@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --pokeball-red: #FF0000;
+  --hp-green: #4CAF50;
+  --deep-black: #222222;
+  --off-white: #F0F0F0;
+  --white: #FFFFFF;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Press Start 2P', cursive;
+  background-color: var(--off-white);
+  color: var(--deep-black);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Pixel-perfect base styles */
+button, input, select, textarea {
+  font-family: 'Press Start 2P', cursive;
+  border-radius: 0;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--off-white);
+  border: 2px solid var(--deep-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--deep-black);
+  border: 2px solid var(--off-white);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--pokeball-red);
+}
+
+/* Animation utilities */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+@keyframes flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes bounce-in {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.animate-flash {
+  animation: flash 0.3s ease-in-out;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.4s ease-out;
+}
+
+/* Pixel borders utility */
+.pixel-border {
+  border: 4px solid var(--deep-black);
+  box-shadow: 
+    inset -4px -4px 0 rgba(0, 0, 0, 0.2),
+    inset 4px 4px 0 rgba(255, 255, 255, 0.2);
+}
+
+.pixel-border-thin {
+  border: 2px solid var(--deep-black);
+}
+
+/* RPG Dialog Box Style */
+.rpg-dialog {
+  background: var(--white);
+  border: 4px solid var(--deep-black);
+  box-shadow: 
+    8px 8px 0 rgba(0, 0, 0, 0.3),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.1),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.5);
+  padding: 1rem;
+}
+
+/* Button press effect */
+.btn-press:active {
+  transform: translateY(2px);
+  box-shadow: 
+    2px 2px 0 rgba(0, 0, 0, 0.3),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* HP Bar styles */
+.hp-bar {
+  background: var(--deep-black);
+  border: 3px solid var(--deep-black);
+  height: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hp-bar-fill {
+  background: var(--hp-green);
+  height: 100%;
+  transition: width 0.5s ease-out;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Quest Card styles */
+.quest-card {
+  background: var(--white);
+  border: 4px solid var(--deep-black);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.quest-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+}
+
+.quest-card.completed {
+  background: #e8f5e9;
+  opacity: 0.7;
+}
+
+/* Responsive text sizing */
+@media (max-width: 768px) {
+  body {
+    font-size: 10px;
+  }
+}
+
+@media (min-width: 769px) {
+  body {
+    font-size: 12px;
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    font-size: 14px;
+  }
+}

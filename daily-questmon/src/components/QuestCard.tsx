@@ -1,0 +1,84 @@
+import React, { useState } from 'react';
+import type { Quest } from '../types/database';
+
+interface QuestCardProps {
+    quest: Quest;
+    isCompleted: boolean;
+    onComplete: (questId: string) => void;
+    disabled?: boolean;
+}
+
+export const QuestCard: React.FC<QuestCardProps> = ({
+    quest,
+    isCompleted,
+    onComplete,
+    disabled = false,
+}) => {
+    const [isShaking, setIsShaking] = useState(false);
+    const [isFlashing, setIsFlashing] = useState(false);
+
+    const handleClick = () => {
+        if (disabled || isCompleted) return;
+
+        // Trigger shake animation
+        setIsShaking(true);
+        setTimeout(() => setIsShaking(false), 500);
+
+        // Complete the quest after shake
+        setTimeout(() => {
+            onComplete(quest.id);
+            setIsFlashing(true);
+            setTimeout(() => setIsFlashing(false), 300);
+        }, 500);
+    };
+
+    return (
+        <div
+            onClick={handleClick}
+            className={`
+        quest-card p-4 
+        ${isCompleted ? 'completed' : 'hover:shadow-lg'}
+        ${isShaking ? 'animate-shake' : ''}
+        ${isFlashing ? 'animate-flash' : ''}
+        ${disabled || isCompleted ? 'cursor-not-allowed' : 'cursor-pointer'}
+      `}
+        >
+            <div className="flex items-center gap-4">
+                {/* Monster Icon */}
+                <div className="text-5xl flex-shrink-0">
+                    {quest.icon}
+                </div>
+
+                {/* Quest Info */}
+                <div className="flex-1">
+                    <h3 className="text-sm font-pixel mb-2 leading-relaxed">
+                        {quest.title}
+                    </h3>
+                    {quest.description && (
+                        <p className="text-xs text-gray-600 leading-relaxed">
+                            {quest.description}
+                        </p>
+                    )}
+                </div>
+
+                {/* Reward Badge */}
+                <div className="flex-shrink-0">
+                    <div className="bg-yellow-400 border-2 border-deep-black px-3 py-2 text-center">
+                        <div className="text-xs font-pixel">⭐</div>
+                        <div className="text-xs font-pixel">{quest.reward_points}</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Completion Status */}
+            {isCompleted && (
+                <div className="mt-3 pt-3 border-t-2 border-deep-black">
+                    <div className="flex items-center justify-center gap-2">
+                        <span className="text-lg">✅</span>
+                        <span className="text-xs font-pixel text-hp-green">已完成！</span>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
