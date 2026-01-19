@@ -4,8 +4,8 @@ import { UserProvider, useUser } from './contexts/UserContext';
 import { FamilyPasswordGuard } from './pages/FamilyPasswordGuard';
 import { RoleSelection } from './pages/RoleSelection';
 import { ChildDashboard } from './pages/ChildDashboard';
-import { ParentDashboard } from './pages/ParentDashboard';
 import { ParentControl } from './pages/ParentControl';
+import { ParentApproval } from './pages/ParentApproval';
 import { LogOut } from 'lucide-react';
 import type { Profile } from './types/database';
 import './index.css';
@@ -91,8 +91,8 @@ function AppContent() {
               <button
                 onClick={() => setView('dashboard')}
                 className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'dashboard'
-                    ? 'bg-pokeball-red text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-pokeball-red text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
                   }`}
               >
                 孩子進度
@@ -100,8 +100,8 @@ function AppContent() {
               <button
                 onClick={() => setView('control')}
                 className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'control'
-                    ? 'bg-pokeball-red text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-pokeball-red text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
                   }`}
               >
                 任務管理
@@ -109,7 +109,7 @@ function AppContent() {
             </div>
           </div>
 
-          {view === 'dashboard' ? <ParentDashboard /> : <ParentControl />}
+          {view === 'dashboard' ? <ParentApproval /> : <ParentControl />}
         </>
       )}
     </div>
