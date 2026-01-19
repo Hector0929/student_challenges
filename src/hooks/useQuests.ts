@@ -3,20 +3,26 @@ import { supabase, getTodayDate } from '../lib/supabase';
 import type { Quest, DailyLog, DailyProgress } from '../types/database';
 
 // Fetch all active quests
-export const useQuests = () => {
+export const useQuests = (status: 'active' | 'pending' | 'archived' = 'active') => {
     return useQuery({
-        queryKey: ['quests'],
+        queryKey: ['quests', status],
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('quests')
+                // .eq('is_active', true) // Legacy check
                 .select('*')
-                .eq('is_active', true)
+                .eq('status', status)
                 .order('created_at', { ascending: true });
 
             if (error) throw error;
             return data as Quest[];
         },
     });
+};
+
+// Fetch pending quests (for parents)
+export const usePendingQuests = () => {
+    return useQuests('pending');
 };
 
 // Fetch daily logs for a specific user and date

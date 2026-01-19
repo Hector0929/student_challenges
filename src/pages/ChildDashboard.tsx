@@ -1,8 +1,10 @@
-import React from 'react';
-import { Trophy, Star } from 'lucide-react';
+import React, { useState } from 'react';
+import { Trophy, Star, Plus, X, Save } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
 import { ProgressBar } from '../components/ProgressBar';
-import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest } from '../hooks/useQuests';
+import { RPGDialog } from '../components/RPGDialog';
+import { RPGButton } from '../components/RPGButton';
+import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest } from '../hooks/useQuests';
 
 interface ChildDashboardProps {
     userId: string;
@@ -13,6 +15,42 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
     const { data: logs, isLoading: logsLoading } = useDailyLogs(userId);
     const progress = useDailyProgress(userId);
     const completeQuestMutation = useCompleteQuest();
+    const createQuestMutation = useCreateQuest();
+
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [formData, setFormData] = useState({
+        title: '',
+        icon: '👾',
+    });
+
+    const commonEmojis = ['👾', '🦷', '🛏️', '📚', '🧸', '🧹', '📖', '⚽', '🎨', '🎮', '🎵', '🌟'];
+
+    const handleOpenDialog = () => {
+        setFormData({ title: '', icon: '👾' });
+        setIsDialogOpen(true);
+    };
+
+    const handleCloseDialog = () => setIsDialogOpen(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await createQuestMutation.mutateAsync({
+                title: formData.title,
+                description: '由孩子建立的任務',
+                icon: formData.icon,
+                reward_points: 10,
+                is_active: true, // Legacy support
+                status: 'pending',
+                created_by: userId,
+            });
+            alert('任務已送出審核！');
+            handleCloseDialog();
+        } catch (error) {
+            console.error('Failed to create quest', error);
+            alert('建立失敗，請稍後再試');
+        }
+    };
 
     const handleCompleteQuest = (questId: string) => {
         completeQuestMutation.mutate({ userId, questId });
@@ -39,9 +77,17 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
         <div className="max-w-4xl mx-auto">
             {/* Header Section */}
             <div className="rpg-dialog mb-6 animate-bounce-in">
-                <div className="flex items-center gap-3 mb-4">
-                    <Trophy className="text-pokeball-red" size={32} />
-                    <h2 className="font-pixel text-xl">今日挑戰</h2>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <Trophy className="text-pokeball-red" size={32} />
+                        <h2 className="font-pixel text-xl">今日挑戰</h2>
+                    </div>
+                    <RPGButton onClick={handleOpenDialog} className="text-xs">
+                        <div className="flex items-center gap-1">
+                            <Plus size={14} />
+                            <span>想要新任務</span>
+                        </div>
+                    </RPGButton>
                 </div>
 
                 {/* Progress Section */}
@@ -111,6 +157,58 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                     </div>
                 </div>
             )}
+            {/* Create Quest Dialog */}
+            <RPGDialog
+                isOpen={isDialogOpen}
+                onClose={handleCloseDialog}
+                title="許願新任務 For Parents"
+                footer={
+                    <div className="flex gap-3 justify-end">
+                        <RPGButton variant="secondary" onClick={handleCloseDialog}>
+                            <div className="flex items-center gap-2">
+                                <X size={16} />
+                                <span>取消</span>
+                            </div>
+                        </RPGButton>
+                        <RPGButton type="submit">
+                            <div className="flex items-center gap-2">
+                                <Save size={16} />
+                                <span>送出許願</span>
+                            </div>
+                        </RPGButton>
+                    </div>
+                }
+            >
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block font-pixel text-xs mb-2">我想做什麼...</label>
+                        <input
+                            type="text"
+                            value={formData.title}
+                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                            className="w-full px-3 py-2 border-2 border-deep-black text-sm"
+                            placeholder="例：幫忙摺衣服"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block font-pixel text-xs mb-2">選個圖案</label>
+                        <div className="grid grid-cols-6 gap-2">
+                            {commonEmojis.map((emoji) => (
+                                <button
+                                    key={emoji}
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, icon: emoji })}
+                                    className={`text-xl p-2 border-2 border-deep-black hover:bg-gray-100 transition-colors ${formData.icon === emoji ? 'bg-yellow-200' : 'bg-white'
+                                        }`}
+                                >
+                                    {emoji}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </form>
+            </RPGDialog>
         </div>
     );
 };

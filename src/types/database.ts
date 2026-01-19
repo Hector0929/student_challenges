@@ -16,7 +16,8 @@ export interface Quest {
     description?: string;
     icon: string;
     reward_points: number;
-    is_active: boolean;
+    is_active: boolean; // Deprecated, use status
+    status: 'active' | 'pending' | 'archived';
     created_by?: string;
     created_at: string;
     updated_at: string;
@@ -44,6 +45,7 @@ export interface QuestFormData {
     icon: string;
     reward_points: number;
     is_active: boolean;
+    status: 'active' | 'pending' | 'archived';
 }
 
 // API response types
