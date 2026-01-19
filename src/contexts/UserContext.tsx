@@ -57,7 +57,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     .select('*')
                     .eq('role', 'child')
                     .eq('student_id', userData.student_id)
-                    .single();
+                    .maybeSingle();
 
                 if (data) profile = data;
             } else if (userData.role === 'parent') {
@@ -66,7 +66,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     .select('*')
                     .eq('role', 'parent')
                     .eq('name', userData.name)
-                    .single();
+                    .maybeSingle();
 
                 if (data) profile = data;
             }

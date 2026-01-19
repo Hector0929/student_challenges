@@ -98,7 +98,7 @@ export const useCompleteQuest = () => {
                 .eq('user_id', userId)
                 .eq('quest_id', questId)
                 .eq('date', today)
-                .single();
+                .maybeSingle();
 
             if (existing) {
                 // Update existing log
@@ -230,9 +230,9 @@ export const useRejectQuest = () => {
         mutationFn: async (logId: string) => {
             const { data, error } = await supabase
                 .from('daily_logs')
-                .update({ 
+                .update({
                     status: 'pending',
-                    completed_at: null 
+                    completed_at: null
                 })
                 .eq('id', logId)
                 .select()
