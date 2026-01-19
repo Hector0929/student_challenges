@@ -10,7 +10,7 @@ export const useQuests = (status: 'active' | 'pending' | 'archived' = 'active') 
             const { data, error } = await supabase
                 .from('quests')
                 // .eq('is_active', true) // Legacy check
-                .select('*')
+                .select('*, quest_assignments(*)')
                 .eq('status', status)
                 .order('created_at', { ascending: true });
 
@@ -249,6 +249,40 @@ export const useRejectQuest = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['daily_logs'] });
+        },
+    });
+};
+
+// Update quest assignments
+export const useUpdateQuestAssignments = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ questId, childIds }: { questId: string; childIds: string[] }) => {
+            // First, delete all existing assignments for this quest
+            const { error: deleteError } = await supabase
+                .from('quest_assignments')
+                .delete()
+                .eq('quest_id', questId);
+
+            if (deleteError) throw deleteError;
+
+            // If there are childIds to assign, insert them
+            if (childIds.length > 0) {
+                const assignments = childIds.map(childId => ({
+                    quest_id: questId,
+                    child_id: childId
+                }));
+
+                const { error: insertError } = await supabase
+                    .from('quest_assignments')
+                    .insert(assignments);
+
+                if (insertError) throw insertError;
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['quests'] });
         },
     });
 };

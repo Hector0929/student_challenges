@@ -11,7 +11,17 @@ interface ChildDashboardProps {
 }
 
 export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
-    const { data: quests, isLoading: questsLoading } = useQuests();
+    const { data: allQuests, isLoading: questsLoading } = useQuests();
+
+    // Filter quests: Show if (Global/No assignments) OR (Assigned to current user)
+    const quests = allQuests?.filter(quest => {
+        // If undefined or empty array, it's global
+        if (!quest.quest_assignments || quest.quest_assignments.length === 0) {
+            return true;
+        }
+        // Check if assigned to this user
+        return quest.quest_assignments.some(qa => qa.child_id === userId);
+    });
     const { data: logs, isLoading: logsLoading } = useDailyLogs(userId);
     const progress = useDailyProgress(userId);
     const completeQuestMutation = useCompleteQuest();

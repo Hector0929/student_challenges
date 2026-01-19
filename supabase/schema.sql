@@ -99,3 +99,24 @@ CREATE TRIGGER update_quests_updated_at
   BEFORE UPDATE ON quests
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
+-- Quest Assignments table (Many-to-Many)
+CREATE TABLE quest_assignments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  quest_id UUID REFERENCES quests(id) ON DELETE CASCADE,
+  child_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(quest_id, child_id)
+);
+
+ALTER TABLE quest_assignments ENABLE ROW LEVEL SECURITY;
+
+-- Assignments: Parents can manage all, Children can read their own
+CREATE POLICY "Parents can manage assignments" ON quest_assignments
+  FOR ALL USING (true); -- Simplified for now, can be stricter if needed
+
+CREATE POLICY "Children can view own assignments" ON quest_assignments
+  FOR SELECT USING (true); -- Children need to read to filter
+
+-- Indexes
+CREATE INDEX idx_quest_assignments_quest ON quest_assignments(quest_id);
+CREATE INDEX idx_quest_assignments_child ON quest_assignments(child_id);

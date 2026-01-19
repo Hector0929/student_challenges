@@ -21,6 +21,14 @@ export interface Quest {
     created_by?: string;
     created_at: string;
     updated_at: string;
+    quest_assignments?: QuestAssignment[];
+}
+
+export interface QuestAssignment {
+    id: string;
+    quest_id: string;
+    child_id: string;
+    created_at: string;
 }
 
 export interface DailyLog {

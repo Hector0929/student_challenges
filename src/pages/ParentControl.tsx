@@ -3,8 +3,10 @@ import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { RPGButton as _RPGButton } from '../components/RPGButton';
 const RPGButton = _RPGButton as any;
 import { RPGDialog } from '../components/RPGDialog';
-import { useQuests, usePendingQuests, useCreateQuest, useUpdateQuest, useDeleteQuest } from '../hooks/useQuests';
-import type { Quest } from '../types/database';
+import { useQuests, usePendingQuests, useCreateQuest, useUpdateQuest, useDeleteQuest, useUpdateQuestAssignments } from '../hooks/useQuests';
+import type { Quest, Profile } from '../types/database';
+import { supabase } from '../lib/supabase';
+import { useQuery } from '@tanstack/react-query';
 
 export const ParentControl: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'active' | 'pending'>('active');
@@ -19,9 +21,24 @@ export const ParentControl: React.FC = () => {
     const createQuestMutation = useCreateQuest();
     const updateQuestMutation = useUpdateQuest();
     const deleteQuestMutation = useDeleteQuest();
+    const updateAssignmentsMutation = useUpdateQuestAssignments();
+
+    // Fetch all children for assignment
+    const { data: children } = useQuery({
+        queryKey: ['children'],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('role', 'child')
+                .order('name');
+            return data as Profile[];
+        },
+    });
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
+    const [selectedChildren, setSelectedChildren] = useState<string[]>([]);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -42,6 +59,12 @@ export const ParentControl: React.FC = () => {
                 is_active: quest.is_active,
                 status: quest.status,
             });
+            // Pre-select assigned children
+            if (quest.quest_assignments && quest.quest_assignments.length > 0) {
+                setSelectedChildren(quest.quest_assignments.map(qa => qa.child_id));
+            } else {
+                setSelectedChildren([]); // Empty means Global (all)
+            }
         } else {
             setEditingQuest(null);
             setFormData({
@@ -52,6 +75,7 @@ export const ParentControl: React.FC = () => {
                 is_active: true,
                 status: 'active' as 'active' | 'pending' | 'archived',
             });
+            setSelectedChildren([]); // Default to Global
         }
         setIsDialogOpen(true);
     };
@@ -59,22 +83,32 @@ export const ParentControl: React.FC = () => {
     const handleCloseDialog = () => {
         setIsDialogOpen(false);
         setEditingQuest(null);
+        setSelectedChildren([]);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        let questId = '';
 
         if (editingQuest) {
+            questId = editingQuest.id;
             await updateQuestMutation.mutateAsync({
-                id: editingQuest.id,
+                id: questId,
                 ...formData,
             });
         } else {
-            await createQuestMutation.mutateAsync({
+            const newQuest = await createQuestMutation.mutateAsync({
                 ...formData,
-                status: 'active' // Parents always create active quests
+                status: 'active'
             });
+            questId = newQuest.id;
         }
+
+        // Update assignments
+        await updateAssignmentsMutation.mutateAsync({
+            questId,
+            childIds: selectedChildren
+        });
 
         handleCloseDialog();
     };
@@ -91,6 +125,15 @@ export const ParentControl: React.FC = () => {
             status: 'active',
             is_active: true
         });
+
+        // Auto-assign to creator if it exists
+        const quest = quests?.find(q => q.id === questId);
+        if (quest?.created_by) {
+            await updateAssignmentsMutation.mutateAsync({
+                questId,
+                childIds: [quest.created_by]
+            });
+        }
     };
 
     const handleReject = async (questId: string) => {
@@ -313,6 +356,33 @@ export const ParentControl: React.FC = () => {
                         />
                     </div>
 
+                    {/* Assignments */}
+                    <div>
+                        <label className="block font-pixel text-xs mb-2">指派給... (未勾選 = 全體任務)</label>
+                        <div className="flex flex-wrap gap-2">
+                            {children?.map((child) => (
+                                <button
+                                    key={child.id}
+                                    type="button"
+                                    onClick={() => {
+                                        if (selectedChildren.includes(child.id)) {
+                                            setSelectedChildren(selectedChildren.filter(id => id !== child.id));
+                                        } else {
+                                            setSelectedChildren([...selectedChildren, child.id]);
+                                        }
+                                    }}
+                                    className={`px-3 py-1 text-sm border-2 border-deep-black transition-colors flex items-center gap-2 ${selectedChildren.includes(child.id)
+                                        ? 'bg-deep-black text-white'
+                                        : 'bg-white text-gray-600 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    <span>{child.avatar_url || '👦'}</span>
+                                    <span>{child.name}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Active Status */}
                     <div className="flex items-center gap-3">
                         <input
@@ -328,6 +398,6 @@ export const ParentControl: React.FC = () => {
                     </div>
                 </form>
             </RPGDialog>
-        </div>
+        </div >
     );
 };
