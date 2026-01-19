@@ -6,6 +6,8 @@ interface UserContextType {
     user: Profile | null;
     setUser: (user: Profile | null) => void;
     registerUser: (userData: Omit<Profile, 'id' | 'created_at'>) => Promise<void>;
+    loginAsChild: (childId: string) => Promise<void>;
+    loginAsParent: () => Promise<void>;
     logout: () => void;
 }
 
@@ -98,12 +100,69 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const loginAsChild = async (childId: string) => {
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', childId)
+                .eq('role', 'child')
+                .maybeSingle();
+
+            if (error) throw error;
+            if (data) {
+                setUser(data);
+            } else {
+                throw new Error('找不到此孩子的資料');
+            }
+        } catch (error) {
+            console.error('登入失敗:', error);
+            alert('登入失敗，請重試');
+        }
+    };
+
+    const loginAsParent = async () => {
+        try {
+            // Check if parent profile exists
+            const { data: existingParent } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('role', 'parent')
+                .maybeSingle();
+
+            let parentProfile = existingParent;
+
+            // Create parent profile if it doesn't exist
+            if (!parentProfile) {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .insert({
+                        role: 'parent',
+                        name: '家長',
+                        avatar_url: '👨‍👩‍👧‍👦'
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                parentProfile = data;
+            }
+
+            if (parentProfile) {
+                setUser(parentProfile);
+            }
+        } catch (error) {
+            console.error('家長登入失敗:', error);
+            alert('登入失敗，請重試');
+        }
+    };
+
     const logout = () => {
         setUser(null);
     };
 
     return (
-        <UserContext.Provider value={{ user, setUser, registerUser, logout }}>
+        <UserContext.Provider value={{ user, setUser, registerUser, loginAsChild, loginAsParent, logout }}>
             {children}
         </UserContext.Provider>
     );

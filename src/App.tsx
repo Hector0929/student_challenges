@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Layout } from './components/Layout';
-import { ChildDashboard } from './pages/ChildDashboard';
-import { ParentControl } from './pages/ParentControl';
-import { ParentApproval } from './pages/ParentApproval';
-import { UserRegistration } from './pages/UserRegistration';
 import { UserProvider, useUser } from './contexts/UserContext';
+import { FamilyPasswordGuard } from './pages/FamilyPasswordGuard';
+import { RoleSelection } from './pages/RoleSelection';
+import { ChildDashboard } from './pages/ChildDashboard';
+import { ParentDashboard } from './pages/ParentDashboard';
+import { ParentControl } from './pages/ParentControl';
+import { LogOut } from 'lucide-react';
+import type { Profile } from './types/database';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -17,72 +19,102 @@ const queryClient = new QueryClient({
   },
 });
 
-const AppContent: React.FC = () => {
-  const { user, registerUser, logout } = useUser();
-  const [currentView, setCurrentView] = useState<'quests' | 'approval'>('quests');
+function AppContent() {
+  const { user, loginAsChild, loginAsParent, logout } = useUser();
+  const [isFamilyAuthenticated, setIsFamilyAuthenticated] = useState(false);
+  const [view, setView] = useState<'dashboard' | 'control'>('dashboard');
 
-  // Show registration if no user
-  if (!user) {
-    return <UserRegistration onRegister={registerUser} />;
+  // Check family authentication on mount
+  useEffect(() => {
+    const familyAuth = sessionStorage.getItem('family-auth');
+    setIsFamilyAuthenticated(familyAuth === 'verified');
+  }, []);
+
+  // Handler for family password success
+  const handleFamilyAuth = () => {
+    setIsFamilyAuthenticated(true);
+  };
+
+  // Handler for child selection
+  const handleChildSelected = async (child: Profile) => {
+    await loginAsChild(child.id);
+  };
+
+  // Handler for parent authentication
+  const handleParentAuth = async () => {
+    await loginAsParent();
+  };
+
+  // Handler for logout
+  const handleLogout = () => {
+    logout();
+    // Don't clear family auth - they can still select another role
+  };
+
+  // Render family password guard if not authenticated
+  if (!isFamilyAuthenticated) {
+    return <FamilyPasswordGuard onAuthenticated={handleFamilyAuth} />;
   }
 
-  // Child view
-  if (user.role === 'child') {
+  // Render role selection if authenticated but no user selected
+  if (!user) {
     return (
-      <Layout
-        currentRole="child"
-        onRoleChange={() => { }}
-        user={user}
-        onLogout={logout}
-      >
-        <ChildDashboard userId={user.id} />
-      </Layout>
+      <RoleSelection
+        onChildSelected={handleChildSelected}
+        onParentAuthenticated={handleParentAuth}
+      />
     );
   }
 
-  // Parent view with tabs
+  // Render based on user role
   return (
-    <Layout
-      currentRole="parent"
-      onRoleChange={() => { }}
-      user={user}
-      onLogout={logout}
-    >
-      {/* Tab Navigation */}
-      <div className="mb-6 flex gap-2 border-b-4 border-deep-black">
+    <div className="min-h-screen bg-gradient-to-b from-pokeball-red to-pink-100 py-8 px-4">
+      {/* Logout Button */}
+      <div className="max-w-6xl mx-auto mb-4 flex justify-end">
         <button
-          onClick={() => setCurrentView('quests')}
-          className={`
-            px-6 py-3 font-pixel text-xs border-4 border-deep-black border-b-0
-            transition-colors
-            ${currentView === 'quests'
-              ? 'bg-pokeball-red text-white -mb-1'
-              : 'bg-white text-deep-black hover:bg-gray-100'
-            }
-          `}
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-deep-black hover:bg-gray-100 transition-colors font-pixel text-xs"
+          title="登出"
         >
-          📝 任務管理
-        </button>
-        <button
-          onClick={() => setCurrentView('approval')}
-          className={`
-            px-6 py-3 font-pixel text-xs border-4 border-deep-black border-b-0
-            transition-colors
-            ${currentView === 'approval'
-              ? 'bg-pokeball-red text-white -mb-1'
-              : 'bg-white text-deep-black hover:bg-gray-100'
-            }
-          `}
-        >
-          ✅ 審核任務
+          <LogOut size={16} />
+          <span>切換角色</span>
         </button>
       </div>
 
-      {/* Content */}
-      {currentView === 'quests' ? <ParentControl /> : <ParentApproval />}
-    </Layout>
+      {user.role === 'child' ? (
+        <ChildDashboard userId={user.id} />
+      ) : (
+        <>
+          {/* Parent View Toggle */}
+          <div className="max-w-6xl mx-auto mb-6">
+            <div className="flex bg-white border-2 border-deep-black p-1 w-fit">
+              <button
+                onClick={() => setView('dashboard')}
+                className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'dashboard'
+                    ? 'bg-pokeball-red text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+              >
+                孩子進度
+              </button>
+              <button
+                onClick={() => setView('control')}
+                className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'control'
+                    ? 'bg-pokeball-red text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+              >
+                任務管理
+              </button>
+            </div>
+          </div>
+
+          {view === 'dashboard' ? <ParentDashboard /> : <ParentControl />}
+        </>
+      )}
+    </div>
   );
-};
+}
 
 function App() {
   return (
