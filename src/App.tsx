@@ -6,6 +6,7 @@ import { RoleSelection } from './pages/RoleSelection';
 import { ChildDashboard } from './pages/ChildDashboard';
 import { ParentControl } from './pages/ParentControl';
 import { ParentApproval } from './pages/ParentApproval';
+import { ChildManagement } from './pages/ChildManagement';
 import { LogOut } from 'lucide-react';
 import type { Profile } from './types/database';
 import './index.css';
@@ -22,7 +23,7 @@ const queryClient = new QueryClient({
 function AppContent() {
   const { user, loginAsChild, loginAsParent, logout } = useUser();
   const [isFamilyAuthenticated, setIsFamilyAuthenticated] = useState(false);
-  const [view, setView] = useState<'dashboard' | 'control'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'control' | 'children'>('dashboard');
 
   // Check family authentication on mount
   useEffect(() => {
@@ -91,8 +92,8 @@ function AppContent() {
               <button
                 onClick={() => setView('dashboard')}
                 className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'dashboard'
-                  ? 'bg-pokeball-red text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-pokeball-red text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
                   }`}
               >
                 孩子進度
@@ -100,16 +101,31 @@ function AppContent() {
               <button
                 onClick={() => setView('control')}
                 className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'control'
-                  ? 'bg-pokeball-red text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-pokeball-red text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
                   }`}
               >
                 任務管理
               </button>
+              <button
+                onClick={() => setView('children')}
+                className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'children'
+                    ? 'bg-pokeball-red text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+              >
+                管理孩子
+              </button>
             </div>
           </div>
 
-          {view === 'dashboard' ? <ParentApproval /> : <ParentControl />}
+          {view === 'dashboard' ? (
+            <ParentApproval />
+          ) : view === 'control' ? (
+            <ParentControl />
+          ) : (
+            <ChildManagement />
+          )}
         </>
       )}
     </div>

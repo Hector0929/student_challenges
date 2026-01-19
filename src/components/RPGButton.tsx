@@ -7,6 +7,7 @@ export interface RPGButtonProps {
     disabled?: boolean;
     type?: 'button' | 'submit' | 'reset';
     className?: string;
+    form?: string;
 }
 
 export const RPGButton = ({
@@ -16,6 +17,7 @@ export const RPGButton = ({
     disabled = false,
     type = 'button',
     className = '',
+    form,
 }: RPGButtonProps) => {
     const baseStyles = 'px-6 py-3 font-pixel text-sm border-4 border-deep-black transition-all btn-press disabled:opacity-50 disabled:cursor-not-allowed';
 
@@ -30,6 +32,7 @@ export const RPGButton = ({
             type={type}
             onClick={onClick}
             disabled={disabled}
+            form={form}
             className={`${baseStyles} ${variantStyles[variant]} ${className}`}
             style={{
                 boxShadow: disabled ? 'none' : '4px 4px 0 rgba(0, 0, 0, 0.3)',
