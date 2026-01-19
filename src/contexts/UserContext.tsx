@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Profile } from '../types/database';
+import { supabase } from '../lib/supabase';
 
 interface UserContextType {
     user: Profile | null;
     setUser: (user: Profile | null) => void;
-    registerUser: (userData: Omit<Profile, 'id' | 'created_at'>) => void;
+    registerUser: (userData: Omit<Profile, 'id' | 'created_at'>) => Promise<void>;
     logout: () => void;
 }
 
@@ -34,21 +35,56 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const registerUser = (userData: Omit<Profile, 'id' | 'created_at'>) => {
-        // Create new user profile
-        const newUser: Profile = {
-            id: `user-${Date.now()}`,
-            ...userData,
-            created_at: new Date().toISOString(),
-        };
+    const registerUser = async (userData: Omit<Profile, 'id' | 'created_at'>) => {
+        try {
+            let profile: Profile | null = null;
 
-        // Save to localStorage (in real app, this would be saved to Supabase)
-        const users = JSON.parse(localStorage.getItem('questmon-users') || '[]');
-        users.push(newUser);
-        localStorage.setItem('questmon-users', JSON.stringify(users));
+            // 1. Check if user already exists
+            if (userData.role === 'child' && userData.student_id) {
+                const { data } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('role', 'child')
+                    .eq('student_id', userData.student_id)
+                    .single();
 
-        // Set as current user
-        setUser(newUser);
+                if (data) profile = data;
+            } else if (userData.role === 'parent') {
+                const { data } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('role', 'parent')
+                    .eq('name', userData.name)
+                    .single();
+
+                if (data) profile = data;
+            }
+
+            // 2. If not exists, create new user
+            if (!profile) {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .insert({
+                        role: userData.role,
+                        name: userData.name,
+                        student_id: userData.student_id,
+                        avatar_url: userData.avatar_url
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                profile = data;
+            }
+
+            // 3. Set as current user
+            if (profile) {
+                setUser(profile);
+            }
+        } catch (error) {
+            console.error('Error registering/logging in user:', error);
+            alert('登入/註冊失敗，請重試');
+        }
     };
 
     const logout = () => {

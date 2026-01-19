@@ -4,7 +4,7 @@ import { RPGButton } from '../components/RPGButton';
 import type { Profile } from '../types/database';
 
 interface UserRegistrationProps {
-    onRegister: (profile: Omit<Profile, 'id' | 'created_at'>) => void;
+    onRegister: (profile: Omit<Profile, 'id' | 'created_at'>) => Promise<void>;
 }
 
 export const UserRegistration: React.FC<UserRegistrationProps> = ({ onRegister }) => {
@@ -12,7 +12,9 @@ export const UserRegistration: React.FC<UserRegistrationProps> = ({ onRegister }
     const [studentId, setStudentId] = useState('');
     const [role, setRole] = useState<'child' | 'parent'>('child');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!name.trim()) {
@@ -25,11 +27,18 @@ export const UserRegistration: React.FC<UserRegistrationProps> = ({ onRegister }
             return;
         }
 
-        onRegister({
-            role,
-            name: name.trim(),
-            student_id: role === 'child' ? studentId.trim() : undefined,
-        });
+        setIsLoading(true);
+        try {
+            await onRegister({
+                role,
+                name: name.trim(),
+                student_id: role === 'child' ? studentId.trim() : undefined,
+            });
+        } catch (error) {
+            console.error('Registration failed:', error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -108,10 +117,10 @@ export const UserRegistration: React.FC<UserRegistrationProps> = ({ onRegister }
                     )}
 
                     {/* Submit Button */}
-                    <RPGButton type="submit" className="w-full">
+                    <RPGButton type="submit" className="w-full" disabled={isLoading}>
                         <div className="flex items-center justify-center gap-2">
                             <UserPlus size={16} />
-                            <span>開始冒險！</span>
+                            <span>{isLoading ? '處理中...' : '開始冒險！'}</span>
                         </div>
                     </RPGButton>
                 </form>
