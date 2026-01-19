@@ -19,9 +19,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const savedUser = localStorage.getItem('questmon-current-user');
         if (savedUser) {
             try {
-                setUserState(JSON.parse(savedUser));
+                const parsedUser = JSON.parse(savedUser);
+                // Validate if ID is a valid UUID
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+                if (parsedUser && parsedUser.id && uuidRegex.test(parsedUser.id)) {
+                    setUserState(parsedUser);
+                } else {
+                    console.warn('Invalid user ID found (legacy), clearing session');
+                    localStorage.removeItem('questmon-current-user');
+                    setUserState(null);
+                }
             } catch (e) {
                 console.error('Failed to parse saved user', e);
+                localStorage.removeItem('questmon-current-user');
             }
         }
     }, []);
