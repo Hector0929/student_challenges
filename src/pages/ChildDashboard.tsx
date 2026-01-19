@@ -34,7 +34,10 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('📝 handleSubmit triggered!', formData);
+
         try {
+            console.log('🚀 Sending quest mutation...');
             await createQuestMutation.mutateAsync({
                 title: formData.title,
                 description: '由孩子建立的任務',
@@ -44,6 +47,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                 status: 'pending',
                 created_by: userId,
             });
+            console.log('✅ Quest created successfully');
             alert('✅ 任務已送出審核！\n\n請等待爸爸媽媽核准。');
             handleCloseDialog();
         } catch (error: any) {
@@ -170,7 +174,19 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                                 <span>取消</span>
                             </div>
                         </RPGButton>
-                        <RPGButton type="submit">
+                        <RPGButton
+                            type="button"
+                            onClick={() => {
+                                console.log('🖱️ Button clicked, attempting to submit form...');
+                                const form = document.getElementById('create-quest-form') as HTMLFormElement;
+                                if (form) {
+                                    form.requestSubmit();
+                                } else {
+                                    console.error('❌ Form element not found!');
+                                    alert('程式錯誤：找不到表單，請重新整理網頁');
+                                }
+                            }}
+                        >
                             <div className="flex items-center gap-2">
                                 <Save size={16} />
                                 <span>送出許願</span>
@@ -179,7 +195,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                     </div>
                 }
             >
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form id="create-quest-form" onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block font-pixel text-xs mb-2">我想做什麼...</label>
                         <input
