@@ -1,6 +1,5 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { RPGButton } from './RPGButton';
 
 interface RPGDialogProps {
     isOpen: boolean;

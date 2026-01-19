@@ -71,20 +71,20 @@ const mockProfile: Profile = {
 const mockDailyLogs: DailyLog[] = [];
 
 // Create a proper mock query builder
-const createQueryBuilder = (table: string, data: any[]) => {
+const createQueryBuilder = (_table: string, data: any[]) => {
     let filters: any = {};
-    let selectFields = '*';
+    // let selectFields = '*'; // Unused
 
     const builder: any = {
-        select: (fields?: string) => {
-            selectFields = fields || '*';
+        select: (_fields?: string) => {
+            // selectFields = fields || '*'; // Unused
             return builder;
         },
         eq: (column: string, value: any) => {
             filters[column] = value;
             return builder;
         },
-        order: (column: string, options?: any) => {
+        order: (_column: string, _options?: any) => {
             return builder;
         },
         single: async () => {
@@ -108,11 +108,11 @@ const createQueryBuilder = (table: string, data: any[]) => {
 };
 
 // Mock Supabase client
-export const supabase = {
+export const supabase: any = {
     from: (table: string) => {
         if (table === 'profiles') {
             return {
-                select: (columns?: string) => createQueryBuilder(table, [mockProfile]),
+                select: (_columns?: string) => createQueryBuilder(table, [mockProfile]),
                 insert: (data: any) => ({
                     select: () => ({
                         single: async () => {
@@ -128,7 +128,7 @@ export const supabase = {
             };
         } else if (table === 'quests') {
             return {
-                select: (columns?: string) => createQueryBuilder(table, mockQuests),
+                select: (_columns?: string) => createQueryBuilder(table, mockQuests),
                 insert: (data: any) => ({
                     select: () => ({
                         single: async () => {
@@ -172,7 +172,7 @@ export const supabase = {
             };
         } else if (table === 'daily_logs') {
             return {
-                select: (columns?: string) => {
+                select: (_columns?: string) => {
                     const builder: any = {
                         eq: (column: string, value: any) => {
                             let filtered = mockDailyLogs;

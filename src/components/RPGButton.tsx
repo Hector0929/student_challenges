@@ -1,6 +1,6 @@
 import React from 'react';
 
-interface RPGButtonProps {
+export interface RPGButtonProps {
     children: React.ReactNode;
     onClick?: () => void;
     variant?: 'primary' | 'secondary' | 'danger';
@@ -9,14 +9,14 @@ interface RPGButtonProps {
     className?: string;
 }
 
-export const RPGButton: React.FC<RPGButtonProps> = ({
+export const RPGButton = ({
     children,
     onClick,
     variant = 'primary',
     disabled = false,
     type = 'button',
     className = '',
-}) => {
+}: RPGButtonProps) => {
     const baseStyles = 'px-6 py-3 font-pixel text-sm border-4 border-deep-black transition-all btn-press disabled:opacity-50 disabled:cursor-not-allowed';
 
     const variantStyles = {

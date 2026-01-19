@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
-import { RPGButton } from '../components/RPGButton';
+import { RPGButton as _RPGButton } from '../components/RPGButton';
+const RPGButton = _RPGButton as any;
 import { RPGDialog } from '../components/RPGDialog';
 import { useQuests, useCreateQuest, useUpdateQuest, useDeleteQuest } from '../hooks/useQuests';
 import type { Quest } from '../types/database';

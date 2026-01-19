@@ -1,0 +1,13 @@
+
+> daily-questmon@0.0.0 build
+> tsc -b && vite build
+
+src/lib/supabase.ts(74,29): error TS6133: 'table' is declared but its value is never read.
+src/lib/supabase.ts(76,9): error TS6133: 'selectFields' is declared but its value is never read.
+src/lib/supabase.ts(87,17): error TS6133: 'column' is declared but its value is never read.
+src/lib/supabase.ts(87,33): error TS6133: 'options' is declared but its value is never read.
+src/lib/supabase.ts(115,26): error TS6133: 'columns' is declared but its value is never read.
+src/lib/supabase.ts(131,26): error TS6133: 'columns' is declared but its value is never read.
+src/lib/supabase.ts(175,26): error TS6133: 'columns' is declared but its value is never read.
+src/pages/ParentControl.tsx(166,36): error TS2322: Type '(e: React.FormEvent) => Promise<void>' is not assignable to type '() => void'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0.
