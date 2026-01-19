@@ -68,6 +68,11 @@ export const ChildManagement: React.FC = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['children'] });
+            alert('刪除成功！');
+        },
+        onError: (error: any) => {
+            console.error('刪除失敗:', error);
+            alert(`刪除失敗：${error.message}\n\n請確認：\n1. 孩子是否有相關的任務紀錄\n2. 資料庫權限設定是否正確`);
         },
     });
 

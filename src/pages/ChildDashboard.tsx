@@ -44,11 +44,11 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                 status: 'pending',
                 created_by: userId,
             });
-            alert('任務已送出審核！');
+            alert('✅ 任務已送出審核！\n\n請等待爸爸媽媽核准。');
             handleCloseDialog();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to create quest', error);
-            alert('建立失敗，請稍後再試');
+            alert(`❌ 建立失敗\n\n錯誤：${error.message || error}\n\n請告訴爸爸媽媽這個錯誤訊息`);
         }
     };
 
