@@ -6,6 +6,8 @@ import { RPGDialog } from '../components/RPGDialog';
 import { RPGButton } from '../components/RPGButton';
 import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useChildTotalPoints } from '../hooks/useQuests';
 
+import { COMMON_EMOJIS } from '../lib/constants';
+
 interface ChildDashboardProps {
     userId: string;
 }
@@ -33,8 +35,6 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
         title: '',
         icon: '👾',
     });
-
-    const commonEmojis = ['👾', '🦷', '🛏️', '📚', '🧸', '🧹', '📖', '⚽', '🎨', '🎮', '🎵', '🌟'];
 
     const handleOpenDialog = () => {
         setFormData({ title: '', icon: '👾' });
@@ -221,7 +221,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                     <div>
                         <label className="block font-pixel text-xs mb-2">選個圖案</label>
                         <div className="grid grid-cols-6 gap-2">
-                            {commonEmojis.map((emoji) => (
+                            {COMMON_EMOJIS.map((emoji) => (
                                 <button
                                     key={emoji}
                                     type="button"

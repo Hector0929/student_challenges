@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
-import { RPGButton as _RPGButton } from '../components/RPGButton';
-const RPGButton = _RPGButton as any;
+import { RPGButton } from '../components/RPGButton';
 import { RPGDialog } from '../components/RPGDialog';
 import { useQuests, usePendingQuests, useCreateQuest, useUpdateQuest, useDeleteQuest, useUpdateQuestAssignments } from '../hooks/useQuests';
 import type { Quest, Profile } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
+import { COMMON_EMOJIS } from '../lib/constants';
 
 export const ParentControl: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'active' | 'pending'>('active');
@@ -141,8 +141,6 @@ export const ParentControl: React.FC = () => {
             await deleteQuestMutation.mutateAsync(questId);
         }
     };
-
-    const commonEmojis = ['👾', '🦷', '🛏️', '📚', '🧸', '🧹', '📖', '⚽', '🎨', '🎮', '🍎', '💪', '🎵', '🌟'];
 
     if (isLoading) {
         return (
@@ -283,7 +281,7 @@ export const ParentControl: React.FC = () => {
                                 <span>取消</span>
                             </div>
                         </RPGButton>
-                        <RPGButton onClick={handleSubmit}>
+                        <RPGButton type="submit" form="parent-quest-form">
                             <div className="flex items-center gap-2">
                                 <Save size={16} />
                                 <span>儲存</span>
@@ -292,7 +290,7 @@ export const ParentControl: React.FC = () => {
                     </div>
                 }
             >
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form id="parent-quest-form" onSubmit={handleSubmit} className="space-y-4">
                     {/* Title */}
                     <div>
                         <label className="block font-pixel text-xs mb-2">任務名稱 *</label>
@@ -322,7 +320,7 @@ export const ParentControl: React.FC = () => {
                     <div>
                         <label className="block font-pixel text-xs mb-2">圖示 *</label>
                         <div className="grid grid-cols-7 gap-2 mb-2">
-                            {commonEmojis.map((emoji) => (
+                            {COMMON_EMOJIS.map((emoji) => (
                                 <button
                                     key={emoji}
                                     type="button"
