@@ -9,6 +9,7 @@ interface UserContextType {
     loginAsChild: (childId: string) => Promise<void>;
     loginAsParent: () => Promise<void>;
     logout: () => void;
+    logoutParent: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -161,8 +162,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
     };
 
+    const logoutParent = () => {
+        // Clear parent authentication from sessionStorage
+        sessionStorage.removeItem('parent-auth');
+        // Also logout the user (back to role selection)
+        setUser(null);
+    };
+
     return (
-        <UserContext.Provider value={{ user, setUser, registerUser, loginAsChild, loginAsParent, logout }}>
+        <UserContext.Provider value={{ user, setUser, registerUser, loginAsChild, loginAsParent, logout, logoutParent }}>
             {children}
         </UserContext.Provider>
     );

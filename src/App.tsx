@@ -22,7 +22,7 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
-  const { user, loginAsChild, loginAsParent, logout } = useUser();
+  const { user, loginAsChild, loginAsParent, logout, logoutParent } = useUser();
 
   // Enable global realtime updates
   useRealtimeSubscription(user?.id);
@@ -57,6 +57,11 @@ function AppContent() {
     // Don't clear family auth - they can still select another role
   };
 
+  // Handler for parent logout
+  const handleLogoutParent = () => {
+    logoutParent();
+  };
+
   // Render family password guard if not authenticated
   if (!isFamilyAuthenticated) {
     return <FamilyPasswordGuard onAuthenticated={handleFamilyAuth} />;
@@ -76,11 +81,21 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-pokeball-red to-pink-100 py-8 px-4">
       {/* Logout Button */}
-      <div className="max-w-6xl mx-auto mb-4 flex justify-end">
+      <div className="max-w-6xl mx-auto mb-4 flex justify-end gap-2">
+        {user.role === 'parent' && (
+          <button
+            onClick={handleLogoutParent}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white border-2 border-deep-black hover:bg-red-600 transition-colors font-pixel text-xs"
+            title="登出家長"
+          >
+            <LogOut size={16} />
+            <span>登出家長</span>
+          </button>
+        )}
         <button
           onClick={handleLogout}
           className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-deep-black hover:bg-gray-100 transition-colors font-pixel text-xs"
-          title="登出"
+          title="切換角色"
         >
           <LogOut size={16} />
           <span>切換角色</span>

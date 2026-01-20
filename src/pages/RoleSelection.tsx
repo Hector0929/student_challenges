@@ -31,6 +31,19 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
         },
     });
 
+    const handleParentClick = () => {
+        // Check if parent is already authenticated in this session
+        const isParentAuth = sessionStorage.getItem('parent-auth') === 'verified';
+
+        if (isParentAuth) {
+            // Already authenticated, skip password dialog
+            onParentAuthenticated();
+        } else {
+            // Not authenticated, show password dialog
+            setShowParentDialog(true);
+        }
+    };
+
     const handleParentLogin = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -42,6 +55,8 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
         }
 
         if (parentPassword === correctPassword) {
+            // Set parent auth flag in sessionStorage
+            sessionStorage.setItem('parent-auth', 'verified');
             setShowParentDialog(false);
             onParentAuthenticated();
         } else {
@@ -101,7 +116,7 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                 {/* Parent Button */}
                 <div className="border-t-2 border-deep-black pt-6">
                     <RPGButton
-                        onClick={() => setShowParentDialog(true)}
+                        onClick={handleParentClick}
                         className="w-full"
                         variant="secondary"
                     >
