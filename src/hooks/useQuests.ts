@@ -26,9 +26,10 @@ export const usePendingQuests = () => {
 };
 
 // Fetch daily logs for a specific user and date
+// Pass date = null to fetch all history (e.g. for parent approval)
 export const useDailyLogs = (
     userId: string,
-    date: string = getTodayDate(),
+    date: string | null = getTodayDate(),
     status?: 'pending' | 'completed' | 'verified'
 ) => {
     return useQuery({
@@ -51,12 +52,32 @@ export const useDailyLogs = (
                 query = query.eq('status', status);
             }
 
+            // If fetching history (no date), order by newest first
+            if (!date) {
+                query = query.order('created_at', { ascending: false });
+            }
+
             const { data, error } = await query;
 
             if (error) throw error;
             return data as DailyLog[];
         },
         enabled: !!userId,
+    });
+};
+
+// Fetch total points for a child using RPC
+export const useChildTotalPoints = (childId: string) => {
+    return useQuery({
+        queryKey: ['total_points', childId],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .rpc('get_child_total_points', { child_id: childId });
+
+            if (error) throw error;
+            return data as number;
+        },
+        enabled: !!childId,
     });
 };
 

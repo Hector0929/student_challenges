@@ -120,3 +120,20 @@ CREATE POLICY "Children can view own assignments" ON quest_assignments
 -- Indexes
 CREATE INDEX idx_quest_assignments_quest ON quest_assignments(quest_id);
 CREATE INDEX idx_quest_assignments_child ON quest_assignments(child_id);
+
+-- Function to calculate total points for a child efficiently
+CREATE OR REPLACE FUNCTION get_child_total_points(child_id UUID)
+RETURNS INTEGER AS $$
+DECLARE
+  total INTEGER;
+BEGIN
+  SELECT COALESCE(SUM(q.reward_points), 0)
+  INTO total
+  FROM daily_logs l
+  JOIN quests q ON l.quest_id = q.id
+  WHERE l.user_id = child_id
+  AND l.status = 'verified';
+  
+  RETURN total;
+END;
+$$ LANGUAGE plpgsql;

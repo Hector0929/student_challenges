@@ -7,6 +7,7 @@ import { ChildDashboard } from './pages/ChildDashboard';
 import { ParentControl } from './pages/ParentControl';
 import { ParentApproval } from './pages/ParentApproval';
 import { ChildManagement } from './pages/ChildManagement';
+import { useRealtimeSubscription } from './hooks/useRealtime';
 import { LogOut } from 'lucide-react';
 import type { Profile } from './types/database';
 import './index.css';
@@ -22,6 +23,10 @@ const queryClient = new QueryClient({
 
 function AppContent() {
   const { user, loginAsChild, loginAsParent, logout } = useUser();
+
+  // Enable global realtime updates
+  useRealtimeSubscription(user?.id);
+
   const [isFamilyAuthenticated, setIsFamilyAuthenticated] = useState(false);
   const [view, setView] = useState<'dashboard' | 'control' | 'children'>('dashboard');
 
@@ -92,8 +97,8 @@ function AppContent() {
               <button
                 onClick={() => setView('dashboard')}
                 className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'dashboard'
-                    ? 'bg-pokeball-red text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-pokeball-red text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
                   }`}
               >
                 孩子進度
@@ -101,8 +106,8 @@ function AppContent() {
               <button
                 onClick={() => setView('control')}
                 className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'control'
-                    ? 'bg-pokeball-red text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-pokeball-red text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
                   }`}
               >
                 任務管理
@@ -110,8 +115,8 @@ function AppContent() {
               <button
                 onClick={() => setView('children')}
                 className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'children'
-                    ? 'bg-pokeball-red text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-pokeball-red text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
                   }`}
               >
                 管理孩子

@@ -4,7 +4,7 @@ import { QuestCard } from '../components/QuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { RPGDialog } from '../components/RPGDialog';
 import { RPGButton } from '../components/RPGButton';
-import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest } from '../hooks/useQuests';
+import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useChildTotalPoints } from '../hooks/useQuests';
 
 interface ChildDashboardProps {
     userId: string;
@@ -24,6 +24,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
     });
     const { data: logs, isLoading: logsLoading } = useDailyLogs(userId);
     const progress = useDailyProgress(userId);
+    const { data: totalPoints } = useChildTotalPoints(userId);
     const completeQuestMutation = useCompleteQuest();
     const createQuestMutation = useCreateQuest();
 
@@ -124,9 +125,9 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                     </div>
                     <div className="bg-white border-2 border-deep-black p-3 text-center">
                         <div className="text-2xl mb-1">⭐</div>
-                        <div className="font-pixel text-xs text-gray-600">獲得點數</div>
+                        <div className="font-pixel text-xs text-gray-600">目前總分</div>
                         <div className="font-pixel text-lg text-yellow-600">
-                            {progress.earned_points}/{progress.total_points}
+                            {totalPoints || 0}
                         </div>
                     </div>
                 </div>
