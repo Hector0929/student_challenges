@@ -37,7 +37,7 @@ export const useDailyLogs = (
         queryFn: async () => {
             let query = supabase
                 .from('daily_logs')
-                .select('*, quest:quests(*), profile:profiles(name, student_id)');
+                .select('*, quests!quest_id(*), profiles!user_id(name, student_id)');
 
             // If userId is 'all', fetch all logs (for parent view)
             if (userId !== 'all') {
@@ -83,12 +83,22 @@ export const useChildTotalPoints = (childId: string) => {
 
 // Calculate daily progress
 export const useDailyProgress = (userId: string, date: string = getTodayDate()) => {
-    const { data: quests } = useQuests();
+    const { data: allQuests } = useQuests();
     const { data: logs } = useDailyLogs(userId, date);
+
+    // Filter quests: Show if (Global/No assignments) OR (Assigned to current user)
+    const quests = allQuests?.filter(quest => {
+        // If undefined or empty array, it's global
+        if (!quest.quest_assignments || quest.quest_assignments.length === 0) {
+            return true;
+        }
+        // Check if assigned to this user
+        return quest.quest_assignments.some(qa => qa.child_id === userId);
+    });
 
     const progress: DailyProgress = {
         total_quests: quests?.length || 0,
-        completed_quests: logs?.filter(log => log.status === 'verified').length || 0,
+        completed_quests: logs?.filter(log => log.status === 'completed' || log.status === 'verified').length || 0,
         total_points: quests?.reduce((sum, q) => sum + q.reward_points, 0) || 0,
         earned_points: 0,
         completion_percentage: 0,
@@ -115,8 +125,17 @@ export const useCompleteQuest = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ userId, questId }: { userId: string; questId: string }) => {
+        mutationFn: async ({
+            userId,
+            questId,
+            isParentApproved = false
+        }: {
+            userId: string;
+            questId: string;
+            isParentApproved?: boolean;
+        }) => {
             const today = getTodayDate();
+            const status = isParentApproved ? 'verified' : 'completed';
 
             // Check if log already exists
             const { data: existing } = await supabase
@@ -132,7 +151,7 @@ export const useCompleteQuest = () => {
                 const { data, error } = await supabase
                     .from('daily_logs')
                     .update({
-                        status: 'completed',
+                        status: status,
                         completed_at: new Date().toISOString(),
                     })
                     .eq('id', existing.id)
@@ -148,7 +167,7 @@ export const useCompleteQuest = () => {
                     .insert({
                         user_id: userId,
                         quest_id: questId,
-                        status: 'completed',
+                        status: status,
                         completed_at: new Date().toISOString(),
                         date: today,
                     })
@@ -161,6 +180,7 @@ export const useCompleteQuest = () => {
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['daily_logs', variables.userId] });
+            queryClient.invalidateQueries({ queryKey: ['total_points', variables.userId] });
         },
     });
 };

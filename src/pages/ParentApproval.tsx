@@ -6,8 +6,8 @@ import { formatDate } from '../lib/supabase';
 import type { DailyLog, Quest } from '../types/database';
 
 interface DailyLogWithDetails extends DailyLog {
-    quest?: Quest;
-    profile?: { name: string; student_id?: string };
+    quests?: Quest;
+    profiles?: { name: string; student_id?: string };
 }
 
 export const ParentApproval: React.FC = () => {
@@ -59,7 +59,7 @@ export const ParentApproval: React.FC = () => {
                             <div className="flex items-start gap-4">
                                 {/* Quest Icon */}
                                 <div className="text-5xl flex-shrink-0">
-                                    {log.quest?.icon || '👾'}
+                                    {log.quests?.icon || '👾'}
                                 </div>
 
                                 {/* Quest Details */}
@@ -67,15 +67,15 @@ export const ParentApproval: React.FC = () => {
                                     <div className="flex items-start justify-between gap-4 mb-2">
                                         <div>
                                             <h3 className="font-pixel text-sm mb-1 leading-relaxed">
-                                                {log.quest?.title || '未知任務'}
+                                                {log.quests?.title || '未知任務'}
                                             </h3>
                                             <p className="text-xs text-gray-600 mb-2">
-                                                {log.quest?.description}
+                                                {log.quests?.description}
                                             </p>
                                         </div>
                                         <div className="bg-yellow-400 border-2 border-deep-black px-3 py-2 text-center flex-shrink-0">
                                             <div className="text-xs font-pixel">⭐</div>
-                                            <div className="text-xs font-pixel">{log.quest?.reward_points || 0}</div>
+                                            <div className="text-xs font-pixel">{log.quests?.reward_points || 0}</div>
                                         </div>
                                     </div>
 
@@ -83,9 +83,9 @@ export const ParentApproval: React.FC = () => {
                                     <div className="flex items-center gap-4 text-xs mb-3">
                                         <div className="flex items-center gap-2">
                                             <span className="text-gray-500">玩家:</span>
-                                            <span className="font-pixel">{log.profile?.name || '未知'}</span>
-                                            {log.profile?.student_id && (
-                                                <span className="text-gray-500">({log.profile.student_id})</span>
+                                            <span className="font-pixel">{log.profiles?.name || '未知'}</span>
+                                            {log.profiles?.student_id && (
+                                                <span className="text-gray-500">({log.profiles.student_id})</span>
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2">

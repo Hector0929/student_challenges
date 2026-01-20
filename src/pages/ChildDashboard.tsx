@@ -73,7 +73,14 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
     };
 
     const handleCompleteQuest = (questId: string) => {
-        completeQuestMutation.mutate({ userId, questId });
+        // Check if parent is authenticated in this session
+        const isParentAuth = sessionStorage.getItem('parent-auth') === 'verified';
+
+        completeQuestMutation.mutate({
+            userId,
+            questId,
+            isParentApproved: isParentAuth,  // If parent is logged in, auto-approve
+        });
     };
 
     const isQuestCompleted = (questId: string): boolean => {
