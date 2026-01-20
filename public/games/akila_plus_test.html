@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全新互動數學測驗 (鍵盤輸入版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基礎樣式設定 --- */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f1f5f9;
+        }
+        body {
+            display: flex;
+            flex-direction: column; /* 讓主內容和頁腳垂直排列 */
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        /* --- 按鈕互動效果 --- */
+        .numpad-btn {
+            transition: background-color 0.2s, transform 0.1s;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 1.875rem; /* text-3xl */
+            padding: 1rem;
+            background-color: white;
+            color: #1e293b; /* slate-800 */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .numpad-btn:active {
+            transform: scale(0.95);
+            background-color: #e2e8f0; /* slate-200 */
+        }
+        /* --- 答案顯示區回饋樣式 --- */
+        #answer-display.correct {
+            background-color: #dcfce7; /* green-100 */
+            color: #166534; /* green-800 */
+            border-color: #22c55e; /* green-500 */
+        }
+        #answer-display.incorrect {
+            background-color: #fee2e2; /* red-100 */
+            color: #991b1b; /* red-800 */
+            border-color: #ef4444; /* red-500 */
+        }
+        /* --- 禁用鍵盤樣式 --- */
+        .disabled {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 測驗主容器 -->
+    <main id="quiz-container" class="w-full max-w-sm mx-auto bg-white rounded-2xl shadow-xl p-6 text-center relative">
+        
+        <!-- 返回首頁按鈕 (左上角) -->
+        <div class="absolute top-4 left-4">
+            <a href="index.html" title="返回首頁" class="h-10 w-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+            </a>
+        </div>
+
+        <!-- 遊戲進行中畫面 -->
+        <section id="game-view">
+            <!-- 標題與進度 -->
+            <header class="mb-4">
+                <h1 class="text-2xl md:text-3xl font-bold text-slate-800 pt-2">數字鍵盤挑戰</h1>
+                <p id="progress" class="text-md text-slate-500 mt-1">題目 1 / 10</p>
+            </header>
+
+            <!-- 問題顯示區 -->
+            <div class="mb-4">
+                <p id="question-text" class="text-4xl md:text-5xl font-bold bg-blue-50 text-blue-900 rounded-lg py-6 px-4"></p>
+            </div>
+
+            <!-- 答案輸入顯示區 -->
+            <div id="answer-display" class="mb-4 h-20 text-4xl font-bold flex items-center justify-end pr-4 bg-slate-100 rounded-lg border-2 border-transparent transition-colors duration-300">
+                <span id="answer-text"></span>
+                <span id="cursor" class="inline-block w-1 h-8 bg-blue-500 animate-ping ml-1"></span>
+            </div>
+
+            <!-- 數字鍵盤 -->
+            <div id="numpad" class="grid grid-cols-3 gap-3">
+                <!-- 數字鍵盤由 JS 生成 -->
+            </div>
+
+        </section>
+
+        <!-- 測驗結果畫面 (初始隱藏) -->
+        <section id="result-view" class="hidden">
+             <h2 class="text-4xl font-bold text-green-600 mb-4">測驗結束！</h2>
+             <p class="text-2xl text-slate-600 mb-6">你的最終成績是： <span id="final-score" class="font-bold text-blue-600"></span> / 10</p>
+             <p id="final-message" class="text-xl text-slate-500 mb-8"></p>
+             <button id="restart-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700">
+                 再玩一次
+             </button>
+        </section>
+    </main>
+
+    <!-- 頁腳返回連結 -->
+    <footer class="mt-6 text-center">
+        <a href="index.html" class="inline-block bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-6 rounded-lg transition-colors shadow-sm">
+            返回首頁
+        </a>
+    </footer>
+
+    <script>
+        // --- 元素宣告 ---
+        const gameView = document.getElementById('game-view');
+        const resultView = document.getElementById('result-view');
+        const questionText = document.getElementById('question-text');
+        const progressText = document.getElementById('progress');
+        const numpad = document.getElementById('numpad');
+        const answerDisplay = document.getElementById('answer-display');
+        const answerText = document.getElementById('answer-text');
+        const cursor = document.getElementById('cursor');
+        const finalScoreText = document.getElementById('final-score');
+        const finalMessageText = document.getElementById('final-message');
+        const restartBtn = document.getElementById('restart-btn');
+        
+        // --- 狀態變數 ---
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswer = '';
+
+        /**
+         * 功能：產生10道「三位數 + 二位數」的題目
+         */
+        function generateQuestions() {
+            const newQuestions = [];
+            for (let i = 0; i < 10; i++) {
+                const num1 = Math.floor(Math.random() * 900) + 100;
+                const num2 = Math.floor(Math.random() * 90) + 10;
+                newQuestions.push({
+                    question: `${num1} + ${num2} = ?`,
+                    answer: num1 + num2
+                });
+            }
+            questions = newQuestions;
+        }
+
+        /**
+         * 功能：初始化並建立數字鍵盤
+         */
+        function createNumpad() {
+            numpad.innerHTML = ''; // 清空
+            const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0', '✓'];
+            
+            keys.forEach(key => {
+                const button = document.createElement('button');
+                button.textContent = key;
+                button.classList.add('numpad-btn');
+                
+                if (key === '✓') { // 確認按鈕
+                    button.classList.add('bg-blue-500', 'text-white');
+                    button.onclick = handleSubmit;
+                } else if (key === '⌫') { // 退格按鈕
+                    button.classList.add('bg-slate-200');
+                    button.onclick = handleBackspace;
+                } else { // 數字按鈕
+                    button.onclick = () => handleNumberInput(key);
+                }
+                numpad.appendChild(button);
+            });
+        }
+
+        /**
+         * 功能：處理數字輸入
+         */
+        function handleNumberInput(num) {
+            cursor.classList.remove('animate-ping'); // 顯示游標
+            if (userAnswer.length < 5) { // 限制最多輸入長度
+                userAnswer += num;
+                answerText.textContent = userAnswer;
+            }
+        }
+
+        /**
+         * 功能：處理退格
+         */
+        function handleBackspace() {
+            userAnswer = userAnswer.slice(0, -1);
+            answerText.textContent = userAnswer;
+        }
+
+        /**
+         * 功能：處理答案提交
+         */
+        function handleSubmit() {
+            if (userAnswer === '') return; // 防止空答案提交
+
+            numpad.classList.add('disabled'); // 禁用鍵盤
+            cursor.classList.add('hidden'); // 隱藏游標
+            
+            const correctAnswer = questions[currentQuestionIndex].answer;
+            const isCorrect = parseInt(userAnswer) === correctAnswer;
+
+            answerDisplay.classList.add(isCorrect ? 'correct' : 'incorrect');
+
+            if (isCorrect) {
+                score++;
+            }
+            
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.length) {
+                    loadNextQuestion();
+                } else {
+                    showResults();
+                }
+            }, 1200);
+        }
+
+        /**
+         * 功能：載入下一道題目
+         */
+        function loadNextQuestion() {
+            userAnswer = '';
+            answerText.textContent = '';
+            answerDisplay.className = 'mb-4 h-20 text-4xl font-bold flex items-center justify-end pr-4 bg-slate-100 rounded-lg border-2 border-transparent transition-colors duration-300'; // 重置樣式
+            numpad.classList.remove('disabled');
+            cursor.classList.remove('hidden');
+            cursor.classList.add('animate-ping');
+            
+            const currentQuestion = questions[currentQuestionIndex];
+            questionText.textContent = currentQuestion.question;
+            progressText.textContent = `題目 ${currentQuestionIndex + 1} / ${questions.length}`;
+        }
+
+        /**
+         * 功能：顯示最終分數
+         */
+        function showResults() {
+            gameView.classList.add('hidden');
+            resultView.classList.remove('hidden');
+            
+            finalScoreText.textContent = score;
+            let message = '';
+            if (score === 10) message = '太棒了，你是數學天才！';
+            else if (score >= 7) message = '做得很好，繼續努力！';
+            else if (score >= 4) message = '還不錯，多練習會更厲害！';
+            else message = '別氣餒，再試一次吧！';
+            finalMessageText.textContent = message;
+        }
+
+        /**
+         * 功能：開始或重啟測驗
+         */
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            generateQuestions();
+            
+            resultView.classList.add('hidden');
+            gameView.classList.remove('hidden');
+            
+            loadNextQuestion();
+        }
+        
+        // --- 初始化 ---
+        restartBtn.addEventListener('click', startQuiz);
+        createNumpad();
+        startQuiz();
+
+    </script>
+</body>
+</html>

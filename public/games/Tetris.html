@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>俄羅斯方塊</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --primary-glow: #0ff;
+            --text-color: #c9d1d9;
+        }
+        html, body {
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+        }
+        body {
+            font-family: 'Press Start 2P', 'Noto Sans TC', sans-serif;
+            touch-action: manipulation;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+        }
+        .neon-text {
+            text-shadow: 0 0 5px var(--primary-glow), 0 0 10px var(--primary-glow);
+        }
+        .game-board {
+            border: 3px solid var(--primary-glow);
+            box-shadow: 0 0 10px var(--primary-glow), inset 0 0 10px var(--primary-glow);
+        }
+        .btn-control {
+            background-color: rgba(30, 41, 59, 0.8);
+            border: 2px solid var(--primary-glow);
+            box-shadow: 0 0 8px var(--primary-glow);
+            transition: all 0.1s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-control:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 4px var(--primary-glow);
+        }
+        .modal { display: none; }
+        .modal.active { display: flex; }
+    </style>
+</head>
+<body class="p-2">
+
+    <header class="text-center shrink-0 py-1">
+        <h1 class="text-2xl sm:text-3xl neon-text">俄羅斯方塊</h1>
+    </header>
+
+    <main id="main-content" class="flex-1 flex items-center justify-center gap-2 min-h-0">
+        <div class="relative shrink-0">
+            <canvas id="tetris" class="game-board"></canvas>
+            <div id="game-over-modal" class="modal absolute inset-0 bg-black bg-opacity-80 flex-col items-center justify-center text-center p-4">
+                <h2 class="text-2xl sm:text-3xl text-red-500 neon-text">遊戲結束</h2>
+                <p class="mt-2 text-base sm:text-lg">最終分數: <span id="final-score">0</span></p>
+                <button id="restart-btn" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg border-2 border-blue-400 shadow-lg text-base">重新開始</button>
+            </div>
+            <div id="pause-modal" class="modal absolute inset-0 bg-black bg-opacity-75 flex-col items-center justify-center text-center">
+                <h2 class="text-2xl sm:text-3xl text-yellow-400 neon-text">已暫停</h2>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <div class="bg-slate-800 p-2 rounded-lg border-2 border-cyan-500 shadow-lg w-24 md:w-32">
+                <h2 class="text-xs md:text-sm mb-1 text-center">分數</h2>
+                <p id="score" class="text-base md:text-lg text-cyan-300 text-center">0</p>
+            </div>
+            <div class="bg-slate-800 p-2 rounded-lg border-2 border-cyan-500 shadow-lg w-24 md:w-32">
+                <h2 class="text-xs md:text-sm mb-1 text-center">下一個</h2>
+                <canvas id="next" class="mx-auto"></canvas>
+            </div>
+            <div class="hidden md:block mt-2">
+                 <button id="main-control-btn-desktop" class="w-full py-3 text-lg rounded-lg border-2 shadow-lg">開始</button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="md:hidden grid grid-cols-3 grid-rows-2 gap-2 w-full max-w-sm mx-auto p-2 shrink-0">
+        <button id="left-btn" class="btn-control row-start-2 col-start-1 w-full h-16 rounded-lg text-cyan-300 text-2xl flex justify-center items-center">←</button>
+        <button id="down-btn" class="btn-control row-start-2 col-start-2 w-full h-16 rounded-lg text-cyan-300 text-2xl flex justify-center items-center">↓</button>
+        <button id="right-btn" class="btn-control row-start-2 col-start-3 w-full h-16 rounded-lg text-cyan-300 text-2xl flex justify-center items-center">→</button>
+        <button id="rotate-btn" class="btn-control row-start-1 col-start-3 w-full h-16 rounded-lg text-cyan-300 text-2xl flex justify-center items-center">⟳</button>
+        <div class="row-start-1 col-start-1 col-span-2 flex gap-2">
+            <button id="drop-btn" class="btn-control w-1/2 h-16 rounded-lg text-cyan-300 text-lg flex justify-center items-center">下降</button>
+            <button id="main-control-btn-mobile" class="w-1/2 h-16 text-lg rounded-lg border-2 shadow-lg">開始</button>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('tetris');
+        const context = canvas.getContext('2d');
+        const nextCanvas = document.getElementById('next');
+        const nextContext = nextCanvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const finalScoreEl = document.getElementById('final-score');
+        const gameOverModal = document.getElementById('game-over-modal');
+        const pauseModal = document.getElementById('pause-modal');
+        const mainControlBtnMobile = document.getElementById('main-control-btn-mobile');
+        const mainControlBtnDesktop = document.getElementById('main-control-btn-desktop');
+        const restartBtn = document.getElementById('restart-btn');
+
+        const COLS = 10;
+        const ROWS = 20;
+        const COLORS = [null, '#FF0D72', '#0DC2FF', '#0DFF72', '#F538FF', '#FF8E0D', '#FFE138', '#3877FF'];
+        const SHAPES = [[], [[0,1,0],[1,1,1],[0,0,0]], [[0,0,0,0],[2,2,2,2],[0,0,0,0],[0,0,0,0]], [[3,3],[3,3]], [[0,0,4],[4,4,4],[0,0,0]], [[5,0,0],[5,5,5],[0,0,0]], [[0,6,6],[6,6,0],[0,0,0]], [[7,7,0],[0,7,7],[0,0,0]]];
+        let BLOCK_SIZE;
+
+        const GAME_STATE = { READY: 'READY', PLAYING: 'PLAYING', PAUSED: 'PAUSED', GAMEOVER: 'GAMEOVER' };
+        let currentState = GAME_STATE.READY;
+
+        let board, player, nextPiece, score, lines, level;
+        let dropCounter, dropInterval, lastTime;
+        let animationFrameId;
+        
+        // 手勢控制變數
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let initialPlayerX = 0;
+
+        function setupCanvas() {
+            const mainContent = document.getElementById('main-content');
+            const availableHeight = mainContent.clientHeight;
+            const infoPanelWidth = document.querySelector('.flex.flex-col.gap-2').offsetWidth;
+            const availableWidth = mainContent.clientWidth - infoPanelWidth - 16; 
+            const sizeFromHeight = availableHeight / ROWS;
+            const sizeFromWidth = availableWidth / COLS;
+            BLOCK_SIZE = Math.floor(Math.min(sizeFromHeight, sizeFromWidth));
+            canvas.width = COLS * BLOCK_SIZE;
+            canvas.height = ROWS * BLOCK_SIZE;
+            const nextBlockSize = Math.floor(BLOCK_SIZE * 0.6);
+            nextCanvas.width = 4 * nextBlockSize;
+            nextCanvas.height = 4 * nextBlockSize;
+        }
+
+        function init() {
+            setupCanvas();
+            currentState = GAME_STATE.READY;
+            board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+            score = 0; lines = 0; level = 0;
+            dropInterval = 1000;
+            player = { pos: { x: 0, y: 0 }, matrix: null, ghost: { y: 0 } };
+            gameOverModal.classList.remove('active');
+            pauseModal.classList.remove('active');
+            nextPiece = createRandomPiece();
+            drawNextPiece();
+            updateUI();
+            draw();
+            updateMainButton();
+        }
+
+        function startGame() {
+            if (currentState !== GAME_STATE.READY) return;
+            currentState = GAME_STATE.PLAYING;
+            spawnPiece();
+            lastTime = performance.now();
+            dropCounter = 0;
+            gameLoop();
+            updateMainButton();
+        }
+        
+        function pauseGame() {
+            if (currentState !== GAME_STATE.PLAYING) return;
+            currentState = GAME_STATE.PAUSED;
+            cancelAnimationFrame(animationFrameId);
+            pauseModal.classList.add('active');
+            updateMainButton();
+        }
+
+        function resumeGame() {
+            if (currentState !== GAME_STATE.PAUSED) return;
+            currentState = GAME_STATE.PLAYING;
+            pauseModal.classList.remove('active');
+            lastTime = performance.now();
+            gameLoop();
+            updateMainButton();
+        }
+
+        function gameOver() {
+            currentState = GAME_STATE.GAMEOVER;
+            cancelAnimationFrame(animationFrameId);
+            finalScoreEl.innerText = score;
+            gameOverModal.classList.add('active');
+            updateMainButton();
+        }
+        
+        function draw() {
+            context.fillStyle = '#0d1117';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            drawMatrix(board, {x: 0, y: 0});
+            if (player.matrix) {
+                drawMatrix(player.matrix, { x: player.pos.x, y: player.ghost.y }, true);
+                drawMatrix(player.matrix, player.pos);
+            }
+        }
+
+        function drawMatrix(matrix, offset, isGhost = false) {
+            matrix.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) {
+                        draw3DBlock((offset.x + x) * BLOCK_SIZE, (offset.y + y) * BLOCK_SIZE, COLORS[value], isGhost);
+                    }
+                });
+            });
+        }
+
+        function draw3DBlock(x, y, color, isGhost) {
+            const darker = shadeColor(color, -0.4);
+            const lighter = shadeColor(color, 0.4);
+            const size = BLOCK_SIZE;
+            const bevel = size * 0.1;
+            context.globalAlpha = isGhost ? 0.25 : 1.0;
+            context.fillStyle = color;
+            context.fillRect(x, y, size, size);
+            context.fillStyle = lighter;
+            context.beginPath();
+            context.moveTo(x, y);
+            context.lineTo(x + size, y);
+            context.lineTo(x + size - bevel, y + bevel);
+            context.lineTo(x + bevel, y + bevel);
+            context.lineTo(x + bevel, y + size - bevel);
+            context.lineTo(x, y + size);
+            context.closePath();
+            context.fill();
+            context.fillStyle = darker;
+            context.beginPath();
+            context.moveTo(x + size, y + size);
+            context.lineTo(x, y + size);
+            context.lineTo(x + bevel, y + size - bevel);
+            context.lineTo(x + size - bevel, y + size - bevel);
+            context.lineTo(x + size - bevel, y + bevel);
+            context.lineTo(x + size, y);
+            context.closePath();
+            context.fill();
+            context.globalAlpha = 1.0;
+        }
+
+        function shadeColor(col, percent) {
+            let R = parseInt(col.substring(1,3),16);
+            let G = parseInt(col.substring(3,5),16);
+            let B = parseInt(col.substring(5,7),16);
+            R = parseInt(R * (1.0 + percent)); G = parseInt(G * (1.0 + percent)); B = parseInt(B * (1.0 + percent));
+            R = (R<255)?R:255; G = (G<255)?G:255; B = (B<255)?B:255;
+            const RR = ((R.toString(16).length==1)?"0"+R.toString(16):R.toString(16));
+            const GG = ((G.toString(16).length==1)?"0"+G.toString(16):G.toString(16));
+            const BB = ((B.toString(16).length==1)?"0"+B.toString(16):B.toString(16));
+            return "#"+RR+GG+BB;
+        }
+
+        function drawNextPiece() {
+            nextContext.fillStyle = '#1f2937';
+            nextContext.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+            const size = nextCanvas.width / 4;
+            const matrix = nextPiece.matrix;
+            const offsetX = (4 - matrix[0].length) / 2;
+            const offsetY = (4 - matrix.length) / 2;
+            matrix.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) {
+                        nextContext.fillStyle = COLORS[value];
+                        nextContext.fillRect((offsetX + x) * size, (offsetY + y) * size, size, size);
+                    }
+                });
+            });
+        }
+        
+        function createRandomPiece() {
+            const rand = Math.floor(Math.random() * (SHAPES.length - 1)) + 1;
+            return { matrix: SHAPES[rand] };
+        }
+        function spawnPiece() {
+            player.matrix = nextPiece.matrix;
+            nextPiece = createRandomPiece();
+            player.pos.x = Math.floor(COLS / 2) - Math.floor(player.matrix[0].length / 2);
+            player.pos.y = 0;
+            updateGhostPiece();
+            if (isColliding(player.matrix, player.pos)) {
+                gameOver();
+            }
+            drawNextPiece();
+        }
+
+        function updateGhostPiece() {
+            if (!player.matrix) return;
+            player.ghost.y = player.pos.y;
+            while (!isColliding(player.matrix, { x: player.pos.x, y: player.ghost.y + 1 })) {
+                player.ghost.y++;
+            }
+        }
+
+        function isColliding(matrix, pos) {
+            for (let y = 0; y < matrix.length; y++) {
+                for (let x = 0; x < matrix[y].length; x++) {
+                    if (matrix[y][x] !== 0 && (board[y + pos.y] && board[y + pos.y][x + pos.x]) !== 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        function merge() {
+            player.matrix.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) {
+                        board[y + player.pos.y][x + player.pos.x] = value;
+                    }
+                });
+            });
+        }
+        function clearLines() {
+            let clearedLines = 0;
+            outer: for (let y = board.length - 1; y >= 0; y--) {
+                for (let x = 0; x < board[y].length; x++) {
+                    if (board[y][x] === 0) continue outer;
+                }
+                const row = board.splice(y, 1)[0].fill(0);
+                board.unshift(row);
+                y++;
+                clearedLines++;
+            }
+            if (clearedLines > 0) {
+                lines += clearedLines;
+                const linePoints = [0, 40, 100, 300, 1200];
+                score += linePoints[clearedLines] * (level + 1);
+                const newLevel = Math.floor(lines / 10);
+                if (newLevel > level) {
+                    level = newLevel;
+                    dropInterval = Math.max(100, 1000 - level * 75);
+                }
+                updateUI();
+            }
+        }
+        function updateUI() {
+            scoreEl.innerText = score;
+        }
+        
+        function playerDrop() {
+            player.pos.y++;
+            if (isColliding(player.matrix, player.pos)) {
+                player.pos.y--;
+                merge();
+                clearLines();
+                spawnPiece();
+                return;
+            }
+            dropCounter = 0;
+        }
+        function hardDrop() {
+            player.pos.y = player.ghost.y;
+            merge();
+            clearLines();
+            spawnPiece();
+        }
+        function playerMove(dir) {
+            player.pos.x += dir;
+            if (isColliding(player.matrix, player.pos)) {
+                player.pos.x -= dir;
+            }
+            updateGhostPiece();
+        }
+        function playerRotate() {
+            const originalMatrix = player.matrix;
+            const rotated = rotate(player.matrix);
+            const pos = player.pos.x;
+            let offset = 1;
+            player.matrix = rotated;
+            while (isColliding(player.matrix, player.pos)) {
+                player.pos.x += offset;
+                offset = -(offset + (offset > 0 ? 1 : -1));
+                if (offset > player.matrix[0].length) {
+                    player.matrix = originalMatrix;
+                    player.pos.x = pos;
+                    return;
+                }
+            }
+            updateGhostPiece();
+        }
+        function rotate(matrix) {
+            const result = [];
+            for (let y = 0; y < matrix[0].length; y++) {
+                result.push([]);
+                for (let x = matrix.length - 1; x >= 0; x--) {
+                    result[y].push(matrix[x][y]);
+                }
+            }
+            return result;
+        }
+        
+        function gameLoop(time = 0) {
+            if (currentState !== GAME_STATE.PLAYING) return;
+            const deltaTime = time - lastTime;
+            lastTime = time;
+            dropCounter += deltaTime;
+            if (dropCounter > dropInterval) {
+                playerDrop();
+            }
+            draw();
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+        
+        function handleMainButtonClick() {
+            switch (currentState) {
+                case GAME_STATE.READY: startGame(); break;
+                case GAME_STATE.PLAYING: pauseGame(); break;
+                case GAME_STATE.PAUSED: resumeGame(); break;
+            }
+        }
+        
+        function updateMainButton() {
+            const buttons = [mainControlBtnMobile, mainControlBtnDesktop];
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-green-600', 'hover:bg-green-700', 'border-green-400', 'bg-yellow-500', 'hover:bg-yellow-600', 'border-yellow-300', 'bg-gray-500');
+                btn.disabled = false;
+                switch (currentState) {
+                    case GAME_STATE.READY:
+                        btn.textContent = '開始';
+                        btn.classList.add('bg-green-600', 'hover:bg-green-700', 'border-green-400');
+                        break;
+                    case GAME_STATE.PLAYING:
+                        btn.textContent = '暫停';
+                        btn.classList.add('bg-yellow-500', 'hover:bg-yellow-600', 'border-yellow-300');
+                        break;
+                    case GAME_STATE.PAUSED:
+                        btn.textContent = '繼續';
+                        btn.classList.add('bg-green-600', 'hover:bg-green-700', 'border-green-400');
+                        break;
+                    case GAME_STATE.GAMEOVER:
+                        btn.textContent = '結束';
+                        btn.classList.add('bg-gray-500');
+                        btn.disabled = true;
+                        break;
+                }
+            });
+        }
+
+        mainControlBtnMobile.addEventListener('click', handleMainButtonClick);
+        mainControlBtnDesktop.addEventListener('click', handleMainButtonClick);
+        restartBtn.addEventListener('click', init);
+        
+        function handleInput(action) {
+            if (currentState !== GAME_STATE.PLAYING) return;
+            switch(action) {
+                case 'left': playerMove(-1); break;
+                case 'right': playerMove(1); break;
+                case 'down': playerDrop(); break;
+                case 'rotate': playerRotate(); break;
+                case 'drop': hardDrop(); break;
+            }
+            draw();
+        }
+
+        document.addEventListener('keydown', e => {
+            switch (e.key) {
+                case 'ArrowLeft': handleInput('left'); break;
+                case 'ArrowRight': handleInput('right'); break;
+                case 'ArrowDown': handleInput('down'); break;
+                case 'ArrowUp': handleInput('rotate'); break;
+                case ' ': e.preventDefault(); handleInput('drop'); break;
+            }
+        });
+        document.getElementById('left-btn').addEventListener('click', () => handleInput('left'));
+        document.getElementById('right-btn').addEventListener('click', () => handleInput('right'));
+        document.getElementById('down-btn').addEventListener('click', () => handleInput('down'));
+        document.getElementById('rotate-btn').addEventListener('click', () => handleInput('rotate'));
+        document.getElementById('drop-btn').addEventListener('click', () => handleInput('drop'));
+        
+        // **已修正：手勢控制事件監聽**
+        canvas.addEventListener('touchstart', e => {
+            if (currentState !== GAME_STATE.PLAYING) return;
+            e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            initialPlayerX = player.pos.x; // 記錄開始滑動時的 X 位置
+            touchStartTime = Date.now();
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', e => {
+            if (currentState !== GAME_STATE.PLAYING) return;
+            e.preventDefault();
+            const touchCurrentX = e.touches[0].clientX;
+            const deltaX = touchCurrentX - touchStartX;
+            
+            // 根據滑動距離計算新的方塊欄位
+            const newPlayerX = initialPlayerX + Math.round(deltaX / BLOCK_SIZE);
+            const move = newPlayerX - player.pos.x;
+
+            if (move !== 0) {
+                // 為了避免一次滑動跳太多格，這裡一次只移動一格
+                playerMove(move > 0 ? 1 : -1);
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', e => {
+            if (currentState !== GAME_STATE.PLAYING) return;
+            const touchEndTime = Date.now();
+            const touchDuration = touchEndTime - touchStartTime;
+            const deltaX = e.changedTouches[0].clientX - touchStartX;
+            const deltaY = e.changedTouches[0].clientY - touchStartY;
+
+            // **修正：更嚴格的手勢判斷**
+            // 判斷為向下滑動 (垂直移動顯著大於水平移動)
+            if (deltaY > 50 && deltaY > Math.abs(deltaX) * 2) {
+                // 在執行快速降落前，將方塊的 X 位置還原到滑動開始時的位置
+                // 這樣可以消除垂直滑動時的水平偏移
+                player.pos.x = initialPlayerX;
+                updateGhostPiece(); // 還原後需要更新輔助線
+                handleInput('drop');
+            }
+            // 判斷為點擊 (時間短，移動距離小)
+            else if (touchDuration < 200 && Math.abs(deltaX) < 20 && Math.abs(deltaY) < 20) {
+                handleInput('rotate');
+            }
+        });
+
+        window.addEventListener('resize', init);
+        init();
+    });
+    </script>
+</body>
+</html>

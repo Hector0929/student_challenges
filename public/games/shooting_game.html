@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九九乘法打擊敵機遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 自定義字體 */
+        body {
+            font-family: "Inter", sans-serif;
+        }
+        /* 確保 canvas 佔用其父容器的可用空間 */
+        canvas {
+            display: block;
+            background-color: #a7f3d0; /* 淺綠色背景 */
+            border-bottom: 2px solid #9ca3af; /* 灰色邊框 */
+            border-radius: 0.5rem; /* 圓角 */
+            width: 100%; /* 佔滿父容器寬度 */
+            height: calc(50vh); /* 將高度設定為視口高度的一半 */
+        }
+        /* 更新按鈕樣式以匹配新圖片 */
+        .answer-button {
+            @apply w-full h-full px-8 py-4 bg-white text-blue-600 text-4xl font-bold rounded-2xl shadow-md transition-all duration-150;
+            @apply border-4 border-blue-500; /* 藍色粗邊框 */
+            @apply hover:bg-blue-50 hover:border-blue-600; /* 滑鼠懸停效果 */
+            @apply active:bg-blue-100; /* 按下效果 */
+        }
+        .answer-button:disabled {
+            @apply bg-gray-200 border-gray-400 text-gray-500 cursor-not-allowed;
+        }
+        .celebration-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            font-weight: bold;
+            text-align: center;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4 relative">
+    <div id="game-area" class="w-full max-w-3xl bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="p-4 bg-gray-50 flex flex-col items-center justify-center text-center rounded-b-lg">
+            <div class="text-lg font-semibold mb-2 flex justify-between w-full px-4">
+                <span id="scoreDisplay">分數: 0</span>
+                <span id="timerDisplay">時間: 40s</span>
+            </div>
+            <div class="text-4xl font-bold mb-4 text-center w-full">
+                <span id="questionDisplay">點擊開始遊戲</span>
+            </div>
+            <div id="answerOptionsContainer" class="grid grid-cols-2 gap-4 mb-4 w-full max-w-sm">
+                </div>
+            <div class="h-2 bg-gray-300 rounded-full mt-4 overflow-hidden w-full max-w-xs">
+                <div id="questionTimerBar" class="h-full bg-green-500 transition-all duration-100 ease-linear" style="width: 100%;"></div>
+            </div>
+            <div id="feedbackDisplay" class="mt-2 text-red-600 font-semibold h-6"></div>
+            <!-- 修改：按鈕初始為禁用狀態，顯示載入中 -->
+            <button
+                id="startGameButton"
+                class="mt-4 px-6 py-3 bg-blue-600 text-white text-xl font-bold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400"
+                disabled
+            >
+                載入中...
+            </button>
+            <button
+                id="specialCannonButton"
+                class="mt-2 px-4 py-2 bg-purple-600 text-white text-lg font-bold rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hidden"
+            >
+                發射大砲！
+            </button>
+        </div>
+    </div>
+
+    <div id="celebrationScreen" class="celebration-screen hidden">
+        <p>恭喜過關！</p>
+        <p>分數: <span id="finalScore">0</span></p>
+        <button id="restartGameButton" class="mt-8 px-6 py-3 bg-green-600 text-white text-xl font-bold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+            再玩一次
+        </button>
+    </div>
+
+    <!-- 新增：回首頁按鈕 -->
+    <a href="index.html" class="mt-8 px-8 py-4 bg-gray-600 text-white text-xl font-bold rounded-lg shadow-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
+        返回首頁
+    </a>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const questionDisplay = document.getElementById('questionDisplay');
+        const answerOptionsContainer = document.getElementById('answerOptionsContainer');
+        const questionTimerBar = document.getElementById('questionTimerBar');
+        const feedbackDisplay = document.getElementById('feedbackDisplay');
+        const startGameButton = document.getElementById('startGameButton');
+        const specialCannonButton = document.getElementById('specialCannonButton');
+        const celebrationScreen = document.getElementById('celebrationScreen');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const restartGameButton = document.getElementById('restartGameButton');
+
+        // 新增：載入玩家圖片 (砲台)
+        const playerImage = new Image();
+        let playerImageLoaded = false;
+        // 使用一個穩定的圖片 URL
+        playerImage.src = 'pikachu.png';
+        playerImage.onload = () => {
+            playerImageLoaded = true;
+            startGameButton.disabled = false; // 圖片載入後啟用按鈕
+            startGameButton.textContent = '開始遊戲';
+        };
+        playerImage.onerror = () => {
+            // 如果圖片載入失敗，依然啟用遊戲，但會使用備用方塊樣式
+            playerImageLoaded = false; // 確保這個變數是 false
+            startGameButton.disabled = false;
+            startGameButton.textContent = '開始遊戲 (圖片載入失敗)';
+        };
+
+
+        // 遊戲狀態變數
+        let score = 0;
+        let gameTimer = 40;
+        let questionTimer = 5;
+        let currentQuestion = { num1: 0, num2: 0, answer: 0 };
+        let gameStarted = false;
+        let gameOver = false;
+        let specialCannonAvailable = false;
+        let lastCannonScoreThreshold = 0;
+
+        // 遊戲元素狀態
+        let player = null;
+        let enemies = [];
+        let bullets = [];
+        let askedQuestions = new Set();
+
+        // 計時器和動畫幀 ID
+        let lastFrameTime = 0;
+        let questionStartTime = 0;
+        let gameLoopId = null;
+        let gameTimerIntervalId = null;
+        let questionTimerIntervalId = null;
+        let enemySpawnTimer = 0;
+        let nextEnemySpawnTime = 0;
+
+        // 遊戲設定
+        const maxEnemies = 10;
+        const enemySpeed = 0.5;
+        const bulletSpeed = 5;
+        const WIN_SCORE = 500;
+
+        // 遊戲元素類別定義
+        class Player {
+            constructor(x, y, width, height) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+            }
+
+            // 修改：使用 drawImage 來繪製砲台圖片
+            draw(ctx) {
+                if (playerImageLoaded) {
+                    ctx.drawImage(playerImage, this.x, this.y, this.width, this.height);
+                } else {
+                    // 圖片載入失敗時的備用繪製方案
+                    ctx.fillStyle = 'blue';
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+            }
+        }
+
+        class Enemy {
+            constructor(x, y, width, height, color = 'red') {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.color = color;
+            }
+
+            draw(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x + this.width, this.y + this.height);
+                ctx.moveTo(this.x + this.width, this.y);
+                ctx.lineTo(this.x, this.y + this.height);
+                ctx.stroke();
+            }
+
+            update() {
+                this.y += enemySpeed;
+            }
+        }
+
+        class Bullet {
+            constructor(x, y, width, height, color = 'yellow', target = null, speed = bulletSpeed) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.color = color;
+                this.target = target;
+                this.speed = speed;
+                this.vx = 0;
+                this.vy = -this.speed;
+            }
+
+            draw(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            update() {
+                if (this.target && enemies.includes(this.target)) {
+                    const angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
+                    this.vx = Math.cos(angle) * this.speed;
+                    this.vy = Math.sin(angle) * this.speed;
+                } 
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+        }
+
+        // 遊戲邏輯函數
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function generateQuestion() {
+            let num1, num2, questionString;
+            do {
+                num1 = Math.floor(Math.random() * 9) + 1;
+                num2 = Math.floor(Math.random() * 9) + 1;
+                questionString = `${Math.min(num1, num2)}x${Math.max(num1, num2)}`;
+            } while (askedQuestions.has(questionString) && askedQuestions.size < 81);
+
+            if (askedQuestions.size === 81) {
+                askedQuestions.clear();
+            }
+            askedQuestions.add(questionString);
+            currentQuestion = { num1, num2, answer: num1 * num2 };
+            questionDisplay.textContent = `${currentQuestion.num1} x ${currentQuestion.num2} = ?`;
+            feedbackDisplay.textContent = '';
+            questionStartTime = Date.now();
+            resetQuestionTimer();
+
+            const answers = [currentQuestion.answer];
+            while (answers.length < 4) {
+                let wrongAnswer;
+                do {
+                    wrongAnswer = Math.floor(Math.random() * 81) + 1;
+                } while (answers.includes(wrongAnswer) || Math.abs(wrongAnswer - currentQuestion.answer) < 3);
+                answers.push(wrongAnswer);
+            }
+            shuffleArray(answers);
+
+            answerOptionsContainer.innerHTML = '';
+            answers.forEach(ans => {
+                const button = document.createElement('button');
+                button.textContent = ans;
+                button.classList.add('answer-button');
+                button.dataset.answer = ans;
+                button.addEventListener('click', handleAnswerClick);
+                answerOptionsContainer.appendChild(button);
+            });
+            enableAnswerButtons();
+        }
+
+        function enableAnswerButtons() {
+            Array.from(answerOptionsContainer.children).forEach(button => {
+                button.disabled = false;
+            });
+        }
+
+        function disableAnswerButtons() {
+            Array.from(answerOptionsContainer.children).forEach(button => {
+                button.disabled = true;
+            });
+        }
+
+        function resetQuestionTimer() {
+            questionTimer = 5;
+            questionTimerBar.style.width = '100%';
+            if (questionTimerIntervalId) clearInterval(questionTimerIntervalId);
+            questionTimerIntervalId = setInterval(() => {
+                questionTimer -= 0.05;
+                if (questionTimer <= 0.05) {
+                    clearInterval(questionTimerIntervalId);
+                    if (gameStarted && !gameOver) {
+                        endGame("時間到，你被敵軍打敗了！");
+                    }
+                    questionTimer = 0;
+                }
+                questionTimerBar.style.width = `${(questionTimer / 5) * 100}%`;
+            }, 50);
+        }
+
+        function fireBullet(numBullets) {
+            const targets = enemies
+                .slice()
+                .sort((a, b) => b.y - a.y)
+                .slice(0, numBullets);
+
+            targets.forEach(target => {
+                // 子彈從砲台中心發射
+                const bulletX = player.x + player.width / 2 - 2.5;
+                const bulletY = player.y + player.height / 2;
+                bullets.push(new Bullet(bulletX, bulletY, 5, 15, 'yellow', target));
+            });
+
+            if (numBullets > 0) {
+                 feedbackDisplay.textContent = `發射 ${numBullets} 枚砲彈！`;
+            }
+        }
+
+        function fireSpecialCannon() {
+            for(let i = 0; i < canvas.width; i += 20) {
+                bullets.push(new Bullet(i, canvas.height - 70, 10, 30, 'orange', null, bulletSpeed * 2));
+            }
+            feedbackDisplay.textContent = '大砲發射！';
+            specialCannonAvailable = false;
+            specialCannonButton.classList.add('hidden');
+        }
+
+        function handleAnswerClick(event) {
+            if (!gameStarted || gameOver) return;
+
+            const selectedAnswer = parseInt(event.target.dataset.answer, 10);
+            disableAnswerButtons();
+
+            if (selectedAnswer === currentQuestion.answer) {
+                const answerTime = (Date.now() - questionStartTime) / 1000;
+                score += 10;
+
+                let bulletsToFire = 0;
+                if (answerTime <= 2) {
+                    bulletsToFire = 5;
+                } else if (answerTime <= 3) {
+                    bulletsToFire = 3;
+                } else if (answerTime <= 4) {
+                    bulletsToFire = 2;
+                } else {
+                    bulletsToFire = 1;
+                }
+                fireBullet(bulletsToFire);
+
+                scoreDisplay.textContent = `分數: ${score}`;
+                checkSpecialCannonAvailability();
+                checkWinCondition();
+                if (!gameOver) {
+                    generateQuestion();
+                }
+            } else {
+                feedbackDisplay.textContent = '答錯了！再試一次。';
+                enableAnswerButtons();
+            }
+        }
+
+        function checkSpecialCannonAvailability() {
+            const currentScoreThreshold = Math.floor(score / 50) * 50;
+            if (currentScoreThreshold > lastCannonScoreThreshold && currentScoreThreshold > 0) {
+                specialCannonAvailable = true;
+                specialCannonButton.classList.remove('hidden');
+                feedbackDisplay.textContent = '獲得特殊大砲！';
+                lastCannonScoreThreshold = currentScoreThreshold;
+            }
+        }
+
+        function useSpecialCannon() {
+            if (specialCannonAvailable && gameStarted && !gameOver) {
+                fireSpecialCannon();
+                generateQuestion();
+            }
+        }
+
+        function checkWinCondition() {
+            if (score >= WIN_SCORE) {
+                endGame("恭喜過關！", true);
+            }
+        }
+
+        function spawnEnemy() {
+            if (enemies.length < maxEnemies) {
+                const x = Math.random() * (canvas.width - 40);
+                enemies.push(new Enemy(x, -40, 40, 40));
+            }
+        }
+
+        function handleCollisions() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const bullet = bullets[i];
+                    const enemy = enemies[j];
+
+                    if (bullet && enemy &&
+                        bullet.x < enemy.x + enemy.width &&
+                        bullet.x + bullet.width > enemy.x &&
+                        bullet.y < enemy.y + enemy.height &&
+                        bullet.y + bullet.height > enemy.y) {
+                        
+                        enemies.splice(j, 1);
+                        bullets.splice(i, 1);
+                        score += 10;
+                        scoreDisplay.textContent = `分數: ${score}`;
+                        checkWinCondition();
+                        break;
+                    }
+                }
+            }
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                if (enemies[i].y + enemies[i].height > canvas.height) {
+                    endGame("敵軍突破防線，你被擊敗了！", false);
+                    break;
+                }
+            }
+        }
+
+        function update(deltaTime) {
+            enemySpawnTimer += deltaTime;
+            if (enemySpawnTimer >= nextEnemySpawnTime) {
+                spawnEnemy();
+                enemySpawnTimer = 0;
+                nextEnemySpawnTime = Math.random() * 2000 + 1000;
+            }
+
+            enemies.forEach(enemy => enemy.update());
+            bullets.forEach(bullet => bullet.update());
+
+            bullets = bullets.filter(bullet => bullet.y > -bullet.height && bullet.y < canvas.height && bullet.x > -bullet.width && bullet.x < canvas.width);
+
+            handleCollisions();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (player) player.draw(ctx);
+            enemies.forEach(enemy => enemy.draw(ctx));
+            bullets.forEach(bullet => bullet.draw(ctx));
+        }
+
+        function gameLoop(currentTime) {
+            if (gameOver) return;
+            if (!lastFrameTime) lastFrameTime = currentTime;
+
+            const deltaTime = currentTime - lastFrameTime;
+            lastFrameTime = currentTime;
+
+            update(deltaTime);
+            draw();
+
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            hideCelebrationScreen();
+            gameStarted = true;
+            gameOver = false;
+            score = 0;
+            gameTimer = 40;
+            specialCannonAvailable = false;
+            lastCannonScoreThreshold = 0;
+
+            scoreDisplay.textContent = `分數: ${score}`;
+            timerDisplay.textContent = `時間: ${gameTimer}s`;
+            feedbackDisplay.textContent = '';
+            enemies = [];
+            bullets = [];
+            askedQuestions.clear();
+            enemySpawnTimer = 0; 
+            nextEnemySpawnTime = Math.random() * 2000 + 1000; 
+
+            // 調整砲台大小以適應圖片
+            player = new Player(canvas.width / 2 - 30, canvas.height - 70, 60, 60);
+
+            generateQuestion();
+            startGameButton.textContent = '重新開始';
+            // 在遊戲進行中禁用開始按鈕
+            startGameButton.disabled = true;
+            specialCannonButton.classList.add('hidden');
+
+            if (gameTimerIntervalId) clearInterval(gameTimerIntervalId);
+            gameTimerIntervalId = setInterval(() => {
+                gameTimer--;
+                timerDisplay.textContent = `時間: ${gameTimer}s`;
+                if (gameTimer <= 0) {
+                    clearInterval(gameTimerIntervalId);
+                    if (!gameOver) endGame("時間到，遊戲結束！", false);
+                }
+            }, 1000);
+
+            lastFrameTime = 0;
+            if (gameLoopId) cancelAnimationFrame(gameLoopId);
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        function endGame(reason, isWin) {
+            if (gameOver) return;
+            gameOver = true;
+            gameStarted = false;
+            feedbackDisplay.textContent = reason + ` 最終分數: ${score}`;
+
+            if (gameLoopId) cancelAnimationFrame(gameLoopId);
+            if (gameTimerIntervalId) clearInterval(gameTimerIntervalId);
+            if (questionTimerIntervalId) clearInterval(questionTimerIntervalId);
+
+            disableAnswerButtons();
+            // 遊戲結束後啟用開始按鈕
+            if (playerImageLoaded) {
+                startGameButton.disabled = false;
+            }
+            startGameButton.textContent = '重新開始';
+            questionDisplay.textContent = '遊戲結束';
+            questionTimerBar.style.width = '0%';
+            specialCannonButton.classList.add('hidden');
+
+            if (isWin) {
+                showCelebrationScreen();
+            }
+        }
+
+        function showCelebrationScreen() {
+            celebrationScreen.classList.remove('hidden');
+            finalScoreDisplay.textContent = score;
+        }
+
+        function hideCelebrationScreen() {
+            celebrationScreen.classList.add('hidden');
+        }
+
+        // 事件監聽器
+        startGameButton.addEventListener('click', startGame);
+        specialCannonButton.addEventListener('click', useSpecialCannon);
+        restartGameButton.addEventListener('click', startGame);
+
+        // 畫布響應式調整大小
+        function resizeCanvas() {
+            const gameArea = document.getElementById('game-area');
+            if (gameArea) {
+                canvas.width = gameArea.clientWidth;
+                canvas.height = window.innerHeight / 2;
+            } else {
+                canvas.width = window.innerWidth * 0.8;
+                canvas.height = window.innerHeight / 2;
+            }
+
+            if (player) {
+                player.x = canvas.width / 2 - player.width / 2;
+                player.y = canvas.height - 70; // 調整 y 座標以適應新大小
+            }
+            if (!gameStarted && !gameOver) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.font = '24px Arial';
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                ctx.fillText('點擊開始遊戲', canvas.width / 2, canvas.height / 2);
+            } else {
+                draw();
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        window.onload = () => {
+            setTimeout(resizeCanvas, 100);
+        };
+    </script>
+</body>
+</html>
