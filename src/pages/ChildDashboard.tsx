@@ -73,6 +73,12 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
     };
 
     const handleCompleteQuest = async (questId: string) => {
+        // Prevent double submission - check if already completed
+        if (isQuestCompleted(questId)) {
+            console.log('Quest already marked as completed in UI');
+            return;
+        }
+
         // Check if parent is authenticated in this session
         const isParentAuth = sessionStorage.getItem('parent-auth') === 'verified';
 
@@ -83,9 +89,11 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                 isParentApproved: isParentAuth,
             });
         } catch (error: any) {
-            // 409 means already completed today, silently ignore
+            // 409 means already completed today, force refresh queries
             if (error?.message?.includes('409') || error?.code === '23505') {
-                console.log('Quest already completed today');
+                console.log('Quest already completed today - refreshing data');
+                // Force refresh to sync UI with database
+                window.location.reload();
                 return;
             }
             console.error('Failed to complete quest:', error);
