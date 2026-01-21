@@ -7,6 +7,7 @@ import { ChildDashboard } from './pages/ChildDashboard';
 import { ParentControl } from './pages/ParentControl';
 import { ParentApproval } from './pages/ParentApproval';
 import { ChildManagement } from './pages/ChildManagement';
+import { DebugPage } from './pages/DebugPage';
 import { useRealtimeSubscription } from './hooks/useRealtime';
 import { LogOut } from 'lucide-react';
 import type { Profile } from './types/database';
@@ -28,7 +29,7 @@ function AppContent() {
   useRealtimeSubscription(user?.id);
 
   const [isFamilyAuthenticated, setIsFamilyAuthenticated] = useState(false);
-  const [view, setView] = useState<'dashboard' | 'control' | 'children'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'control' | 'children' | 'debug'>('dashboard');
 
   // Check family authentication on mount
   useEffect(() => {
@@ -170,6 +171,15 @@ function AppContent() {
               >
                 管理孩子
               </button>
+              <button
+                onClick={() => setView('debug')}
+                className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'debug'
+                  ? 'bg-pokeball-red text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+              >
+                🐛 Debug
+              </button>
             </div>
           </div>
 
@@ -177,6 +187,8 @@ function AppContent() {
             <ParentApproval />
           ) : view === 'control' ? (
             <ParentControl />
+          ) : view === 'debug' ? (
+            <DebugPage />
           ) : (
             <ChildManagement />
           )}

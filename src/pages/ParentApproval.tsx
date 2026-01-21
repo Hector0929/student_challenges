@@ -17,12 +17,26 @@ export const ParentApproval: React.FC = () => {
     const rejectQuest = useRejectQuest();
 
     const handleApprove = async (logId: string) => {
-        await approveQuest.mutateAsync(logId);
+        try {
+            console.log('Approving quest:', logId);
+            await approveQuest.mutateAsync(logId);
+            console.log('Quest approved successfully');
+        } catch (error) {
+            console.error('Failed to approve quest:', error);
+            alert('審核失敗，請重試');
+        }
     };
 
     const handleReject = async (logId: string) => {
         if (confirm('確定要拒絕這個任務嗎？玩家需要重新完成。')) {
-            await rejectQuest.mutateAsync(logId);
+            try {
+                console.log('Rejecting quest:', logId);
+                await rejectQuest.mutateAsync(logId);
+                console.log('Quest rejected successfully');
+            } catch (error) {
+                console.error('Failed to reject quest:', error);
+                alert('操作失敗，請重試');
+            }
         }
     };
 

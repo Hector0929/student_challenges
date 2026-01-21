@@ -33,6 +33,8 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isQuestSectionCollapsed, setIsQuestSectionCollapsed] = useState(false);
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         title: '',
         icon: '👾',
@@ -97,6 +99,19 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             }
             console.error('Failed to complete quest:', error);
         }
+    };
+
+    const handleQuestClick = (questId: string) => {
+        setSelectedQuestId(questId);
+        setConfirmDialogOpen(true);
+    };
+
+    const handleConfirmComplete = async () => {
+        if (!selectedQuestId) return;
+
+        await handleCompleteQuest(selectedQuestId);
+        setConfirmDialogOpen(false);
+        setSelectedQuestId(null);
     };
 
     const isQuestCompleted = (questId: string): boolean => {
@@ -187,7 +202,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                                 <QuestCard
                                     quest={quest}
                                     isCompleted={isQuestCompleted(quest.id)}
-                                    onComplete={handleCompleteQuest}
+                                    onComplete={handleQuestClick}
                                     disabled={completeQuestMutation.isPending}
                                 />
                             </div>
@@ -289,6 +304,30 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                         </div>
                     </div>
                 </form>
+            </RPGDialog>
+
+            {/* Confirmation Dialog */}
+            <RPGDialog
+                isOpen={confirmDialogOpen}
+                onClose={() => setConfirmDialogOpen(false)}
+                title="確定完成了嗎？"
+                footer={
+                    <div className="flex gap-3 justify-end">
+                        <RPGButton
+                            onClick={() => setConfirmDialogOpen(false)}
+                            variant="secondary"
+                        >
+                            取消
+                        </RPGButton>
+                        <RPGButton onClick={handleConfirmComplete}>
+                            確定完成！
+                        </RPGButton>
+                    </div>
+                }
+            >
+                <p className="text-sm text-gray-700">
+                    完成後將送出給爸爸媽媽審核喔！
+                </p>
             </RPGDialog>
         </div>
     );
