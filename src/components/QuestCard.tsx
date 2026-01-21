@@ -18,6 +18,13 @@ export const QuestCard: React.FC<QuestCardProps> = ({
     const [isFlashing, setIsFlashing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Reset isSubmitting when quest becomes completed
+    React.useEffect(() => {
+        if (isCompleted) {
+            setIsSubmitting(false);
+        }
+    }, [isCompleted]);
+
     const handleClick = () => {
         // Prevent clicks if disabled, completed, or already submitting
         if (disabled || isCompleted || isSubmitting) return;
