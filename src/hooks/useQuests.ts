@@ -135,21 +135,36 @@ export const useCompleteQuest = () => {
             isParentApproved?: boolean;
         }) => {
             const today = getTodayDate();
-            const status = isParentApproved ? 'verified' : 'completed';
+            const targetStatus = isParentApproved ? 'verified' : 'completed';
+
+            // Check if already exists and is verified
+            const { data: existing } = await supabase
+                .from('daily_logs')
+                .select('id, status')
+                .eq('user_id', userId)
+                .eq('quest_id', questId)
+                .eq('date', today)
+                .maybeSingle();
+
+            // Don't overwrite verified status
+            if (existing?.status === 'verified') {
+                console.log('Quest already verified, skipping update');
+                return existing;
+            }
 
             // Use upsert to avoid race condition
-            // This will insert if not exists, or update if exists
+            // This will insert if not exists, or update if exists (but not verified)
             const { data, error } = await supabase
                 .from('daily_logs')
                 .upsert({
                     user_id: userId,
                     quest_id: questId,
-                    status: status,
+                    status: targetStatus,
                     completed_at: new Date().toISOString(),
                     date: today,
                 }, {
-                    onConflict: 'user_id,quest_id,date', // Specify the unique constraint
-                    ignoreDuplicates: false, // Update if exists
+                    onConflict: 'user_id,quest_id,date',
+                    ignoreDuplicates: false,
                 })
                 .select()
                 .single();
