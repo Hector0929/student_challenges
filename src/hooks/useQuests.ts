@@ -137,46 +137,25 @@ export const useCompleteQuest = () => {
             const today = getTodayDate();
             const status = isParentApproved ? 'verified' : 'completed';
 
-            // Check if log already exists
-            const { data: existing } = await supabase
+            // Use upsert to avoid race condition
+            // This will insert if not exists, or update if exists
+            const { data, error } = await supabase
                 .from('daily_logs')
-                .select('*')
-                .eq('user_id', userId)
-                .eq('quest_id', questId)
-                .eq('date', today)
-                .maybeSingle();
+                .upsert({
+                    user_id: userId,
+                    quest_id: questId,
+                    status: status,
+                    completed_at: new Date().toISOString(),
+                    date: today,
+                }, {
+                    onConflict: 'user_id,quest_id,date', // Specify the unique constraint
+                    ignoreDuplicates: false, // Update if exists
+                })
+                .select()
+                .single();
 
-            if (existing) {
-                // Update existing log
-                const { data, error } = await supabase
-                    .from('daily_logs')
-                    .update({
-                        status: status,
-                        completed_at: new Date().toISOString(),
-                    })
-                    .eq('id', existing.id)
-                    .select()
-                    .single();
-
-                if (error) throw error;
-                return data;
-            } else {
-                // Insert new log
-                const { data, error } = await supabase
-                    .from('daily_logs')
-                    .insert({
-                        user_id: userId,
-                        quest_id: questId,
-                        status: status,
-                        completed_at: new Date().toISOString(),
-                        date: today,
-                    })
-                    .select()
-                    .single();
-
-                if (error) throw error;
-                return data;
-            }
+            if (error) throw error;
+            return data;
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['daily_logs', variables.userId] });
