@@ -11,8 +11,8 @@ interface DailyLogWithDetails extends DailyLog {
 }
 
 export const ParentApproval: React.FC = () => {
-    // Fetch ALL pending logs (history included) by passing null as date
-    const { data: pendingLogs, isLoading } = useDailyLogs('all', null, 'pending');
+    // Fetch ALL completed logs waiting for approval (history included) by passing null as date
+    const { data: pendingLogs, isLoading } = useDailyLogs('all', null, 'completed');
     const approveQuest = useApproveQuest();
     const rejectQuest = useRejectQuest();
 
