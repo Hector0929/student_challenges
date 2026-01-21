@@ -72,15 +72,24 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
         }
     };
 
-    const handleCompleteQuest = (questId: string) => {
+    const handleCompleteQuest = async (questId: string) => {
         // Check if parent is authenticated in this session
         const isParentAuth = sessionStorage.getItem('parent-auth') === 'verified';
 
-        completeQuestMutation.mutate({
-            userId,
-            questId,
-            isParentApproved: isParentAuth,  // If parent is logged in, auto-approve
-        });
+        try {
+            await completeQuestMutation.mutateAsync({
+                userId,
+                questId,
+                isParentApproved: isParentAuth,
+            });
+        } catch (error: any) {
+            // 409 means already completed today, silently ignore
+            if (error?.message?.includes('409') || error?.code === '23505') {
+                console.log('Quest already completed today');
+                return;
+            }
+            console.error('Failed to complete quest:', error);
+        }
     };
 
     const isQuestCompleted = (questId: string): boolean => {

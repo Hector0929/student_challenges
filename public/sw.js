@@ -32,6 +32,12 @@ self.addEventListener('activate', (event) => {
 // Fetch event - network-first for HTML, cache-first for other assets
 self.addEventListener('fetch', (event) => {
     const { request } = event;
+    const url = new URL(request.url);
+
+    // Only handle http/https requests (skip chrome-extension, data:, etc.)
+    if (!url.protocol.startsWith('http')) {
+        return;
+    }
 
     // Network-First strategy for HTML files (including index.html)
     if (request.headers.get('accept')?.includes('text/html')) {
