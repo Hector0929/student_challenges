@@ -89,11 +89,10 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                 isParentApproved: isParentAuth,
             });
         } catch (error: any) {
-            // 409 means already completed today, force refresh queries
+            // 409 means already completed - this shouldn't happen due to UI check above
+            // but handle it gracefully just in case
             if (error?.message?.includes('409') || error?.code === '23505') {
-                console.log('Quest already completed today - refreshing data');
-                // Force refresh to sync UI with database
-                window.location.reload();
+                console.log('Quest already completed today (409 conflict)');
                 return;
             }
             console.error('Failed to complete quest:', error);
