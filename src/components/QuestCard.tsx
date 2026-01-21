@@ -16,9 +16,14 @@ export const QuestCard: React.FC<QuestCardProps> = ({
 }) => {
     const [isShaking, setIsShaking] = useState(false);
     const [isFlashing, setIsFlashing] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleClick = () => {
-        if (disabled || isCompleted) return;
+        // Prevent clicks if disabled, completed, or already submitting
+        if (disabled || isCompleted || isSubmitting) return;
+
+        // Mark as submitting to prevent double-clicks
+        setIsSubmitting(true);
 
         // Trigger shake animation
         setIsShaking(true);
