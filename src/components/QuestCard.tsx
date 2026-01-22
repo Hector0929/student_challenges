@@ -6,6 +6,7 @@ interface QuestCardProps {
     isCompleted: boolean;
     onComplete: (questId: string) => void;
     disabled?: boolean;
+    status?: 'pending' | 'completed' | 'verified';
 }
 
 export const QuestCard: React.FC<QuestCardProps> = ({
@@ -13,6 +14,7 @@ export const QuestCard: React.FC<QuestCardProps> = ({
     isCompleted,
     onComplete,
     disabled = false,
+    status = 'pending',
 }) => {
     const [isShaking, setIsShaking] = useState(false);
     const [isFlashing, setIsFlashing] = useState(false);
@@ -26,8 +28,8 @@ export const QuestCard: React.FC<QuestCardProps> = ({
     }, [isCompleted]);
 
     const handleClick = () => {
-        // Prevent clicks if disabled, completed, or already submitting
-        if (disabled || isCompleted || isSubmitting) return;
+        // Prevent clicks if disabled, completed, verified, or already submitting
+        if (disabled || status === 'completed' || status === 'verified' || isSubmitting) return;
 
         // Mark as submitting to prevent double-clicks
         setIsSubmitting(true);
@@ -44,15 +46,17 @@ export const QuestCard: React.FC<QuestCardProps> = ({
         }, 500);
     };
 
+    const isDisabled = disabled || status === 'completed' || status === 'verified';
+
     return (
         <div
             onClick={handleClick}
             className={`
         quest-card p-4 
-        ${isCompleted ? 'completed' : 'hover:shadow-lg'}
+        ${isDisabled ? 'opacity-60 bg-gray-100' : 'hover:shadow-lg'}
         ${isShaking ? 'animate-shake' : ''}
         ${isFlashing ? 'animate-flash' : ''}
-        ${disabled || isCompleted ? 'cursor-not-allowed' : 'cursor-pointer'}
+        ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}
       `}
         >
             <div className="flex items-center gap-4">
@@ -83,7 +87,15 @@ export const QuestCard: React.FC<QuestCardProps> = ({
             </div>
 
             {/* Completion Status */}
-            {isCompleted && (
+            {status === 'completed' && (
+                <div className="mt-3 pt-3 border-t-2 border-deep-black">
+                    <div className="inline-flex items-center gap-2 bg-orange-100 border-2 border-deep-black px-3 py-1">
+                        <span className="text-sm">⏰</span>
+                        <span className="text-xs font-pixel text-orange-600">等待家長審核</span>
+                    </div>
+                </div>
+            )}
+            {status === 'verified' && (
                 <div className="mt-3 pt-3 border-t-2 border-deep-black">
                     <div className="flex items-center justify-center gap-2">
                         <span className="text-lg">✅</span>

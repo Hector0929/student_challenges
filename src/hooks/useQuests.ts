@@ -247,6 +247,7 @@ export const useApproveQuest = () => {
 
     return useMutation({
         mutationFn: async (logId: string) => {
+            console.log('Approving quest:', logId);
             const { data, error } = await supabase
                 .from('daily_logs')
                 .update({ status: 'verified' })
@@ -255,11 +256,16 @@ export const useApproveQuest = () => {
                 .single();
 
             if (error) throw error;
+            console.log('Quest approved successfully:', logId);
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['daily_logs'] });
-            queryClient.invalidateQueries({ queryKey: ['total_points'] }); // 修復：加入這行
+            // Invalidate ALL daily_logs queries to ensure UI refresh
+            queryClient.invalidateQueries({
+                queryKey: ['daily_logs'],
+                refetchType: 'all'
+            });
+            queryClient.invalidateQueries({ queryKey: ['total_points'] });
         },
     });
 };
@@ -270,6 +276,7 @@ export const useRejectQuest = () => {
 
     return useMutation({
         mutationFn: async (logId: string) => {
+            console.log('Rejecting quest:', logId);
             const { data, error } = await supabase
                 .from('daily_logs')
                 .update({
@@ -281,10 +288,15 @@ export const useRejectQuest = () => {
                 .single();
 
             if (error) throw error;
+            console.log('Quest rejected successfully:', logId);
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['daily_logs'] });
+            // Invalidate ALL daily_logs queries to ensure UI refresh
+            queryClient.invalidateQueries({
+                queryKey: ['daily_logs'],
+                refetchType: 'all'
+            });
         },
     });
 };

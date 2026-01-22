@@ -128,6 +128,11 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
         ) || false;
     };
 
+    const getQuestStatus = (questId: string): 'pending' | 'completed' | 'verified' => {
+        const log = logs?.find(log => log.quest_id === questId);
+        return log?.status || 'pending';
+    };
+
     if (questsLoading || logsLoading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
@@ -210,6 +215,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                                 <QuestCard
                                     quest={quest}
                                     isCompleted={isQuestCompleted(quest.id)}
+                                    status={getQuestStatus(quest.id)}
                                     onComplete={handleQuestClick}
                                     disabled={completeQuestMutation.isPending}
                                 />
