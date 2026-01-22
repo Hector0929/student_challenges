@@ -81,14 +81,16 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             return;
         }
 
-        // Check if parent is authenticated in this session
-        const isParentAuth = sessionStorage.getItem('parent-auth') === 'verified';
+        // Only auto-approve if the user is CURRENTLY a parent
+        // Note: Children completing quests should always go to 'completed' status
+        // Parent approval should only happen through the ParentApproval page
+        const isParentApproved = false; // Children always need parent approval
 
         try {
             await completeQuestMutation.mutateAsync({
                 userId,
                 questId,
-                isParentApproved: isParentAuth,
+                isParentApproved,
             });
         } catch (error: any) {
             // 409 means already completed - this shouldn't happen due to UI check above
