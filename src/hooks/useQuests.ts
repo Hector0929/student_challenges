@@ -36,9 +36,12 @@ export const useDailyLogs = (
         queryKey: ['daily_logs', userId, date, status],
         queryFn: async () => {
             console.log('🔍 useDailyLogs fetching...', { userId, date, status });
+
+            // Use LEFT JOIN syntax (no !) to ensure records are returned
+            // even if related quest or profile is missing/deleted
             let query = supabase
                 .from('daily_logs')
-                .select('*, quests!quest_id(*), profiles!user_id(name, student_id)');
+                .select('*');
 
             // If userId is 'all', fetch all logs (for parent view)
             if (userId !== 'all') {
