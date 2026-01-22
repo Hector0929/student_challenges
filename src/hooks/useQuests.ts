@@ -7,15 +7,44 @@ export const useQuests = (status: 'active' | 'pending' | 'archived' = 'active') 
     return useQuery({
         queryKey: ['quests', status],
         queryFn: async () => {
-            const { data, error } = await supabase
+            console.log('🔍 useQuests fetching with status:', status);
+            
+            // Try using status column first, fallback to is_active for backward compatibility
+            let query = supabase
                 .from('quests')
-                // .eq('is_active', true) // Legacy check
-                .select('*, quest_assignments(*)')
-                .eq('status', status)
-                .order('created_at', { ascending: true });
+                .select('*, quest_assignments(*)');
+            
+            // Check if status column exists by attempting to query with it
+            // If it fails, we'll use is_active instead
+            try {
+                const { data, error } = await query
+                    .eq('status', status)
+                    .order('created_at', { ascending: true });
 
-            if (error) throw error;
-            return data as Quest[];
+                if (error) {
+                    // If column doesn't exist, fallback to is_active
+                    if (error.message?.includes('column') || error.code === '42703') {
+                        console.warn('⚠️ status column not found, using is_active fallback');
+                        const isActive = status === 'active';
+                        const fallbackQuery = await supabase
+                            .from('quests')
+                            .select('*, quest_assignments(*)')
+                            .eq('is_active', isActive)
+                            .order('created_at', { ascending: true });
+                        
+                        if (fallbackQuery.error) throw fallbackQuery.error;
+                        console.log('✅ useQuests fallback result:', { count: fallbackQuery.data?.length });
+                        return fallbackQuery.data as Quest[];
+                    }
+                    throw error;
+                }
+                
+                console.log('✅ useQuests result:', { count: data?.length });
+                return data as Quest[];
+            } catch (e) {
+                console.error('❌ useQuests error:', e);
+                throw e;
+            }
         },
     });
 };
@@ -155,6 +184,25 @@ export const useCompleteQuest = () => {
                 today
             });
 
+            // CRITICAL: Verify quest exists before attempting to insert
+            const { data: questExists, error: questCheckError } = await supabase
+                .from('quests')
+                .select('id, title')
+                .eq('id', questId)
+                .maybeSingle();
+
+            if (questCheckError) {
+                console.error('❌ Error checking quest existence:', questCheckError);
+                throw new Error(`查询任务失败: ${questCheckError.message}`);
+            }
+
+            if (!questExists) {
+                console.error('❌ Quest not found in database:', questId);
+                throw new Error('任务不存在，请刷新页面重试');
+            }
+
+            console.log('✅ Quest exists:', questExists.title);
+
             // Check if already exists and is verified
             const { data: existing, error: checkError } = await supabase
                 .from('daily_logs')
@@ -200,7 +248,7 @@ export const useCompleteQuest = () => {
 
             if (error) {
                 console.error('❌ Upsert error:', error);
-                throw error;
+                throw new Error(`保存失败: ${error.message}`);
             }
 
             console.log('✅ Upsert success:', {
