@@ -11,42 +11,32 @@ interface QuestCardProps {
 
 export const QuestCard: React.FC<QuestCardProps> = ({
     quest,
-    isCompleted,
+    isCompleted: _isCompleted, // Legacy prop, now using status instead
     onComplete,
     disabled = false,
     status = 'pending',
 }) => {
     const [isShaking, setIsShaking] = useState(false);
     const [isFlashing, setIsFlashing] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Reset isSubmitting when quest becomes completed
-    React.useEffect(() => {
-        if (isCompleted) {
-            setIsSubmitting(false);
-        }
-    }, [isCompleted]);
+    // Check if quest is disabled based on status
+    const isDisabled = disabled || status === 'completed' || status === 'verified';
 
     const handleClick = () => {
-        // Prevent clicks if disabled, completed, verified, or already submitting
-        if (disabled || status === 'completed' || status === 'verified' || isSubmitting) return;
-
-        // Mark as submitting to prevent double-clicks
-        setIsSubmitting(true);
+        // Prevent clicks if disabled
+        if (isDisabled) return;
 
         // Trigger shake animation
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 500);
 
-        // Complete the quest after shake
+        // Call onComplete after shake animation
         setTimeout(() => {
             onComplete(quest.id);
             setIsFlashing(true);
             setTimeout(() => setIsFlashing(false), 300);
         }, 500);
     };
-
-    const isDisabled = disabled || status === 'completed' || status === 'verified';
 
     return (
         <div
