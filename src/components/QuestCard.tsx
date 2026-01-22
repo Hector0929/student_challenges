@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Quest } from '../types/database';
 
 interface QuestCardProps {
@@ -19,6 +19,13 @@ export const QuestCard: React.FC<QuestCardProps> = ({
     const [isShaking, setIsShaking] = useState(false);
     const [isFlashing, setIsFlashing] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // Reset processing state when status changes (e.g., after error or completion)
+    useEffect(() => {
+        if (status === 'completed' || status === 'verified') {
+            setIsProcessing(false);
+        }
+    }, [status]);
 
     // Check if quest is disabled based on status
     const isDisabled = disabled || status === 'completed' || status === 'verified' || isProcessing;

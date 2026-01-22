@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Star, Plus, X, Save, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trophy, Star, Plus, X, Save, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { RPGDialog } from '../components/RPGDialog';
@@ -48,6 +48,11 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
 
     const isAllQuestsCompleted = progress.completed_quests === progress.total_quests && progress.total_quests > 0;
     const remainingQuests = progress.total_quests - progress.completed_quests;
+
+    const handleRefreshData = () => {
+        console.log('🔄 Manually refreshing data...');
+        window.location.reload();
+    };
 
     const handleOpenDialog = () => {
         setFormData({ title: '', icon: '👾' });
@@ -146,12 +151,20 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             await new Promise(resolve => setTimeout(resolve, 150));
             setConfirmDialogOpen(false);
             setSelectedQuestId(null);
-        } catch (error) {
-            console.error('Failed to complete quest:', error);
-            // 仍然關閉對話框，讓用戶可以重試
+        } catch (error: any) {
+            console.error('❌ Failed to complete quest:', error);
             setConfirmDialogOpen(false);
             setSelectedQuestId(null);
-            alert('完成任務失敗，請重試');
+            
+            // Show user-friendly error message
+            const errorMessage = error?.message || String(error);
+            if (errorMessage.includes('任務不存在')) {
+                alert('❌ 任務不存在\n\n資料庫中找不到這個任務，可能已被刪除。\n請重新整理頁面（按 F5）。');
+                // Force reload after user dismisses alert
+                setTimeout(() => window.location.reload(), 500);
+            } else {
+                alert(`❌ 完成任務失敗\n\n${errorMessage}\n\n請重試或聯絡管理員`);
+            }
         }
     };
 
@@ -195,6 +208,13 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                         {isAllQuestsCompleted && <span className="text-2xl">✅</span>}
                     </div>
                     <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleRefreshData}
+                            className="px-3 py-2 bg-white border-2 border-deep-black hover:bg-gray-100 transition-colors"
+                            title="重新整理"
+                        >
+                            <RefreshCw size={16} />
+                        </button>
                         {!isAllQuestsCompleted && (
                             <RPGButton onClick={handleOpenDialog} className="text-xs">
                                 <div className="flex items-center gap-1">
