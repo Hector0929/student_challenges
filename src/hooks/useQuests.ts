@@ -259,6 +259,7 @@ export const useApproveQuest = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['daily_logs'] });
+            queryClient.invalidateQueries({ queryKey: ['total_points'] }); // 修復：加入這行
         },
     });
 };

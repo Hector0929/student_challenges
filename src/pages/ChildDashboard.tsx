@@ -109,9 +109,17 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
     const handleConfirmComplete = async () => {
         if (!selectedQuestId) return;
 
-        await handleCompleteQuest(selectedQuestId);
-        setConfirmDialogOpen(false);
-        setSelectedQuestId(null);
+        try {
+            await handleCompleteQuest(selectedQuestId);
+            setConfirmDialogOpen(false);
+            setSelectedQuestId(null);
+        } catch (error) {
+            console.error('Failed to complete quest:', error);
+            // 仍然關閉對話框，讓用戶可以重試
+            setConfirmDialogOpen(false);
+            setSelectedQuestId(null);
+            alert('完成任務失敗，請重試');
+        }
     };
 
     const isQuestCompleted = (questId: string): boolean => {
