@@ -172,9 +172,21 @@ export const useCompleteQuest = () => {
             if (error) throw error;
             return data;
         },
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['daily_logs', variables.userId] });
-            queryClient.invalidateQueries({ queryKey: ['total_points', variables.userId] });
+        onSuccess: (data, variables) => {
+            console.log('✅ Quest completed successfully:', {
+                userId: variables.userId,
+                questId: variables.questId,
+                status: data?.status
+            });
+            // Invalidate ALL daily_logs queries regardless of other parameters
+            queryClient.invalidateQueries({
+                queryKey: ['daily_logs'],
+                refetchType: 'all'
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['total_points'],
+                refetchType: 'all'
+            });
         },
     });
 };
