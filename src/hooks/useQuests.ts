@@ -142,8 +142,16 @@ export const useCompleteQuest = () => {
             const today = getTodayDate();
             const targetStatus = isParentApproved ? 'verified' : 'completed';
 
+            console.log('🚀 useCompleteQuest starting:', {
+                userId: userId.substring(0, 8) + '...',
+                questId: questId.substring(0, 8) + '...',
+                isParentApproved,
+                targetStatus,
+                today
+            });
+
             // Check if already exists and is verified
-            const { data: existing } = await supabase
+            const { data: existing, error: checkError } = await supabase
                 .from('daily_logs')
                 .select('id, status')
                 .eq('user_id', userId)
@@ -151,14 +159,25 @@ export const useCompleteQuest = () => {
                 .eq('date', today)
                 .maybeSingle();
 
+            if (checkError) {
+                console.error('❌ Error checking existing log:', checkError);
+            }
+
+            console.log('🔍 Existing check result:', {
+                found: !!existing,
+                existingStatus: existing?.status
+            });
+
             // Don't overwrite verified status
             if (existing?.status === 'verified') {
-                console.log('Quest already verified, skipping update');
-                return existing;
+                console.log('⚠️ Quest already verified, skipping update');
+                // Return existing data but mark that we skipped
+                return { ...existing, _skipped: true };
             }
 
             // Use upsert to avoid race condition
-            // This will insert if not exists, or update if exists (but not verified)
+            console.log('📝 Upserting with status:', targetStatus);
+
             const { data, error } = await supabase
                 .from('daily_logs')
                 .upsert({
@@ -174,16 +193,27 @@ export const useCompleteQuest = () => {
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ Upsert error:', error);
+                throw error;
+            }
+
+            console.log('✅ Upsert success:', {
+                id: data?.id?.substring(0, 8) + '...',
+                status: data?.status
+            });
+
             return data;
         },
         onSuccess: (data, variables) => {
-            console.log('✅ Quest completed successfully:', {
-                userId: variables.userId,
-                questId: variables.questId,
-                status: data?.status
+            console.log('🎉 Mutation onSuccess:', {
+                userId: variables.userId.substring(0, 8) + '...',
+                questId: variables.questId.substring(0, 8) + '...',
+                returnedStatus: data?.status,
+                wasSkipped: (data as any)?._skipped
             });
-            // Invalidate ALL daily_logs queries regardless of other parameters
+
+            // Always invalidate queries to refresh UI
             queryClient.invalidateQueries({
                 queryKey: ['daily_logs'],
                 refetchType: 'all'
@@ -192,7 +222,12 @@ export const useCompleteQuest = () => {
                 queryKey: ['total_points'],
                 refetchType: 'all'
             });
+
+            console.log('🔄 Cache invalidated, queries should refetch');
         },
+        onError: (error) => {
+            console.error('❌ Mutation onError:', error);
+        }
     });
 };
 

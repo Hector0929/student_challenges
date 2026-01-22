@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, Star, Plus, X, Save, ChevronDown, ChevronUp } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
 import { ProgressBar } from '../components/ProgressBar';
@@ -14,6 +14,12 @@ interface ChildDashboardProps {
 }
 
 export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
+    // Log current user ID for debugging cross-browser issues
+    useEffect(() => {
+        console.log('👤 ChildDashboard mounted with userId:', userId);
+        console.log('📅 Today Date:', new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' }));
+    }, [userId]);
+
     const { data: allQuests, isLoading: questsLoading } = useQuests();
 
     // Filter quests: Show if (Global/No assignments) OR (Assigned to current user)
