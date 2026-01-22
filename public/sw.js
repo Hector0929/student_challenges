@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-questmon-v2'; // Updated version to force cache refresh
+const CACHE_NAME = 'daily-questmon-v3'; // Increment version to force cache refresh
 const urlsToCache = [
     '/',
     '/manifest.json',
@@ -6,30 +6,42 @@ const urlsToCache = [
 
 // Install event - cache essential files
 self.addEventListener('install', (event) => {
+    console.log('[SW] Installing new service worker...');
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then((cache) => cache.addAll(urlsToCache))
-            .then(() => self.skipWaiting()) // Force new SW to activate immediately
+            .then((cache) => {
+                console.log('[SW] Caching essential files');
+                return cache.addAll(urlsToCache);
+            })
+            .then(() => {
+                console.log('[SW] Skip waiting to activate immediately');
+                return self.skipWaiting();
+            })
     );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
+    console.log('[SW] Activating new service worker...');
     event.waitUntil(
         caches.keys().then((cacheNames) => {
+            console.log('[SW] Found caches:', cacheNames);
             return Promise.all(
                 cacheNames.map((cacheName) => {
                     if (cacheName !== CACHE_NAME) {
-                        console.log('Deleting old cache:', cacheName);
+                        console.log('[SW] Deleting old cache:', cacheName);
                         return caches.delete(cacheName);
                     }
                 })
             );
-        }).then(() => self.clients.claim()) // Take control of all pages immediately
+        }).then(() => {
+            console.log('[SW] Taking control of all pages');
+            return self.clients.claim();
+        })
     );
 });
 
-// Fetch event - network-first for HTML, cache-first for other assets
+// Fetch event - network-first strategy for all requests (better for development)
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
@@ -39,44 +51,28 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Network-First strategy for HTML files (including index.html)
-    if (request.headers.get('accept')?.includes('text/html')) {
-        event.respondWith(
-            fetch(request)
-                .then((response) => {
-                    // Clone the response and cache it
-                    const responseToCache = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(request, responseToCache);
-                    });
-                    return response;
-                })
-                .catch(() => {
-                    // If network fails, try cache
-                    return caches.match(request);
-                })
-        );
-        return;
+    // Skip caching for API requests (Supabase)
+    if (url.hostname.includes('supabase')) {
+        return; // Let browser handle directly, don't intercept
     }
 
-    // Cache-First strategy for static assets (JS, CSS, images)
+    // Network-First strategy for all requests
     event.respondWith(
-        caches.match(request)
+        fetch(request)
             .then((response) => {
-                if (response) {
-                    return response;
-                }
-                return fetch(request).then((response) => {
-                    // Don't cache non-successful responses or non-GET requests
-                    if (!response || response.status !== 200 || request.method !== 'GET') {
-                        return response;
-                    }
+                // Only cache successful GET requests
+                if (response.status === 200 && request.method === 'GET') {
                     const responseToCache = response.clone();
                     caches.open(CACHE_NAME).then((cache) => {
                         cache.put(request, responseToCache);
                     });
-                    return response;
-                });
+                }
+                return response;
+            })
+            .catch(() => {
+                // If network fails, try cache as fallback
+                console.log('[SW] Network failed, trying cache for:', request.url);
+                return caches.match(request);
             })
     );
 });

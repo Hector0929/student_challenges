@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Star, Plus, X, Save, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { Trophy, Star, Plus, X, Save, ChevronDown, ChevronUp, RefreshCw, Trash2 } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { RPGDialog } from '../components/RPGDialog';
@@ -52,6 +52,44 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
     const handleRefreshData = () => {
         console.log('🔄 Manually refreshing data...');
         window.location.reload();
+    };
+
+    const handleClearAllCache = async () => {
+        if (!confirm('⚠️ 這將清除所有快取資料和登入狀態，需要重新登入。\n\n確定要繼續嗎？')) {
+            return;
+        }
+
+        console.log('🗑️ Clearing all caches...');
+        
+        try {
+            // 1. Clear localStorage
+            localStorage.clear();
+            console.log('✅ localStorage cleared');
+
+            // 2. Clear sessionStorage
+            sessionStorage.clear();
+            console.log('✅ sessionStorage cleared');
+
+            // 3. Clear Service Worker caches
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                console.log('✅ Service Worker caches cleared');
+            }
+
+            // 4. Unregister Service Worker
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map(reg => reg.unregister()));
+                console.log('✅ Service Worker unregistered');
+            }
+
+            alert('✅ 所有快取已清除！\n\n頁面將重新載入。');
+            window.location.href = '/';
+        } catch (error) {
+            console.error('❌ Error clearing cache:', error);
+            alert('清除快取時發生錯誤，請手動重新整理頁面');
+        }
     };
 
     const handleOpenDialog = () => {
@@ -214,6 +252,13 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                             title="重新整理"
                         >
                             <RefreshCw size={16} />
+                        </button>
+                        <button
+                            onClick={handleClearAllCache}
+                            className="px-3 py-2 bg-orange-100 border-2 border-deep-black hover:bg-orange-200 transition-colors"
+                            title="清除所有快取（如果遇到問題）"
+                        >
+                            <Trash2 size={16} />
                         </button>
                         {!isAllQuestsCompleted && (
                             <RPGButton onClick={handleOpenDialog} className="text-xs">
