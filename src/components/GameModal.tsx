@@ -16,12 +16,17 @@ export const GameModal: React.FC<GameModalProps> = ({ isOpen, onClose, gameUrl, 
             onClose={onClose}
             title={`🎮 ${gameName}`}
         >
-            <div className="relative w-full" style={{ height: '70vh' }}>
+            <div className="relative w-full bg-gray-100 rounded-lg overflow-hidden" style={{ height: '70vh' }}>
                 <iframe
                     src={gameUrl}
-                    className="w-full h-full border-2 border-deep-black"
+                    className="w-full h-full border-none"
                     title={gameName}
                     allow="fullscreen"
+                    scrolling="no"
+                    style={{
+                        overflow: 'hidden',
+                        display: 'block',
+                    }}
                 />
             </div>
             <div className="mt-4 text-center">
@@ -29,7 +34,7 @@ export const GameModal: React.FC<GameModalProps> = ({ isOpen, onClose, gameUrl, 
                     onClick={onClose}
                     className="px-6 py-2 bg-pokeball-red text-white border-2 border-deep-black hover:brightness-110 transition-all font-pixel text-sm"
                 >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 justify-center">
                         <X size={16} />
                         <span>關閉遊戲</span>
                     </div>

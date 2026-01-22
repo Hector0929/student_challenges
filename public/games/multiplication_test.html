@@ -10,14 +10,15 @@
         /* Custom styles for the Inter font and overall look */
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #a8c0ff, #3f2b96); /* Gradient background */
+            background: linear-gradient(135deg, #a8c0ff, #3f2b96);
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh; /* Ensure it takes full viewport height for centering */
+            min-height: 100vh;
             margin: 0;
-            padding: 15px; /* Slightly reduced overall padding */
+            padding: 10px;
             box-sizing: border-box;
+            overflow: hidden; /* 防止滚动 */
         }
         .game-container {
             background-color: #ffffff;
@@ -247,10 +248,6 @@
                 重新挑戰
             </button>
         </div>
-        <!-- New: Return to Homepage Button -->
-        <button id="home-button" class="button-style home-button w-full max-w-xs block mx-auto mt-8">
-            返回首頁
-        </button>
     </div>
 
     <script>
@@ -271,7 +268,6 @@
         const timeSettingSelect = document.getElementById('time-setting');
         const timeSettingContainer = document.getElementById('time-setting-container');
         const avgTimePerCorrectParagraph = document.getElementById('avg-time-per-correct');
-        const homeButton = document.getElementById('home-button'); // New: Home button element
 
         // Game state variables
         let initialGameTime = 30; // Stores the time chosen by the user at the start of the game
@@ -390,7 +386,6 @@
             submitButton.disabled = false;
             answerInput.disabled = true; // Keep keyboard input disabled to enforce numpad use
             avgTimePerCorrectParagraph.textContent = ''; // Clear previous average time display
-            homeButton.classList.add('hidden'); // Hide home button during game
 
             displayQuestion();
             startTimer();
@@ -425,7 +420,6 @@
             submitButton.disabled = true;
             feedbackArea.classList.add('hidden');
             resultsArea.classList.add('hidden'); // Hide results area
-            homeButton.classList.remove('hidden'); // Show home button on setup/results
 
             timeSettingSelect.disabled = false; // Enable time setting for selection
         }
@@ -440,7 +434,6 @@
             gameArea.classList.add('hidden'); // Hide game elements (including setup)
             resultsArea.classList.remove('hidden'); // Show results
             timeSettingSelect.disabled = false; // Re-enable time setting after game ends
-            homeButton.classList.remove('hidden'); // Show home button on setup/results
 
             correctCountSpan.textContent = score;
 

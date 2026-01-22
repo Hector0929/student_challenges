@@ -48,7 +48,7 @@
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4 relative">
+<body class="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-2 relative overflow-hidden">
     <div id="game-area" class="w-full max-w-3xl bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">
         <canvas id="gameCanvas"></canvas>
 
@@ -90,11 +90,6 @@
             再玩一次
         </button>
     </div>
-
-    <!-- 新增：回首頁按鈕 -->
-    <a href="index.html" class="mt-8 px-8 py-4 bg-gray-600 text-white text-xl font-bold rounded-lg shadow-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
-        返回首頁
-    </a>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
