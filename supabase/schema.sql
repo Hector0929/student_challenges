@@ -22,6 +22,7 @@ CREATE TABLE quests (
   icon TEXT NOT NULL DEFAULT '👾',
   reward_points INTEGER NOT NULL DEFAULT 10,
   is_active BOOLEAN NOT NULL DEFAULT true,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'pending', 'archived')),
   created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -43,6 +44,7 @@ CREATE TABLE daily_logs (
 CREATE INDEX idx_daily_logs_user_date ON daily_logs(user_id, date);
 CREATE INDEX idx_daily_logs_quest_date ON daily_logs(quest_id, date);
 CREATE INDEX idx_quests_active ON quests(is_active);
+CREATE INDEX idx_quests_status ON quests(status);
 
 -- Row Level Security (RLS) Policies
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -77,14 +79,14 @@ CREATE POLICY "Users can update logs" ON daily_logs
   FOR UPDATE USING (true);
 
 -- Seed data: Sample quests
-INSERT INTO quests (title, description, icon, reward_points) VALUES
-  ('刷牙怪獸 (Brush Teeth Monster)', '早晚刷牙保持牙齒健康！', '🦷', 10),
-  ('整理床鋪怪獸 (Make Bed Monster)', '起床後整理好自己的床鋪', '🛏️', 10),
-  ('寫作業怪獸 (Homework Monster)', '完成今天的學校作業', '📚', 15),
-  ('收拾玩具怪獸 (Tidy Toys Monster)', '玩完玩具後收拾整齊', '🧸', 10),
-  ('幫忙家事怪獸 (Chores Monster)', '幫忙做家事（洗碗、掃地等）', '🧹', 15),
-  ('閱讀怪獸 (Reading Monster)', '閱讀至少20分鐘', '📖', 15),
-  ('運動怪獸 (Exercise Monster)', '運動或戶外活動30分鐘', '⚽', 20);
+INSERT INTO quests (title, description, icon, reward_points, status) VALUES
+  ('刷牙怪獸 (Brush Teeth Monster)', '早晚刷牙保持牙齒健康！', '🦷', 10, 'active'),
+  ('整理床鋪怪獸 (Make Bed Monster)', '起床後整理好自己的床鋪', '🛏️', 10, 'active'),
+  ('寫作業怪獸 (Homework Monster)', '完成今天的學校作業', '📚', 15, 'active'),
+  ('收拾玩具怪獸 (Tidy Toys Monster)', '玩完玩具後收拾整齊', '🧸', 10, 'active'),
+  ('幫忙家事怪獸 (Chores Monster)', '幫忙做家事（洗碗、掃地等）', '🧹', 15, 'active'),
+  ('閱讀怪獸 (Reading Monster)', '閱讀至少20分鐘', '📖', 15, 'active'),
+  ('運動怪獸 (Exercise Monster)', '運動或戶外活動30分鐘', '⚽', 20, 'active');
 
 -- Function to auto-update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
