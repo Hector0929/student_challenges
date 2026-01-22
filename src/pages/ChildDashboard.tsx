@@ -123,14 +123,21 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
     };
 
     const isQuestCompleted = (questId: string): boolean => {
-        return logs?.some(
+        const completed = logs?.some(
             log => log.quest_id === questId && (log.status === 'completed' || log.status === 'verified')
         ) || false;
+        return completed;
     };
 
     const getQuestStatus = (questId: string): 'pending' | 'completed' | 'verified' => {
         const log = logs?.find(log => log.quest_id === questId);
-        return log?.status || 'pending';
+        const status = log?.status || 'pending';
+        console.log(`📊 getQuestStatus(${questId.substring(0, 8)}...):`, {
+            found: !!log,
+            status,
+            totalLogs: logs?.length || 0
+        });
+        return status;
     };
 
     if (questsLoading || logsLoading) {

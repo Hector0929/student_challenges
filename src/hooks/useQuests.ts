@@ -35,6 +35,7 @@ export const useDailyLogs = (
     return useQuery({
         queryKey: ['daily_logs', userId, date, status],
         queryFn: async () => {
+            console.log('🔍 useDailyLogs fetching...', { userId, date, status });
             let query = supabase
                 .from('daily_logs')
                 .select('*, quests!quest_id(*), profiles!user_id(name, student_id)');
@@ -60,6 +61,7 @@ export const useDailyLogs = (
             const { data, error } = await query;
 
             if (error) throw error;
+            console.log('📦 useDailyLogs result:', { count: data?.length, data });
             return data as DailyLog[];
         },
         enabled: !!userId,
