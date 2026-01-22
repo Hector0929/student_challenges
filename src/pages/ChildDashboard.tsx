@@ -110,6 +110,13 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
     };
 
     const handleQuestClick = (questId: string) => {
+        // Double check the quest is not already completed before opening dialog
+        if (isQuestCompleted(questId)) {
+            console.log('⚠️ Quest already completed, blocking dialog:', questId.substring(0, 8));
+            return;
+        }
+        
+        console.log('🎯 Opening confirmation dialog for quest:', questId.substring(0, 8));
         setSelectedQuestId(questId);
         setConfirmDialogOpen(true);
     };
@@ -117,8 +124,26 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
     const handleConfirmComplete = async () => {
         if (!selectedQuestId) return;
 
+        // Prevent duplicate clicks while mutation is in progress
+        if (completeQuestMutation.isPending) {
+            console.log('⏳ Mutation already in progress, ignoring click');
+            return;
+        }
+
+        // Final check before submitting
+        if (isQuestCompleted(selectedQuestId)) {
+            console.log('⚠️ Quest already completed, closing dialog:', selectedQuestId.substring(0, 8));
+            setConfirmDialogOpen(false);
+            setSelectedQuestId(null);
+            return;
+        }
+
+        console.log('🚀 Submitting quest completion:', selectedQuestId.substring(0, 8));
+
         try {
             await handleCompleteQuest(selectedQuestId);
+            // Small delay to allow cache invalidation and refetch to complete
+            await new Promise(resolve => setTimeout(resolve, 150));
             setConfirmDialogOpen(false);
             setSelectedQuestId(null);
         } catch (error) {
@@ -134,17 +159,17 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
         const completed = logs?.some(
             log => log.quest_id === questId && (log.status === 'completed' || log.status === 'verified')
         ) || false;
+        
+        if (completed) {
+            console.log(`✅ Quest ${questId.substring(0, 8)}... is completed/verified`);
+        }
+        
         return completed;
     };
 
     const getQuestStatus = (questId: string): 'pending' | 'completed' | 'verified' => {
         const log = logs?.find(log => log.quest_id === questId);
         const status = log?.status || 'pending';
-        console.log(`📊 getQuestStatus(${questId.substring(0, 8)}...):`, {
-            found: !!log,
-            status,
-            totalLogs: logs?.length || 0
-        });
         return status;
     };
 
@@ -348,8 +373,11 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                         >
                             取消
                         </RPGButton>
-                        <RPGButton onClick={handleConfirmComplete}>
-                            確定完成！
+                        <RPGButton
+                            onClick={handleConfirmComplete}
+                            disabled={completeQuestMutation.isPending}
+                        >
+                            {completeQuestMutation.isPending ? '送出中...' : '確定完成！'}
                         </RPGButton>
                     </div>
                 }

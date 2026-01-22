@@ -18,13 +18,26 @@ export const QuestCard: React.FC<QuestCardProps> = ({
 }) => {
     const [isShaking, setIsShaking] = useState(false);
     const [isFlashing, setIsFlashing] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     // Check if quest is disabled based on status
-    const isDisabled = disabled || status === 'completed' || status === 'verified';
+    const isDisabled = disabled || status === 'completed' || status === 'verified' || isProcessing;
 
     const handleClick = () => {
-        // Prevent clicks if disabled
-        if (isDisabled) return;
+        // Prevent clicks if disabled or already processing
+        if (isDisabled) {
+            console.log('❌ Quest card click blocked:', {
+                disabled,
+                status,
+                isProcessing,
+                questId: quest.id.substring(0, 8)
+            });
+            return;
+        }
+
+        // Set processing state immediately to prevent double clicks
+        setIsProcessing(true);
+        console.log('✅ Quest card clicked, starting animation:', quest.id.substring(0, 8));
 
         // Trigger shake animation
         setIsShaking(true);
@@ -34,7 +47,10 @@ export const QuestCard: React.FC<QuestCardProps> = ({
         setTimeout(() => {
             onComplete(quest.id);
             setIsFlashing(true);
-            setTimeout(() => setIsFlashing(false), 300);
+            setTimeout(() => {
+                setIsFlashing(false);
+                // Keep processing state to prevent re-clicks until parent updates status
+            }, 300);
         }, 500);
     };
 

@@ -39,9 +39,14 @@ export const useDailyLogs = (
 
             // Use LEFT JOIN syntax (no !) to ensure records are returned
             // even if related quest or profile is missing/deleted
+            // JOIN quest and profile data for ParentApproval display
             let query = supabase
                 .from('daily_logs')
-                .select('*');
+                .select(`
+                    *,
+                    quest:quests(*),
+                    profile:profiles(id, name, student_id, avatar_url)
+                `);
 
             // If userId is 'all', fetch all logs (for parent view)
             if (userId !== 'all') {
