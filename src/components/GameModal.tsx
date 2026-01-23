@@ -34,17 +34,23 @@ export const GameModal: React.FC<GameModalProps> = ({
     const [isProcessing, setIsProcessing] = useState(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    const hasInitialized = useRef(false);  // Track if we've initialized for this session
 
-    // Reset state when modal opens
+    // Reset state ONLY when modal opens (not when starBalance changes)
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && !hasInitialized.current) {
+            // First time opening - initialize state
+            hasInitialized.current = true;
             setTimeRemaining(GAME_DURATION_SECONDS);
             if (starBalance < GAME_COST) {
                 setPhase('insufficient');
             } else {
                 setPhase('confirm');
             }
-        } else {
+        } else if (!isOpen) {
+            // Modal closed - reset for next open
+            hasInitialized.current = false;
+            setPhase('confirm');
             // Clear timer when modal closes
             if (timerRef.current) {
                 clearInterval(timerRef.current);
