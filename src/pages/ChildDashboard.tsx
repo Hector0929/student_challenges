@@ -5,7 +5,7 @@ import { ProgressBar } from '../components/ProgressBar';
 import { RPGDialog } from '../components/RPGDialog';
 import { RPGButton } from '../components/RPGButton';
 import { RewardTime } from '../components/RewardTime';
-import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useChildTotalPoints } from '../hooks/useQuests';
+import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useStarBalance } from '../hooks/useQuests';
 
 import { COMMON_EMOJIS } from '../lib/constants';
 
@@ -33,7 +33,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
     });
     const { data: logs, isLoading: logsLoading } = useDailyLogs(userId);
     const progress = useDailyProgress(userId);
-    const { data: totalPoints } = useChildTotalPoints(userId);
+    const { data: starBalance } = useStarBalance(userId);
     const completeQuestMutation = useCompleteQuest();
     const createQuestMutation = useCreateQuest();
 
@@ -301,9 +301,9 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                             </div>
                             <div className="bg-white border-2 border-deep-black p-3 text-center">
                                 <div className="text-2xl mb-1">⭐</div>
-                                <div className="font-pixel text-xs text-gray-600">目前總分</div>
+                                <div className="font-pixel text-xs text-gray-600">可用星幣</div>
                                 <div className="font-pixel text-lg text-yellow-600">
-                                    {totalPoints || 0}
+                                    {starBalance || 0}
                                 </div>
                             </div>
                         </div>
