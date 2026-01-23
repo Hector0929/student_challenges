@@ -159,55 +159,54 @@ export const GameModal: React.FC<GameModalProps> = ({
             case 'playing':
                 return (
                     <>
-                        {/* Game iframe */}
-                        <div className="relative w-full bg-gray-100 rounded-lg overflow-hidden" style={{ height: '60vh' }}>
-                            <iframe
-                                ref={iframeRef}
-                                src={gameUrl}
-                                className="w-full h-full border-none"
-                                title={gameName}
-                                allow="fullscreen"
-                                scrolling="no"
-                                style={{
-                                    overflow: 'hidden',
-                                    display: 'block',
-                                }}
-                            />
-                        </div>
-
-                        {/* Timer bar */}
-                        <div className="mt-4 bg-gray-100 border-2 border-deep-black rounded-lg p-3">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <Clock size={16} className="text-blue-500" />
-                                    <span className="font-pixel text-sm">剩餘時間</span>
-                                </div>
-                                <span className={`font-pixel text-lg ${timeRemaining <= 30 ? 'text-red-500 animate-pulse' : 'text-blue-600'}`}>
-                                    {formatTime(timeRemaining)}
-                                </span>
-                            </div>
-                            <div className="w-full bg-gray-300 rounded-full h-4 border border-gray-400 overflow-hidden">
-                                <div
-                                    className={`h-full transition-all duration-1000 ${timeRemaining <= 30
-                                        ? 'bg-gradient-to-r from-red-400 to-red-600'
-                                        : 'bg-gradient-to-r from-blue-400 to-blue-600'
-                                        }`}
-                                    style={{ width: `${progressPercent}%` }}
+                        {/* Game container with side timer */}
+                        <div className="flex gap-3">
+                            {/* Game iframe */}
+                            <div className="flex-1 relative bg-gray-100 rounded-lg overflow-hidden" style={{ height: '65vh' }}>
+                                <iframe
+                                    ref={iframeRef}
+                                    src={gameUrl}
+                                    className="w-full h-full border-none"
+                                    title={gameName}
+                                    allow="fullscreen"
+                                    scrolling="no"
+                                    style={{
+                                        overflow: 'hidden',
+                                        display: 'block',
+                                    }}
                                 />
                             </div>
-                        </div>
 
-                        {/* End game button */}
-                        <div className="mt-3 text-center">
-                            <button
-                                onClick={handleEndGame}
-                                className="px-4 py-2 bg-gray-200 text-gray-700 border-2 border-gray-400 rounded hover:bg-gray-300 transition-colors text-sm"
-                            >
-                                <div className="flex items-center gap-2 justify-center">
-                                    <StopCircle size={14} />
-                                    <span>提前結束</span>
+                            {/* Vertical Timer bar on the side */}
+                            <div className="flex flex-col items-center justify-between bg-gray-100 border-2 border-deep-black rounded-lg p-2 w-16">
+                                {/* Time display */}
+                                <div className="text-center">
+                                    <Clock size={20} className={`mx-auto mb-1 ${timeRemaining <= 30 ? 'text-red-500' : 'text-blue-500'}`} />
+                                    <span className={`font-pixel text-sm block ${timeRemaining <= 30 ? 'text-red-500 animate-pulse' : 'text-blue-600'}`}>
+                                        {formatTime(timeRemaining)}
+                                    </span>
                                 </div>
-                            </button>
+
+                                {/* Vertical progress bar */}
+                                <div className="flex-1 w-4 bg-gray-300 rounded-full border border-gray-400 overflow-hidden my-2 relative">
+                                    <div
+                                        className={`w-full absolute bottom-0 transition-all duration-1000 ${timeRemaining <= 30
+                                                ? 'bg-gradient-to-t from-red-600 to-red-400'
+                                                : 'bg-gradient-to-t from-blue-600 to-blue-400'
+                                            }`}
+                                        style={{ height: `${progressPercent}%` }}
+                                    />
+                                </div>
+
+                                {/* End button */}
+                                <button
+                                    onClick={handleEndGame}
+                                    className="p-2 bg-gray-200 text-gray-600 border border-gray-400 rounded hover:bg-gray-300 transition-colors"
+                                    title="提前結束"
+                                >
+                                    <StopCircle size={16} />
+                                </button>
+                            </div>
                         </div>
                     </>
                 );
