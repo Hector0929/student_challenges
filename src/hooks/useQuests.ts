@@ -8,12 +8,12 @@ export const useQuests = (status: 'active' | 'pending' | 'archived' = 'active') 
         queryKey: ['quests', status],
         queryFn: async () => {
             console.log('🔍 useQuests fetching with status:', status);
-            
+
             // Try using status column first, fallback to is_active for backward compatibility
             let query = supabase
                 .from('quests')
                 .select('*, quest_assignments(*)');
-            
+
             // Check if status column exists by attempting to query with it
             // If it fails, we'll use is_active instead
             try {
@@ -31,14 +31,14 @@ export const useQuests = (status: 'active' | 'pending' | 'archived' = 'active') 
                             .select('*, quest_assignments(*)')
                             .eq('is_active', isActive)
                             .order('created_at', { ascending: true });
-                        
+
                         if (fallbackQuery.error) throw fallbackQuery.error;
                         console.log('✅ useQuests fallback result:', { count: fallbackQuery.data?.length });
                         return fallbackQuery.data as Quest[];
                     }
                     throw error;
                 }
-                
+
                 console.log('✅ useQuests result:', { count: data?.length });
                 return data as Quest[];
             } catch (e) {
@@ -437,5 +437,138 @@ export const useUpdateQuestAssignments = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['quests'] });
         },
+    });
+};
+
+// ============================================
+// 星幣系統 Hooks
+// ============================================
+
+// Fetch star balance for a child (earned - spent)
+export const useStarBalance = (childId: string) => {
+    return useQuery({
+        queryKey: ['star_balance', childId],
+        queryFn: async () => {
+            console.log('💰 Fetching star balance for:', childId.substring(0, 8) + '...');
+
+            // Try RPC function first (if database migration is done)
+            try {
+                const { data, error } = await supabase
+                    .rpc('get_child_star_balance', { child_id: childId });
+
+                if (!error && data !== null) {
+                    console.log('✅ Star balance from RPC:', data);
+                    return data as number;
+                }
+            } catch (e) {
+                console.log('⚠️ RPC not available, calculating manually...');
+            }
+
+            // Fallback: Calculate manually
+            // 1. Get total earned from verified quests
+            const { data: totalPoints } = await supabase
+                .rpc('get_child_total_points', { child_id: childId });
+
+            const earned = totalPoints || 0;
+
+            // 2. Get total spent from star_transactions
+            let spent = 0;
+            try {
+                const { data: transactions } = await supabase
+                    .from('star_transactions')
+                    .select('amount')
+                    .eq('user_id', childId)
+                    .eq('type', 'spend');
+
+                if (transactions) {
+                    spent = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+                }
+            } catch (e) {
+                // star_transactions table might not exist yet
+                console.log('⚠️ star_transactions table not available');
+            }
+
+            const balance = earned - spent;
+            console.log('💰 Star balance calculated:', { earned, spent, balance });
+            return balance;
+        },
+        enabled: !!childId,
+    });
+};
+
+// Spend stars to play a game
+export const useSpendStars = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            userId,
+            amount,
+            gameId,
+            gameName
+        }: {
+            userId: string;
+            amount: number;
+            gameId: string;
+            gameName: string;
+        }) => {
+            console.log('💸 Spending stars:', { userId: userId.substring(0, 8) + '...', amount, gameId });
+
+            // First verify balance is sufficient
+            let currentBalance = 0;
+
+            // Try RPC first
+            try {
+                const { data } = await supabase
+                    .rpc('get_child_star_balance', { child_id: userId });
+                if (data !== null) {
+                    currentBalance = data;
+                }
+            } catch (e) {
+                // Fallback
+                const { data: totalPoints } = await supabase
+                    .rpc('get_child_total_points', { child_id: userId });
+                currentBalance = totalPoints || 0;
+            }
+
+            if (currentBalance < amount) {
+                throw new Error(`星幣不足！需要 ${amount} 顆，目前只有 ${currentBalance} 顆`);
+            }
+
+            // Record the transaction
+            const { data, error } = await supabase
+                .from('star_transactions')
+                .insert({
+                    user_id: userId,
+                    amount: -amount,  // Negative for spending
+                    type: 'spend',
+                    description: `玩遊戲: ${gameName}`,
+                    game_id: gameId
+                })
+                .select()
+                .single();
+
+            if (error) {
+                console.error('❌ Failed to record transaction:', error);
+                throw new Error(`記錄交易失敗: ${error.message}`);
+            }
+
+            console.log('✅ Stars spent successfully:', data);
+            return { transaction: data, newBalance: currentBalance - amount };
+        },
+        onSuccess: (_, variables) => {
+            // Invalidate star balance queries
+            queryClient.invalidateQueries({
+                queryKey: ['star_balance', variables.userId],
+                refetchType: 'all'
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['star_transactions'],
+                refetchType: 'all'
+            });
+        },
+        onError: (error) => {
+            console.error('❌ useSpendStars error:', error);
+        }
     });
 };

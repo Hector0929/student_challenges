@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 
 interface RPGDialogProps {
     isOpen: boolean;
-    onClose: () => void;
+    onClose?: () => void;  // Made optional for cases like game playing
     title: string;
     children: React.ReactNode;
     footer?: React.ReactNode;
@@ -23,7 +23,7 @@ export const RPGDialog: React.FC<RPGDialogProps> = ({
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black bg-opacity-50"
-                onClick={onClose}
+                onClick={onClose}  // Will do nothing if onClose is undefined
             />
 
             {/* Dialog */}
@@ -31,13 +31,15 @@ export const RPGDialog: React.FC<RPGDialogProps> = ({
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-deep-black">
                     <h2 className="text-lg font-pixel">{title}</h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-gray-100 transition-colors"
-                        aria-label="Close"
-                    >
-                        <X size={20} />
-                    </button>
+                    {onClose && (
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-gray-100 transition-colors"
+                            aria-label="Close"
+                        >
+                            <X size={20} />
+                        </button>
+                    )}
                 </div>
 
                 {/* Content */}

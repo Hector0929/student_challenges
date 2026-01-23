@@ -60,7 +60,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
         }
 
         console.log('🗑️ Clearing all caches...');
-        
+
         try {
             // 1. Clear localStorage
             localStorage.clear();
@@ -158,7 +158,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             console.log('⚠️ Quest already completed, blocking dialog:', questId.substring(0, 8));
             return;
         }
-        
+
         console.log('🎯 Opening confirmation dialog for quest:', questId.substring(0, 8));
         setSelectedQuestId(questId);
         setConfirmDialogOpen(true);
@@ -193,7 +193,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             console.error('❌ Failed to complete quest:', error);
             setConfirmDialogOpen(false);
             setSelectedQuestId(null);
-            
+
             // Show user-friendly error message
             const errorMessage = error?.message || String(error);
             if (errorMessage.includes('任務不存在')) {
@@ -210,11 +210,11 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
         const completed = logs?.some(
             log => log.quest_id === questId && (log.status === 'completed' || log.status === 'verified')
         ) || false;
-        
+
         if (completed) {
             console.log(`✅ Quest ${questId.substring(0, 8)}... is completed/verified`);
         }
-        
+
         return completed;
     };
 
@@ -341,6 +341,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                 isUnlocked={isAllQuestsCompleted}
                 remainingQuests={remainingQuests}
                 totalQuests={progress.total_quests}
+                userId={userId}
             />
 
             {/* Completion Message */}
