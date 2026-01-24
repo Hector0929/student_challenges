@@ -22,8 +22,8 @@ export const GameModal: React.FC<GameModalProps> = ({
     onClose,
     gameUrl,
     gameName,
-    gameId: _gameId,  // Prefixed to acknowledge intentionally unused
-    userId: _userId,  // Prefixed to acknowledge intentionally unused
+    gameId: _gameId,
+    userId: _userId,
     starBalance,
     onSpendStars,
     onRefreshBalance
@@ -33,32 +33,49 @@ export const GameModal: React.FC<GameModalProps> = ({
     const [isProcessing, setIsProcessing] = useState(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
-    const hasInitialized = useRef(false);  // Track if we've initialized for this session
+    const hasInitialized = useRef(false);
 
-    // Reset state ONLY when modal opens (not when starBalance changes)
+    // 1. Body Scroll Lock & Phase Reset
     useEffect(() => {
-        if (isOpen && !hasInitialized.current) {
-            // First time opening - initialize state
-            hasInitialized.current = true;
-            setTimeRemaining(GAME_DURATION_SECONDS);
-            if (starBalance < GAME_COST) {
-                setPhase('insufficient');
-            } else {
-                setPhase('confirm');
+        if (isOpen) {
+            // Prevent background scrolling
+            document.body.style.overflow = 'hidden';
+
+            if (!hasInitialized.current) {
+                hasInitialized.current = true;
+                setTimeRemaining(GAME_DURATION_SECONDS);
+                setPhase(starBalance < GAME_COST ? 'insufficient' : 'confirm');
             }
-        } else if (!isOpen) {
-            // Modal closed - reset for next open
+        } else {
+            // Restore background scrolling
+            document.body.style.overflow = 'unset';
+
             hasInitialized.current = false;
             setPhase('confirm');
-            // Clear timer when modal closes
             if (timerRef.current) {
                 clearInterval(timerRef.current);
                 timerRef.current = null;
             }
         }
+
+        // Cleanup on unmount
+        return () => {
+            document.body.style.overflow = 'unset';
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
     }, [isOpen, starBalance]);
 
-    // Timer countdown
+    // 2. Focus Management - focus iframe when playing starts
+    useEffect(() => {
+        if (phase === 'playing' && iframeRef.current) {
+            // Include a small delay to ensure render is complete
+            setTimeout(() => {
+                iframeRef.current?.focus();
+            }, 100);
+        }
+    }, [phase]);
+
+    // 3. Timer Logic
     useEffect(() => {
         if (phase === 'playing' && timeRemaining > 0) {
             timerRef.current = setInterval(() => {
@@ -79,17 +96,14 @@ export const GameModal: React.FC<GameModalProps> = ({
         }
     }, [phase, timeRemaining]);
 
-    // Format time as MM:SS
     const formatTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Calculate progress percentage
     const progressPercent = (timeRemaining / GAME_DURATION_SECONDS) * 100;
 
-    // Handle starting/continuing the game
     const handleStartGame = async () => {
         if (starBalance < GAME_COST) {
             setPhase('insufficient');
@@ -114,7 +128,6 @@ export const GameModal: React.FC<GameModalProps> = ({
         }
     };
 
-    // Handle ending the game
     const handleEndGame = () => {
         if (timerRef.current) {
             clearInterval(timerRef.current);
@@ -122,13 +135,135 @@ export const GameModal: React.FC<GameModalProps> = ({
         onClose();
     };
 
-    const renderContent = () => {
-        // Common button styles for Claymorphism to replace RPGButton
-        const btnBase = "px-6 py-3 font-pixel text-sm rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_0_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-1";
-        const btnPrimary = "bg-indigo-500 hover:bg-indigo-600 text-white";
-        const btnSecondary = "bg-white text-indigo-900 border-2 border-indigo-100 hover:bg-indigo-50";
-        const btnGreen = "bg-green-500 hover:bg-green-600 text-white";
+    // Button Styles
+    const btnBase = "px-6 py-3 font-pixel text-sm rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_0_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-1";
+    const btnPrimary = "bg-indigo-500 hover:bg-indigo-600 text-white";
+    const btnSecondary = "bg-white text-indigo-900 border-2 border-indigo-100 hover:bg-indigo-50";
+    const btnGreen = "bg-green-500 hover:bg-green-600 text-white";
 
+    // Sub-components for cleaner render
+    const TopHUD = () => (
+        <div className="bg-white border-b-4 border-indigo-100 p-3 flex items-center justify-between shadow-sm z-10 shrink-0">
+            <div className="flex items-center gap-3">
+                <div className="bg-indigo-100 p-2 rounded-xl">
+                    <span className="text-2xl">🎮</span>
+                </div>
+                <span className="font-pixel text-indigo-900 hidden sm:inline">{gameName}</span>
+            </div>
+
+            <div className="flex items-center gap-3 bg-indigo-900 rounded-full py-2 px-4 shadow-lg transform scale-100 hover:scale-105 transition-transform">
+                <Clock size={20} className={`${timeRemaining <= 30 ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`} />
+                <div className="flex flex-col items-start w-16">
+                    <span className={`font-pixel text-lg leading-none ${timeRemaining <= 30 ? 'text-red-400' : 'text-white'}`}>
+                        {formatTime(timeRemaining)}
+                    </span>
+                </div>
+                <div className="w-16 h-2 bg-indigo-800 rounded-full overflow-hidden">
+                    <div
+                        className={`h-full transition-all duration-1000 ${timeRemaining <= 30 ? 'bg-red-500' : 'bg-yellow-400'
+                            }`}
+                        style={{ width: `${progressPercent}%` }}
+                    />
+                </div>
+            </div>
+
+            <button
+                onClick={handleEndGame}
+                className="group p-2 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 text-gray-400 hover:text-red-500"
+            >
+                <span className="font-pixel text-xs hidden sm:inline group-hover:opacity-100 opacity-0 transition-opacity">離開遊戲</span>
+                <StopCircle size={24} />
+            </button>
+        </div>
+    );
+
+    const TimeUpOverlay = () => (
+        <div className="absolute inset-0 z-50 bg-indigo-900/90 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+            <div className="text-center p-8 bg-white rounded-3xl shadow-2xl border-4 border-indigo-200 max-w-lg w-full mx-4 animate-bounce-in">
+                <div className="relative inline-block mb-4">
+                    <div className="text-8xl animate-bounce">⏰</div>
+                    <div className="absolute -bottom-2 w-full h-4 bg-black opacity-10 blur-md rounded-[100%]"></div>
+                </div>
+
+                <h3 className="font-pixel text-3xl mb-2 text-indigo-900">時間到囉！</h3>
+                <p className="text-indigo-400 mb-8 font-pixel">玩得開心嗎？休息一下還是繼續挑戰？</p>
+
+                <div className="bg-indigo-50 rounded-3xl p-6 mb-8 border-4 border-indigo-100">
+                    <div className="text-sm text-indigo-400 mb-2 font-bold">再玩 3 分鐘只需要</div>
+                    <div className="flex items-center justify-center gap-2">
+                        <Star className="text-yellow-500" fill="currentColor" size={32} />
+                        <span className="font-pixel text-4xl text-indigo-900">{GAME_COST}</span>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-indigo-200 flex justify-between px-4 text-sm">
+                        <span className="text-indigo-400">目前餘額</span>
+                        <span className="font-pixel text-yellow-600">{starBalance} ⭐</span>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button onClick={handleEndGame} className={`${btnBase} ${btnSecondary} w-full sm:w-auto`}>
+                        <div className="flex items-center justify-center gap-2">
+                            <X size={20} />
+                            <span>結束休息</span>
+                        </div>
+                    </button>
+
+                    {starBalance >= GAME_COST ? (
+                        <button onClick={handleStartGame} disabled={isProcessing} className={`${btnBase} ${btnGreen} w-full sm:w-auto`}>
+                            <div className="flex items-center justify-center gap-2 px-4">
+                                <Play size={20} fill="currentColor" />
+                                <span className="text-lg">繼續玩 !</span>
+                            </div>
+                        </button>
+                    ) : (
+                        <button disabled className={`${btnBase} ${btnSecondary} w-full sm:w-auto opacity-50 cursor-not-allowed`}>
+                            <span>餘額不足 😢</span>
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
+    const renderContent = () => {
+        // Condition to render Game Area: playing OR timeup (because we want to keep iframe mounted)
+        if (phase === 'playing' || phase === 'timeup') {
+            return (
+                <div className="flex flex-col h-[80vh] bg-indigo-50 rounded-xl overflow-hidden relative">
+                    <TopHUD />
+
+                    {/* Game Area */}
+                    <div className="flex-1 bg-gray-900 relative">
+                        <iframe
+                            ref={iframeRef}
+                            src={gameUrl}
+                            className="w-full h-full border-none"
+                            title={gameName}
+                            allow="fullscreen"
+                            // Important: disable pointer events when timeup to prevent interaction
+                            style={{
+                                display: 'block',
+                                pointerEvents: phase === 'timeup' ? 'none' : 'auto'
+                            }}
+                        />
+                    </div>
+
+                    {/* Overlays */}
+                    {phase === 'timeup' && <TimeUpOverlay />}
+
+                    {/* Low Time Warning (Only when playing) */}
+                    {phase === 'playing' && timeRemaining <= 10 && timeRemaining > 0 && (
+                        <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
+                            <div className="text-9xl font-pixel text-red-500 opacity-20 animate-ping">
+                                {timeRemaining}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // CONFIRM & INSUFFICIENT PHASES (Standard Modal Content)
         switch (phase) {
             case 'confirm':
                 return (
@@ -143,7 +278,6 @@ export const GameModal: React.FC<GameModalProps> = ({
                         <h3 className="font-pixel text-2xl mb-2 text-indigo-900">{gameName}</h3>
                         <p className="text-indigo-400 text-sm mb-8 font-pixel">準備好開始挑戰了嗎？</p>
 
-                        {/* Price Card */}
                         <div className="bg-white rounded-3xl p-6 mb-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] border-4 border-indigo-100 transform hover:-translate-y-1 transition-transform">
                             <div className="flex items-center justify-center gap-3 mb-2">
                                 <div className="bg-yellow-400 p-2 rounded-2xl shadow-inner">
@@ -154,7 +288,6 @@ export const GameModal: React.FC<GameModalProps> = ({
                             <div className="text-indigo-400 font-pixel text-sm">星幣 / 3分鐘</div>
                         </div>
 
-                        {/* Balance Info */}
                         <div className="flex justify-center gap-8 mb-8 text-sm font-bold">
                             <div className="text-center">
                                 <div className="text-gray-400 text-xs mb-1">目前擁有</div>
@@ -183,118 +316,6 @@ export const GameModal: React.FC<GameModalProps> = ({
                                     <span className="text-lg pt-1">{isProcessing ? '啟動中...' : '開始遊戲!'}</span>
                                 </div>
                             </button>
-                        </div>
-                    </div>
-                );
-
-            case 'playing':
-                return (
-                    <div className="flex flex-col h-[80vh] bg-indigo-50 rounded-xl overflow-hidden relative">
-                        {/* Top HUD */}
-                        <div className="bg-white border-b-4 border-indigo-100 p-3 flex items-center justify-between shadow-sm z-10 shrink-0">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-indigo-100 p-2 rounded-xl">
-                                    <span className="text-2xl">🎮</span>
-                                </div>
-                                <span className="font-pixel text-indigo-900 hidden sm:inline">{gameName}</span>
-                            </div>
-
-                            {/* Timer Capsule */}
-                            <div className="flex items-center gap-3 bg-indigo-900 rounded-full py-2 px-4 shadow-lg transform scale-100 hover:scale-105 transition-transform">
-                                <Clock size={20} className={`${timeRemaining <= 30 ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`} />
-                                <div className="flex flex-col items-start w-16">
-                                    <span className={`font-pixel text-lg leading-none ${timeRemaining <= 30 ? 'text-red-400' : 'text-white'}`}>
-                                        {formatTime(timeRemaining)}
-                                    </span>
-                                </div>
-                                {/* Mini Progress Ring or Bar */}
-                                <div className="w-16 h-2 bg-indigo-800 rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full transition-all duration-1000 ${timeRemaining <= 30 ? 'bg-red-500' : 'bg-yellow-400'
-                                            }`}
-                                        style={{ width: `${progressPercent}%` }}
-                                    />
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={handleEndGame}
-                                className="group p-2 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 text-gray-400 hover:text-red-500"
-                            >
-                                <span className="font-pixel text-xs hidden sm:inline group-hover:opacity-100 opacity-0 transition-opacity">離開遊戲</span>
-                                <StopCircle size={24} />
-                            </button>
-                        </div>
-
-                        {/* Game Area */}
-                        <div className="flex-1 bg-gray-900 relative">
-                            <iframe
-                                ref={iframeRef}
-                                src={gameUrl}
-                                className="w-full h-full border-none"
-                                title={gameName}
-                                allow="fullscreen"
-                                scrolling="no"
-                                style={{
-                                    display: 'block',
-                                }}
-                            />
-                        </div>
-
-                        {/* Low Time Warning Overlay */}
-                        {timeRemaining <= 10 && timeRemaining > 0 && (
-                            <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
-                                <div className="text-9xl font-pixel text-red-500 opacity-20 animate-ping">
-                                    {timeRemaining}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-
-            case 'timeup':
-                return (
-                    <div className="text-center py-8 px-4">
-                        <div className="relative inline-block mb-4">
-                            <div className="text-8xl animate-bounce">⏰</div>
-                            <div className="absolute -bottom-2 w-full h-4 bg-black opacity-10 blur-md rounded-[100%]"></div>
-                        </div>
-
-                        <h3 className="font-pixel text-3xl mb-2 text-indigo-900">時間到囉！</h3>
-                        <p className="text-indigo-400 mb-8 font-pixel">玩得開心嗎？休息一下還是繼續挑戰？</p>
-
-                        <div className="bg-indigo-50 rounded-3xl p-6 mb-8 border-4 border-indigo-100">
-                            <div className="text-sm text-indigo-400 mb-2 font-bold">再玩 3 分鐘只需要</div>
-                            <div className="flex items-center justify-center gap-2">
-                                <Star className="text-yellow-500" fill="currentColor" size={32} />
-                                <span className="font-pixel text-4xl text-indigo-900">{GAME_COST}</span>
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-indigo-200 flex justify-between px-4 text-sm">
-                                <span className="text-indigo-400">目前餘額</span>
-                                <span className="font-pixel text-yellow-600">{starBalance} ⭐</span>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <button onClick={handleEndGame} className={`${btnBase} ${btnSecondary} w-full sm:w-auto`}>
-                                <div className="flex items-center justify-center gap-2">
-                                    <X size={20} />
-                                    <span>結束休息</span>
-                                </div>
-                            </button>
-
-                            {starBalance >= GAME_COST ? (
-                                <button onClick={handleStartGame} disabled={isProcessing} className={`${btnBase} ${btnGreen} w-full sm:w-auto`}>
-                                    <div className="flex items-center justify-center gap-2 px-4">
-                                        <Play size={20} fill="currentColor" />
-                                        <span>繼續玩 ! ({GAME_COST}⭐)</span>
-                                    </div>
-                                </button>
-                            ) : (
-                                <button disabled className={`${btnBase} ${btnSecondary} w-full sm:w-auto opacity-50 cursor-not-allowed`}>
-                                    <span>餘額不足 😢</span>
-                                </button>
-                            )}
                         </div>
                     </div>
                 );
@@ -339,8 +360,8 @@ export const GameModal: React.FC<GameModalProps> = ({
     return (
         <RPGDialog
             isOpen={isOpen}
-            onClose={phase === 'playing' ? undefined : handleEndGame}
-            title={phase === 'playing' ? `🎮 ${gameName}` : '🎮 遊戲付費'}
+            onClose={phase === 'playing' || phase === 'timeup' ? undefined : handleEndGame}
+            title={phase === 'confirm' || phase === 'insufficient' ? '🎮 遊戲付費' : `🎮 ${gameName}`}
         >
             {renderContent()}
         </RPGDialog>
