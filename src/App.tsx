@@ -31,9 +31,49 @@ function AppContent() {
 
   const [view, setView] = useState<'dashboard' | 'control' | 'children' | 'settings' | 'debug'>('dashboard');
 
-  // ... (handlers)
+  // Handler for child selection
+  const handleChildSelected = async (child: Profile) => {
+    await loginAsChild(child.id);
+  };
 
-  // ... (useEffect for midnight refresh)
+  // Handler for parent authentication
+  const handleParentAuth = async () => {
+    await loginAsParent();
+  };
+
+  // Setup automatic refresh at midnight (Taiwan time)
+  useEffect(() => {
+    const scheduleMiddnightRefresh = () => {
+      // Get current time in Taiwan timezone
+      const nowInTaiwan = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+
+      // Calculate next midnight in Taiwan
+      const nextMidnight = new Date(nowInTaiwan);
+      nextMidnight.setHours(24, 0, 0, 0); // Set to next day at 00:00:00
+
+      const msUntilMidnight = nextMidnight.getTime() - nowInTaiwan.getTime();
+
+      console.log(`⏰ Scheduling midnight refresh in ${Math.round(msUntilMidnight / 1000 / 60)} minutes`);
+
+      const timer = setTimeout(() => {
+        console.log('🔄 Midnight refresh triggered - invalidating queries');
+        queryClient.invalidateQueries({ queryKey: ['daily_logs'] });
+        queryClient.invalidateQueries({ queryKey: ['quests'] });
+        queryClient.invalidateQueries({ queryKey: ['total_points'] });
+
+        // Schedule next refresh
+        scheduleMiddnightRefresh();
+      }, msUntilMidnight);
+
+      return timer;
+    };
+
+    const timer = scheduleMiddnightRefresh();
+    return () => {
+      console.log('⏹️ Clearing midnight refresh timer');
+      clearTimeout(timer);
+    };
+  }, []); // Remove queryClient dependency as it's stable
 
   if (loading) {
     // ... loading UI
