@@ -76,25 +76,38 @@ export const GameModal: React.FC<GameModalProps> = ({
     }, [phase]);
 
     // 3. Timer Logic
+    const endTimeRef = useRef<number>(0);
+
     useEffect(() => {
+        console.log('[GameModal] Timer Effect running. Phase:', phase);
         if (phase === 'playing') {
+            // Calculate when the timer should end (Wall clock time)
+            endTimeRef.current = Date.now() + GAME_DURATION_SECONDS * 1000;
+            console.log('[GameModal] Timer started. End time:', new Date(endTimeRef.current).toLocaleTimeString());
+
             timerRef.current = setInterval(() => {
-                setTimeRemaining(prev => {
-                    if (prev <= 0) {
-                        return 0;
+                const now = Date.now();
+                const msRemaining = endTimeRef.current - now;
+                const secondsRemaining = Math.max(0, Math.ceil(msRemaining / 1000));
+
+                // console.log('[GameModal] Tick:', secondsRemaining); // Uncomment for verbose logs
+
+                setTimeRemaining(secondsRemaining);
+
+                if (secondsRemaining <= 0) {
+                    console.log('[GameModal] Time up!');
+                    setPhase('timeup');
+                    if (timerRef.current) {
+                        clearInterval(timerRef.current);
+                        timerRef.current = null;
                     }
-                    const next = prev - 1;
-                    if (next <= 0) {
-                        setPhase('timeup');
-                        return 0;
-                    }
-                    return next;
-                });
-            }, 1000);
+                }
+            }, 500);
         }
 
         return () => {
             if (timerRef.current) {
+                console.log('[GameModal] Clearing timer');
                 clearInterval(timerRef.current);
                 timerRef.current = null;
             }
