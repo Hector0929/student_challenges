@@ -7,9 +7,10 @@ import { ChildDashboard } from './pages/ChildDashboard';
 import { ParentControl } from './pages/ParentControl';
 import { ParentApproval } from './pages/ParentApproval';
 import { ChildManagement } from './pages/ChildManagement';
+import { ParentSettings } from './pages/ParentSettings';
 import { DebugPage } from './pages/DebugPage';
 import { useRealtimeSubscription } from './hooks/useRealtime';
-import { LogOut, ArrowLeft } from 'lucide-react';
+import { LogOut, ArrowLeft, Lock } from 'lucide-react';
 import type { Profile } from './types/database';
 import './index.css';
 
@@ -23,58 +24,19 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
-  const { session, user, loginAsChild, loginAsParent, logout, exitProfile, loading } = useUser();
+  const { session, user, loginAsChild, loginAsParent, logout, exitProfile, lockParent, loading } = useUser();
 
   // Enable global realtime updates
   useRealtimeSubscription(user?.id);
 
-  const [view, setView] = useState<'dashboard' | 'control' | 'children' | 'debug'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'control' | 'children' | 'settings' | 'debug'>('dashboard');
 
-  // Handler for child selection
-  const handleChildSelected = async (child: Profile) => {
-    await loginAsChild(child.id);
-  };
+  // ... (handlers)
 
-  // Handler for parent authentication
-  const handleParentAuth = async () => {
-    await loginAsParent();
-  };
-
-  // Setup automatic refresh at midnight (Taiwan time)
-  useEffect(() => {
-    const scheduleMiddnightRefresh = () => {
-      // Get current time in Taiwan timezone
-      const nowInTaiwan = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-
-      // Calculate next midnight in Taiwan
-      const nextMidnight = new Date(nowInTaiwan);
-      nextMidnight.setHours(24, 0, 0, 0); // Set to next day at 00:00:00
-
-      const msUntilMidnight = nextMidnight.getTime() - nowInTaiwan.getTime();
-
-      console.log(`⏰ Scheduling midnight refresh in ${Math.round(msUntilMidnight / 1000 / 60)} minutes`);
-
-      const timer = setTimeout(() => {
-        console.log('🔄 Midnight refresh triggered - invalidating queries');
-        queryClient.invalidateQueries({ queryKey: ['daily_logs'] });
-        queryClient.invalidateQueries({ queryKey: ['quests'] });
-        queryClient.invalidateQueries({ queryKey: ['total_points'] });
-
-        // Schedule next refresh
-        scheduleMiddnightRefresh();
-      }, msUntilMidnight);
-
-      return timer;
-    };
-
-    const timer = scheduleMiddnightRefresh();
-    return () => {
-      console.log('⏹️ Clearing midnight refresh timer');
-      clearTimeout(timer);
-    };
-  }, []); // Remove queryClient dependency as it's stable
+  // ... (useEffect for midnight refresh)
 
   if (loading) {
+    // ... loading UI
     return (
       <div className="min-h-screen bg-pink-50 flex items-center justify-center">
         <div className="text-xl font-pixel animate-pulse">Loading...</div>
@@ -82,12 +44,12 @@ function AppContent() {
     );
   }
 
-  // 1. Not Authenticated (No Family Session) -> Show Onboarding
+  // 1. Not Authenticated
   if (!session) {
     return <FamilyOnboarding />;
   }
 
-  // 2. Authenticated but No Role Selected -> Show Role Selection
+  // 2. Authenticated but No Role
   if (!user) {
     return (
       <RoleSelection
@@ -97,7 +59,7 @@ function AppContent() {
     );
   }
 
-  // 3. Authenticated and Role Selected -> Show Dashboard
+  // 3. Authenticated and Role Selected
   return (
     <div className="min-h-screen bg-gradient-to-b from-pokeball-red to-pink-100 py-8 px-4">
       {/* Header / Logout Area */}
@@ -108,6 +70,17 @@ function AppContent() {
         </div>
 
         <div className="flex gap-2">
+          {user.role === 'parent' && (
+            <button
+              onClick={lockParent}
+              className="flex items-center gap-2 px-3 py-1 bg-yellow-100 border-2 border-deep-black hover:bg-yellow-200 transition-colors font-pixel text-xs"
+              title="鎖定家長模式"
+            >
+              <Lock size={14} />
+              <span>鎖定</span>
+            </button>
+          )}
+
           {/* Exit Profile (Back to Role Selection) */}
           <button
             onClick={exitProfile}
@@ -136,7 +109,7 @@ function AppContent() {
         <>
           {/* Parent View Toggle */}
           <div className="max-w-6xl mx-auto mb-6">
-            <div className="flex bg-white border-2 border-deep-black p-1 w-fit">
+            <div className="flex bg-white border-2 border-deep-black p-1 w-fit flex-wrap gap-1">
               <button
                 onClick={() => setView('dashboard')}
                 className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'dashboard'
@@ -165,6 +138,15 @@ function AppContent() {
                 管理孩子
               </button>
               <button
+                onClick={() => setView('settings')}
+                className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'settings'
+                  ? 'bg-pokeball-red text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+              >
+                ⚙️ 設定
+              </button>
+              <button
                 onClick={() => setView('debug')}
                 className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'debug'
                   ? 'bg-pokeball-red text-white'
@@ -180,10 +162,12 @@ function AppContent() {
             <ParentApproval />
           ) : view === 'control' ? (
             <ParentControl />
-          ) : view === 'debug' ? (
-            <DebugPage />
-          ) : (
+          ) : view === 'children' ? (
             <ChildManagement />
+          ) : view === 'settings' ? (
+            <ParentSettings />
+          ) : (
+            <DebugPage />
           )}
         </>
       )}

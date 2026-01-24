@@ -13,6 +13,7 @@ interface UserContextType {
     loginAsParent: (pin?: string) => Promise<void>;
     logout: () => Promise<void>; // Logout from Auth (Family transaction)
     exitProfile: () => void; // Go back to Role Selection
+    lockParent: () => void; // Lock parent mode (require PIN next time)
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -195,6 +196,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
     };
 
+    const lockParent = () => {
+        sessionStorage.removeItem('parent-auth');
+        setUser(null);
+    };
+
     return (
         <UserContext.Provider value={{
             session,
@@ -205,7 +211,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             loginAsChild,
             loginAsParent,
             logout,
-            exitProfile
+            exitProfile,
+            lockParent
         }}>
             {children}
         </UserContext.Provider>
