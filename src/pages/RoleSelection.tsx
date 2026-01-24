@@ -11,7 +11,10 @@ interface RoleSelectionProps {
     onParentAuthenticated: () => void;
 }
 
+import { useUser } from '../contexts/UserContext';
+
 export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, onParentAuthenticated }) => {
+    const { loginAsParent } = useUser();
     const [showParentDialog, setShowParentDialog] = useState(false);
     const [parentPassword, setParentPassword] = useState('');
     const [error, setError] = useState('');
@@ -44,23 +47,17 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
         }
     };
 
-    const handleParentLogin = (e: React.FormEvent) => {
+    const handleParentLogin = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const correctPassword = import.meta.env.VITE_PARENT_PASSWORD;
-
-        if (!correctPassword) {
-            setError('系統未設定家長密碼，請聯絡管理員');
-            return;
-        }
-
-        if (parentPassword === correctPassword) {
-            // Set parent auth flag in sessionStorage
+        try {
+            await loginAsParent(parentPassword); // Using parentPassword state for PIN input
+            // Set parent auth flag in sessionStorage if successful
             sessionStorage.setItem('parent-auth', 'verified');
             setShowParentDialog(false);
             onParentAuthenticated();
-        } else {
-            setError('密碼錯誤，請重試');
+        } catch (err) {
+            // Error handling is done in UserContext, but we can clear input here
             setParentPassword('');
         }
     };
@@ -147,14 +144,19 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                         <div className="relative">
                             <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                             <input
-                                type="password"
+                                type="tel"
+                                pattern="[0-9]*"
+                                inputMode="numeric"
+                                maxLength={4}
                                 value={parentPassword}
                                 onChange={(e) => {
-                                    setParentPassword(e.target.value);
+                                    // Only allow numbers
+                                    const val = e.target.value.replace(/\D/g, '');
+                                    setParentPassword(val);
                                     setError('');
                                 }}
-                                className="w-full pl-12 pr-4 py-3 border-2 border-deep-black text-sm"
-                                placeholder="輸入家長密碼"
+                                className="w-full pl-12 pr-4 py-3 border-2 border-deep-black text-sm tracking-widest text-center text-2xl font-pixel"
+                                placeholder="請輸入4位數 PIN 碼"
                                 autoFocus
                                 required
                             />

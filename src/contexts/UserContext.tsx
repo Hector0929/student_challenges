@@ -10,7 +10,7 @@ interface UserContextType {
     setUser: (user: Profile | null) => void;
     registerUser: (userData: Omit<Profile, 'id' | 'created_at' | 'family_id'>) => Promise<void>;
     loginAsChild: (childId: string) => Promise<void>;
-    loginAsParent: () => Promise<void>;
+    loginAsParent: (pin?: string) => Promise<void>;
     logout: () => Promise<void>; // Logout from Auth (Family transaction)
     exitProfile: () => void; // Go back to Role Selection
 }
@@ -152,7 +152,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const loginAsParent = async () => {
+    const loginAsParent = async (pin?: string) => {
         if (!session) return;
         try {
             // Ideally, open a dialog to choose *which* parent if there are multiple.
@@ -162,15 +162,25 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 .from('profiles')
                 .select('*')
                 .eq('id', session.user.id) // Get the profile matching the Auth User
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
             if (data) {
+                // If the user has a PIN set, verify it
+                if (data.pin_code && data.pin_code !== pin) {
+                    throw new Error('PIN 碼錯誤');
+                }
                 setUser(data);
+            } else {
+                // Profile not found - this should be rare if triggers work
+                // Attempt recovery or just error out
+                console.error('Profile not found for authenticated user');
+                throw new Error('找不到家長檔案，請重新註冊');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('家長登入失敗:', error);
-            alert('登入失敗，請重試');
+            alert(error.message || '登入失敗，請重試');
+            throw error; // Re-throw so UI knows it failed
         }
     };
 
