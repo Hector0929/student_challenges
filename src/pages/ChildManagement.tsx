@@ -1,47 +1,27 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, X, Save } from 'lucide-react';
-import { RPGButton } from '../components/RPGButton';
-import { RPGDialog } from '../components/RPGDialog';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../lib/supabase';
-import type { Profile } from '../types/database';
+import { useUser } from '../contexts/UserContext';
+// ... imports
 
 export const ChildManagement: React.FC = () => {
+    const { user } = useUser();
     const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [formData, setFormData] = useState({
-        name: '',
-        student_id: '',
-        avatar_url: '👦'
-    });
+    // ...
 
-    const commonEmojis = ['👦', '👧', '🧒', '👶', '🦸', '🦹', '🧙', '🧚', '🐱', '🐶', '🦁', '🐻', '🐼', '🦊'];
-
-    // Fetch all children
-    const { data: children, isLoading } = useQuery({
-        queryKey: ['children'],
-        queryFn: async () => {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('role', 'child')
-                .order('name');
-
-            if (error) throw error;
-            return data as Profile[];
-        },
-    });
+    // ... useQuery ...
 
     // Create child mutation
     const createChildMutation = useMutation({
         mutationFn: async (childData: { name: string; student_id: string; avatar_url: string }) => {
+            if (!user?.family_id) throw new Error('無法取得家庭資訊');
+
             const { data, error } = await supabase
                 .from('profiles')
                 .insert({
                     role: 'child',
                     name: childData.name,
                     student_id: childData.student_id,
-                    avatar_url: childData.avatar_url
+                    avatar_url: childData.avatar_url,
+                    family_id: user.family_id // Link to current family
                 })
                 .select()
                 .single();

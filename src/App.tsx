@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { UserProvider, useUser } from './contexts/UserContext';
-import { FamilyPasswordGuard } from './pages/FamilyPasswordGuard';
+import { FamilyOnboarding } from './pages/FamilyOnboarding';
 import { RoleSelection } from './pages/RoleSelection';
 import { ChildDashboard } from './pages/ChildDashboard';
 import { ParentControl } from './pages/ParentControl';
@@ -9,7 +9,7 @@ import { ParentApproval } from './pages/ParentApproval';
 import { ChildManagement } from './pages/ChildManagement';
 import { DebugPage } from './pages/DebugPage';
 import { useRealtimeSubscription } from './hooks/useRealtime';
-import { LogOut } from 'lucide-react';
+import { LogOut, ArrowLeft } from 'lucide-react';
 import type { Profile } from './types/database';
 import './index.css';
 
@@ -23,24 +23,12 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
-  const { user, loginAsChild, loginAsParent, logout, logoutParent } = useUser();
+  const { session, user, loginAsChild, loginAsParent, logout, exitProfile, loading } = useUser();
 
   // Enable global realtime updates
   useRealtimeSubscription(user?.id);
 
-  const [isFamilyAuthenticated, setIsFamilyAuthenticated] = useState(false);
   const [view, setView] = useState<'dashboard' | 'control' | 'children' | 'debug'>('dashboard');
-
-  // Check family authentication on mount
-  useEffect(() => {
-    const familyAuth = sessionStorage.getItem('family-auth');
-    setIsFamilyAuthenticated(familyAuth === 'verified');
-  }, []);
-
-  // Handler for family password success
-  const handleFamilyAuth = () => {
-    setIsFamilyAuthenticated(true);
-  };
 
   // Handler for child selection
   const handleChildSelected = async (child: Profile) => {
@@ -50,17 +38,6 @@ function AppContent() {
   // Handler for parent authentication
   const handleParentAuth = async () => {
     await loginAsParent();
-  };
-
-  // Handler for logout
-  const handleLogout = () => {
-    logout();
-    // Don't clear family auth - they can still select another role
-  };
-
-  // Handler for parent logout
-  const handleLogoutParent = () => {
-    logoutParent();
   };
 
   // Setup automatic refresh at midnight (Taiwan time)
@@ -95,14 +72,22 @@ function AppContent() {
       console.log('⏹️ Clearing midnight refresh timer');
       clearTimeout(timer);
     };
-  }, [queryClient]);
+  }, []); // Remove queryClient dependency as it's stable
 
-  // Render family password guard if not authenticated
-  if (!isFamilyAuthenticated) {
-    return <FamilyPasswordGuard onAuthenticated={handleFamilyAuth} />;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-pink-50 flex items-center justify-center">
+        <div className="text-xl font-pixel animate-pulse">Loading...</div>
+      </div>
+    );
   }
 
-  // Render role selection if authenticated but no user selected
+  // 1. Not Authenticated (No Family Session) -> Show Onboarding
+  if (!session) {
+    return <FamilyOnboarding />;
+  }
+
+  // 2. Authenticated but No Role Selected -> Show Role Selection
   if (!user) {
     return (
       <RoleSelection
@@ -112,29 +97,37 @@ function AppContent() {
     );
   }
 
-  // Render based on user role
+  // 3. Authenticated and Role Selected -> Show Dashboard
   return (
     <div className="min-h-screen bg-gradient-to-b from-pokeball-red to-pink-100 py-8 px-4">
-      {/* Logout Button */}
-      <div className="max-w-6xl mx-auto mb-4 flex justify-end gap-2">
-        {user.role === 'parent' && (
+      {/* Header / Logout Area */}
+      <div className="max-w-6xl mx-auto mb-4 flex justify-between items-center bg-white/80 p-2 rounded-lg border-2 border-deep-black">
+        <div className="font-pixel text-sm">
+          {/* Current User Info */}
+          👤 {user.name} ({user.role === 'parent' ? '家長' : '小小冒險家'})
+        </div>
+
+        <div className="flex gap-2">
+          {/* Exit Profile (Back to Role Selection) */}
           <button
-            onClick={handleLogoutParent}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white border-2 border-deep-black hover:bg-red-600 transition-colors font-pixel text-xs"
-            title="登出家長"
+            onClick={exitProfile}
+            className="flex items-center gap-2 px-3 py-1 bg-white border-2 border-deep-black hover:bg-gray-100 transition-colors font-pixel text-xs"
+            title="切換角色"
           >
-            <LogOut size={16} />
-            <span>登出家長</span>
+            <ArrowLeft size={14} />
+            <span>切換角色</span>
           </button>
-        )}
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-deep-black hover:bg-gray-100 transition-colors font-pixel text-xs"
-          title="切換角色"
-        >
-          <LogOut size={16} />
-          <span>切換角色</span>
-        </button>
+
+          {/* Logout (Sign out from Family) */}
+          <button
+            onClick={() => logout()}
+            className="flex items-center gap-2 px-3 py-1 bg-red-100 border-2 border-deep-black hover:bg-red-200 transition-colors font-pixel text-xs text-red-600"
+            title="登出家庭"
+          >
+            <LogOut size={14} />
+            <span>登出家庭</span>
+          </button>
+        </div>
       </div>
 
       {user.role === 'child' ? (

@@ -1,5 +1,13 @@
 // Database type definitions
 
+export interface Family {
+    id: string;
+    name: string;
+    invite_code: string;
+    created_by?: string;
+    created_at: string;
+}
+
 export interface Profile {
     id: string;
     role: 'parent' | 'child';
@@ -7,6 +15,10 @@ export interface Profile {
     student_id?: string;
     avatar_url?: string;
     parent_id?: string;
+    family_id?: string;
+    pin_code?: string; // Hashed/Encrypted ideally, but frontend might just send it
+    line_user_id?: string;
+    is_family_admin?: boolean;
     created_at: string;
 }
 
