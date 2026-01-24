@@ -153,30 +153,42 @@ export const GameModal: React.FC<GameModalProps> = ({
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const hasInitialized = useRef(false);
     const endTimeRef = useRef<number>(0);
+    const starBalanceRef = useRef(starBalance);
 
-    // 1. Body Scroll Lock & Phase Reset
+    // Keep ref in sync
+    useEffect(() => {
+        starBalanceRef.current = starBalance;
+    }, [starBalance]);
+
+    // 1. Body Scroll Lock & Phase Reset (Logic Cleanup Fix)
+    // Removed starBalance from dependencies to prevent unintended timer cleanup on balance updates
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
             if (!hasInitialized.current) {
                 hasInitialized.current = true;
                 setTimeRemaining(GAME_DURATION_SECONDS);
-                setPhase(starBalance < GAME_COST ? 'insufficient' : 'confirm');
+                // Use ref for initial check to avoid dependency cycle
+                setPhase(starBalanceRef.current < GAME_COST ? 'insufficient' : 'confirm');
             }
         } else {
             document.body.style.overflow = 'unset';
             hasInitialized.current = false;
             setPhase('confirm');
             if (timerRef.current) {
+                console.log('[GameModal] Closing modal, clearing timer');
                 clearInterval(timerRef.current);
                 timerRef.current = null;
             }
         }
         return () => {
             document.body.style.overflow = 'unset';
-            if (timerRef.current) clearInterval(timerRef.current);
+            if (timerRef.current) {
+                console.log('[GameModal] Unmounting, clearing timer');
+                clearInterval(timerRef.current);
+            }
         };
-    }, [isOpen, starBalance]);
+    }, [isOpen]);
 
     // 2. Focus Management
     useEffect(() => {
@@ -189,7 +201,7 @@ export const GameModal: React.FC<GameModalProps> = ({
 
     // 3. Timer Logic (Wall-clock)
     useEffect(() => {
-        console.log('[GameModal] Phase changed to:', phase);
+        console.log('[GameModal] Timer Effect running. Phase:', phase);
         if (phase === 'playing') {
             endTimeRef.current = Date.now() + GAME_DURATION_SECONDS * 1000;
             console.log('[GameModal] Timer started. Ends at:', new Date(endTimeRef.current).toLocaleTimeString());
@@ -214,6 +226,7 @@ export const GameModal: React.FC<GameModalProps> = ({
 
         return () => {
             if (timerRef.current) {
+                console.log('[GameModal] Phase change/cleanup, clearing timer');
                 clearInterval(timerRef.current);
                 timerRef.current = null;
             }
@@ -232,8 +245,6 @@ export const GameModal: React.FC<GameModalProps> = ({
         try {
             const success = await onSpendStars();
             if (success) {
-                /* Important: We set phase to 'playing', which triggers the Timer useEffect.
-                   We also reset timeRemaining for immediate visual feedback */
                 setTimeRemaining(GAME_DURATION_SECONDS);
                 setPhase('playing');
                 onRefreshBalance();
