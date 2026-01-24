@@ -11,156 +11,36 @@ interface GameModalProps {
     gameId: string;
     userId: string;
     starBalance: number;
-    onSpendStars: () => Promise<boolean>;  // Returns true if successful
+    onSpendStars: () => Promise<boolean>;
     onRefreshBalance: () => void;
 }
 
 type GamePhase = 'confirm' | 'playing' | 'timeup' | 'insufficient';
 
-export const GameModal: React.FC<GameModalProps> = ({
-    isOpen,
-    onClose,
-    gameUrl,
+// Helper Components (Extracted to prevent re-mounting)
+const btnBase = "px-6 py-3 font-pixel text-sm rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_0_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-1";
+const btnPrimary = "bg-indigo-500 hover:bg-indigo-600 text-white";
+const btnSecondary = "bg-white text-indigo-900 border-2 border-indigo-100 hover:bg-indigo-50";
+const btnGreen = "bg-green-500 hover:bg-green-600 text-white";
+
+const TopHUD = ({
     gameName,
-    gameId: _gameId,
-    userId: _userId,
-    starBalance,
-    onSpendStars,
-    onRefreshBalance
+    timeRemaining,
+    progressPercent,
+    onEndGame
+}: {
+    gameName: string;
+    timeRemaining: number;
+    progressPercent: number;
+    onEndGame: () => void;
 }) => {
-    const [phase, setPhase] = useState<GamePhase>('confirm');
-    const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION_SECONDS);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const iframeRef = useRef<HTMLIFrameElement>(null);
-    const hasInitialized = useRef(false);
-
-    // 1. Body Scroll Lock & Phase Reset
-    useEffect(() => {
-        if (isOpen) {
-            // Prevent background scrolling
-            document.body.style.overflow = 'hidden';
-
-            if (!hasInitialized.current) {
-                hasInitialized.current = true;
-                setTimeRemaining(GAME_DURATION_SECONDS);
-                setPhase(starBalance < GAME_COST ? 'insufficient' : 'confirm');
-            }
-        } else {
-            // Restore background scrolling
-            document.body.style.overflow = 'unset';
-
-            hasInitialized.current = false;
-            setPhase('confirm');
-            if (timerRef.current) {
-                clearInterval(timerRef.current);
-                timerRef.current = null;
-            }
-        }
-
-        // Cleanup on unmount
-        return () => {
-            document.body.style.overflow = 'unset';
-            if (timerRef.current) clearInterval(timerRef.current);
-        };
-    }, [isOpen, starBalance]);
-
-    // 2. Focus Management - focus iframe when playing starts
-    useEffect(() => {
-        if (phase === 'playing' && iframeRef.current) {
-            // Include a small delay to ensure render is complete
-            setTimeout(() => {
-                iframeRef.current?.focus();
-            }, 100);
-        }
-    }, [phase]);
-
-    // 3. Timer Logic
-    const endTimeRef = useRef<number>(0);
-
-    useEffect(() => {
-        console.log('[GameModal] Timer Effect running. Phase:', phase);
-        if (phase === 'playing') {
-            // Calculate when the timer should end (Wall clock time)
-            endTimeRef.current = Date.now() + GAME_DURATION_SECONDS * 1000;
-            console.log('[GameModal] Timer started. End time:', new Date(endTimeRef.current).toLocaleTimeString());
-
-            timerRef.current = setInterval(() => {
-                const now = Date.now();
-                const msRemaining = endTimeRef.current - now;
-                const secondsRemaining = Math.max(0, Math.ceil(msRemaining / 1000));
-
-                // console.log('[GameModal] Tick:', secondsRemaining); // Uncomment for verbose logs
-
-                setTimeRemaining(secondsRemaining);
-
-                if (secondsRemaining <= 0) {
-                    console.log('[GameModal] Time up!');
-                    setPhase('timeup');
-                    if (timerRef.current) {
-                        clearInterval(timerRef.current);
-                        timerRef.current = null;
-                    }
-                }
-            }, 500);
-        }
-
-        return () => {
-            if (timerRef.current) {
-                console.log('[GameModal] Clearing timer');
-                clearInterval(timerRef.current);
-                timerRef.current = null;
-            }
-        };
-    }, [phase]);
-
     const formatTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const progressPercent = (timeRemaining / GAME_DURATION_SECONDS) * 100;
-
-    const handleStartGame = async () => {
-        if (starBalance < GAME_COST) {
-            setPhase('insufficient');
-            return;
-        }
-
-        setIsProcessing(true);
-        try {
-            const success = await onSpendStars();
-            if (success) {
-                setTimeRemaining(GAME_DURATION_SECONDS);
-                setPhase('playing');
-                onRefreshBalance();
-            } else {
-                setPhase('insufficient');
-            }
-        } catch (error) {
-            console.error('Failed to spend stars:', error);
-            alert('扣除星幣失敗，請重試');
-        } finally {
-            setIsProcessing(false);
-        }
-    };
-
-    const handleEndGame = () => {
-        if (timerRef.current) {
-            clearInterval(timerRef.current);
-        }
-        onClose();
-    };
-
-    // Button Styles
-    const btnBase = "px-6 py-3 font-pixel text-sm rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_0_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-1";
-    const btnPrimary = "bg-indigo-500 hover:bg-indigo-600 text-white";
-    const btnSecondary = "bg-white text-indigo-900 border-2 border-indigo-100 hover:bg-indigo-50";
-    const btnGreen = "bg-green-500 hover:bg-green-600 text-white";
-
-    // Sub-components for cleaner render
-    const TopHUD = () => (
+    return (
         <div className="bg-white border-b-4 border-indigo-100 p-3 flex items-center justify-between shadow-sm z-10 shrink-0">
             <div className="flex items-center gap-3">
                 <div className="bg-indigo-100 p-2 rounded-xl">
@@ -178,15 +58,14 @@ export const GameModal: React.FC<GameModalProps> = ({
                 </div>
                 <div className="w-16 h-2 bg-indigo-800 rounded-full overflow-hidden">
                     <div
-                        className={`h-full transition-all duration-1000 ${timeRemaining <= 30 ? 'bg-red-500' : 'bg-yellow-400'
-                            }`}
+                        className={`h-full transition-all duration-1000 ${timeRemaining <= 30 ? 'bg-red-500' : 'bg-yellow-400'}`}
                         style={{ width: `${progressPercent}%` }}
                     />
                 </div>
             </div>
 
             <button
-                onClick={handleEndGame}
+                onClick={onEndGame}
                 className="group p-2 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 text-gray-400 hover:text-red-500"
             >
                 <span className="font-pixel text-xs hidden sm:inline group-hover:opacity-100 opacity-0 transition-opacity">離開遊戲</span>
@@ -194,8 +73,20 @@ export const GameModal: React.FC<GameModalProps> = ({
             </button>
         </div>
     );
+};
 
-    const TimeUpOverlay = () => (
+const TimeUpOverlay = ({
+    starBalance,
+    onEndGame,
+    onStartGame,
+    isProcessing
+}: {
+    starBalance: number;
+    onEndGame: () => void;
+    onStartGame: () => void;
+    isProcessing: boolean;
+}) => {
+    return (
         <div className="absolute inset-0 z-50 bg-indigo-900/90 backdrop-blur-sm flex items-center justify-center animate-fade-in">
             <div className="text-center p-8 bg-white rounded-3xl shadow-2xl border-4 border-indigo-200 max-w-lg w-full mx-4 animate-bounce-in">
                 <div className="relative inline-block mb-4">
@@ -219,7 +110,7 @@ export const GameModal: React.FC<GameModalProps> = ({
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button onClick={handleEndGame} className={`${btnBase} ${btnSecondary} w-full sm:w-auto`}>
+                    <button onClick={onEndGame} className={`${btnBase} ${btnSecondary} w-full sm:w-auto`}>
                         <div className="flex items-center justify-center gap-2">
                             <X size={20} />
                             <span>結束休息</span>
@@ -227,7 +118,7 @@ export const GameModal: React.FC<GameModalProps> = ({
                     </button>
 
                     {starBalance >= GAME_COST ? (
-                        <button onClick={handleStartGame} disabled={isProcessing} className={`${btnBase} ${btnGreen} w-full sm:w-auto`}>
+                        <button onClick={onStartGame} disabled={isProcessing} className={`${btnBase} ${btnGreen} w-full sm:w-auto`}>
                             <div className="flex items-center justify-center gap-2 px-4">
                                 <Play size={20} fill="currentColor" />
                                 <span className="text-lg">繼續玩 !</span>
@@ -242,13 +133,138 @@ export const GameModal: React.FC<GameModalProps> = ({
             </div>
         </div>
     );
+};
+
+export const GameModal: React.FC<GameModalProps> = ({
+    isOpen,
+    onClose,
+    gameUrl,
+    gameName,
+    gameId: _gameId,
+    userId: _userId,
+    starBalance,
+    onSpendStars,
+    onRefreshBalance
+}) => {
+    const [phase, setPhase] = useState<GamePhase>('confirm');
+    const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION_SECONDS);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+    const hasInitialized = useRef(false);
+    const endTimeRef = useRef<number>(0);
+
+    // 1. Body Scroll Lock & Phase Reset
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+            if (!hasInitialized.current) {
+                hasInitialized.current = true;
+                setTimeRemaining(GAME_DURATION_SECONDS);
+                setPhase(starBalance < GAME_COST ? 'insufficient' : 'confirm');
+            }
+        } else {
+            document.body.style.overflow = 'unset';
+            hasInitialized.current = false;
+            setPhase('confirm');
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, [isOpen, starBalance]);
+
+    // 2. Focus Management
+    useEffect(() => {
+        if (phase === 'playing' && iframeRef.current) {
+            setTimeout(() => {
+                iframeRef.current?.focus();
+            }, 100);
+        }
+    }, [phase]);
+
+    // 3. Timer Logic (Wall-clock)
+    useEffect(() => {
+        console.log('[GameModal] Phase changed to:', phase);
+        if (phase === 'playing') {
+            endTimeRef.current = Date.now() + GAME_DURATION_SECONDS * 1000;
+            console.log('[GameModal] Timer started. Ends at:', new Date(endTimeRef.current).toLocaleTimeString());
+
+            timerRef.current = setInterval(() => {
+                const now = Date.now();
+                const msRemaining = endTimeRef.current - now;
+                const secondsRemaining = Math.max(0, Math.ceil(msRemaining / 1000));
+
+                setTimeRemaining(secondsRemaining);
+
+                if (secondsRemaining <= 0) {
+                    console.log('[GameModal] Time up!');
+                    setPhase('timeup');
+                    if (timerRef.current) {
+                        clearInterval(timerRef.current);
+                        timerRef.current = null;
+                    }
+                }
+            }, 500);
+        }
+
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+        };
+    }, [phase]);
+
+    const progressPercent = (timeRemaining / GAME_DURATION_SECONDS) * 100;
+
+    const handleStartGame = async () => {
+        if (starBalance < GAME_COST) {
+            setPhase('insufficient');
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            const success = await onSpendStars();
+            if (success) {
+                /* Important: We set phase to 'playing', which triggers the Timer useEffect.
+                   We also reset timeRemaining for immediate visual feedback */
+                setTimeRemaining(GAME_DURATION_SECONDS);
+                setPhase('playing');
+                onRefreshBalance();
+            } else {
+                setPhase('insufficient');
+            }
+        } catch (error) {
+            console.error('Failed to spend stars:', error);
+            alert('扣除星幣失敗，請重試');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleEndGame = () => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+        }
+        onClose();
+    };
 
     const renderContent = () => {
-        // Condition to render Game Area: playing OR timeup (because we want to keep iframe mounted)
         if (phase === 'playing' || phase === 'timeup') {
             return (
                 <div className="flex flex-col h-[80vh] bg-indigo-50 rounded-xl overflow-hidden relative">
-                    <TopHUD />
+                    <TopHUD
+                        gameName={gameName}
+                        timeRemaining={timeRemaining}
+                        progressPercent={progressPercent}
+                        onEndGame={handleEndGame}
+                    />
 
                     {/* Game Area */}
                     <div className="flex-1 bg-gray-900 relative">
@@ -258,7 +274,6 @@ export const GameModal: React.FC<GameModalProps> = ({
                             className="w-full h-full border-none"
                             title={gameName}
                             allow="fullscreen"
-                            // Important: disable pointer events when timeup to prevent interaction
                             style={{
                                 display: 'block',
                                 pointerEvents: phase === 'timeup' ? 'none' : 'auto'
@@ -267,9 +282,16 @@ export const GameModal: React.FC<GameModalProps> = ({
                     </div>
 
                     {/* Overlays */}
-                    {phase === 'timeup' && <TimeUpOverlay />}
+                    {phase === 'timeup' && (
+                        <TimeUpOverlay
+                            starBalance={starBalance}
+                            onEndGame={handleEndGame}
+                            onStartGame={handleStartGame}
+                            isProcessing={isProcessing}
+                        />
+                    )}
 
-                    {/* Low Time Warning (Only when playing) */}
+                    {/* Low Time Warning */}
                     {phase === 'playing' && timeRemaining <= 10 && timeRemaining > 0 && (
                         <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
                             <div className="text-9xl font-pixel text-red-500 opacity-20 animate-ping">
@@ -281,7 +303,6 @@ export const GameModal: React.FC<GameModalProps> = ({
             );
         }
 
-        // CONFIRM & INSUFFICIENT PHASES (Standard Modal Content)
         switch (phase) {
             case 'confirm':
                 return (
