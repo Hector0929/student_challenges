@@ -41,48 +41,35 @@ export const FamilyOnboarding: React.FC = () => {
 
         try {
             // 1. Sign Up User (Parent/Family Admin)
+            // Pass family_name and name in metadata to trigger Profile/Family creation on server
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email,
                 password,
+                options: {
+                    data: {
+                        name: '家長 (Admin)', // Default name or could add input for it
+                        family_name: familyName
+                    }
+                }
             });
 
             if (authError) throw authError;
-            if (!authData.user) throw new Error('註冊失敗');
 
-            // 2. Create Family Record
-            const { data: familyData, error: familyError } = await supabase
-                .from('families')
-                .insert({
-                    name: familyName,
-                    created_by: authData.user.id
-                })
-                .select()
-                .single();
-
-            if (familyError) throw familyError;
-
-            // 3. Create Initial Parent Profile
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .insert({
-                    id: authData.user.id, // Link profile ID to Auth ID for the main parent
-                    role: 'parent',
-                    name: '家長 (Admin)',
-                    avatar_url: '👨‍👩‍👧‍👦',
-                    family_id: familyData.id,
-                    is_family_admin: true
-                });
-
-            if (profileError) {
-                // Succeeded auth but failed profile? Ideally rollback or handle manually, 
-                // but for now just alert.
-                console.error('Profile creation failed:', profileError);
-                throw profileError;
+            // Check if email confirmation is required (session might be null)
+            if (authData.user && !authData.session) {
+                alert('註冊成功！請檢查您的 Email 信箱並點擊驗證連結。');
+                setMode('login'); // Switch to login mode
+            } else if (authData.user && authData.session) {
+                // Auto logged in
+                // The trigger ensures profile is created.
+                // Re-fetch session to ensure context updates might be needed? 
+                // Context listens to onAuthStateChange so it should auto-update.
+            } else {
+                throw new Error('註冊失敗，請重試');
             }
 
-            // Auto-login happens by default with signUp on Supabase unless email confirm is on.
-
         } catch (err: any) {
+            console.error('Registration error:', err);
             setError(err.message || '註冊失敗');
         } finally {
             setLoading(false);
