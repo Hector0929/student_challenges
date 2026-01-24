@@ -1,13 +1,38 @@
+import React, { useState } from 'react';
+import { Plus, Trash2, X, Save } from 'lucide-react';
+import { RPGButton } from '../components/RPGButton';
+import { RPGDialog } from '../components/RPGDialog';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../lib/supabase';
+import type { Profile } from '../types/database';
 import { useUser } from '../contexts/UserContext';
-// ... imports
 
 export const ChildManagement: React.FC = () => {
     const { user } = useUser();
     const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    // ...
+    const [formData, setFormData] = useState({
+        name: '',
+        student_id: '',
+        avatar_url: '👦'
+    });
 
-    // ... useQuery ...
+    const commonEmojis = ['👦', '👧', '🧒', '👶', '🦸', '🦹', '🧙', '🧚', '🐱', '🐶', '🦁', '🐻', '🐼', '🦊'];
+
+    // Fetch all children
+    const { data: children, isLoading } = useQuery({
+        queryKey: ['children'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('role', 'child')
+                .order('name');
+
+            if (error) throw error;
+            return data as Profile[];
+        },
+    });
 
     // Create child mutation
     const createChildMutation = useMutation({
