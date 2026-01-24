@@ -22,6 +22,14 @@ interface Game {
 
 const GAMES: Game[] = [
     {
+        id: 'parkour',
+        name: '方塊衝刺',
+        icon: '🔲',
+        description: '節奏跑酷挑戰',
+        url: '/games/parkour_game.html',
+        color: 'bg-violet-500 hover:bg-violet-600'
+    },
+    {
         id: 'spelling',
         name: '單字召喚術',
         icon: '🅰️',

@@ -77,24 +77,29 @@ export const GameModal: React.FC<GameModalProps> = ({
 
     // 3. Timer Logic
     useEffect(() => {
-        if (phase === 'playing' && timeRemaining > 0) {
+        if (phase === 'playing') {
             timerRef.current = setInterval(() => {
                 setTimeRemaining(prev => {
-                    if (prev <= 1) {
+                    if (prev <= 0) {
+                        return 0;
+                    }
+                    const next = prev - 1;
+                    if (next <= 0) {
                         setPhase('timeup');
                         return 0;
                     }
-                    return prev - 1;
+                    return next;
                 });
             }, 1000);
-
-            return () => {
-                if (timerRef.current) {
-                    clearInterval(timerRef.current);
-                }
-            };
         }
-    }, [phase, timeRemaining]);
+
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+        };
+    }, [phase]);
 
     const formatTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
