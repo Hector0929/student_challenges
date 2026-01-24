@@ -42,8 +42,8 @@
                 <span class="text-2xl">🏆</span>
                 <span id="score" class="text-2xl text-indigo-900 font-bold font-mono">0</span>
             </div>
-            <div id="hint-text" class="text-white/50 animate-pulse text-sm">
-                按空白鍵或點擊跳躍
+            <div id="hint-text" class="text-white/50 animate-pulse text-sm text-right">
+                按空白鍵跳躍<br>空中再次按下可二段跳
             </div>
         </div>
     </div>
@@ -54,7 +54,7 @@
             class="bg-white rounded-3xl p-8 text-center max-w-sm mx-4 border-4 border-indigo-500 shadow-2xl animate-bounce-in pointer-events-auto">
             <div class="text-8xl mb-4 animate-bounce">🔲</div>
             <h1 class="text-4xl text-indigo-900 font-bold mb-2">方塊衝刺</h1>
-            <p class="text-indigo-400 mb-8">躲避尖刺，衝向終點！</p>
+            <p class="text-indigo-400 mb-8">二段跳躍，飛越障礙！</p>
             <button onclick="startGame()"
                 class="clay-btn bg-indigo-500 text-white px-8 py-4 text-xl font-bold hover:bg-indigo-600 block w-full">
                 開始奔跑
@@ -85,8 +85,8 @@
         const ctx = canvas.getContext('2d');
 
         // Game Constants
-        const GRAVITY = 0.6;
-        const JUMP_FORCE = -10.5; // Slightly reduced jump force
+        const GRAVITY = 0.5;       // Reduced from 0.6 for longer float (1.2x air time)
+        const JUMP_FORCE = -10.5;
         const SPEED = 5;
         const FLOOR_HEIGHT = 100;
 
@@ -105,8 +105,9 @@
             h: 40,
             vy: 0,
             isGrounded: false,
+            jumpCount: 0,           // For double jump
             rotation: 0,
-            color: '#6366f1' // Indigo-500
+            color: '#6366f1'
         };
 
         // Resize Canvas
@@ -121,11 +122,24 @@
         // Input Handling
         function jump() {
             if (!isPlaying) return;
+
             if (player.isGrounded) {
+                // First Jump
                 player.vy = JUMP_FORCE;
                 player.isGrounded = false;
-                spawnParticles(player.x + player.w / 2, player.y + player.h, 5, '#e0e7ff'); // Dust
+                player.jumpCount = 1;
+                spawnParticles(player.x + player.w / 2, player.y + player.h, 5, '#e0e7ff');
                 playSound('jump');
+            } else if (player.jumpCount < 2) {
+                // Double Jump
+                player.vy = JUMP_FORCE; // Full force for double jump to reach high places
+                player.jumpCount = 2;
+
+                // Spin effect on double jump
+                player.rotation += Math.PI / 4;
+
+                spawnParticles(player.x + player.w / 2, player.y + player.h, 8, '#fbbf24'); // Yellow flair
+                playSound('jump_double');
             }
         }
 
@@ -134,7 +148,6 @@
         });
 
         window.addEventListener('pointerdown', (e) => {
-            // Prevent clicking UI buttons from triggering jump
             if (e.target.tagName !== 'BUTTON') jump();
         });
 
@@ -143,16 +156,14 @@
             if (!isPlaying) return;
 
             // Clear
-            ctx.fillStyle = '#1e1b4b'; // Indigo-950
+            ctx.fillStyle = '#1e1b4b';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Background Grid (Perspective effect)
             drawBackground();
 
             // Floor
-            ctx.fillStyle = '#312e81'; // Indigo-900
+            ctx.fillStyle = '#312e81';
             ctx.fillRect(0, canvas.height - FLOOR_HEIGHT, canvas.width, FLOOR_HEIGHT);
-            // Floor highlight line
             ctx.fillStyle = '#6366f1';
             ctx.fillRect(0, canvas.height - FLOOR_HEIGHT, canvas.width, 4);
 
@@ -163,7 +174,7 @@
             drawPlayer();
 
             // UI Update
-            score += 0.1; // Distance based score
+            score += 0.1;
             document.getElementById('score').innerText = Math.floor(score);
 
             frame++;
@@ -180,17 +191,16 @@
                 player.y = floorY;
                 player.vy = 0;
                 player.isGrounded = true;
+                player.jumpCount = 0; // Reset jump count
 
-                // Snap rotation to nearest 90 degrees when grounded
+                // Snap rotation
                 const mod = player.rotation % (Math.PI / 2);
                 if (mod < 0.1 || mod > (Math.PI / 2 - 0.1)) {
                     player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2);
                 } else {
-                    // Auto-correct rotation if slightly off
                     player.rotation += 0.1;
                 }
             } else {
-                // Rotate while jumping
                 player.rotation += 0.1;
             }
         }
@@ -204,11 +214,10 @@
             ctx.fillStyle = player.color;
             ctx.fillRect(-player.w / 2, -player.h / 2, player.w, player.h);
 
-            // Inner Face
-            ctx.fillStyle = '#818cf8'; // Lighter indigo
+            // Inner Face (change color if double jumped to indicate power)
+            ctx.fillStyle = player.jumpCount > 1 ? '#fbbf24' : '#818cf8';
             ctx.fillRect(-player.w / 4, -player.h / 4, player.w / 2, player.h / 2);
 
-            // Border
             ctx.strokeStyle = 'white';
             ctx.lineWidth = 2;
             ctx.strokeRect(-player.w / 2, -player.h / 2, player.w, player.h);
@@ -217,14 +226,34 @@
         }
 
         function updateObstacles() {
-            // Spawn Spikes
-            if (frame % 90 === 0) { // Approx every 1.5 seconds
-                const type = Math.random() > 0.7 ? 'double' : 'single';
-                const count = type === 'double' ? 2 : 1;
+            // Spawn Obstacles
+            if (frame % 100 === 0) {
+                const typeRoll = Math.random();
 
-                for (let i = 0; i < count; i++) {
+                if (typeRoll > 0.8) {
+                    // Tall Spike (Requires Double Jump)
                     obstacles.push({
-                        x: canvas.width + (i * 40),
+                        x: canvas.width,
+                        y: canvas.height - FLOOR_HEIGHT,
+                        w: 30,
+                        h: 90, // Tall!
+                        type: 'tall'
+                    });
+                } else if (typeRoll > 0.5) {
+                    // Double Spike
+                    for (let i = 0; i < 2; i++) {
+                        obstacles.push({
+                            x: canvas.width + (i * 40),
+                            y: canvas.height - FLOOR_HEIGHT,
+                            w: 40,
+                            h: 40,
+                            type: 'spike'
+                        });
+                    }
+                } else {
+                    // Single Spike
+                    obstacles.push({
+                        x: canvas.width,
                         y: canvas.height - FLOOR_HEIGHT,
                         w: 40,
                         h: 40,
@@ -238,33 +267,40 @@
                 const obs = obstacles[i];
                 obs.x -= SPEED;
 
-                // Draw Spike
-                ctx.fillStyle = '#f43f5e'; // Rose-500
+                // Draw Spike/Obstacle
+                ctx.fillStyle = obs.type === 'tall' ? '#d946ef' : '#f43f5e'; // Purple for tall, Red for normal
                 ctx.strokeStyle = '#fff';
                 ctx.lineWidth = 2;
 
                 ctx.beginPath();
-                ctx.moveTo(obs.x, obs.y);
-                ctx.lineTo(obs.x + obs.w / 2, obs.y - obs.h);
-                ctx.lineTo(obs.x + obs.w, obs.y);
+                if (obs.type === 'tall') {
+                    // Tall spike - sharper
+                    ctx.moveTo(obs.x, obs.y);
+                    ctx.lineTo(obs.x + obs.w / 2, obs.y - obs.h);
+                    ctx.lineTo(obs.x + obs.w, obs.y);
+                } else {
+                    // Normal spike
+                    ctx.moveTo(obs.x, obs.y);
+                    ctx.lineTo(obs.x + obs.w / 2, obs.y - obs.h);
+                    ctx.lineTo(obs.x + obs.w, obs.y);
+                }
                 ctx.closePath();
                 ctx.fill();
                 ctx.stroke();
 
-                // Collision Detection (Simple Box for player vs Triangle tip)
-                // Tip of triangle is hazardous
+                // Collision Detection
                 const tipX = obs.x + obs.w / 2;
-                const tipY = obs.y - obs.h + 10; // Slightly forgiving
+                const tipY = obs.y - obs.h + 10;
 
+                // Bounding box overlap logic approximation
                 if (
-                    player.x < tipX + 10 &&
-                    player.x + player.w > tipX - 10 &&
+                    player.x < obs.x + obs.w - 10 &&
+                    player.x + player.w > obs.x + 10 &&
                     player.y + player.h > tipY
                 ) {
                     gameOver();
                 }
 
-                // Remove off-screen
                 if (obs.x + obs.w < 0) {
                     obstacles.splice(i, 1);
                 }
@@ -303,20 +339,17 @@
         }
 
         function drawBackground() {
-            // Moving Grid
-            ctx.strokeStyle = '#4338ca'; // Indigo-800
+            ctx.strokeStyle = '#4338ca';
             ctx.lineWidth = 1;
             const gridSize = 100;
             const offset = (frame * SPEED * 0.5) % gridSize;
 
-            // Verticals
             for (let x = -offset; x < canvas.width; x += gridSize) {
                 ctx.beginPath();
                 ctx.moveTo(x, 0);
                 ctx.lineTo(x, canvas.height);
                 ctx.stroke();
             }
-            // Horizontals
             for (let y = 0; y < canvas.height; y += gridSize) {
                 ctx.beginPath();
                 ctx.moveTo(0, y);
@@ -338,7 +371,7 @@
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('ui-layer').classList.remove('hidden');
             document.getElementById('hint-text').classList.remove('hidden');
-            setTimeout(() => document.getElementById('hint-text').classList.add('hidden'), 3000);
+            setTimeout(() => document.getElementById('hint-text').classList.add('hidden'), 5000);
 
             resetGameLogic();
         }
@@ -357,6 +390,7 @@
             player.y = canvas.height - FLOOR_HEIGHT - player.h;
             player.vy = 0;
             player.rotation = 0;
+            player.jumpCount = 0;
             isPlaying = true;
             loop();
         }
@@ -378,6 +412,14 @@
                 g.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.1);
                 osc.start();
                 osc.stop(ctx.currentTime + 0.1);
+            } else if (type === 'jump_double') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(300, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.15);
+                g.gain.setValueAtTime(0.1, ctx.currentTime);
+                g.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.15);
             } else if (type === 'hit') {
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(100, ctx.currentTime);
