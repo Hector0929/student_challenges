@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Star, Clock, Play, StopCircle } from 'lucide-react';
 import { RPGDialog } from './RPGDialog';
-import { RPGButton } from './RPGButton';
 import { GAME_COST, GAME_DURATION_SECONDS } from '../lib/constants';
 
 interface GameModalProps {
@@ -123,127 +122,178 @@ export const GameModal: React.FC<GameModalProps> = ({
         onClose();
     };
 
-    // Render based on phase
     const renderContent = () => {
+        // Common button styles for Claymorphism to replace RPGButton
+        const btnBase = "px-6 py-3 font-pixel text-sm rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_0_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-1";
+        const btnPrimary = "bg-indigo-500 hover:bg-indigo-600 text-white";
+        const btnSecondary = "bg-white text-indigo-900 border-2 border-indigo-100 hover:bg-indigo-50";
+        const btnGreen = "bg-green-500 hover:bg-green-600 text-white";
+
         switch (phase) {
             case 'confirm':
                 return (
-                    <div className="text-center py-8">
-                        <div className="text-6xl mb-4">🎮</div>
-                        <h3 className="font-pixel text-lg mb-4">{gameName}</h3>
-                        <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 mb-6 inline-block">
-                            <div className="flex items-center gap-2 justify-center text-yellow-700">
-                                <Star className="text-yellow-500" fill="currentColor" size={24} />
-                                <span className="font-pixel text-xl">{GAME_COST}</span>
-                                <span className="text-sm">星幣 / 3分鐘</span>
+                    <div className="text-center py-6 px-4">
+                        <div className="relative inline-block mb-6">
+                            <div className="absolute inset-0 bg-blue-200 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                            <div className="relative text-7xl transform hover:scale-110 transition-transform duration-300 cursor-pointer">
+                                🎮
                             </div>
                         </div>
-                        <div className="text-sm text-gray-600 mb-6">
-                            <p>目前餘額: <span className="font-pixel text-yellow-600">{starBalance}</span> ⭐</p>
-                            <p className="mt-2">付費後剩餘: <span className="font-pixel text-green-600">{starBalance - GAME_COST}</span> ⭐</p>
-                        </div>
-                        <div className="flex gap-3 justify-center">
-                            <RPGButton variant="secondary" onClick={handleEndGame}>
-                                取消
-                            </RPGButton>
-                            <RPGButton onClick={handleStartGame} disabled={isProcessing}>
-                                <div className="flex items-center gap-2">
-                                    <Play size={16} />
-                                    <span>{isProcessing ? '處理中...' : '開始遊戲'}</span>
+
+                        <h3 className="font-pixel text-2xl mb-2 text-indigo-900">{gameName}</h3>
+                        <p className="text-indigo-400 text-sm mb-8 font-pixel">準備好開始挑戰了嗎？</p>
+
+                        {/* Price Card */}
+                        <div className="bg-white rounded-3xl p-6 mb-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] border-4 border-indigo-100 transform hover:-translate-y-1 transition-transform">
+                            <div className="flex items-center justify-center gap-3 mb-2">
+                                <div className="bg-yellow-400 p-2 rounded-2xl shadow-inner">
+                                    <Star className="text-white" fill="currentColor" size={28} />
                                 </div>
-                            </RPGButton>
+                                <span className="font-pixel text-4xl text-indigo-900">{GAME_COST}</span>
+                            </div>
+                            <div className="text-indigo-400 font-pixel text-sm">星幣 / 3分鐘</div>
+                        </div>
+
+                        {/* Balance Info */}
+                        <div className="flex justify-center gap-8 mb-8 text-sm font-bold">
+                            <div className="text-center">
+                                <div className="text-gray-400 text-xs mb-1">目前擁有</div>
+                                <div className="font-pixel text-xl text-yellow-500">{starBalance}</div>
+                            </div>
+                            <div className="w-px bg-gray-200"></div>
+                            <div className="text-center">
+                                <div className="text-gray-400 text-xs mb-1">付費後剩餘</div>
+                                <div className={`font-pixel text-xl ${starBalance - GAME_COST < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                    {starBalance - GAME_COST}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4 justify-center">
+                            <button onClick={handleEndGame} className={`${btnBase} ${btnSecondary}`}>
+                                <span className="text-gray-500">下次再玩</span>
+                            </button>
+                            <button
+                                onClick={handleStartGame}
+                                disabled={isProcessing}
+                                className={`${btnBase} ${btnPrimary} px-8 w-48`}
+                            >
+                                <div className="flex items-center justify-center gap-2">
+                                    <Play size={24} fill="currentColor" />
+                                    <span className="text-lg pt-1">{isProcessing ? '啟動中...' : '開始遊戲!'}</span>
+                                </div>
+                            </button>
                         </div>
                     </div>
                 );
 
             case 'playing':
                 return (
-                    <>
-                        {/* Game container with side timer */}
-                        <div className="flex gap-3">
-                            {/* Game iframe */}
-                            <div className="flex-1 relative bg-gray-100 rounded-lg overflow-hidden" style={{ height: '65vh' }}>
-                                <iframe
-                                    ref={iframeRef}
-                                    src={gameUrl}
-                                    className="w-full h-full border-none"
-                                    title={gameName}
-                                    allow="fullscreen"
-                                    scrolling="no"
-                                    style={{
-                                        overflow: 'hidden',
-                                        display: 'block',
-                                    }}
-                                />
+                    <div className="flex flex-col h-[80vh] bg-indigo-50 rounded-xl overflow-hidden relative">
+                        {/* Top HUD */}
+                        <div className="bg-white border-b-4 border-indigo-100 p-3 flex items-center justify-between shadow-sm z-10 shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-indigo-100 p-2 rounded-xl">
+                                    <span className="text-2xl">🎮</span>
+                                </div>
+                                <span className="font-pixel text-indigo-900 hidden sm:inline">{gameName}</span>
                             </div>
 
-                            {/* Vertical Timer bar on the side */}
-                            <div className="flex flex-col items-center justify-between bg-gray-100 border-2 border-deep-black rounded-lg p-2 w-16">
-                                {/* Time display */}
-                                <div className="text-center">
-                                    <Clock size={20} className={`mx-auto mb-1 ${timeRemaining <= 30 ? 'text-red-500' : 'text-blue-500'}`} />
-                                    <span className={`font-pixel text-sm block ${timeRemaining <= 30 ? 'text-red-500 animate-pulse' : 'text-blue-600'}`}>
+                            {/* Timer Capsule */}
+                            <div className="flex items-center gap-3 bg-indigo-900 rounded-full py-2 px-4 shadow-lg transform scale-100 hover:scale-105 transition-transform">
+                                <Clock size={20} className={`${timeRemaining <= 30 ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`} />
+                                <div className="flex flex-col items-start w-16">
+                                    <span className={`font-pixel text-lg leading-none ${timeRemaining <= 30 ? 'text-red-400' : 'text-white'}`}>
                                         {formatTime(timeRemaining)}
                                     </span>
                                 </div>
-
-                                {/* Vertical progress bar */}
-                                <div className="flex-1 w-4 bg-gray-300 rounded-full border border-gray-400 overflow-hidden my-2 relative">
+                                {/* Mini Progress Ring or Bar */}
+                                <div className="w-16 h-2 bg-indigo-800 rounded-full overflow-hidden">
                                     <div
-                                        className={`w-full absolute bottom-0 transition-all duration-1000 ${timeRemaining <= 30
-                                                ? 'bg-gradient-to-t from-red-600 to-red-400'
-                                                : 'bg-gradient-to-t from-blue-600 to-blue-400'
+                                        className={`h-full transition-all duration-1000 ${timeRemaining <= 30 ? 'bg-red-500' : 'bg-yellow-400'
                                             }`}
-                                        style={{ height: `${progressPercent}%` }}
+                                        style={{ width: `${progressPercent}%` }}
                                     />
                                 </div>
-
-                                {/* End button */}
-                                <button
-                                    onClick={handleEndGame}
-                                    className="p-2 bg-gray-200 text-gray-600 border border-gray-400 rounded hover:bg-gray-300 transition-colors"
-                                    title="提前結束"
-                                >
-                                    <StopCircle size={16} />
-                                </button>
                             </div>
+
+                            <button
+                                onClick={handleEndGame}
+                                className="group p-2 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 text-gray-400 hover:text-red-500"
+                            >
+                                <span className="font-pixel text-xs hidden sm:inline group-hover:opacity-100 opacity-0 transition-opacity">離開遊戲</span>
+                                <StopCircle size={24} />
+                            </button>
                         </div>
-                    </>
+
+                        {/* Game Area */}
+                        <div className="flex-1 bg-gray-900 relative">
+                            <iframe
+                                ref={iframeRef}
+                                src={gameUrl}
+                                className="w-full h-full border-none"
+                                title={gameName}
+                                allow="fullscreen"
+                                scrolling="no"
+                                style={{
+                                    display: 'block',
+                                }}
+                            />
+                        </div>
+
+                        {/* Low Time Warning Overlay */}
+                        {timeRemaining <= 10 && timeRemaining > 0 && (
+                            <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
+                                <div className="text-9xl font-pixel text-red-500 opacity-20 animate-ping">
+                                    {timeRemaining}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 );
 
             case 'timeup':
                 return (
-                    <div className="text-center py-8">
-                        <div className="text-6xl mb-4">⏰</div>
-                        <h3 className="font-pixel text-xl mb-2 text-orange-600">時間到！</h3>
-                        <p className="text-gray-600 mb-6">想要繼續玩嗎？</p>
+                    <div className="text-center py-8 px-4">
+                        <div className="relative inline-block mb-4">
+                            <div className="text-8xl animate-bounce">⏰</div>
+                            <div className="absolute -bottom-2 w-full h-4 bg-black opacity-10 blur-md rounded-[100%]"></div>
+                        </div>
 
-                        <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 mb-6 inline-block">
-                            <div className="flex items-center gap-2 justify-center text-yellow-700">
-                                <span className="text-sm">再玩 3 分鐘</span>
-                                <Star className="text-yellow-500" fill="currentColor" size={20} />
-                                <span className="font-pixel text-lg">{GAME_COST}</span>
+                        <h3 className="font-pixel text-3xl mb-2 text-indigo-900">時間到囉！</h3>
+                        <p className="text-indigo-400 mb-8 font-pixel">玩得開心嗎？休息一下還是繼續挑戰？</p>
+
+                        <div className="bg-indigo-50 rounded-3xl p-6 mb-8 border-4 border-indigo-100">
+                            <div className="text-sm text-indigo-400 mb-2 font-bold">再玩 3 分鐘只需要</div>
+                            <div className="flex items-center justify-center gap-2">
+                                <Star className="text-yellow-500" fill="currentColor" size={32} />
+                                <span className="font-pixel text-4xl text-indigo-900">{GAME_COST}</span>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-indigo-200 flex justify-between px-4 text-sm">
+                                <span className="text-indigo-400">目前餘額</span>
+                                <span className="font-pixel text-yellow-600">{starBalance} ⭐</span>
                             </div>
                         </div>
 
-                        <div className="text-sm text-gray-600 mb-6">
-                            <p>目前餘額: <span className="font-pixel text-yellow-600">{starBalance}</span> ⭐</p>
-                        </div>
-
-                        <div className="flex gap-3 justify-center">
-                            <RPGButton variant="secondary" onClick={handleEndGame}>
-                                <div className="flex items-center gap-2">
-                                    <X size={16} />
-                                    <span>結束遊戲</span>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <button onClick={handleEndGame} className={`${btnBase} ${btnSecondary} w-full sm:w-auto`}>
+                                <div className="flex items-center justify-center gap-2">
+                                    <X size={20} />
+                                    <span>結束休息</span>
                                 </div>
-                            </RPGButton>
-                            {starBalance >= GAME_COST && (
-                                <RPGButton onClick={handleStartGame} disabled={isProcessing}>
-                                    <div className="flex items-center gap-2">
-                                        <Star size={16} />
-                                        <span>{isProcessing ? '處理中...' : `繼續 (${GAME_COST}⭐)`}</span>
+                            </button>
+
+                            {starBalance >= GAME_COST ? (
+                                <button onClick={handleStartGame} disabled={isProcessing} className={`${btnBase} ${btnGreen} w-full sm:w-auto`}>
+                                    <div className="flex items-center justify-center gap-2 px-4">
+                                        <Play size={20} fill="currentColor" />
+                                        <span>繼續玩 ! ({GAME_COST}⭐)</span>
                                     </div>
-                                </RPGButton>
+                                </button>
+                            ) : (
+                                <button disabled className={`${btnBase} ${btnSecondary} w-full sm:w-auto opacity-50 cursor-not-allowed`}>
+                                    <span>餘額不足 😢</span>
+                                </button>
                             )}
                         </div>
                     </div>
@@ -251,23 +301,36 @@ export const GameModal: React.FC<GameModalProps> = ({
 
             case 'insufficient':
                 return (
-                    <div className="text-center py-8">
-                        <div className="text-6xl mb-4">😢</div>
-                        <h3 className="font-pixel text-lg mb-2 text-red-600">星幣不足</h3>
-                        <p className="text-gray-600 mb-4">
-                            玩遊戲需要 <span className="font-pixel text-yellow-600">{GAME_COST}</span> ⭐
-                        </p>
-                        <p className="text-gray-600 mb-6">
-                            目前餘額: <span className="font-pixel text-red-500">{starBalance}</span> ⭐
-                        </p>
-                        <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 mb-6">
-                            <p className="text-blue-700 text-sm">
-                                💡 完成任務可以獲得更多星幣喔！
-                            </p>
+                    <div className="text-center py-8 px-4">
+                        <div className="text-8xl mb-4 grayscale opacity-80">😢</div>
+                        <h3 className="font-pixel text-2xl mb-2 text-red-500">星幣不夠了...</h3>
+
+                        <div className="bg-white rounded-2xl p-6 shadow-sm border-2 border-red-100 mb-6 mx-auto max-w-xs">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-gray-500 text-sm">需要</span>
+                                <span className="font-pixel text-red-500">{GAME_COST} ⭐</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-500 text-sm">擁有</span>
+                                <span className="font-pixel text-gray-900">{starBalance} ⭐</span>
+                            </div>
                         </div>
-                        <RPGButton onClick={handleEndGame}>
-                            知道了
-                        </RPGButton>
+
+                        <div className="bg-yellow-50 border-2 border-dashed border-yellow-300 rounded-xl p-4 mb-8">
+                            <h4 className="font-bold text-yellow-800 mb-2">💡 如何獲得星幣？</h4>
+                            <ul className="text-left text-sm text-yellow-700 space-y-2">
+                                <li className="flex items-center gap-2">
+                                    <span className="text-lg">📅</span> 完成每日任務
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <span className="text-lg">🧹</span> 幫忙做家事
+                                </li>
+                            </ul>
+                        </div>
+
+                        <button onClick={handleEndGame} className={`${btnBase} ${btnPrimary} w-full`}>
+                            我知道了，去解任務！
+                        </button>
                     </div>
                 );
         }
