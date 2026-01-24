@@ -22,10 +22,34 @@ interface Game {
 
 const GAMES: Game[] = [
     {
+        id: 'spelling',
+        name: '單字召喚術',
+        icon: '🅰️',
+        description: '英文拼字戰鬥',
+        url: '/games/spelling_game.html',
+        color: 'bg-teal-400 hover:bg-teal-500'
+    },
+    {
+        id: 'echo',
+        name: '聽音辨位',
+        icon: '👂',
+        description: '英文聽力迷宮',
+        url: '/games/echo_game.html',
+        color: 'bg-indigo-400 hover:bg-indigo-500'
+    },
+    {
+        id: 'sentence',
+        name: '句子重組',
+        icon: '📝',
+        description: '英文文法挑戰',
+        url: '/games/sentence_game.html',
+        color: 'bg-pink-400 hover:bg-pink-500'
+    },
+    {
         id: 'akila',
-        name: '英文測驗',
-        icon: '🔤',
-        description: '單字記憶遊戲',
+        name: '加法練習',
+        icon: '➕',
+        description: '數學計算挑戰',
         url: '/games/akila_plus_test.html',
         color: 'bg-blue-400 hover:bg-blue-500'
     },

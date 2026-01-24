@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spelling Summoner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'DotGothic16', sans-serif;
+        }
+
+        .pixel-font {
+            font-family: 'DotGothic16', sans-serif;
+        }
+
+        .clay-card {
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff;
+            border: 4px solid #eef2f6;
+        }
+
+        .clay-btn {
+            border-radius: 1rem;
+            box-shadow: 4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff;
+            transition: all 0.2s;
+        }
+
+        .clay-btn:active {
+            box-shadow: inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff;
+            transform: scale(0.98);
+        }
+
+        @keyframes shake {
+            0% {
+                transform: translate(1px, 1px) rotate(0deg);
+            }
+
+            10% {
+                transform: translate(-1px, -2px) rotate(-1deg);
+            }
+
+            20% {
+                transform: translate(-3px, 0px) rotate(1deg);
+            }
+
+            30% {
+                transform: translate(3px, 2px) rotate(0deg);
+            }
+
+            40% {
+                transform: translate(1px, -1px) rotate(1deg);
+            }
+
+            50% {
+                transform: translate(-1px, 2px) rotate(-1deg);
+            }
+
+            60% {
+                transform: translate(-3px, 1px) rotate(0deg);
+            }
+
+            70% {
+                transform: translate(3px, 1px) rotate(-1deg);
+            }
+
+            80% {
+                transform: translate(-1px, -1px) rotate(1deg);
+            }
+
+            90% {
+                transform: translate(1px, 2px) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(1px, -2px) rotate(-1deg);
+            }
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        .damage-text {
+            animation: float-up 1s forwards;
+        }
+
+        @keyframes float-up {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-indigo-50 h-screen overflow-hidden flex flex-col items-center justify-center select-none">
+
+    <!-- Game Container -->
+    <div class="w-full max-w-2xl px-4 flex flex-col gap-6 h-full max-h-[800px] justify-between py-6">
+
+        <!-- Header: Score & Level -->
+        <div class="flex justify-between items-center">
+            <div class="clay-card px-6 py-2 flex items-center gap-2">
+                <span class="text-2xl">🏆</span>
+                <span id="score" class="text-xl text-indigo-800 font-bold">0</span>
+            </div>
+            <div class="clay-card px-6 py-2 flex items-center gap-2 bg-yellow-100">
+                <span class="text-xl">❤️</span>
+                <span id="hp" class="text-xl text-red-600 font-bold">3</span>
+            </div>
+        </div>
+
+        <!-- Monster Area -->
+        <div class="flex-1 flex flex-col items-center justify-center relative">
+            <div id="monster-container" class="relative transition-transform duration-300">
+                <div class="text-[150px] filter drop-shadow-xl" id="monster-emoji">🐲</div>
+                <!-- HP Bar -->
+                <div class="w-48 h-4 bg-gray-200 rounded-full mt-4 overflow-hidden border-2 border-gray-300">
+                    <div id="monster-hp-bar" class="h-full bg-red-500 transition-all duration-300" style="width: 100%">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Damage Overlay -->
+            <div id="effects-layer" class="absolute inset-0 pointer-events-none flex justify-center items-center"></div>
+        </div>
+
+        <!-- Word Input Area -->
+        <div class="clay-card p-6 flex flex-col items-center gap-4 w-full">
+            <div class="text-center mb-2">
+                <p class="text-gray-500 text-sm mb-1">拼出這個單字！</p>
+                <h2 id="question-hint" class="text-2xl text-indigo-900 font-bold">Apple</h2>
+                <button onclick="speakWord()" class="mt-2 text-indigo-400 hover:text-indigo-600">
+                    🔊 聽發音
+                </button>
+            </div>
+
+            <div id="input-display" class="flex gap-2 justify-center flex-wrap min-h-[60px]">
+                <!-- Input slots will be generated here -->
+            </div>
+
+            <div id="keyboard" class="grid grid-cols-7 gap-2 w-full max-w-md mt-4">
+                <!-- Virtual Keyboard -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal"
+        class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="clay-card p-8 text-center max-w-sm mx-4 animate-bounce-in">
+            <div class="text-6xl mb-4">💀</div>
+            <h2 class="text-3xl text-indigo-900 mb-2 font-bold">Game Over</h2>
+            <p class="text-gray-600 mb-6">本次得分: <span id="final-score" class="font-bold text-indigo-600">0</span></p>
+            <button onclick="restartGame()"
+                class="clay-btn bg-indigo-500 text-white px-8 py-3 w-full text-lg hover:bg-indigo-600">
+                再次挑戰
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Game Data
+        const VOCABULARY = [
+            { word: 'APPLE', emoji: '🍎', hint: '紅色的水果' },
+            { word: 'BANANA', emoji: '🍌', hint: '黃色的水果' },
+            { word: 'CAT', emoji: '🐱', hint: '會喵喵叫的動物' },
+            { word: 'DOG', emoji: '🐶', hint: '人類最好的朋友' },
+            { word: 'ELEPHANT', emoji: '🐘', hint: '有長鼻子的動物' },
+            { word: 'FISH', emoji: '🐟', hint: '在水裡游泳' },
+            { word: 'GIRAFFE', emoji: '🦒', hint: '脖子很長的動物' },
+            { word: 'HOUSE', emoji: '🏠', hint: '我們住的地方' },
+            { word: 'ICE', emoji: '🧊', hint: '很冷的水' },
+            { word: 'JUMP', emoji: '🦘', hint: '跳躍' },
+            { word: 'KITE', emoji: '🪁', hint: '在風中飛' },
+            { word: 'LION', emoji: '🦁', hint: '萬獸之王' },
+            { word: 'MONKEY', emoji: '🐒', hint: '喜歡吃香蕉' },
+            { word: 'NIGHT', emoji: '🌙', hint: '晚上' },
+            { word: 'ORANGE', emoji: '🍊', hint: '橘色的水果' },
+            { word: 'PIG', emoji: '🐷', hint: '粉紅色的動物' },
+            { word: 'QUEEN', emoji: '👸', hint: '國王的太太' },
+            { word: 'RABBIT', emoji: '🐰', hint: '長耳朵的動物' },
+            { word: 'SNAKE', emoji: '🐍', hint: '沒腳的動物' },
+            { word: 'TIGER', emoji: '🐯', hint: '大貓咪' },
+            { word: 'UMBRELLA', emoji: '☂️', hint: '下雨時用' },
+            { word: 'VAN', emoji: '🚐', hint: '廂型車' },
+            { word: 'WATER', emoji: '💧', hint: '口渴時喝' },
+            { word: 'XYLOPHONE', emoji: '🎹', hint: '木琴' },
+            { word: 'YELLOW', emoji: '🟨', hint: '黃色' },
+            { word: 'ZEBRA', emoji: '🦓', hint: '有斑馬線的動物' }
+        ];
+
+        // State
+        let currentWordObj = null;
+        let currentInput = [];
+        let score = 0;
+        let hp = 3;
+        let monsterHp = 100;
+
+        // Init
+        function init() {
+            renderKeyboard();
+            nextLevel();
+            updateUI();
+        }
+
+        function renderKeyboard() {
+            const keyboard = document.getElementById('keyboard');
+            keyboard.innerHTML = '';
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+            letters.forEach(char => {
+                const btn = document.createElement('button');
+                btn.className = 'clay-btn bg-white text-indigo-900 font-bold p-2 hover:bg-indigo-50 active:bg-indigo-100 disabled:opacity-30 disabled:cursor-not-allowed';
+                btn.textContent = char;
+                btn.onclick = () => handleInput(char);
+                btn.id = `key-${char}`;
+                keyboard.appendChild(btn);
+            });
+
+            // Add backspace
+            const delBtn = document.createElement('button');
+            delBtn.className = 'clay-btn bg-red-100 text-red-900 font-bold p-2 col-span-2 hover:bg-red-200';
+            delBtn.textContent = '⌫';
+            delBtn.onclick = handleBackspace;
+            keyboard.appendChild(delBtn);
+        }
+
+        function nextLevel() {
+            currentWordObj = VOCABULARY[Math.floor(Math.random() * VOCABULARY.length)];
+            currentInput = [];
+            monsterHp = 100;
+
+            // UI
+            document.getElementById('monster-emoji').textContent = currentWordObj.emoji;
+            document.getElementById('monster-hp-bar').style.width = '100%';
+            document.getElementById('question-hint').textContent = currentWordObj.hint || '???';
+
+            // Reset keyboard
+            document.querySelectorAll('#keyboard button').forEach(b => b.disabled = false);
+
+            updateInputDisplay();
+            speakWord();
+        }
+
+        function handleInput(char) {
+            if (currentInput.length >= currentWordObj.word.length) return;
+
+            const expectedChar = currentWordObj.word[currentInput.length];
+
+            if (char === expectedChar) {
+                // Correct
+                currentInput.push(char);
+                updateInputDisplay();
+                playSound('hit');
+                damageMonster(30); // Visual damage
+
+                // Disable key visual
+                // document.getElementById(`key-${char}`).disabled = true;
+
+                if (currentInput.length === currentWordObj.word.length) {
+                    // Win level
+                    setTimeout(() => {
+                        score += 10;
+                        playSound('win');
+                        showDamageEffect('PERFECT!', 'text-yellow-500');
+                        nextLevel();
+                        updateUI();
+                    }, 500);
+                }
+            } else {
+                // Wrong
+                shakeScreen();
+                hp--;
+                playSound('hurt');
+                updateUI();
+                if (hp <= 0) gameOver();
+            }
+        }
+
+        function handleBackspace() {
+            if (currentInput.length > 0) {
+                currentInput.pop();
+                updateInputDisplay();
+            }
+        }
+
+        function updateInputDisplay() {
+            const container = document.getElementById('input-display');
+            container.innerHTML = '';
+
+            const wordLength = currentWordObj.word.length;
+
+            for (let i = 0; i < wordLength; i++) {
+                const char = currentInput[i] || '';
+                const slot = document.createElement('div');
+                slot.className = `w-10 h-12 flex items-center justify-center text-2xl font-bold rounded-lg border-2 ${char ? 'bg-indigo-500 text-white border-indigo-600' : 'bg-gray-100 border-gray-300'}`;
+                slot.textContent = char;
+                container.appendChild(slot);
+            }
+        }
+
+        function damageMonster(amount) {
+            monsterHp = Math.max(0, monsterHp - amount);
+            document.getElementById('monster-hp-bar').style.width = `${monsterHp}%`;
+
+            const monster = document.getElementById('monster-container');
+            monster.classList.add('shake');
+            setTimeout(() => monster.classList.remove('shake'), 500);
+
+            showDamageEffect(`-${amount}`, 'text-red-500');
+        }
+
+        function showDamageEffect(text, colorClass) {
+            const el = document.createElement('div');
+            el.className = `damage-text absolute text-4xl font-bold ${colorClass}`;
+            el.style.left = '50%';
+            el.style.top = '40%';
+            el.style.transform = 'translate(-50%, -50%)';
+            el.textContent = text;
+            document.getElementById('effects-layer').appendChild(el);
+            setTimeout(() => el.remove(), 1000);
+        }
+
+        function shakeScreen() {
+            document.body.classList.add('shake');
+            setTimeout(() => document.body.classList.remove('shake'), 500);
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('hp').textContent = hp;
+        }
+
+        function gameOver() {
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('game-over-modal').classList.remove('hidden');
+        }
+
+        function restartGame() {
+            score = 0;
+            hp = 3;
+            document.getElementById('game-over-modal').classList.add('hidden');
+            nextLevel();
+            updateUI();
+        }
+
+        function speakWord() {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(currentWordObj.word);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function playSound(type) {
+            // Simple synth sounds
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.connect(g);
+            g.connect(ctx.destination);
+
+            if (type === 'hit') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(440, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+                g.gain.setValueAtTime(0.1, ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.1);
+            } else if (type === 'hurt') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.3);
+                g.gain.setValueAtTime(0.2, ctx.currentTime);
+                g.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            } else if (type === 'win') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
+                g.gain.setValueAtTime(0.1, ctx.currentTime);
+                g.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.4);
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
