@@ -74,8 +74,21 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-pokeball-red to-pink-100 flex items-center justify-center p-4">
-            <div className="rpg-dialog max-w-2xl w-full animate-bounce-in">
+        <div className="min-h-screen bg-gradient-to-b from-pokeball-red to-pink-100 flex flex-col items-center justify-center p-4">
+            {/* Header Bar */}
+            <div className="absolute top-0 left-0 right-0 bg-white/80 p-4 border-b-2 border-deep-black flex justify-between items-center shadow-sm">
+                <div className="font-pixel text-lg">
+                    🏠 {useUser().familyName || '歡迎回來'}
+                </div>
+                <button
+                    onClick={() => useUser().logout()}
+                    className="text-xs text-red-600 hover:text-red-800 font-pixel border border-red-200 px-2 py-1 bg-red-50 rounded"
+                >
+                    登出系統
+                </button>
+            </div>
+
+            <div className="rpg-dialog max-w-2xl w-full animate-bounce-in mt-16">
                 <div className="text-center mb-6">
                     <div className="text-6xl mb-4">👋</div>
                     <h1 className="font-pixel text-2xl mb-2">選擇你的角色</h1>

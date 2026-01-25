@@ -99,14 +99,26 @@ function AppContent() {
     );
   }
 
-  // 3. Authenticated and Role Selected
+  // 3. Authenticated and Role Selected -> Show Dashboard
   return (
     <div className="min-h-screen bg-gradient-to-b from-pokeball-red to-pink-100 py-8 px-4">
       {/* Header / Logout Area */}
-      <div className="max-w-6xl mx-auto mb-4 flex justify-between items-center bg-white/80 p-2 rounded-lg border-2 border-deep-black">
-        <div className="font-pixel text-sm">
-          {/* Current User Info */}
-          👤 {user.name} ({user.role === 'parent' ? '家長' : '小小冒險家'})
+      <div className="max-w-6xl mx-auto mb-4 flex justify-between items-center bg-white/80 p-2 rounded-lg border-2 border-deep-black shadow-md sticky top-2 z-50">
+        <div className="font-pixel text-sm flex items-center gap-2">
+          {/* Header Text Logic */}
+          {user.role === 'parent' ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🛡️</span>
+              <span className="font-bold">{user.name}</span>
+              <span className="text-gray-500 text-xs">(家長)</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-xl">{user.avatar_url || '👦'}</span>
+              <span className="font-bold">{user.name}</span>
+              <span className="text-gray-500 text-xs">(小小冒險家)</span>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2">
@@ -114,10 +126,10 @@ function AppContent() {
             <button
               onClick={lockParent}
               className="flex items-center gap-2 px-3 py-1 bg-yellow-100 border-2 border-deep-black hover:bg-yellow-200 transition-colors font-pixel text-xs"
-              title="鎖定家長模式"
+              title="登出家長 (需要重新輸入PIN)"
             >
               <Lock size={14} />
-              <span>鎖定</span>
+              <span>登出家長</span>
             </button>
           )}
 
@@ -125,20 +137,20 @@ function AppContent() {
           <button
             onClick={exitProfile}
             className="flex items-center gap-2 px-3 py-1 bg-white border-2 border-deep-black hover:bg-gray-100 transition-colors font-pixel text-xs"
-            title="切換角色"
+            title={user.role === 'parent' ? '保持登入並切換' : '切換角色'}
           >
             <ArrowLeft size={14} />
-            <span>切換角色</span>
+            <span>{user.role === 'parent' ? '保持登入' : '切換角色'}</span>
           </button>
 
           {/* Logout (Sign out from Family) */}
           <button
             onClick={() => logout()}
             className="flex items-center gap-2 px-3 py-1 bg-red-100 border-2 border-deep-black hover:bg-red-200 transition-colors font-pixel text-xs text-red-600"
-            title="登出家庭"
+            title="登出系統"
           >
             <LogOut size={14} />
-            <span>登出家庭</span>
+            <span>登出系統</span>
           </button>
         </div>
       </div>

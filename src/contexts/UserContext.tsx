@@ -6,6 +6,7 @@ import type { Session } from '@supabase/supabase-js';
 interface UserContextType {
     session: Session | null;
     user: Profile | null; // The currently active profile (Child or Parent)
+    familyName: string | null; // Family name for the authenticated session
     loading: boolean;
     setUser: (user: Profile | null) => void;
     registerUser: (userData: Omit<Profile, 'id' | 'created_at' | 'family_id'>) => Promise<void>;
@@ -21,6 +22,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUserState] = useState<Profile | null>(null);
+    const [familyName, setFamilyName] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     // 1. Initialize Supabase Auth Listener
@@ -38,12 +40,47 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setSession(session);
             if (!session) {
                 setUserState(null); // Clear profile if logged out
+                setFamilyName(null);
                 localStorage.removeItem('questmon-current-profile-id');
             }
         });
 
         return () => subscription.unsubscribe();
     }, []);
+
+    // 1.5 Fetch Family Name when session exists
+    useEffect(() => {
+        const fetchFamilyName = async () => {
+            if (!session?.user?.id) return;
+
+            try {
+                // Get the admin profile to find family_id
+                const { data: adminProfile } = await supabase
+                    .from('profiles')
+                    .select('family_id')
+                    .eq('id', session.user.id)
+                    .maybeSingle();
+
+                if (adminProfile?.family_id) {
+                    const { data: family } = await supabase
+                        .from('families')
+                        .select('name')
+                        .eq('id', adminProfile.family_id)
+                        .maybeSingle();
+
+                    if (family) {
+                        setFamilyName(family.name);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching family name:', error);
+            }
+        };
+
+        if (session && !familyName) {
+            fetchFamilyName();
+        }
+    }, [session, familyName]);
 
     // 2. Restore active profile from localStorage if session exists
     useEffect(() => {
@@ -240,6 +277,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         <UserContext.Provider value={{
             session,
             user,
+            familyName,
             loading,
             setUser,
             registerUser,
