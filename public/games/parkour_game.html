@@ -632,6 +632,27 @@
             }
         }
 
+        function updateStars() {
+            for (let i = stars.length - 1; i >= 0; i--) {
+                const star = stars[i];
+                star.update();
+
+                // Collect
+                const dx = (player.x + player.w / 2) - star.x;
+                const dy = (player.y + player.h / 2) - star.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < 40) { // Collection radius
+                    state.score += 500;
+                    spawnParticles(star.x, star.y, 10, star.color);
+                    playSound('coin');
+                    stars.splice(i, 1);
+                } else if (star.x < -100) {
+                    stars.splice(i, 1);
+                }
+            }
+        }
+
         function spawnPattern() {
             const patternIdx = Math.floor(Math.random() * PATTERNS.length);
             const patternFn = PATTERNS[patternIdx];
