@@ -155,6 +155,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const loginAsParent = async (pin?: string) => {
         if (!session) return;
+
+        // Ensure whitespace is stripped
+        const cleanPin = pin ? pin.trim() : undefined;
+        console.log(`🔐 Attempting parent login. PIN provided: ${!!cleanPin}`);
+
         try {
             // Ideally, open a dialog to choose *which* parent if there are multiple.
             // For now, default to the Main Admin Parent (matches Auth ID).
@@ -168,9 +173,17 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (error) throw error;
             if (data) {
                 // If the user has a PIN set, verify it
-                if (data.pin_code && data.pin_code !== pin) {
-                    throw new Error('PIN 碼錯誤');
+                if (data.pin_code) {
+                    const dbPin = data.pin_code.trim(); // Ensure DB value is clean
+
+                    if (cleanPin !== dbPin) {
+                        console.error(`❌ PIN Mismatch. Input: '${cleanPin}', DB: '${dbPin}'`);
+                        // In production, don't log the actual PIN, but here we debug
+                        throw new Error('PIN 碼錯誤');
+                    }
                 }
+
+                console.log('✅ Parent login successful');
                 setUser(data);
             } else {
                 // Profile not found - this should be rare if triggers work

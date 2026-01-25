@@ -5,8 +5,9 @@ import { useUser } from '../contexts/UserContext';
 import { supabase } from '../lib/supabase';
 
 export const ParentSettings: React.FC = () => {
-    const { user } = useUser();
+    const { user, setUser } = useUser();
     const [familyName, setFamilyName] = useState('');
+    const [userName, setUserName] = useState('');
     const [pin, setPin] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ text: '', type: '' });
@@ -25,8 +26,9 @@ export const ParentSettings: React.FC = () => {
 
             if (family) setFamilyName(family.name);
 
-            // Get current PIN (from user profile)
+            // Get current PIN and Name (from user profile)
             if (user.pin_code) setPin(user.pin_code);
+            if (user.name) setUserName(user.name);
         };
 
         fetchData();
@@ -40,21 +42,39 @@ export const ParentSettings: React.FC = () => {
         try {
             // Update Family Name
             if (user?.family_id) {
-                const { error: familyError } = await supabase
+                const { data: updatedDetails, error: familyError } = await supabase
                     .from('families')
-                    .update({ name: familyName })
-                    .eq('id', user.family_id);
+                    .update({ name: familyName.trim() })
+                    .eq('id', user.family_id)
+                    .select('id'); // Just select ID to verify update
 
                 if (familyError) throw familyError;
+
+                // CRITICAL: Check if row was actually updated
+                // If RLS blocks update, it returns success but empty data array
+                if (!updatedDetails || updatedDetails.length === 0) {
+                    console.warn("Family update returned 0 rows. Possible RLS issue.");
+                    throw new Error('無法更新家庭名稱 (權限不足：您可能不是家庭建立者)');
+                }
             }
 
-            // Update PIN
-            const { error: profileError } = await supabase
+            // Update Profile (PIN and Name)
+            const { data: updatedUser, error: profileError } = await supabase
                 .from('profiles')
-                .update({ pin_code: pin })
-                .eq('id', user!.id);
+                .update({
+                    pin_code: pin.trim(), // Ensure no whitespace
+                    name: userName.trim()
+                })
+                .eq('id', user!.id)
+                .select()
+                .single();
 
             if (profileError) throw profileError;
+
+            // Update local context immediately to reflect changes in header
+            if (updatedUser) {
+                setUser(updatedUser);
+            }
 
             setMessage({ text: '設定已更新！', type: 'success' });
         } catch (error: any) {
@@ -74,6 +94,27 @@ export const ParentSettings: React.FC = () => {
 
             <div className="rpg-dialog animate-bounce-in">
                 <form onSubmit={handleUpdateProfile} className="space-y-6">
+                    {/* User Name Section */}
+                    <div className="border-b-2 border-dashed border-gray-300 pb-6">
+                        <h3 className="font-pixel text-lg mb-4 flex items-center gap-2">
+                            <div className="bg-blue-100 p-1 rounded">👤</div>
+                            家長暱稱
+                        </h3>
+                        <div>
+                            <label className="block text-sm text-gray-600 mb-2">
+                                顯示在右上角的稱呼
+                            </label>
+                            <input
+                                type="text"
+                                value={userName}
+                                onChange={(e) => setUserName(e.target.value)}
+                                className="w-full px-3 py-2 border-2 border-deep-black text-sm"
+                                placeholder="例如：超級媽媽"
+                                required
+                            />
+                        </div>
+                    </div>
+
                     {/* Family Name Section */}
                     <div className="border-b-2 border-dashed border-gray-300 pb-6">
                         <h3 className="font-pixel text-lg mb-4 flex items-center gap-2">
