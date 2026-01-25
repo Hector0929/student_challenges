@@ -435,76 +435,255 @@
             requestAnimationFrame(loop);
         }
 
-        function updateObstacles() {
-            // Spawning Logic
-            if (state.frame % Math.floor(1000 / state.speed) === 0) { // Spawn frequency increases with speed
-                spawnObstacle();
+        // --- Advanced Classes ---
+
+        class Platform {
+            constructor(x, y, w, h) {
+                this.x = x;
+                this.y = y;
+                this.w = w;
+                this.h = h;
+                this.type = 'platform';
+                this.passed = false;
             }
+
+            draw(ctx) {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = CONFIG.colors.playerGlow;
+                ctx.fillStyle = '#4c1d95'; // Dark purple
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+
+                // Neon top
+                ctx.fillStyle = '#c084fc';
+                ctx.fillRect(this.x, this.y, this.w, 4);
+
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(this.x, this.y, this.w, this.h);
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        class Drone {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.w = 30;
+                this.h = 30;
+                this.vx = 8; // Faster than world
+                this.type = 'drone';
+                this.oscillation = Math.random() * Math.PI;
+            }
+
+            update() {
+                // Move left faster (relative speed = drone.vx + state.speed effectively)
+                // Actually if we want it to charge, it moves left relative to world
+                this.x -= (state.speed + 3);
+
+                // Bobbing functionality
+                this.y += Math.sin(state.frame * 0.1 + this.oscillation) * 2;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
+
+                // Rotation effect
+                ctx.rotate(state.frame * 0.2);
+
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ef4444';
+
+                // Spiky shape
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    const r = (i % 2 === 0) ? 15 : 8;
+                    ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+                }
+                ctx.closePath();
+                ctx.fill();
+
+                // Eye
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(0, 0, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        class Lava {
+            constructor(x, w) {
+                this.x = x;
+                this.y = canvas.height - CONFIG.floorHeight + 20; // Slightly below floor level
+                this.w = w;
+                this.h = CONFIG.floorHeight;
+                this.type = 'lava';
+            }
+
+            draw(ctx) {
+                // Draw over the floor
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(this.x, canvas.height - CONFIG.floorHeight, this.w, CONFIG.floorHeight);
+
+                // Bubbles logic could go here, for now simple glow
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#fca5a5';
+                ctx.fillStyle = '#b91c1c';
+                ctx.fillRect(this.x, canvas.height - CONFIG.floorHeight + 10, this.w, CONFIG.floorHeight);
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // --- Player Updates for Physics ---
+        // We need to inject platform collision into Player.update
+        // ... (This requires modifying the Player class or the update loop) ...
+        // Let's modify the update loop collision check.
+
+        // --- Pattern Generator ---
+        const PATTERNS = [
+            // 0: Classic 3 spikes
+            (startX) => [
+                { type: 'spike', x: startX, delay: 0 },
+                { type: 'spike', x: startX + 200, delay: 0 },
+                { type: 'spike', x: startX + 400, delay: 0 }
+            ],
+            // 1: Platform jump over lava
+            (startX) => {
+                const floorY = canvas.height - CONFIG.floorHeight;
+                return [
+                    { type: 'platform', x: startX, y: floorY - 80, w: 100, h: 20 },
+                    { type: 'lava', x: startX + 50, w: 300 }, // Dangerous floor
+                    { type: 'platform', x: startX + 200, y: floorY - 120, w: 100, h: 20 },
+                    { type: 'star', x: startX + 250, y: floorY - 200 }
+                ];
+            },
+            // 2: Drone ambush
+            (startX) => [
+                { type: 'spike', x: startX },
+                { type: 'drone', x: startX + 400, y: canvas.height - CONFIG.floorHeight - 60 },
+                { type: 'drone', x: startX + 600, y: canvas.height - CONFIG.floorHeight - 100 }
+            ],
+            // 3: High stairs
+            (startX) => {
+                const floorY = canvas.height - CONFIG.floorHeight;
+                return [
+                    { type: 'platform', x: startX, y: floorY - 60, w: 80, h: 20 },
+                    { type: 'platform', x: startX + 150, y: floorY - 120, w: 80, h: 20 },
+                    { type: 'platform', x: startX + 300, y: floorY - 180, w: 80, h: 20 },
+                    { type: 'star', x: startX + 340, y: floorY - 240 },
+                    { type: 'spike', x: startX + 150, y: floorY } // Trap below
+                ];
+            }
+        ];
+
+        let nextSpawnX = 0;
+
+        function updateObstacles() {
+            // Spawning Logic using Patterns
+            // Initialize nextSpawnX if needed
+            if (nextSpawnX === 0) nextSpawnX = canvas.width;
+
+            if (nextSpawnX < canvas.width + 100) {
+                spawnPattern();
+            }
+
+            // Move container for patterns? No, we just spawn individual objects from the pattern.
+            // Actually, we need to correct the 'update' of obstacles to handle the new types
 
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 const obs = obstacles[i];
-                obs.x -= state.speed;
+
+                if (obs.update) {
+                    obs.update(); // For Drones
+                } else {
+                    obs.x -= state.speed;
+                }
 
                 // Collision
                 if (checkCollision(player, obs)) {
-                    gameOver();
+                    if (obs.type === 'lava' || obs.type === 'spike' || obs.type === 'drone' || obs.type === 'tall') {
+                        gameOver();
+                    }
                 }
 
-                if (obs.x + obs.w < -100) obstacles.splice(i, 1);
+                // Platform Landing Logic
+                if (obs.type === 'platform') {
+                    // Check if player enters from top
+                    // Previous Y (approximate)
+                    const prevY = player.y - player.vy;
+                    if (player.vy >= 0 && // Falling
+                        player.x + player.w > obs.x && player.x < obs.x + obs.w && // Horizontal overlaps
+                        player.y + player.h >= obs.y && player.y + player.h <= obs.y + 20 && // Feet at top edge
+                        prevY + player.h <= obs.y + 10 // Was above
+                    ) {
+                        player.y = obs.y - player.h;
+                        player.vy = 0;
+                        player.isGrounded = true;
+                        player.jumpCount = 0;
+                        player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2);
+                    }
+                }
+
+                if (obs.x + (obs.w || 30) < -200) obstacles.splice(i, 1);
             }
         }
 
-        function updateStars() {
-            for (let i = stars.length - 1; i >= 0; i--) {
-                const star = stars[i];
-                star.update();
+        function spawnPattern() {
+            const patternIdx = Math.floor(Math.random() * PATTERNS.length);
+            const patternFn = PATTERNS[patternIdx];
 
-                // Collect
-                const dx = (player.x + player.w / 2) - star.x;
-                const dy = (player.y + player.h / 2) - star.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
+            // Space patterns out based on speed
+            const gap = 500 + Math.random() * 300 + (state.speed * 20);
 
-                if (dist < 40) { // Collection radius
-                    state.score += 500;
-                    spawnParticles(star.x, star.y, 10, star.color);
-                    playSound('coin');
-                    stars.splice(i, 1);
-                } else if (star.x < -100) {
-                    stars.splice(i, 1);
-                }
-            }
-        }
-
-        function spawnObstacle() {
-            const type = Math.random();
+            const entities = patternFn(nextSpawnX);
             const floorY = canvas.height - CONFIG.floorHeight;
 
-            if (type > 0.7) {
-                // Tall Spike
-                obstacles.push({ x: canvas.width, y: floorY - 90, w: 30, h: 90, type: 'tall' });
-                // Chance to spawn star above
-                stars.push(new Star(canvas.width, floorY - 150));
-            } else if (type > 0.4) {
-                // Double Mini
-                obstacles.push({ x: canvas.width, y: floorY - 40, w: 40, h: 40, type: 'spike' });
-                obstacles.push({ x: canvas.width + 45, y: floorY - 40, w: 40, h: 40, type: 'spike' });
-            } else {
-                // Single
-                obstacles.push({ x: canvas.width, y: floorY - 40, w: 40, h: 40, type: 'spike' });
-                // Star on ground? unlikely, maybe jump arch
-            }
+            entities.forEach(entity => {
+                if (entity.type === 'spike') {
+                    obstacles.push({ x: entity.x, y: floorY - 40, w: 40, h: 40, type: 'spike' });
+                } else if (entity.type === 'tall') {
+                    obstacles.push({ x: entity.x, y: floorY - 90, w: 30, h: 90, type: 'tall' });
+                } else if (entity.type === 'platform') {
+                    obstacles.push(new Platform(entity.x, entity.y, entity.w, entity.h));
+                } else if (entity.type === 'drone') {
+                    obstacles.push(new Drone(entity.x, entity.y));
+                } else if (entity.type === 'lava') {
+                    obstacles.push(new Lava(entity.x, entity.w));
+                } else if (entity.type === 'star') {
+                    stars.push(new Star(entity.x, entity.y));
+                }
+            });
+
+            nextSpawnX += gap;
         }
 
         function drawObstacle(obs) {
+            if (obs.draw) {
+                obs.draw(ctx);
+                return;
+            }
+
+            // Fallback for simple objects (spikes)
             ctx.shadowBlur = 10;
             ctx.shadowColor = CONFIG.colors.obstacle;
             ctx.fillStyle = CONFIG.colors.obstacle;
 
             // Draw Triangle
             ctx.beginPath();
-            ctx.moveTo(obs.x, obs.y + obs.h);
-            ctx.lineTo(obs.x + obs.w / 2, obs.y);
-            ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
+            if (obs.type === 'tall') {
+                ctx.moveTo(obs.x, obs.y + obs.h);
+                ctx.lineTo(obs.x + obs.w / 2, obs.y);
+                ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
+            } else {
+                ctx.moveTo(obs.x, obs.y + obs.h);
+                ctx.lineTo(obs.x + obs.w / 2, obs.y);
+                ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
+            }
+
             ctx.closePath();
             ctx.fill();
 
@@ -513,6 +692,7 @@
             ctx.stroke();
             ctx.shadowBlur = 0;
         }
+
 
         function checkCollision(p, obs) {
             // Hitbox tuning (forgiving)
@@ -559,6 +739,7 @@
             obstacles = [];
             particles = [];
             stars = [];
+            nextSpawnX = canvas.width; // Reset pattern spawner
 
             initBackground();
             player.reset();
