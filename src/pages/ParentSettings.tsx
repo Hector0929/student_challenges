@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Save, Lock, Home } from 'lucide-react';
 import { RPGButton } from '../components/RPGButton';
 import { useUser } from '../contexts/UserContext';
-import { useLine } from '../hooks/useLine';
 import { supabase } from '../lib/supabase';
 
 export const ParentSettings: React.FC = () => {
     const { user, setUser } = useUser();
-    const { bindLineAccount } = useLine(); // Correct top-level hook usage (requires import)
+    // const { bindLineAccount } = useLine(); // Postponed
     const [familyName, setFamilyName] = useState('');
     const [userName, setUserName] = useState('');
     const [pin, setPin] = useState('');
@@ -89,30 +88,11 @@ export const ParentSettings: React.FC = () => {
         }
     };
 
-    // Handler for Line Binding
-    const handleBindLine = async () => {
-        if (!user) return;
-        const success = await bindLineAccount(user.id);
-        if (success) {
-            // Refresh user to get the new line_user_id
-            const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-            if (data) setUser(data);
-        }
-    };
-
-    // Handler for Unbind
-    const handleUnbindLine = async () => {
-        if (!user) return;
-        if (confirm('確定要解除 Line 綁定嗎？')) {
-            const { error } = await supabase.from('profiles').update({ line_user_id: null }).eq('id', user.id);
-            if (!error) {
-                setUser({ ...user, line_user_id: undefined });
-                alert('已解除綁定');
-            } else {
-                alert('解除失敗');
-            }
-        }
-    };
+    // Line Integration Handlers (Postponed)
+    /*
+    const handleBindLine = async () => { ... }
+    const handleUnbindLine = async () => { ... }
+    */
 
     return (
         <div className="max-w-2xl mx-auto">
