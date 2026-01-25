@@ -7,6 +7,7 @@ import type { Quest, Profile } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { COMMON_EMOJIS } from '../lib/constants';
+import { useUser } from '../contexts/UserContext';
 
 export const ParentControl: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'active' | 'pending'>('active');
