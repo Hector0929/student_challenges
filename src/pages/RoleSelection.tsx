@@ -140,54 +140,54 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                     </div>
                 </div>
             </div>
+
+
+            {/* Parent Password Dialog */}
+            <RPGDialog
+                isOpen={showParentDialog}
+                onClose={() => {
+                    setShowParentDialog(false);
+                    setParentPassword('');
+                    setError('');
+                }}
+                title="家長驗證"
+            >
+                <form onSubmit={handleParentLogin} className="space-y-4">
+                    <p className="text-sm text-gray-600 mb-4">
+                        請輸入家長密碼以進入管理介面
+                    </p>
+
+                    <div>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                            <input
+                                type="tel"
+                                pattern="[0-9]*"
+                                inputMode="numeric"
+                                maxLength={4}
+                                value={parentPassword}
+                                onChange={(e) => {
+                                    // Only allow numbers
+                                    const val = e.target.value.replace(/\D/g, '');
+                                    setParentPassword(val);
+                                    setError('');
+                                }}
+                                className="w-full pl-12 pr-4 py-3 border-2 border-deep-black text-sm tracking-widest text-center text-2xl font-pixel"
+                                placeholder="請輸入4位數 PIN 碼"
+                                autoFocus
+                                required
+                            />
+                        </div>
+                        {error && (
+                            <p className="mt-2 text-sm text-red-600 font-pixel">❌ {error}</p>
+                        )}
+                    </div>
+
+                    <RPGButton type="submit" className="w-full">
+                        <span>確認</span>
+                    </RPGButton>
+                </form>
+            </RPGDialog>
         </div>
-
-                {/* Parent Password Dialog */ }
-    <RPGDialog
-        isOpen={showParentDialog}
-        onClose={() => {
-            setShowParentDialog(false);
-            setParentPassword('');
-            setError('');
-        }}
-        title="家長驗證"
-    >
-        <form onSubmit={handleParentLogin} className="space-y-4">
-            <p className="text-sm text-gray-600 mb-4">
-                請輸入家長密碼以進入管理介面
-            </p>
-
-            <div>
-                <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                        type="tel"
-                        pattern="[0-9]*"
-                        inputMode="numeric"
-                        maxLength={4}
-                        value={parentPassword}
-                        onChange={(e) => {
-                            // Only allow numbers
-                            const val = e.target.value.replace(/\D/g, '');
-                            setParentPassword(val);
-                            setError('');
-                        }}
-                        className="w-full pl-12 pr-4 py-3 border-2 border-deep-black text-sm tracking-widest text-center text-2xl font-pixel"
-                        placeholder="請輸入4位數 PIN 碼"
-                        autoFocus
-                        required
-                    />
-                </div>
-                {error && (
-                    <p className="mt-2 text-sm text-red-600 font-pixel">❌ {error}</p>
-                )}
-            </div>
-
-            <RPGButton type="submit" className="w-full">
-                <span>確認</span>
-            </RPGButton>
-        </form>
-    </RPGDialog>
-            </div >
-            );
+    );
 };
