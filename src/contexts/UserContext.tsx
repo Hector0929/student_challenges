@@ -60,9 +60,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         .maybeSingle();
 
                     if (data && !error) {
-                        // Verify this profile belongs to the family (or is the family admin)
-                        // Note: RLS should handle this, but double check logic:
-                        // If I am the auth user, I can see my family members.
+                        // Security Check: If restoring a Parent profile, require active session auth
+                        if (data.role === 'parent') {
+                            const isParentAuth = sessionStorage.getItem('parent-auth') === 'verified';
+                            if (!isParentAuth) {
+                                // Session invalid (e.g. browser closed), force partial logout to Role Selection
+                                console.log('🔒 Parent session expired, requiring PIN re-entry');
+                                localStorage.removeItem('questmon-current-profile-id');
+                                setUserState(null);
+                                return;
+                            }
+                        }
+
                         setUserState(data);
                     } else {
                         localStorage.removeItem('questmon-current-profile-id');
@@ -156,14 +165,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const loginAsParent = async (pin?: string) => {
         if (!session) return;
 
-        // Ensure whitespace is stripped
         const cleanPin = pin ? pin.trim() : undefined;
-        console.log(`🔐 Attempting parent login. PIN provided: ${!!cleanPin}`);
+        // console.log(`🔐 Attempting parent login. PIN provided: ${!!cleanPin}`);
 
         try {
-            // Ideally, open a dialog to choose *which* parent if there are multiple.
-            // For now, default to the Main Admin Parent (matches Auth ID).
-
             const { data, error } = await supabase
                 .from('profiles')
                 .select('*')
@@ -172,29 +177,46 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             if (error) throw error;
             if (data) {
-                // If the user has a PIN set, verify it
-                if (data.pin_code) {
-                    const dbPin = data.pin_code.trim(); // Ensure DB value is clean
+                // Logic:
+                // 1. If PIN provided, check against DB.
+                // 2. If PIN NOT provided, check if session is already verified.
 
-                    if (cleanPin !== dbPin) {
-                        console.error(`❌ PIN Mismatch. Input: '${cleanPin}', DB: '${dbPin}'`);
-                        // In production, don't log the actual PIN, but here we debug
+                const sessionVerified = sessionStorage.getItem('parent-auth') === 'verified';
+                const dbPin = data.pin_code ? data.pin_code.trim() : null;
+
+                if (cleanPin !== undefined) {
+                    // PIN provided (trying to login with PIN)
+                    // If DB has no PIN (null or 0000?), allow? User request A says default 0000.
+                    // If dbPin is '0000', allow specific check? No, just match string.
+
+                    if (dbPin && dbPin !== cleanPin) {
+                        // console.error(`❌ PIN Mismatch.`);
                         throw new Error('PIN 碼錯誤');
                     }
+                    // Verification success -> Mark session
+                    sessionStorage.setItem('parent-auth', 'verified');
+                } else {
+                    // PIN not provided (trying to bypass or switch back)
+                    if (!sessionVerified && dbPin) {
+                        // Not verified and DB has PIN -> Reject
+                        // Note: If DB has NO PIN, we might allow? Secure default is Reject.
+                        throw new Error('請輸入 PIN 碼');
+                    }
+                    // If verified, allow.
                 }
 
                 console.log('✅ Parent login successful');
                 setUser(data);
             } else {
-                // Profile not found - this should be rare if triggers work
-                // Attempt recovery or just error out
                 console.error('Profile not found for authenticated user');
                 throw new Error('找不到家長檔案，請重新註冊');
             }
         } catch (error: any) {
             console.error('家長登入失敗:', error);
-            alert(error.message || '登入失敗，請重試');
-            throw error; // Re-throw so UI knows it failed
+            // Alert is handled by UI caller if needed, or we just throw
+            // But usually contexts verify silent or loud. 
+            // We throw so RoleSelection can show error
+            throw error;
         }
     };
 
