@@ -155,6 +155,16 @@ export const ParentControl: React.FC = () => {
 
     return (
         <div className="max-w-6xl mx-auto">
+            {/* PIN Warning Banner */}
+            {useUser().user?.pin_code === '0000' && (
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 flex justify-between items-center animate-pulse">
+                    <div>
+                        <p className="font-bold font-pixel">⚠️ 安全提醒</p>
+                        <p className="text-sm">您目前使用的是預設 PIN 碼 (0000)。為了帳號安全，請前往「⚙️ 設定」修改您的 PIN 碼。</p>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
