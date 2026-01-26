@@ -591,6 +591,9 @@
                 spawnPattern();
             }
 
+            // Critical fix: Move the spawn point with the world
+            if (nextSpawnX > 0) nextSpawnX -= state.speed;
+
             // Move container for patterns? No, we just spawn individual objects from the pattern.
             // Actually, we need to correct the 'update' of obstacles to handle the new types
 
