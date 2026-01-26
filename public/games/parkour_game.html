@@ -61,6 +61,12 @@
                 Collect STARS for bonus!
             </div>
         </div>
+        <!-- Hearts UI -->
+        <div id="hearts-container" class="mt-2 flex gap-1">
+            <span class="text-2xl">❤️</span>
+            <span class="text-2xl">❤️</span>
+            <span class="text-2xl">❤️</span>
+        </div>
     </div>
 
     <!-- Start Screen -->
@@ -137,7 +143,10 @@
             speed: CONFIG.initialSpeed,
             frame: 0,
             distance: 0,
-            cameraShake: 0
+            cameraShake: 0,
+            lives: 3,
+            invincible: false,
+            invincibleTimer: 0
         };
 
         // --- Classes ---
@@ -287,6 +296,9 @@
             }
 
             draw(ctx) {
+                // Blink if invincible
+                if (state.invincible && Math.floor(state.frame / 4) % 2 === 0) return;
+
                 ctx.save();
                 ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
                 ctx.scale(this.scaleX, this.scaleY);
@@ -430,6 +442,14 @@
             particles.forEach(p => p.draw(ctx));
 
             ctx.restore();
+
+            // Invincibility Timer
+            if (state.invincible) {
+                state.invincibleTimer--;
+                if (state.invincibleTimer <= 0) {
+                    state.invincible = false;
+                }
+            }
 
             state.frame++;
             requestAnimationFrame(loop);
@@ -675,7 +695,20 @@
                 // Collision
                 if (checkCollision(player, obs)) {
                     if (obs.type === 'lava' || obs.type === 'spike' || obs.type === 'drone' || obs.type === 'tall' || obs.type === 'wheel') {
-                        gameOver();
+                        if (!state.invincible) {
+                            state.lives--;
+                            updateHeartsUI();
+
+                            if (state.lives <= 0) {
+                                gameOver();
+                            } else {
+                                // Get hit but survive
+                                state.invincible = true;
+                                state.invincibleTimer = 60; // 1 second roughly
+                                state.cameraShake = 5;
+                                playSound('hit');
+                            }
+                        }
                     }
                 }
 
@@ -850,8 +883,24 @@
 
             initBackground();
             player.reset();
+
+            // Reset Lives
+            state.lives = 3;
+            state.invincible = false;
+            updateHeartsUI();
+
             resize();
             loop();
+        }
+
+        function updateHeartsUI() {
+            const container = document.getElementById('hearts-container');
+            if (state.lives < 0) state.lives = 0;
+            // Generate hearts string
+            let hearts = '';
+            for (let i = 0; i < state.lives; i++) hearts += '<span class="text-2xl">❤️</span>';
+            // Empty hearts placehoders? Optional.
+            container.innerHTML = hearts;
         }
 
         function resetGame() {
