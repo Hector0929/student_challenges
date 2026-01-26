@@ -538,6 +538,53 @@
             }
         }
 
+        class Wheel {
+            constructor(x) {
+                this.radius = 25;
+                this.x = x;
+                this.y = canvas.height - CONFIG.floorHeight - this.radius;
+                this.w = this.radius * 2; // For simple collision check
+                this.h = this.radius * 2;
+                this.type = 'wheel';
+                this.angle = 0;
+            }
+
+            update() {
+                // Rolling fast towards player
+                // Moves faster than the scroll speed
+                this.x -= (state.speed + 4);
+                this.angle -= 0.2; // Spin
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x + this.radius, this.y + this.radius);
+                ctx.rotate(this.angle);
+
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#facc15'; // Yellow glow
+
+                // Tire
+                ctx.strokeStyle = '#facc15';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Spokes
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(-this.radius, 0);
+                ctx.lineTo(this.radius, 0);
+                ctx.moveTo(0, -this.radius);
+                ctx.lineTo(0, this.radius);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+        }
+
         // --- Player Updates for Physics ---
         // We need to inject platform collision into Player.update
         // ... (This requires modifying the Player class or the update loop) ...
@@ -545,11 +592,10 @@
 
         // --- Pattern Generator ---
         const PATTERNS = [
-            // 0: Classic 3 spikes (Easy)
+            // 0: Classic spikes (Easy) - Modified to max 2
             (startX) => [
                 { type: 'spike', x: startX, delay: 0 },
-                { type: 'spike', x: startX + 200, delay: 0 },
-                { type: 'spike', x: startX + 400, delay: 0 }
+                { type: 'spike', x: startX + 200, delay: 0 }
             ],
             // 1: Platform jump over lava (Medium)
             (startX) => {
@@ -586,9 +632,16 @@
             },
             // 4: Single Spike (Training) - Very Easy
             (startX) => {
-                const floorY = canvas.height - CONFIG.floorHeight;
                 return [
                     { type: 'spike', x: startX, delay: 0 }
+                ];
+            },
+            // 5: Rolling Wheel (Hard) - Spawns alone
+            (startX) => {
+                // Ensure no interaction with right spikes by giving it space.
+                // The spawn logic handles the gap after this pattern.
+                return [
+                    { type: 'wheel', x: startX }
                 ];
             }
         ];
@@ -614,14 +667,14 @@
                 const obs = obstacles[i];
 
                 if (obs.update) {
-                    obs.update(); // For Drones
+                    obs.update(); // For Drones and Wheels
                 } else {
                     obs.x -= state.speed;
                 }
 
                 // Collision
                 if (checkCollision(player, obs)) {
-                    if (obs.type === 'lava' || obs.type === 'spike' || obs.type === 'drone' || obs.type === 'tall') {
+                    if (obs.type === 'lava' || obs.type === 'spike' || obs.type === 'drone' || obs.type === 'tall' || obs.type === 'wheel') {
                         gameOver();
                     }
                 }
@@ -676,11 +729,13 @@
 
             if (state.score < 500) {
                 availablePatterns = [4]; // Just Single Spike (Training)
-                extraGap = 300; // More breathing room for beginners
+                extraGap = 300; // More breathing room
+            } else if (state.score < 1000) {
+                availablePatterns = [0, 1, 4]; // Spikes + Platforms + Single
             } else if (state.score < 1500) {
-                availablePatterns = [0, 1, 4]; // Classic Spikes + Platforms + Single
+                availablePatterns = [0, 1, 3, 5]; // Spikes + Platforms + Stairs + Wheel (New!)
             } else {
-                availablePatterns = [0, 1, 2, 3]; // All (including Drones, excluding baby pattern 4)
+                availablePatterns = [0, 1, 2, 3, 5]; // All (Drones + Wheels)
             }
 
             const patternIdx = availablePatterns[Math.floor(Math.random() * availablePatterns.length)];
@@ -705,6 +760,8 @@
                     obstacles.push(new Lava(entity.x, entity.w));
                 } else if (entity.type === 'star') {
                     stars.push(new Star(entity.x, entity.y));
+                } else if (entity.type === 'wheel') {
+                    obstacles.push(new Wheel(entity.x));
                 }
             });
 
