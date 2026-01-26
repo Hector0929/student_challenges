@@ -583,6 +583,13 @@
                     { type: 'star', x: startX + 340, y: floorY - 240 },
                     { type: 'spike', x: startX + 150, y: floorY } // Trap below
                 ];
+            },
+            // 4: Single Spike (Training) - Very Easy
+            (startX) => {
+                const floorY = canvas.height - CONFIG.floorHeight;
+                return [
+                    { type: 'spike', x: startX, delay: 0 }
+                ];
             }
         ];
 
@@ -665,20 +672,22 @@
         function spawnPattern() {
             // Difficulty Progression
             let availablePatterns = [];
+            let extraGap = 0;
 
             if (state.score < 500) {
-                availablePatterns = [0]; // Just spikes
+                availablePatterns = [4]; // Just Single Spike (Training)
+                extraGap = 300; // More breathing room for beginners
             } else if (state.score < 1500) {
-                availablePatterns = [0, 1, 3]; // Spikes + Platforms
+                availablePatterns = [0, 1, 4]; // Classic Spikes + Platforms + Single
             } else {
-                availablePatterns = [0, 1, 2, 3]; // All (including Drones)
+                availablePatterns = [0, 1, 2, 3]; // All (including Drones, excluding baby pattern 4)
             }
 
             const patternIdx = availablePatterns[Math.floor(Math.random() * availablePatterns.length)];
             const patternFn = PATTERNS[patternIdx];
 
             // Space patterns out based on speed
-            const gap = 500 + Math.random() * 300 + (state.speed * 20);
+            const gap = 500 + Math.random() * 300 + (state.speed * 20) + extraGap;
 
             const entities = patternFn(nextSpawnX);
             const floorY = canvas.height - CONFIG.floorHeight;
