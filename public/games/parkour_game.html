@@ -840,7 +840,8 @@
             return (
                 p.x + buffering < obs.x + obs.w &&
                 p.x + p.w - buffering > obs.x &&
-                p.y + p.h - buffering > obs.y
+                p.y + p.h - buffering > obs.y &&
+                p.y + buffering < obs.y + obs.h // Added missing check: Player Top < Obstacle Bottom
             );
         }
 
