@@ -316,7 +316,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
 
             {/* Quest List */}
             {!isQuestSectionCollapsed && (
-                <div className="space-y-4">
+                <div className="space-y-4 mb-6">
                     {quests && quests.length > 0 ? (
                         quests.map((quest) => (
                             <div key={quest.id} className="animate-bounce-in">

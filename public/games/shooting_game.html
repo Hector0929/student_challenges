@@ -1,99 +1,146 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九九乘法打擊敵機遊戲</title>
+    <title>Neon Math Shooter</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* 自定義字體 */
         body {
-            font-family: "Inter", sans-serif;
-        }
-        /* 確保 canvas 佔用其父容器的可用空間 */
-        canvas {
-            display: block;
-            background-color: #a7f3d0; /* 淺綠色背景 */
-            border-bottom: 2px solid #9ca3af; /* 灰色邊框 */
-            border-radius: 0.5rem; /* 圓角 */
-            width: 100%; /* 佔滿父容器寬度 */
-            height: calc(50vh); /* 將高度設定為視口高度的一半 */
-        }
-        /* 更新按鈕樣式以匹配新圖片 */
-        .answer-button {
-            @apply w-full h-full px-8 py-4 bg-white text-blue-600 text-4xl font-bold rounded-2xl shadow-md transition-all duration-150;
-            @apply border-4 border-blue-500; /* 藍色粗邊框 */
-            @apply hover:bg-blue-50 hover:border-blue-600; /* 滑鼠懸停效果 */
-            @apply active:bg-blue-100; /* 按下效果 */
-        }
-        .answer-button:disabled {
-            @apply bg-gray-200 border-gray-400 text-gray-500 cursor-not-allowed;
-        }
-        .celebration-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            font-family: 'Orbitron', sans-serif;
+            background-color: #0f0b1e;
             color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 3rem;
-            font-weight: bold;
-            text-align: center;
-            z-index: 100;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px #a855f7, 0 0 20px #a855f7;
+        }
+
+        .neon-box {
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid #a855f7;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.3), inset 0 0 10px rgba(168, 85, 247, 0.1);
+        }
+
+        .clay-btn {
+            background: linear-gradient(145deg, #1e1b4b, #312e81);
+            border: 1px solid #6366f1;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+            transition: all 0.2s;
+        }
+
+        .clay-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.7);
+            border-color: #818cf8;
+        }
+
+        .clay-btn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+
+        .clay-btn:disabled {
+            background: #1f2937;
+            border-color: #374151;
+            color: #6b7280;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        canvas {
+            image-rendering: pixelated;
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-2 relative overflow-hidden">
-    <div id="game-area" class="w-full max-w-3xl bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">
-        <canvas id="gameCanvas"></canvas>
 
-        <div class="p-4 bg-gray-50 flex flex-col items-center justify-center text-center rounded-b-lg">
-            <div class="text-lg font-semibold mb-2 flex justify-between w-full px-4">
-                <span id="scoreDisplay">分數: 0</span>
-                <span id="timerDisplay">時間: 40s</span>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 relative">
+
+    <!-- Game Container -->
+    <div id="game-container" class="w-full max-w-2xl relative">
+
+        <!-- Stats Bar -->
+        <div class="flex justify-between items-center mb-4 px-2">
+            <div class="neon-box rounded-xl px-4 py-2 flex gap-4">
+                <span class="text-purple-400 font-bold">SCORE</span>
+                <span id="scoreDisplay" class="text-white text-xl">0</span>
             </div>
-            <div class="text-4xl font-bold mb-4 text-center w-full">
-                <span id="questionDisplay">點擊開始遊戲</span>
+            <div class="neon-box rounded-xl px-4 py-2 flex gap-4">
+                <span class="text-cyan-400 font-bold">TIME</span>
+                <span id="timerDisplay" class="text-white text-xl">40s</span>
             </div>
-            <div id="answerOptionsContainer" class="grid grid-cols-2 gap-4 mb-4 w-full max-w-sm">
+        </div>
+
+        <!-- Canvas Area -->
+        <div class="relative neon-box rounded-2xl overflow-hidden mb-4">
+            <canvas id="gameCanvas" class="w-full h-80 block bg-[#0f0b1e]"></canvas>
+
+            <!-- Question Texture Overlay (Optional, keeping clean for now) -->
+        </div>
+
+        <!-- UI / Control Panel -->
+        <div class="neon-box rounded-2xl p-6 text-center">
+
+            <!-- Question Display -->
+            <div class="mb-6">
+                <div id="feedbackDisplay" class="h-6 text-sm font-bold mb-1 transition-colors duration-200"></div>
+                <div id="questionDisplay"
+                    class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 neon-text pb-2">
+                    READY?
                 </div>
-            <div class="h-2 bg-gray-300 rounded-full mt-4 overflow-hidden w-full max-w-xs">
-                <div id="questionTimerBar" class="h-full bg-green-500 transition-all duration-100 ease-linear" style="width: 100%;"></div>
+                <!-- Timer Bar -->
+                <div class="h-1 bg-gray-800 rounded-full mt-4 overflow-hidden w-64 mx-auto">
+                    <div id="questionTimerBar"
+                        class="h-full bg-cyan-500 shadow-[0_0_10px_#22d3ee] transition-all duration-100 ease-linear"
+                        style="width: 100%;"></div>
+                </div>
             </div>
-            <div id="feedbackDisplay" class="mt-2 text-red-600 font-semibold h-6"></div>
-            <!-- 修改：按鈕初始為禁用狀態，顯示載入中 -->
-            <button
-                id="startGameButton"
-                class="mt-4 px-6 py-3 bg-blue-600 text-white text-xl font-bold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400"
-                disabled
-            >
-                載入中...
-            </button>
-            <button
-                id="specialCannonButton"
-                class="mt-2 px-4 py-2 bg-purple-600 text-white text-lg font-bold rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 hidden"
-            >
-                發射大砲！
+
+            <!-- Answers Grid -->
+            <div id="answerOptionsContainer" class="grid grid-cols-2 gap-4 mb-6">
+                <!-- Buttons injected by JS -->
+            </div>
+
+            <!-- Controls -->
+            <div class="flex justify-center gap-4">
+                <button id="startGameButton"
+                    class="clay-btn text-white px-8 py-3 text-xl font-bold rounded-xl w-full max-w-xs">
+                    START MISSION
+                </button>
+                <button id="specialCannonButton"
+                    class="hidden clay-btn text-yellow-300 border-yellow-500 px-6 py-3 text-lg font-bold rounded-xl whitespace-nowrap shadow-[0_0_15px_rgba(234,179,8,0.4)]">
+                    ⚡ SUPER BEAM
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Celebration / Game Over Overlay -->
+    <div id="celebrationScreen"
+        class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="neon-box rounded-2xl p-8 text-center max-w-sm mx-4 animate-[bounce_1s_infinite]">
+            <div class="text-6xl mb-4">🎉</div>
+            <h2 class="text-3xl font-bold text-purple-400 mb-2 neon-text">MISSION COMPLETE!</h2>
+            <p class="text-gray-300 mb-2">FINAL SCORE</p>
+            <p id="finalScore" class="text-5xl font-bold text-white mb-8 text-shadow-lg">0</p>
+            <button id="restartGameButton" class="clay-btn text-white px-8 py-3 text-xl font-bold rounded-xl w-full">
+                PLAY AGAIN
             </button>
         </div>
     </div>
 
-    <div id="celebrationScreen" class="celebration-screen hidden">
-        <p>恭喜過關！</p>
-        <p>分數: <span id="finalScore">0</span></p>
-        <button id="restartGameButton" class="mt-8 px-6 py-3 bg-green-600 text-white text-xl font-bold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
-            再玩一次
-        </button>
-    </div>
-
     <script>
+        /**
+         * NEON MATH SHOOTER - Redesigned
+         */
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+
+        // UI Elements
         const scoreDisplay = document.getElementById('scoreDisplay');
         const timerDisplay = document.getElementById('timerDisplay');
         const questionDisplay = document.getElementById('questionDisplay');
@@ -106,477 +153,548 @@
         const finalScoreDisplay = document.getElementById('finalScore');
         const restartGameButton = document.getElementById('restartGameButton');
 
-        // 新增：載入玩家圖片 (砲台)
-        const playerImage = new Image();
-        let playerImageLoaded = false;
-        // 使用一個穩定的圖片 URL
-        playerImage.src = 'pikachu.png';
-        playerImage.onload = () => {
-            playerImageLoaded = true;
-            startGameButton.disabled = false; // 圖片載入後啟用按鈕
-            startGameButton.textContent = '開始遊戲';
-        };
-        playerImage.onerror = () => {
-            // 如果圖片載入失敗，依然啟用遊戲，但會使用備用方塊樣式
-            playerImageLoaded = false; // 確保這個變數是 false
-            startGameButton.disabled = false;
-            startGameButton.textContent = '開始遊戲 (圖片載入失敗)';
+        // Game Configuration
+        const CONFIG = {
+            width: 800,
+            height: 480, // Internal resolution
+            colors: {
+                bg: '#0f0b1e',
+                player: '#22d3ee', // Cyan
+                playerGlow: '#06b6d4',
+                enemy: '#f472b6',  // Pink
+                enemyGlow: '#db2777',
+                bullet: '#facc15', // Yellow
+                bulletGlow: '#eab308'
+            }
         };
 
+        // Resize handling
+        function resize() {
+            const container = document.getElementById('game-container');
+            const aspect = CONFIG.width / CONFIG.height;
+            // Fit to container width
+            canvas.width = CONFIG.width;
+            canvas.height = CONFIG.height;
+            // CSS handles visual scaling
+        }
+        window.addEventListener('resize', resize);
+        resize();
 
-        // 遊戲狀態變數
-        let score = 0;
-        let gameTimer = 40;
-        let questionTimer = 5;
-        let currentQuestion = { num1: 0, num2: 0, answer: 0 };
-        let gameStarted = false;
-        let gameOver = false;
-        let specialCannonAvailable = false;
-        let lastCannonScoreThreshold = 0;
+        // Game State
+        let state = {
+            isPlaying: false,
+            score: 0,
+            gameTime: 40,
+            questionTime: 5,
+            lastFrame: 0,
+            specialReady: false,
+            lastSpecialScore: 0
+        };
 
-        // 遊戲元素狀態
-        let player = null;
-        let enemies = [];
-        let bullets = [];
-        let askedQuestions = new Set();
-
-        // 計時器和動畫幀 ID
-        let lastFrameTime = 0;
-        let questionStartTime = 0;
-        let gameLoopId = null;
-        let gameTimerIntervalId = null;
-        let questionTimerIntervalId = null;
+        // Entities
+        let player, enemies = [], bullets = [], particles = [], stars = [];
+        // Logic
+        let currentQuestion = null;
+        let gameLoopId, gameTimerId, questionTimerId;
         let enemySpawnTimer = 0;
-        let nextEnemySpawnTime = 0;
 
-        // 遊戲設定
-        const maxEnemies = 10;
-        const enemySpeed = 0.5;
-        const bulletSpeed = 5;
-        const WIN_SCORE = 500;
+        // --- Classes ---
 
-        // 遊戲元素類別定義
-        class Player {
-            constructor(x, y, width, height) {
+        class Star {
+            constructor() {
+                this.x = Math.random() * CONFIG.width;
+                this.y = Math.random() * CONFIG.height;
+                this.size = Math.random() * 2;
+                this.speed = Math.random() * 0.5 + 0.1;
+                this.brightness = Math.random();
+            }
+            update() {
+                this.y += this.speed;
+                if (this.y > CONFIG.height) {
+                    this.y = 0;
+                    this.x = Math.random() * CONFIG.width;
+                }
+                this.brightness = 0.5 + Math.sin(Date.now() * 0.005 + this.x) * 0.5;
+            }
+            draw(ctx) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.brightness})`;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
                 this.x = x;
                 this.y = y;
-                this.width = width;
-                this.height = height;
+                this.color = color;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 3 + 1;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.03 + 0.02;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+            }
+            draw(ctx) {
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        class Player {
+            constructor() {
+                this.w = 50;
+                this.h = 50;
+                this.x = CONFIG.width / 2;
+                this.y = CONFIG.height - 70;
+                this.targetX = this.x;
             }
 
-            // 修改：使用 drawImage 來繪製砲台圖片
+            update() {
+                // Smooth movement to target
+                this.x += (this.targetX - this.x) * 0.1;
+            }
+
             draw(ctx) {
-                if (playerImageLoaded) {
-                    ctx.drawImage(playerImage, this.x, this.y, this.width, this.height);
-                } else {
-                    // 圖片載入失敗時的備用繪製方案
-                    ctx.fillStyle = 'blue';
-                    ctx.fillRect(this.x, this.y, this.width, this.height);
-                }
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                // Glow
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = CONFIG.colors.playerGlow;
+                ctx.strokeStyle = CONFIG.colors.player;
+                ctx.fillStyle = '#000';
+                ctx.lineWidth = 2;
+
+                // Ship Shape
+                ctx.beginPath();
+                ctx.moveTo(0, -25);
+                ctx.lineTo(20, 25);
+                ctx.lineTo(0, 15); // Engine indent
+                ctx.lineTo(-20, 25);
+                ctx.closePath();
+
+                ctx.fill();
+                ctx.stroke();
+
+                // Detailed Engine Glow
+                ctx.shadowBlur = 10;
+                ctx.fillStyle = CONFIG.colors.player;
+                ctx.beginPath();
+                ctx.arc(0, 15, 3 + Math.random() * 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
             }
         }
 
         class Enemy {
-            constructor(x, y, width, height, color = 'red') {
+            constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.width = width;
-                this.height = height;
-                this.color = color;
-            }
-
-            draw(ctx) {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(this.x, this.y);
-                ctx.lineTo(this.x + this.width, this.y + this.height);
-                ctx.moveTo(this.x + this.width, this.y);
-                ctx.lineTo(this.x, this.y + this.height);
-                ctx.stroke();
+                this.w = 40;
+                this.h = 40;
+                this.speed = 1.5;
+                this.rotation = 0;
             }
 
             update() {
-                this.y += enemySpeed;
+                this.y += this.speed;
+                this.rotation += 0.05;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
+                ctx.rotate(this.rotation);
+
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = CONFIG.colors.enemyGlow;
+                ctx.strokeStyle = CONFIG.colors.enemy;
+                ctx.lineWidth = 2;
+
+                // Geometric Shape (Diamond)
+                ctx.beginPath();
+                ctx.moveTo(0, -20);
+                ctx.lineTo(20, 0);
+                ctx.lineTo(0, 20);
+                ctx.lineTo(-20, 0);
+                ctx.closePath();
+                ctx.stroke();
+
+                // Inner core
+                ctx.fillStyle = CONFIG.colors.enemy;
+                ctx.globalAlpha = 0.3;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+
+                ctx.restore();
             }
         }
 
         class Bullet {
-            constructor(x, y, width, height, color = 'yellow', target = null, speed = bulletSpeed) {
+            constructor(x, y, target) {
                 this.x = x;
                 this.y = y;
-                this.width = width;
-                this.height = height;
-                this.color = color;
+                this.w = 6;
+                this.h = 20;
+                this.speed = 12;
                 this.target = target;
-                this.speed = speed;
-                this.vx = 0;
-                this.vy = -this.speed;
-            }
 
-            draw(ctx) {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
+                if (target) {
+                    // Homing logic (simple)
+                    const dx = (target.x + target.w / 2) - x;
+                    const dy = (target.y + target.h / 2) - y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    this.vx = (dx / dist) * this.speed;
+                    this.vy = (dy / dist) * this.speed;
+                    this.angle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
+                } else {
+                    this.vx = 0;
+                    this.vy = -this.speed;
+                    this.angle = 0;
+                }
             }
 
             update() {
-                if (this.target && enemies.includes(this.target)) {
-                    const angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
-                    this.vx = Math.cos(angle) * this.speed;
-                    this.vy = Math.sin(angle) * this.speed;
-                } 
                 this.x += this.vx;
                 this.y += this.vy;
             }
-        }
 
-        // 遊戲邏輯函數
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = CONFIG.colors.bulletGlow;
+                ctx.fillStyle = CONFIG.colors.bullet;
+
+                // Laser beam shape
+                ctx.beginPath();
+                ctx.roundRect(-3, -10, 6, 20, 3);
+                ctx.fill();
+
+                ctx.restore();
             }
         }
 
-        function generateQuestion() {
-            let num1, num2, questionString;
-            do {
-                num1 = Math.floor(Math.random() * 9) + 1;
-                num2 = Math.floor(Math.random() * 9) + 1;
-                questionString = `${Math.min(num1, num2)}x${Math.max(num1, num2)}`;
-            } while (askedQuestions.has(questionString) && askedQuestions.size < 81);
+        // --- Core Systems ---
 
-            if (askedQuestions.size === 81) {
-                askedQuestions.clear();
+        function init() {
+            player = new Player();
+            stars = Array(50).fill().map(() => new Star());
+
+            // Initial render
+            loop(0);
+        }
+
+        function loop(timestamp) {
+            if (!state.lastFrame) state.lastFrame = timestamp;
+            const dt = (timestamp - state.lastFrame) / 16.67;
+            state.lastFrame = timestamp;
+
+            // Clear
+            ctx.fillStyle = CONFIG.colors.bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Update & Draw Background
+            stars.forEach(s => { s.update(); s.draw(ctx); });
+
+            // Player
+            if (player) {
+                player.update();
+                player.draw(ctx);
             }
-            askedQuestions.add(questionString);
-            currentQuestion = { num1, num2, answer: num1 * num2 };
-            questionDisplay.textContent = `${currentQuestion.num1} x ${currentQuestion.num2} = ?`;
-            feedbackDisplay.textContent = '';
-            questionStartTime = Date.now();
-            resetQuestionTimer();
 
-            const answers = [currentQuestion.answer];
-            while (answers.length < 4) {
-                let wrongAnswer;
-                do {
-                    wrongAnswer = Math.floor(Math.random() * 81) + 1;
-                } while (answers.includes(wrongAnswer) || Math.abs(wrongAnswer - currentQuestion.answer) < 3);
-                answers.push(wrongAnswer);
-            }
-            shuffleArray(answers);
-
-            answerOptionsContainer.innerHTML = '';
-            answers.forEach(ans => {
-                const button = document.createElement('button');
-                button.textContent = ans;
-                button.classList.add('answer-button');
-                button.dataset.answer = ans;
-                button.addEventListener('click', handleAnswerClick);
-                answerOptionsContainer.appendChild(button);
-            });
-            enableAnswerButtons();
-        }
-
-        function enableAnswerButtons() {
-            Array.from(answerOptionsContainer.children).forEach(button => {
-                button.disabled = false;
-            });
-        }
-
-        function disableAnswerButtons() {
-            Array.from(answerOptionsContainer.children).forEach(button => {
-                button.disabled = true;
-            });
-        }
-
-        function resetQuestionTimer() {
-            questionTimer = 5;
-            questionTimerBar.style.width = '100%';
-            if (questionTimerIntervalId) clearInterval(questionTimerIntervalId);
-            questionTimerIntervalId = setInterval(() => {
-                questionTimer -= 0.05;
-                if (questionTimer <= 0.05) {
-                    clearInterval(questionTimerIntervalId);
-                    if (gameStarted && !gameOver) {
-                        endGame("時間到，你被敵軍打敗了！");
-                    }
-                    questionTimer = 0;
+            if (state.isPlaying) {
+                // Spawning
+                enemySpawnTimer++;
+                if (enemySpawnTimer > 60) {
+                    spawnEnemy();
+                    enemySpawnTimer = 0;
                 }
-                questionTimerBar.style.width = `${(questionTimer / 5) * 100}%`;
-            }, 50);
+
+                // Entities Update & Draw
+                updateEntities();
+                checkCollisions();
+            }
+
+            // Always draw entities (even particles if game over)
+            bullets.forEach(b => b.draw(ctx));
+            enemies.forEach(e => e.draw(ctx));
+            particles.forEach(p => { p.update(); p.draw(ctx); });
+
+            requestAnimationFrame(loop);
         }
 
-        function fireBullet(numBullets) {
-            const targets = enemies
-                .slice()
-                .sort((a, b) => b.y - a.y)
-                .slice(0, numBullets);
+        function updateEntities() {
+            // Cleanup off-screen
+            bullets = bullets.filter(b => b.y > -50 && b.y < CONFIG.height + 50 && b.x > -50 && b.x < CONFIG.width + 50);
+            enemies = enemies.filter(e => e.y < CONFIG.height + 50);
+            particles = particles.filter(p => p.life > 0);
 
-            targets.forEach(target => {
-                // 子彈從砲台中心發射
-                const bulletX = player.x + player.width / 2 - 2.5;
-                const bulletY = player.y + player.height / 2;
-                bullets.push(new Bullet(bulletX, bulletY, 5, 15, 'yellow', target));
-            });
-
-            if (numBullets > 0) {
-                 feedbackDisplay.textContent = `發射 ${numBullets} 枚砲彈！`;
-            }
-        }
-
-        function fireSpecialCannon() {
-            for(let i = 0; i < canvas.width; i += 20) {
-                bullets.push(new Bullet(i, canvas.height - 70, 10, 30, 'orange', null, bulletSpeed * 2));
-            }
-            feedbackDisplay.textContent = '大砲發射！';
-            specialCannonAvailable = false;
-            specialCannonButton.classList.add('hidden');
-        }
-
-        function handleAnswerClick(event) {
-            if (!gameStarted || gameOver) return;
-
-            const selectedAnswer = parseInt(event.target.dataset.answer, 10);
-            disableAnswerButtons();
-
-            if (selectedAnswer === currentQuestion.answer) {
-                const answerTime = (Date.now() - questionStartTime) / 1000;
-                score += 10;
-
-                let bulletsToFire = 0;
-                if (answerTime <= 2) {
-                    bulletsToFire = 5;
-                } else if (answerTime <= 3) {
-                    bulletsToFire = 3;
-                } else if (answerTime <= 4) {
-                    bulletsToFire = 2;
-                } else {
-                    bulletsToFire = 1;
-                }
-                fireBullet(bulletsToFire);
-
-                scoreDisplay.textContent = `分數: ${score}`;
-                checkSpecialCannonAvailability();
-                checkWinCondition();
-                if (!gameOver) {
-                    generateQuestion();
-                }
-            } else {
-                feedbackDisplay.textContent = '答錯了！再試一次。';
-                enableAnswerButtons();
-            }
-        }
-
-        function checkSpecialCannonAvailability() {
-            const currentScoreThreshold = Math.floor(score / 50) * 50;
-            if (currentScoreThreshold > lastCannonScoreThreshold && currentScoreThreshold > 0) {
-                specialCannonAvailable = true;
-                specialCannonButton.classList.remove('hidden');
-                feedbackDisplay.textContent = '獲得特殊大砲！';
-                lastCannonScoreThreshold = currentScoreThreshold;
-            }
-        }
-
-        function useSpecialCannon() {
-            if (specialCannonAvailable && gameStarted && !gameOver) {
-                fireSpecialCannon();
-                generateQuestion();
-            }
-        }
-
-        function checkWinCondition() {
-            if (score >= WIN_SCORE) {
-                endGame("恭喜過關！", true);
-            }
+            bullets.forEach(b => b.update());
+            enemies.forEach(e => e.update());
         }
 
         function spawnEnemy() {
-            if (enemies.length < maxEnemies) {
-                const x = Math.random() * (canvas.width - 40);
-                enemies.push(new Enemy(x, -40, 40, 40));
+            if (enemies.length >= 10) return;
+            const x = Math.random() * (CONFIG.width - 60) + 10;
+            enemies.push(new Enemy(x, -50));
+        }
+
+        function spawnParticles(x, y, count = 10, color = '#fff') {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, color));
             }
         }
 
-        function handleCollisions() {
+        function checkCollisions() {
             for (let i = bullets.length - 1; i >= 0; i--) {
                 for (let j = enemies.length - 1; j >= 0; j--) {
-                    const bullet = bullets[i];
-                    const enemy = enemies[j];
+                    const b = bullets[i];
+                    const e = enemies[j];
 
-                    if (bullet && enemy &&
-                        bullet.x < enemy.x + enemy.width &&
-                        bullet.x + bullet.width > enemy.x &&
-                        bullet.y < enemy.y + enemy.height &&
-                        bullet.y + bullet.height > enemy.y) {
-                        
+                    if (!b || !e) continue;
+
+                    // Simple AABB / Hitbox
+                    if (b.x > e.x && b.x < e.x + e.w &&
+                        b.y > e.y && b.y < e.y + e.h) {
+
+                        // Hit!
+                        spawnParticles(e.x + e.w / 2, e.y + e.h / 2, 10, CONFIG.colors.enemy);
                         enemies.splice(j, 1);
                         bullets.splice(i, 1);
-                        score += 10;
-                        scoreDisplay.textContent = `分數: ${score}`;
-                        checkWinCondition();
+
+                        // Score logic is handled in "Answer" phase mostly, 
+                        // but maybe we give bonus for shooting random debris?
+                        // For now, let's keep score tied to math.
+                        // Actually, in the original game, shooting enemies gives points too?
+                        // Original: `score += 10` on collision.
+                        addScore(10);
                         break;
                     }
                 }
             }
 
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                if (enemies[i].y + enemies[i].height > canvas.height) {
-                    endGame("敵軍突破防線，你被擊敗了！", false);
-                    break;
+            // Enemy hit bottom?
+            enemies.forEach((e, index) => {
+                if (e.y > CONFIG.height && state.isPlaying) {
+                    // console.log("Enemy breached!");
+                    // Optional: Penalty?
+                    // enemies.splice(index, 1); 
+                }
+            });
+        }
+
+        // --- Math Logic ---
+
+        let askedQuestions = new Set();
+
+        function generateQuestion() {
+            let num1, num2, qStr;
+            do {
+                num1 = Math.floor(Math.random() * 9) + 1;
+                num2 = Math.floor(Math.random() * 9) + 1;
+                qStr = `${Math.min(num1, num2)}x${Math.max(num1, num2)}`;
+            } while (askedQuestions.has(qStr) && askedQuestions.size < 50);
+
+            if (askedQuestions.size >= 50) askedQuestions.clear();
+            askedQuestions.add(qStr);
+
+            currentQuestion = { num1, num2, ans: num1 * num2 };
+
+            // Visual Update
+            questionDisplay.innerText = `${num1} × ${num2} = ?`;
+            questionDisplay.classList.remove('text-red-500');
+            questionDisplay.classList.add('text-transparent'); // Restore gradient
+
+            resetTimerBar();
+            generateAnswers(currentQuestion.ans);
+        }
+
+        function generateAnswers(correct) {
+            const answers = [correct];
+            while (answers.length < 4) {
+                let wrong = Math.floor(Math.random() * 81) + 1;
+                if (!answers.includes(wrong) && Math.abs(wrong - correct) > 2) {
+                    answers.push(wrong);
                 }
             }
+            // Shuffle
+            answers.sort(() => Math.random() - 0.5);
+
+            answerOptionsContainer.innerHTML = '';
+            answers.forEach(ans => {
+                const btn = document.createElement('button');
+                btn.textContent = ans;
+                btn.className = 'clay-btn text-white text-3xl font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-transform';
+                btn.onclick = () => handleAnswer(ans);
+                answerOptionsContainer.appendChild(btn);
+            });
         }
 
-        function update(deltaTime) {
-            enemySpawnTimer += deltaTime;
-            if (enemySpawnTimer >= nextEnemySpawnTime) {
-                spawnEnemy();
-                enemySpawnTimer = 0;
-                nextEnemySpawnTime = Math.random() * 2000 + 1000;
+        function handleAnswer(val) {
+            if (!state.isPlaying) return;
+
+            if (val === currentQuestion.ans) {
+                // Correct!
+                feedbackDisplay.innerText = "EXCELLENT!";
+                feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-green-400";
+                addScore(50);
+
+                // Fire Bullets!
+                // Calculate how many based on speed?
+                const burst = 5;
+                fireBullets(burst);
+
+                generateQuestion();
+            } else {
+                // Wrong
+                feedbackDisplay.innerText = "TRY AGAIN!";
+                feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-red-500 animate-pulse";
+                // Penalty?
             }
-
-            enemies.forEach(enemy => enemy.update());
-            bullets.forEach(bullet => bullet.update());
-
-            bullets = bullets.filter(bullet => bullet.y > -bullet.height && bullet.y < canvas.height && bullet.x > -bullet.width && bullet.x < canvas.width);
-
-            handleCollisions();
         }
 
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if (player) player.draw(ctx);
-            enemies.forEach(enemy => enemy.draw(ctx));
-            bullets.forEach(bullet => bullet.draw(ctx));
+        function fireBullets(count) {
+            // Sort enemies by proximity (lowest Y)
+            let targets = [...enemies].sort((a, b) => b.y - a.y); // Bottom first
+
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const target = targets[i % targets.length]; // cycle targets if not enough
+                    // Offset x slightly for visual flair
+                    const bX = player.x;
+                    const bY = player.y - 20;
+                    bullets.push(new Bullet(bX, bY, target));
+                }, i * 100);
+            }
         }
 
-        function gameLoop(currentTime) {
-            if (gameOver) return;
-            if (!lastFrameTime) lastFrameTime = currentTime;
+        function fireSpecial() {
+            if (!state.specialReady) return;
 
-            const deltaTime = currentTime - lastFrameTime;
-            lastFrameTime = currentTime;
+            // BEAM
+            feedbackDisplay.innerText = "SUPER BEAM ACTIVATED!";
+            feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-yellow-300";
 
-            update(deltaTime);
-            draw();
+            // Fan of bullets
+            for (let i = -2; i <= 2; i++) {
+                const b = new Bullet(player.x, player.y - 20, null);
+                b.vx = i * 2;
+                b.w = 50; // Huge beam
+                b.h = 100;
+                b.speed = 20;
+                bullets.push(b);
+            }
+            // Clear all enemies logic visually
+            enemies.forEach(e => spawnParticles(e.x, e.y, 15, CONFIG.colors.enemy));
+            const killCount = enemies.length;
+            enemies = [];
+            addScore(killCount * 20);
 
-            gameLoopId = requestAnimationFrame(gameLoop);
+            // Reset
+            state.specialReady = false;
+            specialCannonButton.classList.add('hidden');
         }
+
+        // --- Game Flow ---
 
         function startGame() {
-            hideCelebrationScreen();
-            gameStarted = true;
-            gameOver = false;
-            score = 0;
-            gameTimer = 40;
-            specialCannonAvailable = false;
-            lastCannonScoreThreshold = 0;
+            state.isPlaying = true;
+            state.score = 0;
+            state.gameTime = 40;
+            state.specialReady = false;
+            state.lastSpecialScore = 0;
 
-            scoreDisplay.textContent = `分數: ${score}`;
-            timerDisplay.textContent = `時間: ${gameTimer}s`;
-            feedbackDisplay.textContent = '';
+            scoreDisplay.innerText = 0;
+            timerDisplay.innerText = '40s';
+
             enemies = [];
             bullets = [];
-            askedQuestions.clear();
-            enemySpawnTimer = 0; 
-            nextEnemySpawnTime = Math.random() * 2000 + 1000; 
 
-            // 調整砲台大小以適應圖片
-            player = new Player(canvas.width / 2 - 30, canvas.height - 70, 60, 60);
+            startGameButton.classList.add('hidden');
+            celebrationScreen.classList.add('hidden');
 
-            generateQuestion();
-            startGameButton.textContent = '重新開始';
-            // 在遊戲進行中禁用開始按鈕
-            startGameButton.disabled = true;
-            specialCannonButton.classList.add('hidden');
-
-            if (gameTimerIntervalId) clearInterval(gameTimerIntervalId);
-            gameTimerIntervalId = setInterval(() => {
-                gameTimer--;
-                timerDisplay.textContent = `時間: ${gameTimer}s`;
-                if (gameTimer <= 0) {
-                    clearInterval(gameTimerIntervalId);
-                    if (!gameOver) endGame("時間到，遊戲結束！", false);
-                }
+            // Start Timers
+            clearInterval(gameTimerId);
+            gameTimerId = setInterval(() => {
+                state.gameTime--;
+                timerDisplay.innerText = state.gameTime + 's';
+                if (state.gameTime <= 0) endGame(true); // Time's up = Win/End? Original said "Defeated" if time out? 
+                // Actually "Win" is mostly score based, but let's say survival logic.
+                // Let's stick to simple "End" and show score.
             }, 1000);
 
-            lastFrameTime = 0;
-            if (gameLoopId) cancelAnimationFrame(gameLoopId);
-            gameLoopId = requestAnimationFrame(gameLoop);
+            generateQuestion();
         }
 
-        function endGame(reason, isWin) {
-            if (gameOver) return;
-            gameOver = true;
-            gameStarted = false;
-            feedbackDisplay.textContent = reason + ` 最終分數: ${score}`;
+        function endGame(timeUp) {
+            state.isPlaying = false;
+            clearInterval(gameTimerId);
+            clearInterval(questionTimerId);
 
-            if (gameLoopId) cancelAnimationFrame(gameLoopId);
-            if (gameTimerIntervalId) clearInterval(gameTimerIntervalId);
-            if (questionTimerIntervalId) clearInterval(questionTimerIntervalId);
-
-            disableAnswerButtons();
-            // 遊戲結束後啟用開始按鈕
-            if (playerImageLoaded) {
-                startGameButton.disabled = false;
-            }
-            startGameButton.textContent = '重新開始';
-            questionDisplay.textContent = '遊戲結束';
-            questionTimerBar.style.width = '0%';
-            specialCannonButton.classList.add('hidden');
-
-            if (isWin) {
-                showCelebrationScreen();
-            }
-        }
-
-        function showCelebrationScreen() {
+            // Show Final Screen
             celebrationScreen.classList.remove('hidden');
-            finalScoreDisplay.textContent = score;
+            document.querySelector('#celebrationScreen h2').innerText = timeUp ? "TIME UP!" : "GAME OVER";
+            finalScoreDisplay.innerText = state.score;
         }
 
-        function hideCelebrationScreen() {
-            celebrationScreen.classList.add('hidden');
-        }
+        function addScore(n) {
+            state.score += n;
+            scoreDisplay.innerText = state.score;
 
-        // 事件監聽器
-        startGameButton.addEventListener('click', startGame);
-        specialCannonButton.addEventListener('click', useSpecialCannon);
-        restartGameButton.addEventListener('click', startGame);
-
-        // 畫布響應式調整大小
-        function resizeCanvas() {
-            const gameArea = document.getElementById('game-area');
-            if (gameArea) {
-                canvas.width = gameArea.clientWidth;
-                canvas.height = window.innerHeight / 2;
-            } else {
-                canvas.width = window.innerWidth * 0.8;
-                canvas.height = window.innerHeight / 2;
-            }
-
-            if (player) {
-                player.x = canvas.width / 2 - player.width / 2;
-                player.y = canvas.height - 70; // 調整 y 座標以適應新大小
-            }
-            if (!gameStarted && !gameOver) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.font = '24px Arial';
-                ctx.fillStyle = 'black';
-                ctx.textAlign = 'center';
-                ctx.fillText('點擊開始遊戲', canvas.width / 2, canvas.height / 2);
-            } else {
-                draw();
+            // Check Special
+            if (state.score - state.lastSpecialScore >= 200) {
+                state.specialReady = true;
+                state.lastSpecialScore = state.score;
+                specialCannonButton.classList.remove('hidden');
             }
         }
 
-        window.addEventListener('resize', resizeCanvas);
-        window.onload = () => {
-            setTimeout(resizeCanvas, 100);
-        };
+        function resetTimerBar() {
+            if (questionTimerId) clearInterval(questionTimerId);
+            state.questionTime = 5;
+            questionTimerBar.style.width = '100%';
+
+            questionTimerId = setInterval(() => {
+                state.questionTime -= 0.1;
+                const pct = (state.questionTime / 5) * 100;
+                questionTimerBar.style.width = pct + '%';
+
+                if (pct < 30) questionTimerBar.className = "h-full bg-red-500 shadow-[0_0_10px_#ef4444] transition-all duration-100 ease-linear";
+                else questionTimerBar.className = "h-full bg-cyan-500 shadow-[0_0_10px_#22d3ee] transition-all duration-100 ease-linear";
+
+                if (state.questionTime <= 0) {
+                    clearInterval(questionTimerId);
+                    // Time out on question = Refresh
+                    feedbackDisplay.innerText = "TOO SLOW!";
+                    feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-red-500";
+                    generateQuestion();
+                }
+            }, 100);
+        }
+
+        // --- Inputs ---
+
+        startGameButton.onclick = startGame;
+        restartGameButton.onclick = startGame;
+        specialCannonButton.onclick = fireSpecial;
+
+        // Init
+        init();
+
     </script>
 </body>
+
 </html>
