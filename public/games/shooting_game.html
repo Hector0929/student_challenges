@@ -143,7 +143,7 @@
         const wrapper = document.getElementById('game-wrapper');
         const ctx = canvas.getContext('2d');
 
-        // Configuration State
+        // Game Configuration
         const CONFIG = {
             width: 800,
             height: 600, // Will be updated by resize
@@ -158,7 +158,26 @@
             }
         };
 
-        // Resize Logic
+        // Game State
+        let state = {
+            isPlaying: false,
+            score: 0,
+            lives: 12,
+            questionTime: 5,
+            lastFrame: 0,
+            specialReady: false,
+            lastSpecialScore: 0,
+            shake: 0
+        };
+
+        // Entities
+        let player, enemies = [], bullets = [], particles = [], stars = [];
+        // Logic
+        let currentQuestion = null;
+        let gameLoopId, questionTimerId;
+        let enemySpawnTimer = 0;
+
+        // Resize handling
         function resize() {
             const rect = wrapper.getBoundingClientRect();
             canvas.width = rect.width;
