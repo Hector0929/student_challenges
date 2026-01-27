@@ -211,24 +211,6 @@
         const finalScoreDisplay = document.getElementById('finalScore');
         const restartGameButton = document.getElementById('restartGameButton');
 
-        // Game State
-        let state = {
-            isPlaying: false,
-            score: 0,
-            lives: 12,
-            questionTime: 5,
-            lastFrame: 0,
-            specialReady: false,
-            lastSpecialScore: 0,
-            shake: 0
-        };
-
-        // Entities
-        let player, enemies = [], bullets = [], particles = [], stars = [];
-        // Logic
-        let currentQuestion = null;
-        let gameLoopId, questionTimerId;
-        let enemySpawnTimer = 0;
 
         // --- Classes ---
 
