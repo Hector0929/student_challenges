@@ -341,9 +341,9 @@
                 this.w = 40;
                 this.h = 40;
 
-                // Difficulty Scaling: Base speed 1.5, increases by 1.2x every 1000 points
+                // Difficulty Scaling: Base speed 0.75 (slow start), increases by 1.2x every 1000 points
                 const difficultyMultiplier = Math.pow(1.2, Math.floor(state.score / 1000));
-                this.speed = 1.5 * difficultyMultiplier;
+                this.speed = 0.75 * difficultyMultiplier;
 
                 this.rotation = 0;
             }
