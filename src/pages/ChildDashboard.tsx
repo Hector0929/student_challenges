@@ -8,7 +8,7 @@ import { RewardTime } from '../components/RewardTime';
 import { LearningArea } from '../components/LearningArea';
 import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useStarBalance } from '../hooks/useQuests';
 
-import { COMMON_EMOJIS } from '../lib/constants';
+import { COMMON_EMOJIS, DAILY_QUEST_TARGET } from '../lib/constants';
 
 interface ChildDashboardProps {
     userId: string;
@@ -47,8 +47,10 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
         icon: '👾',
     });
 
+    const questTarget = Math.max(0, progress.total_quests > 0 ? Math.min(progress.total_quests, DAILY_QUEST_TARGET) : DAILY_QUEST_TARGET);
+    const isUnlocked = progress.completed_quests >= questTarget && progress.total_quests > 0;
+    const remainingQuests = Math.max(0, questTarget - progress.completed_quests);
     const isAllQuestsCompleted = progress.completed_quests === progress.total_quests && progress.total_quests > 0;
-    const remainingQuests = progress.total_quests - progress.completed_quests;
 
     const handleRefreshData = () => {
         console.log('🔄 Manually refreshing data...');
@@ -244,7 +246,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                     <div className="flex items-center gap-3">
                         <Trophy className="text-pokeball-red" size={32} />
                         <h2 className="font-pixel text-xl">今日挑戰</h2>
-                        {isAllQuestsCompleted && <span className="text-2xl">✅</span>}
+                        {isUnlocked && <span className="text-2xl">✅</span>}
                     </div>
                     <div className="flex items-center gap-2">
                         <button
@@ -286,8 +288,8 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                         <div className="bg-off-white p-4 border-2 border-deep-black mb-4">
                             <ProgressBar
                                 current={progress.completed_quests}
-                                total={progress.total_quests}
-                                label="完成進度"
+                                total={questTarget}
+                                label={`每日目標 (${Math.min(progress.completed_quests, questTarget)}/${questTarget})`}
                             />
                         </div>
 
@@ -342,9 +344,9 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
 
             {/* Reward Time Section */}
             <RewardTime
-                isUnlocked={isAllQuestsCompleted}
+                isUnlocked={isUnlocked}
                 remainingQuests={remainingQuests}
-                totalQuests={progress.total_quests}
+                totalQuests={questTarget}
                 userId={userId}
             />
 
