@@ -54,6 +54,10 @@
         canvas {
             image-rendering: pixelated;
         }
+
+        .hearts-container {
+            letter-spacing: 2px;
+        }
     </style>
 </head>
 
@@ -69,16 +73,15 @@
                 <span id="scoreDisplay" class="text-white text-xl">0</span>
             </div>
             <div class="neon-box rounded-xl px-4 py-2 flex gap-4">
-                <span class="text-cyan-400 font-bold">TIME</span>
-                <span id="timerDisplay" class="text-white text-xl">40s</span>
+                <span class="text-red-500 font-bold">LIVES</span>
+                <span id="livesDisplay" class="text-white text-xl hearts-container">❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️</span>
             </div>
         </div>
 
         <!-- Canvas Area -->
         <div class="relative neon-box rounded-2xl overflow-hidden mb-4">
-            <canvas id="gameCanvas" class="w-full h-80 block bg-[#0f0b1e]"></canvas>
-
-            <!-- Question Texture Overlay (Optional, keeping clean for now) -->
+            <!-- Increased height from h-80 to h-[550px] -->
+            <canvas id="gameCanvas" class="w-full h-[550px] block bg-[#0f0b1e]"></canvas>
         </div>
 
         <!-- UI / Control Panel -->
@@ -142,7 +145,7 @@
 
         // UI Elements
         const scoreDisplay = document.getElementById('scoreDisplay');
-        const timerDisplay = document.getElementById('timerDisplay');
+        const livesDisplay = document.getElementById('livesDisplay');
         const questionDisplay = document.getElementById('questionDisplay');
         const answerOptionsContainer = document.getElementById('answerOptionsContainer');
         const questionTimerBar = document.getElementById('questionTimerBar');
@@ -156,7 +159,7 @@
         // Game Configuration
         const CONFIG = {
             width: 800,
-            height: 480, // Internal resolution
+            height: 600, // Increased internal vertical resolution
             colors: {
                 bg: '#0f0b1e',
                 player: '#22d3ee', // Cyan
@@ -184,18 +187,19 @@
         let state = {
             isPlaying: false,
             score: 0,
-            gameTime: 40,
+            lives: 12,
             questionTime: 5,
             lastFrame: 0,
             specialReady: false,
-            lastSpecialScore: 0
+            lastSpecialScore: 0,
+            shake: 0
         };
 
         // Entities
         let player, enemies = [], bullets = [], particles = [], stars = [];
         // Logic
         let currentQuestion = null;
-        let gameLoopId, gameTimerId, questionTimerId;
+        let gameLoopId, questionTimerId;
         let enemySpawnTimer = 0;
 
         // --- Classes ---
@@ -406,6 +410,16 @@
             ctx.fillStyle = CONFIG.colors.bg;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // Screen Shake
+            ctx.save();
+            if (state.shake > 0) {
+                const dx = (Math.random() - 0.5) * state.shake;
+                const dy = (Math.random() - 0.5) * state.shake;
+                ctx.translate(dx, dy);
+                state.shake *= 0.9;
+                if (state.shake < 0.5) state.shake = 0;
+            }
+
             // Update & Draw Background
             stars.forEach(s => { s.update(); s.draw(ctx); });
 
@@ -433,17 +447,29 @@
             enemies.forEach(e => e.draw(ctx));
             particles.forEach(p => { p.update(); p.draw(ctx); });
 
+            ctx.restore(); // Restore shake
+
             requestAnimationFrame(loop);
         }
 
         function updateEntities() {
             // Cleanup off-screen
             bullets = bullets.filter(b => b.y > -50 && b.y < CONFIG.height + 50 && b.x > -50 && b.x < CONFIG.width + 50);
-            enemies = enemies.filter(e => e.y < CONFIG.height + 50);
-            particles = particles.filter(p => p.life > 0);
 
+            // Special: Check if enemies hit bottom
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                e.update();
+
+                if (e.y > CONFIG.height + 50) {
+                    // Enemy breached! Damage!
+                    enemies.splice(i, 1);
+                    takeDamage();
+                }
+            }
+
+            particles = particles.filter(p => p.life > 0);
             bullets.forEach(b => b.update());
-            enemies.forEach(e => e.update());
         }
 
         function spawnEnemy() {
@@ -456,6 +482,27 @@
             for (let i = 0; i < count; i++) {
                 particles.push(new Particle(x, y, color));
             }
+        }
+
+        function takeDamage() {
+            if (!state.isPlaying) return;
+            state.lives--;
+            updateLivesDisplay();
+            state.shake = 10; // Trigger shake
+
+            // Feedback
+            feedbackDisplay.innerText = "WARNING! BREACH!";
+            feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-red-500 animate-pulse";
+
+            if (state.lives <= 0) {
+                endGame(false);
+            }
+        }
+
+        function updateLivesDisplay() {
+            let hearts = "";
+            for (let i = 0; i < state.lives; i++) hearts += "❤️";
+            livesDisplay.innerText = hearts;
         }
 
         function checkCollisions() {
@@ -475,25 +522,11 @@
                         enemies.splice(j, 1);
                         bullets.splice(i, 1);
 
-                        // Score logic is handled in "Answer" phase mostly, 
-                        // but maybe we give bonus for shooting random debris?
-                        // For now, let's keep score tied to math.
-                        // Actually, in the original game, shooting enemies gives points too?
-                        // Original: `score += 10` on collision.
                         addScore(10);
                         break;
                     }
                 }
             }
-
-            // Enemy hit bottom?
-            enemies.forEach((e, index) => {
-                if (e.y > CONFIG.height && state.isPlaying) {
-                    // console.log("Enemy breached!");
-                    // Optional: Penalty?
-                    // enemies.splice(index, 1); 
-                }
-            });
         }
 
         // --- Math Logic ---
@@ -553,7 +586,6 @@
                 addScore(50);
 
                 // Fire Bullets!
-                // Calculate how many based on speed?
                 const burst = 5;
                 fireBullets(burst);
 
@@ -562,7 +594,6 @@
                 // Wrong
                 feedbackDisplay.innerText = "TRY AGAIN!";
                 feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-red-500 animate-pulse";
-                // Penalty?
             }
         }
 
@@ -573,7 +604,6 @@
             for (let i = 0; i < count; i++) {
                 setTimeout(() => {
                     const target = targets[i % targets.length]; // cycle targets if not enough
-                    // Offset x slightly for visual flair
                     const bX = player.x;
                     const bY = player.y - 20;
                     bullets.push(new Bullet(bX, bY, target));
@@ -613,12 +643,12 @@
         function startGame() {
             state.isPlaying = true;
             state.score = 0;
-            state.gameTime = 40;
+            state.lives = 12;
             state.specialReady = false;
             state.lastSpecialScore = 0;
 
             scoreDisplay.innerText = 0;
-            timerDisplay.innerText = '40s';
+            updateLivesDisplay();
 
             enemies = [];
             bullets = [];
@@ -626,27 +656,16 @@
             startGameButton.classList.add('hidden');
             celebrationScreen.classList.add('hidden');
 
-            // Start Timers
-            clearInterval(gameTimerId);
-            gameTimerId = setInterval(() => {
-                state.gameTime--;
-                timerDisplay.innerText = state.gameTime + 's';
-                if (state.gameTime <= 0) endGame(true); // Time's up = Win/End? Original said "Defeated" if time out? 
-                // Actually "Win" is mostly score based, but let's say survival logic.
-                // Let's stick to simple "End" and show score.
-            }, 1000);
-
             generateQuestion();
         }
 
         function endGame(timeUp) {
             state.isPlaying = false;
-            clearInterval(gameTimerId);
             clearInterval(questionTimerId);
 
             // Show Final Screen
             celebrationScreen.classList.remove('hidden');
-            document.querySelector('#celebrationScreen h2').innerText = timeUp ? "TIME UP!" : "GAME OVER";
+            document.querySelector('#celebrationScreen h2').innerText = "GAME OVER";
             finalScoreDisplay.innerText = state.score;
         }
 
