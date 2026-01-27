@@ -191,15 +191,17 @@
             lastFrame: 0,
             specialReady: false,
             lastSpecialScore: 0,
-            shake: 0
+            shake: 0,
+            slowMo: false
         };
 
         // Entities
-        let player, enemies = [], bullets = [], particles = [], stars = [];
+        let player, enemies = [], bullets = [], particles = [], stars = [], items = [];
         // Logic
         let currentQuestion = null;
         let gameLoopId, questionTimerId;
         let enemySpawnTimer = 0;
+        let slowMoTimer = 0;
 
         // Resize handling
         function resize() {
@@ -334,6 +336,42 @@
             }
         }
 
+        class Item {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.w = 40;
+                this.h = 40;
+                this.type = type; // 'clock' or 'nuke'
+                this.speed = 2; // Items fall slightly faster to be catchable
+                this.rotation = 0;
+            }
+
+            update() {
+                this.y += this.speed;
+                this.rotation += 0.05;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
+                // Oscillation
+                const scale = 1 + Math.sin(Date.now() * 0.01) * 0.1;
+                ctx.scale(scale, scale);
+                ctx.font = "30px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+
+                if (this.type === 'clock') {
+                    ctx.fillText("⏰", 0, 0);
+                } else if (this.type === 'nuke') {
+                    ctx.fillText("☢️", 0, 0);
+                }
+
+                ctx.restore();
+            }
+        }
+
         class Enemy {
             constructor(x, y) {
                 this.x = x;
@@ -343,13 +381,20 @@
 
                 // Difficulty Scaling: Base speed 0.375 (very slow start), increases by 1.2x every 1000 points
                 const difficultyMultiplier = Math.pow(1.2, Math.floor(state.score / 1000));
-                this.speed = 0.375 * difficultyMultiplier;
+                this.baseSpeed = 0.375 * difficultyMultiplier;
+                this.speed = this.baseSpeed;
 
                 this.rotation = 0;
             }
 
             update() {
-                this.y += this.speed;
+                // Apply Slow Motion
+                let currentSpeed = this.baseSpeed;
+                if (state.slowMo) {
+                    currentSpeed *= 0.5;
+                }
+
+                this.y += currentSpeed;
                 this.rotation += 0.05;
             }
 
@@ -465,6 +510,14 @@
                 if (state.shake < 0.5) state.shake = 0;
             }
 
+            if (state.slowMo) {
+                slowMoTimer--;
+                if (slowMoTimer <= 0) {
+                    state.slowMo = false;
+                    feedbackDisplay.innerText = ""; // Clear status
+                }
+            }
+
             // Update & Draw Background
             stars.forEach(s => { s.update(); s.draw(ctx); });
 
@@ -496,6 +549,9 @@
 
             // Always draw entities (even particles if game over)
             bullets.forEach(b => b.draw(ctx));
+            // Always draw entities (even particles if game over)
+            bullets.forEach(b => b.draw(ctx));
+            items.forEach(i => i.draw(ctx));
             enemies.forEach(e => e.draw(ctx));
             particles.forEach(p => { p.update(); p.draw(ctx); });
 
@@ -521,13 +577,25 @@
             }
 
             particles = particles.filter(p => p.life > 0);
+            particles = particles.filter(p => p.life > 0);
             bullets.forEach(b => b.update());
+
+            // Items
+            items = items.filter(i => i.y < CONFIG.height + 50);
+            items.forEach(i => i.update());
         }
 
         function spawnEnemy() {
             if (enemies.length >= 10) return;
             const x = Math.random() * (CONFIG.width - 60) + 10;
-            enemies.push(new Enemy(x, -50));
+
+            // 5% chance to spawn item instead
+            if (Math.random() < 0.05) {
+                const type = Math.random() < 0.5 ? 'clock' : 'nuke';
+                items.push(new Item(x, -50, type));
+            } else {
+                enemies.push(new Enemy(x, -50));
+            }
         }
 
         function spawnParticles(x, y, count = 10, color = '#fff') {
@@ -559,6 +627,38 @@
 
         function checkCollisions() {
             for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                if (!b) continue;
+
+                // Check Items first
+                for (let k = items.length - 1; k >= 0; k--) {
+                    const item = items[k];
+                    if (b.x > item.x && b.x < item.x + item.w &&
+                        b.y > item.y && b.y < item.y + item.h) {
+
+                        // Activate Item!
+                        if (item.type === 'clock') {
+                            state.slowMo = true;
+                            slowMoTimer = 300; // 5 seconds (60fps)
+                            feedbackDisplay.innerText = "⏳ SLOW MOTION! ⏳";
+                            feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-blue-400";
+                        } else if (item.type === 'nuke') {
+                            // Explosion visual
+                            enemies.forEach(e => spawnParticles(e.x, e.y, 20, '#ff4400'));
+                            enemies = [];
+                            feedbackDisplay.innerText = "☢️ NUKE CLEARED! ☢️";
+                            feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-orange-500";
+                            state.shake = 20;
+                        }
+
+                        items.splice(k, 1);
+                        bullets.splice(i, 1);
+                        break; // Bullet used
+                    }
+                }
+
+                if (!bullets[i]) continue; // If bullet hit item, skip enemy check
+
                 for (let j = enemies.length - 1; j >= 0; j--) {
                     const b = bullets[i];
                     const e = enemies[j];
@@ -707,7 +807,9 @@
             updateLivesDisplay();
 
             enemies = [];
+            enemies = [];
             bullets = [];
+            items = [];
 
             startGameButton.classList.add('hidden');
             celebrationScreen.classList.add('hidden');
