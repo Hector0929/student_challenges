@@ -11,7 +11,7 @@ interface RewardTimeProps {
     userId: string;  // NEW: Required for star balance
 }
 
-interface Game {
+export interface Game {
     id: string;
     name: string;
     icon: string;
@@ -20,7 +20,7 @@ interface Game {
     color: string;
 }
 
-const GAMES: Game[] = [
+export const GAMES: Game[] = [
     {
         id: 'parkour',
         name: '方塊衝刺',

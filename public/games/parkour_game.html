@@ -102,6 +102,12 @@
         </div>
     </div>
 
+    <!-- Countdown Overlay -->
+    <div id="countdown-overlay"
+        class="hidden absolute inset-0 z-30 flex items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-none">
+        <div id="countdown-text" class="text-9xl font-bold text-white neon-text animate-ping">3</div>
+    </div>
+
     <canvas id="gameCanvas" class="w-full h-full"></canvas>
 
     <script>
@@ -139,6 +145,7 @@
         // --- State ---
         let state = {
             isPlaying: false,
+            inCountdown: false, // New state for input blocking
             score: 0,
             speed: CONFIG.initialSpeed,
             // Replaced frame with time for continuous time tracking
@@ -902,27 +909,61 @@
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('ui-layer').classList.remove('hidden');
 
-            state.isPlaying = true;
-            state.score = 0;
-            state.speed = CONFIG.initialSpeed;
+            // Reset Game Objects
             obstacles = [];
             particles = [];
             stars = [];
-            nextSpawnX = canvas.width; // Reset pattern spawner
-            state.lastTime = 0; // Reset timer tracking
+            nextSpawnX = canvas.width;
+            state.lastTime = 0;
             state.time = 0;
 
             initBackground();
             player.reset();
 
-            // Reset Lives
+            // Reset Lives & UI
             state.lives = 3;
             state.invincible = false;
             updateHeartsUI();
 
             resize();
-            requestAnimationFrame(loop);
+
+            // Start Countdown Loop
+            startCountdown();
         }
+
+        function startCountdown() {
+            state.inCountdown = true;
+            const overlay = document.getElementById('countdown-overlay');
+            const text = document.getElementById('countdown-text');
+            overlay.classList.remove('hidden');
+
+            let count = 3;
+            text.innerText = count;
+            playSound('coin'); // Beep
+
+            const interval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    text.innerText = count;
+                    // Reset animation??
+                    text.classList.remove('animate-ping');
+                    void text.offsetWidth; // trigger reflow
+                    text.classList.add('animate-ping');
+
+                    playSound('coin');
+                } else if (count === 0) {
+                    text.innerText = "GO!";
+                    playSound('jump_double'); // High pitch beep
+                } else {
+                    clearInterval(interval);
+                    overlay.classList.add('hidden');
+                    state.inCountdown = false;
+                    state.isPlaying = true;
+                    requestAnimationFrame(loop);
+                }
+            }, 1000);
+        }
+
 
         function updateHeartsUI() {
             const container = document.getElementById('hearts-container');
@@ -950,6 +991,7 @@
 
         // Input
         function handleInput(e) {
+            if (state.inCountdown) return; // Block input during countdown
             if ((e.code === 'Space' || e.code === 'ArrowUp') || e.type === 'touchstart') {
                 if (state.isPlaying) player.jump();
             }
