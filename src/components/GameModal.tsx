@@ -13,6 +13,7 @@ interface GameModalProps {
     starBalance: number;
     onSpendStars: () => Promise<boolean>;
     onRefreshBalance: () => void;
+    mode?: 'play' | 'practice'; // New prop
 }
 
 type GamePhase = 'confirm' | 'playing' | 'timeup' | 'insufficient';
@@ -144,7 +145,8 @@ export const GameModal: React.FC<GameModalProps> = ({
     userId: _userId,
     starBalance,
     onSpendStars,
-    onRefreshBalance
+    onRefreshBalance,
+    mode = 'play'
 }) => {
     const [phase, setPhase] = useState<GamePhase>('confirm');
     const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION_SECONDS);
@@ -168,8 +170,12 @@ export const GameModal: React.FC<GameModalProps> = ({
             if (!hasInitialized.current) {
                 hasInitialized.current = true;
                 setTimeRemaining(GAME_DURATION_SECONDS);
-                // Use ref for initial check to avoid dependency cycle
-                setPhase(starBalanceRef.current < GAME_COST ? 'insufficient' : 'confirm');
+
+                if (mode === 'practice') {
+                    setPhase('confirm'); // Go to confirm screen, but with different UI
+                } else {
+                    setPhase(starBalanceRef.current < GAME_COST ? 'insufficient' : 'confirm');
+                }
             }
         } else {
             document.body.style.overflow = 'unset';
@@ -316,6 +322,8 @@ export const GameModal: React.FC<GameModalProps> = ({
 
         switch (phase) {
             case 'confirm':
+                const isPractice = mode === 'practice';
+
                 return (
                     <div className="text-center py-6 px-4">
                         <div className="relative inline-block mb-6">
@@ -326,46 +334,67 @@ export const GameModal: React.FC<GameModalProps> = ({
                         </div>
 
                         <h3 className="font-pixel text-2xl mb-2 text-indigo-900">{gameName}</h3>
-                        <p className="text-indigo-400 text-sm mb-8 font-pixel">準備好開始挑戰了嗎？</p>
+                        <p className="text-indigo-400 text-sm mb-8 font-pixel">
+                            {isPractice ? '準備好開始學習了嗎？加油！' : '準備好開始挑戰了嗎？'}
+                        </p>
 
-                        <div className="bg-white rounded-3xl p-6 mb-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] border-4 border-indigo-100 transform hover:-translate-y-1 transition-transform">
-                            <div className="flex items-center justify-center gap-3 mb-2">
-                                <div className="bg-yellow-400 p-2 rounded-2xl shadow-inner">
-                                    <Star className="text-white" fill="currentColor" size={28} />
+                        {!isPractice && (
+                            <>
+                                <div className="bg-white rounded-3xl p-6 mb-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] border-4 border-indigo-100 transform hover:-translate-y-1 transition-transform">
+                                    <div className="flex items-center justify-center gap-3 mb-2">
+                                        <div className="bg-yellow-400 p-2 rounded-2xl shadow-inner">
+                                            <Star className="text-white" fill="currentColor" size={28} />
+                                        </div>
+                                        <span className="font-pixel text-4xl text-indigo-900">{GAME_COST}</span>
+                                    </div>
+                                    <div className="text-indigo-400 font-pixel text-sm">星幣 / 3分鐘</div>
                                 </div>
-                                <span className="font-pixel text-4xl text-indigo-900">{GAME_COST}</span>
-                            </div>
-                            <div className="text-indigo-400 font-pixel text-sm">星幣 / 3分鐘</div>
-                        </div>
 
-                        <div className="flex justify-center gap-8 mb-8 text-sm font-bold">
-                            <div className="text-center">
-                                <div className="text-gray-400 text-xs mb-1">目前擁有</div>
-                                <div className="font-pixel text-xl text-yellow-500">{starBalance}</div>
-                            </div>
-                            <div className="w-px bg-gray-200"></div>
-                            <div className="text-center">
-                                <div className="text-gray-400 text-xs mb-1">付費後剩餘</div>
-                                <div className={`font-pixel text-xl ${starBalance - GAME_COST < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                                    {starBalance - GAME_COST}
+                                <div className="flex justify-center gap-8 mb-8 text-sm font-bold">
+                                    <div className="text-center">
+                                        <div className="text-gray-400 text-xs mb-1">目前擁有</div>
+                                        <div className="font-pixel text-xl text-yellow-500">{starBalance}</div>
+                                    </div>
+                                    <div className="w-px bg-gray-200"></div>
+                                    <div className="text-center">
+                                        <div className="text-gray-400 text-xs mb-1">付費後剩餘</div>
+                                        <div className={`font-pixel text-xl ${starBalance - GAME_COST < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                            {starBalance - GAME_COST}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
+                            </>
+                        )}
 
                         <div className="flex gap-4 justify-center">
                             <button onClick={handleEndGame} className={`${btnBase} ${btnSecondary}`}>
                                 <span className="text-gray-500">下次再玩</span>
                             </button>
-                            <button
-                                onClick={handleStartGame}
-                                disabled={isProcessing}
-                                className={`${btnBase} ${btnPrimary} px-8 w-48`}
-                            >
-                                <div className="flex items-center justify-center gap-2">
-                                    <Play size={24} fill="currentColor" />
-                                    <span className="text-lg pt-1">{isProcessing ? '啟動中...' : '開始遊戲!'}</span>
-                                </div>
-                            </button>
+                            {isPractice ? (
+                                <button
+                                    onClick={() => {
+                                        setTimeRemaining(GAME_DURATION_SECONDS);
+                                        setPhase('playing');
+                                    }}
+                                    className={`${btnBase} ${btnGreen} px-8 w-48`}
+                                >
+                                    <div className="flex items-center justify-center gap-2">
+                                        <Play size={24} fill="currentColor" />
+                                        <span className="text-lg pt-1">開始練習!</span>
+                                    </div>
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleStartGame}
+                                    disabled={isProcessing}
+                                    className={`${btnBase} ${btnPrimary} px-8 w-48`}
+                                >
+                                    <div className="flex items-center justify-center gap-2">
+                                        <Play size={24} fill="currentColor" />
+                                        <span className="text-lg pt-1">{isProcessing ? '啟動中...' : '開始遊戲!'}</span>
+                                    </div>
+                                </button>
+                            )}
                         </div>
                     </div>
                 );
@@ -411,7 +440,7 @@ export const GameModal: React.FC<GameModalProps> = ({
         <RPGDialog
             isOpen={isOpen}
             onClose={phase === 'playing' || phase === 'timeup' ? undefined : handleEndGame}
-            title={phase === 'confirm' || phase === 'insufficient' ? '🎮 遊戲付費' : `🎮 ${gameName}`}
+            title={phase === 'confirm' || phase === 'insufficient' ? (mode === 'practice' ? '📚 學習時間' : '🎮 遊戲付費') : `🎮 ${gameName}`}
         >
             {renderContent()}
         </RPGDialog>

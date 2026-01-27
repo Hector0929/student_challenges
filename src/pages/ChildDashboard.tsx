@@ -5,6 +5,7 @@ import { ProgressBar } from '../components/ProgressBar';
 import { RPGDialog } from '../components/RPGDialog';
 import { RPGButton } from '../components/RPGButton';
 import { RewardTime } from '../components/RewardTime';
+import { LearningArea } from '../components/LearningArea';
 import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useStarBalance } from '../hooks/useQuests';
 
 import { COMMON_EMOJIS } from '../lib/constants';
@@ -336,6 +337,9 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                 </div>
             )}
 
+            {/* Learning Area Section (Always Visible) */}
+            <LearningArea userId={userId} />
+
             {/* Reward Time Section */}
             <RewardTime
                 isUnlocked={isAllQuestsCompleted}
@@ -345,22 +349,24 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             />
 
             {/* Completion Message */}
-            {progress.completed_quests === progress.total_quests && progress.total_quests > 0 && !isQuestSectionCollapsed && (
-                <div className="rpg-dialog mt-6 bg-yellow-50 text-center py-6 animate-bounce-in">
-                    <div className="text-6xl mb-4">🎉</div>
-                    <h3 className="font-pixel text-lg mb-2">太棒了！</h3>
-                    <p className="text-sm text-gray-700">
-                        你已經完成今天所有的任務！
-                    </p>
-                    <div className="mt-4 flex items-center justify-center gap-2">
-                        <Star className="text-yellow-500" fill="currentColor" />
-                        <span className="font-pixel text-xl text-yellow-600">
-                            +{progress.earned_points}
-                        </span>
-                        <Star className="text-yellow-500" fill="currentColor" />
+            {
+                progress.completed_quests === progress.total_quests && progress.total_quests > 0 && !isQuestSectionCollapsed && (
+                    <div className="rpg-dialog mt-6 bg-yellow-50 text-center py-6 animate-bounce-in">
+                        <div className="text-6xl mb-4">🎉</div>
+                        <h3 className="font-pixel text-lg mb-2">太棒了！</h3>
+                        <p className="text-sm text-gray-700">
+                            你已經完成今天所有的任務！
+                        </p>
+                        <div className="mt-4 flex items-center justify-center gap-2">
+                            <Star className="text-yellow-500" fill="currentColor" />
+                            <span className="font-pixel text-xl text-yellow-600">
+                                +{progress.earned_points}
+                            </span>
+                            <Star className="text-yellow-500" fill="currentColor" />
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
             {/* Create Quest Dialog */}
             <RPGDialog
                 isOpen={isDialogOpen}
@@ -452,6 +458,6 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                     完成後將送出給爸爸媽媽審核喔！
                 </p>
             </RPGDialog>
-        </div>
+        </div >
     );
 };

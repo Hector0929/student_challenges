@@ -18,6 +18,7 @@ export interface Game {
     description: string;
     url: string;
     color: string;
+    category: 'learning' | 'fun';
 }
 
 export const GAMES: Game[] = [
@@ -27,7 +28,8 @@ export const GAMES: Game[] = [
         icon: '🔲',
         description: '節奏跑酷挑戰',
         url: '/games/parkour_game.html',
-        color: 'bg-violet-500 hover:bg-violet-600'
+        color: 'bg-violet-500 hover:bg-violet-600',
+        category: 'fun'
     },
     {
         id: 'spelling',
@@ -35,7 +37,8 @@ export const GAMES: Game[] = [
         icon: '🅰️',
         description: '英文拼字戰鬥',
         url: '/games/spelling_game.html',
-        color: 'bg-teal-400 hover:bg-teal-500'
+        color: 'bg-teal-400 hover:bg-teal-500',
+        category: 'learning'
     },
     {
         id: 'echo',
@@ -43,7 +46,8 @@ export const GAMES: Game[] = [
         icon: '👂',
         description: '英文聽力迷宮',
         url: '/games/echo_game.html',
-        color: 'bg-indigo-400 hover:bg-indigo-500'
+        color: 'bg-indigo-400 hover:bg-indigo-500',
+        category: 'learning'
     },
     {
         id: 'sentence',
@@ -51,7 +55,8 @@ export const GAMES: Game[] = [
         icon: '📝',
         description: '英文文法挑戰',
         url: '/games/sentence_game.html',
-        color: 'bg-pink-400 hover:bg-pink-500'
+        color: 'bg-pink-400 hover:bg-pink-500',
+        category: 'learning'
     },
     {
         id: 'akila',
@@ -59,7 +64,8 @@ export const GAMES: Game[] = [
         icon: '➕',
         description: '數學計算挑戰',
         url: '/games/akila_plus_test.html',
-        color: 'bg-blue-400 hover:bg-blue-500'
+        color: 'bg-blue-400 hover:bg-blue-500',
+        category: 'learning'
     },
     {
         id: 'multiplication',
@@ -67,7 +73,8 @@ export const GAMES: Game[] = [
         icon: '✖️',
         description: '九九乘法表',
         url: '/games/multiplication_test.html',
-        color: 'bg-purple-400 hover:bg-purple-500'
+        color: 'bg-purple-400 hover:bg-purple-500',
+        category: 'learning'
     },
     {
         id: 'shooting',
@@ -75,7 +82,8 @@ export const GAMES: Game[] = [
         icon: '🎯',
         description: '反應力訓練',
         url: '/games/shooting_game.html',
-        color: 'bg-orange-400 hover:bg-orange-500'
+        color: 'bg-orange-400 hover:bg-orange-500',
+        category: 'fun'
     },
     {
         id: 'tetris',
@@ -83,7 +91,8 @@ export const GAMES: Game[] = [
         icon: '🧱',
         description: '經典益智遊戲',
         url: '/games/Tetris.html',
-        color: 'bg-green-400 hover:bg-green-500'
+        color: 'bg-green-400 hover:bg-green-500',
+        category: 'fun'
     }
 ];
 
@@ -164,7 +173,7 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
 
                 {/* Game Cards Grid */}
                 <div className="grid grid-cols-2 gap-4">
-                    {GAMES.map((game) => (
+                    {GAMES.filter(g => g.category === 'fun').map((game) => (
                         <button
                             key={game.id}
                             onClick={() => setSelectedGame(game)}
