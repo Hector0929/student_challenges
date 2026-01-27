@@ -141,12 +141,14 @@
             isPlaying: false,
             score: 0,
             speed: CONFIG.initialSpeed,
-            frame: 0,
+            // Replaced frame with time for continuous time tracking
+            time: 0, 
             distance: 0,
             cameraShake: 0,
             lives: 3,
             invincible: false,
-            invincibleTimer: 0
+            invincibleTimer: 0,
+            lastTime: 0
         };
 
         // --- Classes ---
@@ -163,11 +165,11 @@
                 this.maxLife = life;
             }
 
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life -= 0.02;
-                this.size *= 0.95;
+            update(dt) {
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+                this.life -= 0.02 * dt;
+                this.size *= Math.pow(0.95, dt);
             }
 
             draw(ctx) {
@@ -187,10 +189,10 @@
                 this.angle = 0;
             }
 
-            update() {
-                this.x -= state.speed;
-                this.angle += 0.1;
-                this.y += Math.sin(this.angle) * 0.5; // Float
+            update(dt) {
+                this.x -= state.speed * dt;
+                this.angle += 0.1 * dt;
+                this.y += Math.sin(this.angle) * 0.5 * dt; // Float
             }
 
             draw(ctx) {
@@ -266,10 +268,10 @@
                 }
             }
 
-            update() {
+            update(dt) {
                 // Physics
-                this.vy += CONFIG.gravity;
-                this.y += this.vy;
+                this.vy += CONFIG.gravity * dt;
+                this.y += this.vy * dt;
 
                 // Ground Check
                 const groundY = canvas.height - CONFIG.floorHeight - this.h;
@@ -287,17 +289,17 @@
                     // Snap rotation
                     this.rotation = Math.round(this.rotation / (Math.PI / 2)) * (Math.PI / 2);
                 } else {
-                    this.rotation += 0.1;
+                    this.rotation += 0.1 * dt;
                 }
 
                 // Return to normal scale
-                this.scaleX += (1 - this.scaleX) * 0.1;
-                this.scaleY += (1 - this.scaleY) * 0.1;
+                this.scaleX += (1 - this.scaleX) * 0.1 * dt;
+                this.scaleY += (1 - this.scaleY) * 0.1 * dt;
             }
 
             draw(ctx) {
                 // Blink if invincible
-                if (state.invincible && Math.floor(state.frame / 4) % 2 === 0) return;
+                if (state.invincible && Math.floor(state.time / 4) % 2 === 0) return;
 
                 ctx.save();
                 ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
@@ -353,11 +355,11 @@
             });
         }
 
-        function updateBackground() {
+        function updateBackground(dt) {
             buildingLayers.forEach(layer => {
                 // Update X
                 layer.buildings.forEach(b => {
-                    b.x -= state.speed * layer.speed;
+                    b.x -= state.speed * layer.speed * dt;
                 });
 
                 // Wrap / Recycle
@@ -386,28 +388,43 @@
         }
 
         // --- Main Loop ---
-        function loop() {
+        function loop(timestamp) {
             if (!state.isPlaying) return;
 
+            // Delta Time Calculation
+            if (!state.lastTime) state.lastTime = timestamp;
+            const deltaTime = timestamp - state.lastTime;
+            state.lastTime = timestamp;
+
+            // Target 60 FPS (approx 16.67ms per frame)
+            // dt = 1.0 means running at 60 FPS
+            // dt = 0.5 means running at 120 FPS (moves half distance per frame)
+            let dt = deltaTime / (1000 / 60);
+            
+            // Clamp dt to prevent jumps (e.g. from backgrounding tab)
+            // Max 3 frames skipping
+            if (dt > 3) dt = 3;
+            if (dt < 0) dt = 0; // Sanity check
+
             // Update
-            player.update();
-            updateObstacles();
-            updateStars();
-            updateParticles();
-            updateBackground();
+            player.update(dt);
+            updateObstacles(dt);
+            updateStars(dt);
+            updateParticles(dt);
+            updateBackground(dt);
 
             // Screen Shake Decay
             if (state.cameraShake > 0) {
-                state.cameraShake *= 0.9;
+                state.cameraShake *= Math.pow(0.9, dt);
                 if (state.cameraShake < 0.5) state.cameraShake = 0;
             }
 
             // Progression
-            state.distance += state.speed;
+            state.distance += state.speed * dt;
             state.speed = CONFIG.initialSpeed + (state.score / 2000); // Speed up slowly
             if (state.speed > CONFIG.maxSpeed) state.speed = CONFIG.maxSpeed;
 
-            state.score += 1;
+            state.score += 1 * dt;
             document.getElementById('score').innerText = Math.floor(state.score);
 
             // Draw
@@ -445,13 +462,13 @@
 
             // Invincibility Timer
             if (state.invincible) {
-                state.invincibleTimer--;
+                state.invincibleTimer -= 1 * dt;
                 if (state.invincibleTimer <= 0) {
                     state.invincible = false;
                 }
             }
 
-            state.frame++;
+            state.time += dt;
             requestAnimationFrame(loop);
         }
 
@@ -495,13 +512,13 @@
                 this.oscillation = Math.random() * Math.PI;
             }
 
-            update() {
+            update(dt) {
                 // Move left faster (relative speed = drone.vx + state.speed effectively)
                 // Actually if we want it to charge, it moves left relative to world
-                this.x -= (state.speed + 3);
+                this.x -= (state.speed + 3) * dt;
 
                 // Bobbing functionality
-                this.y += Math.sin(state.frame * 0.1 + this.oscillation) * 2;
+                this.y += Math.sin(state.time * 0.1 + this.oscillation) * 2 * dt;
             }
 
             draw(ctx) {
@@ -509,7 +526,7 @@
                 ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
 
                 // Rotation effect
-                ctx.rotate(state.frame * 0.2);
+                ctx.rotate(state.time * 0.2);
 
                 ctx.shadowBlur = 15;
                 ctx.shadowColor = '#ef4444';
@@ -569,11 +586,11 @@
                 this.angle = 0;
             }
 
-            update() {
+            update(dt) {
                 // Rolling fast towards player
                 // Moves faster than the scroll speed
-                this.x -= (state.speed + 4);
-                this.angle -= 0.2; // Spin
+                this.x -= (state.speed + 4) * dt;
+                this.angle -= 0.2 * dt; // Spin
             }
 
             draw(ctx) {
@@ -668,7 +685,7 @@
 
         let nextSpawnX = 0;
 
-        function updateObstacles() {
+        function updateObstacles(dt) {
             // Spawning Logic using Patterns
             // Initialize nextSpawnX if needed
             if (nextSpawnX === 0) nextSpawnX = canvas.width;
@@ -678,7 +695,7 @@
             }
 
             // Critical fix: Move the spawn point with the world
-            if (nextSpawnX > 0) nextSpawnX -= state.speed;
+            if (nextSpawnX > 0) nextSpawnX -= state.speed * dt;
 
             // Move container for patterns? No, we just spawn individual objects from the pattern.
             // Actually, we need to correct the 'update' of obstacles to handle the new types
@@ -687,9 +704,9 @@
                 const obs = obstacles[i];
 
                 if (obs.update) {
-                    obs.update(); // For Drones and Wheels
+                    obs.update(dt); // For Drones and Wheels
                 } else {
-                    obs.x -= state.speed;
+                    obs.x -= state.speed * dt;
                 }
 
                 // Collision
@@ -704,7 +721,7 @@
                             } else {
                                 // Get hit but survive
                                 state.invincible = true;
-                                state.invincibleTimer = 60; // 1 second roughly
+                                state.invincibleTimer = 60; // 1 second roughly (now handled by dt)
                                 state.cameraShake = 5;
                                 playSound('hit');
                             }
@@ -716,11 +733,22 @@
                 if (obs.type === 'platform') {
                     // Check if player enters from top
                     // Previous Y (approximate)
-                    const prevY = player.y - player.vy;
+                    const prevY = player.y - player.vy * dt; // Rewind using dt logic? 
+                    // Actually, collision logic for platforms is tricky with varying dt.
+                    // But here we just check if overlapping.
+                    // Let's rely on overlap logic.
+                    // Logic: Feet were previously above platform top.
+                    
+                    // The original logic used `player.y - player.vy` as strict previous frame approximation.
+                    // Now `player.vy` is per frame? No, `player.vy` accumulates `gravity * dt`. 
+                    // So `player.vy` is pixels/frame if dt=1.
+                    // So `player.vy * dt` is the displacement this frame.
+                    const displacementY = player.vy * dt;
+
                     if (player.vy >= 0 && // Falling
                         player.x + player.w > obs.x && player.x < obs.x + obs.w && // Horizontal overlaps
                         player.y + player.h >= obs.y && player.y + player.h <= obs.y + 20 && // Feet at top edge
-                        prevY + player.h <= obs.y + 10 // Was above
+                        player.y - displacementY + player.h <= obs.y + 10 // Was above
                     ) {
                         player.y = obs.y - player.h;
                         player.vy = 0;
@@ -734,10 +762,10 @@
             }
         }
 
-        function updateStars() {
+        function updateStars(dt) {
             for (let i = stars.length - 1; i >= 0; i--) {
                 const star = stars[i];
-                star.update();
+                star.update(dt);
 
                 // Collect
                 const dx = (player.x + player.w / 2) - star.x;
@@ -845,9 +873,9 @@
             );
         }
 
-        function updateParticles() {
+        function updateParticles(dt) {
             for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
+                particles[i].update(dt);
                 if (particles[i].life <= 0) particles.splice(i, 1);
             }
         }
@@ -881,6 +909,8 @@
             particles = [];
             stars = [];
             nextSpawnX = canvas.width; // Reset pattern spawner
+            state.lastTime = 0; // Reset timer tracking
+            state.time = 0;
 
             initBackground();
             player.reset();
