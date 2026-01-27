@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Gamepad2, Lock, Star } from 'lucide-react';
+import { Gamepad2, Lock, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { GameModal } from './GameModal';
 import { useStarBalance, useSpendStars } from '../hooks/useQuests';
 import { GAME_COST } from '../lib/constants';
@@ -103,6 +103,7 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
     userId
 }) => {
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     // Fetch star balance
     const { data: starBalance = 0, refetch: refetchBalance } = useStarBalance(userId);
@@ -158,45 +159,68 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
     return (
         <>
             <div className="rpg-dialog mt-6 bg-gradient-to-br from-yellow-50 to-orange-50 animate-bounce-in">
-                <div className="text-center mb-6">
-                    <div className="text-6xl mb-2 animate-bounce">🎉</div>
-                    <h3 className="font-pixel text-xl mb-2 text-pokeball-red">獎勵時間解鎖！</h3>
-                    <p className="text-sm text-gray-700">選一個遊戲放鬆一下吧 🎮</p>
-
-                    {/* Star Balance Display */}
-                    <div className="mt-4 inline-flex items-center gap-2 bg-yellow-100 border-2 border-yellow-400 rounded-full px-4 py-2">
-                        <Star className="text-yellow-500" fill="currentColor" size={20} />
-                        <span className="font-pixel text-lg text-yellow-700">{starBalance}</span>
-                        <span className="text-xs text-yellow-600">可用星幣</span>
+                {/* Collapsible Header */}
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white p-2 rounded-xl shadow-sm">
+                            <Gamepad2 className="text-yellow-600" size={24} />
+                        </div>
+                        <div>
+                            <h2 className="font-pixel text-xl text-yellow-800">獎勵時間</h2>
+                            <p className="text-xs text-yellow-600">已解鎖，盡情玩樂吧！</p>
+                        </div>
                     </div>
+                    <button
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        className="px-3 py-2 border-2 border-yellow-800/10 bg-white hover:bg-yellow-50 transition-colors rounded-lg text-yellow-800"
+                    >
+                        {isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+                    </button>
                 </div>
 
-                {/* Game Cards Grid */}
-                <div className="grid grid-cols-2 gap-4">
-                    {GAMES.filter(g => g.category === 'fun').map((game) => (
-                        <button
-                            key={game.id}
-                            onClick={() => setSelectedGame(game)}
-                            className={`${game.color} border-2 border-deep-black p-4 transition-all transform hover:scale-105 hover:shadow-lg active:scale-95 relative`}
-                        >
-                            <div className="text-4xl mb-2">{game.icon}</div>
-                            <div className="font-pixel text-sm text-white mb-1">{game.name}</div>
-                            <div className="text-xs text-white opacity-90">{game.description}</div>
-                            {/* Cost badge */}
-                            <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 rounded-full px-2 py-1 text-xs font-bold flex items-center gap-1">
-                                <Star size={12} fill="currentColor" />
-                                {GAME_COST}
+                {!isCollapsed && (
+                    <>
+                        <div className="text-center mb-6">
+                            <div className="text-6xl mb-2 animate-bounce">🎉</div>
+                            <h3 className="font-pixel text-xl mb-2 text-pokeball-red">獎勵時間解鎖！</h3>
+                            <p className="text-sm text-gray-700">選一個遊戲放鬆一下吧 🎮</p>
+
+                            {/* Star Balance Display */}
+                            <div className="mt-4 inline-flex items-center gap-2 bg-yellow-100 border-2 border-yellow-400 rounded-full px-4 py-2">
+                                <Star className="text-yellow-500" fill="currentColor" size={20} />
+                                <span className="font-pixel text-lg text-yellow-700">{starBalance}</span>
+                                <span className="text-xs text-yellow-600">可用星幣</span>
                             </div>
-                        </button>
-                    ))}
-                </div>
+                        </div>
 
-                <div className="mt-4 text-center">
-                    <div className="flex items-center justify-center gap-2 text-gray-600">
-                        <Gamepad2 size={16} />
-                        <span className="text-xs">每次遊戲 {GAME_COST} 星幣 / 3分鐘</span>
-                    </div>
-                </div>
+                        {/* Game Cards Grid */}
+                        <div className="grid grid-cols-2 gap-4">
+                            {GAMES.filter(g => g.category === 'fun').map((game) => (
+                                <button
+                                    key={game.id}
+                                    onClick={() => setSelectedGame(game)}
+                                    className={`${game.color} border-2 border-deep-black p-4 transition-all transform hover:scale-105 hover:shadow-lg active:scale-95 relative`}
+                                >
+                                    <div className="text-4xl mb-2">{game.icon}</div>
+                                    <div className="font-pixel text-sm text-white mb-1">{game.name}</div>
+                                    <div className="text-xs text-white opacity-90">{game.description}</div>
+                                    {/* Cost badge */}
+                                    <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 rounded-full px-2 py-1 text-xs font-bold flex items-center gap-1">
+                                        <Star size={12} fill="currentColor" />
+                                        {GAME_COST}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="mt-4 text-center">
+                            <div className="flex items-center justify-center gap-2 text-gray-600">
+                                <Gamepad2 size={16} />
+                                <span className="text-xs">每次遊戲 {GAME_COST} 星幣 / 3分鐘</span>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Game Modal */}
