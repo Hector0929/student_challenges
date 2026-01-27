@@ -394,11 +394,18 @@
         // --- Core Systems ---
 
         function init() {
-            player = new Player();
-            stars = Array(50).fill().map(() => new Star());
+            try {
+                player = new Player();
+                stars = Array(50).fill().map(() => new Star());
 
-            // Initial render
-            loop(0);
+                // Auto-start game on load for better UX
+                startGame();
+
+                // Initial render
+                loop(0);
+            } catch (e) {
+                console.error("Game Init Error:", e);
+            }
         }
 
         function loop(timestamp) {
@@ -430,9 +437,10 @@
             }
 
             if (state.isPlaying) {
-                // Spawning
+                // Spawning - check count
                 enemySpawnTimer++;
-                if (enemySpawnTimer > 60) {
+                // Spawn faster: every 40 frames instead of 60
+                if (enemySpawnTimer > 40) {
                     spawnEnemy();
                     enemySpawnTimer = 0;
                 }
@@ -603,7 +611,10 @@
 
             for (let i = 0; i < count; i++) {
                 setTimeout(() => {
-                    const target = targets[i % targets.length]; // cycle targets if not enough
+                    // Check if target still exists
+                    let freshTargets = [...enemies].sort((a, b) => b.y - a.y);
+                    const target = freshTargets[i % freshTargets.length]; // cycle targets if not enough
+
                     const bX = player.x;
                     const bY = player.y - 20;
                     bullets.push(new Bullet(bX, bY, target));
@@ -641,6 +652,7 @@
         // --- Game Flow ---
 
         function startGame() {
+            console.log("Game Started");
             state.isPlaying = true;
             state.score = 0;
             state.lives = 12;
