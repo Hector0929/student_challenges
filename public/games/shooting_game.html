@@ -61,75 +61,75 @@
     </style>
 </head>
 
-<body class="flex flex-col items-center justify-center min-h-screen p-4 relative">
+<body class="bg-[#0f0b1e] text-white overflow-hidden touch-action-none h-screen w-screen flex flex-col">
 
-    <!-- Game Container -->
-    <div id="game-container" class="w-full max-w-2xl relative">
-
-        <!-- Stats Bar -->
-        <div class="flex justify-between items-center mb-4 px-2">
-            <div class="neon-box rounded-xl px-4 py-2 flex gap-4">
-                <span class="text-purple-400 font-bold">SCORE</span>
-                <span id="scoreDisplay" class="text-white text-xl">0</span>
+    <!-- Top Stats Bar -->
+    <div class="flex-none p-2 z-20">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="neon-box rounded-xl px-4 py-2 flex gap-4 bg-[#0f0b1e]/80 backdrop-blur">
+                <span class="text-purple-400 font-bold text-sm md:text-base">SCORE</span>
+                <span id="scoreDisplay" class="text-lg md:text-xl text-white">0</span>
             </div>
-            <div class="neon-box rounded-xl px-4 py-2 flex gap-4">
-                <span class="text-red-500 font-bold">LIVES</span>
-                <span id="livesDisplay" class="text-white text-xl hearts-container">❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️</span>
+            <div class="neon-box rounded-xl px-4 py-2 flex gap-1 md:gap-2 bg-[#0f0b1e]/80 backdrop-blur">
+                <span class="text-red-500 font-bold text-sm md:text-base">LIVES</span>
+                <span id="livesDisplay" class="text-sm md:text-xl text-white tracking-widest">❤️❤️❤️❤️❤️❤️</span>
             </div>
         </div>
+    </div>
 
-        <!-- Canvas Area -->
-        <div class="relative neon-box rounded-2xl overflow-hidden mb-4">
-            <!-- Increased height from h-80 to h-[550px] -->
-            <canvas id="gameCanvas" class="w-full h-[550px] block bg-[#0f0b1e]"></canvas>
-        </div>
+    <!-- Game Area (Flexible) -->
+    <div id="game-wrapper"
+        class="flex-1 relative w-full max-w-4xl mx-auto my-2 border-x-2 border-purple-500/30 overflow-hidden">
+        <canvas id="gameCanvas" class="block h-full w-full"></canvas>
 
-        <!-- UI / Control Panel -->
-        <div class="neon-box rounded-2xl p-6 text-center">
-
-            <!-- Question Display -->
-            <div class="mb-6">
-                <div id="feedbackDisplay" class="h-6 text-sm font-bold mb-1 transition-colors duration-200"></div>
-                <div id="questionDisplay"
-                    class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 neon-text pb-2">
-                    READY?
-                </div>
-                <!-- Timer Bar -->
-                <div class="h-1 bg-gray-800 rounded-full mt-4 overflow-hidden w-64 mx-auto">
-                    <div id="questionTimerBar"
-                        class="h-full bg-cyan-500 shadow-[0_0_10px_#22d3ee] transition-all duration-100 ease-linear"
-                        style="width: 100%;"></div>
-                </div>
+        <!-- Question Overlay (Floating Top Center) -->
+        <div class="absolute left-0 right-0 top-4 z-10 text-center pointer-events-none">
+            <div id="questionDisplay"
+                class="neon-text drop-shadow-xl inline-block bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-5xl font-bold text-transparent md:text-6xl">
+                READY?
             </div>
+            <!-- Timer Bar -->
+            <div class="mx-auto mt-2 h-2 w-64 overflow-hidden rounded-full bg-gray-800/50 backdrop-blur-sm">
+                <div id="questionTimerBar"
+                    class="h-full bg-cyan-500 shadow-[0_0_10px_#22d3ee] transition-all duration-100 ease-linear"
+                    style="width: 100%;"></div>
+            </div>
+            <!-- Feedback -->
+            <div id="feedbackDisplay" class="mt-2 h-8 text-xl font-bold text-shadow-md"></div>
+        </div>
+    </div>
 
+    <!-- Bottom Controls (Fixed Height) -->
+    <div class="flex-none p-4 pb-8 z-20 bg-gradient-to-t from-[#0f0b1e] to-transparent">
+        <div class="mx-auto max-w-2xl">
             <!-- Answers Grid -->
-            <div id="answerOptionsContainer" class="grid grid-cols-2 gap-4 mb-6">
+            <div id="answerOptionsContainer" class="mb-4 grid grid-cols-2 gap-4">
                 <!-- Buttons injected by JS -->
             </div>
 
-            <!-- Controls -->
+            <!-- Start / Controls -->
             <div class="flex justify-center gap-4">
                 <button id="startGameButton"
-                    class="clay-btn text-white px-8 py-3 text-xl font-bold rounded-xl w-full max-w-xs">
+                    class="clay-btn shadow-2xl w-full max-w-xs rounded-xl px-8 py-3 text-xl font-bold text-white">
                     START MISSION
                 </button>
                 <button id="specialCannonButton"
-                    class="hidden clay-btn text-yellow-300 border-yellow-500 px-6 py-3 text-lg font-bold rounded-xl whitespace-nowrap shadow-[0_0_15px_rgba(234,179,8,0.4)]">
+                    class="clay-btn animate-pulse hidden whitespace-nowrap rounded-xl border-yellow-500 px-6 py-3 text-lg font-bold text-yellow-300 shadow-[0_0_15px_rgba(234,179,8,0.4)]">
                     ⚡ SUPER BEAM
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Celebration / Game Over Overlay -->
+    <!-- Celebration Overlay -->
     <div id="celebrationScreen"
-        class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div class="neon-box rounded-2xl p-8 text-center max-w-sm mx-4 animate-[bounce_1s_infinite]">
-            <div class="text-6xl mb-4">🎉</div>
-            <h2 class="text-3xl font-bold text-purple-400 mb-2 neon-text">MISSION COMPLETE!</h2>
-            <p class="text-gray-300 mb-2">FINAL SCORE</p>
-            <p id="finalScore" class="text-5xl font-bold text-white mb-8 text-shadow-lg">0</p>
-            <button id="restartGameButton" class="clay-btn text-white px-8 py-3 text-xl font-bold rounded-xl w-full">
+        class="absolute inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="neon-box animate-[bounce_1s_infinite] mx-4 max-w-sm rounded-2xl p-8 text-center">
+            <div class="mb-4 text-6xl">🎉</div>
+            <h2 class="neon-text mb-2 text-3xl font-bold text-purple-400">MISSION COMPLETE!</h2>
+            <p class="mb-2 text-gray-300">FINAL SCORE</p>
+            <p id="finalScore" class="mb-8 text-5xl font-bold text-white text-shadow-lg">0</p>
+            <button id="restartGameButton" class="clay-btn w-full rounded-xl px-8 py-3 text-xl font-bold text-white">
                 PLAY AGAIN
             </button>
         </div>
@@ -137,13 +137,49 @@
 
     <script>
         /**
-         * NEON MATH SHOOTER - Redesigned
+         * NEON MATH SHOOTER - Responsive Fit
          */
-
         const canvas = document.getElementById('gameCanvas');
+        const wrapper = document.getElementById('game-wrapper');
         const ctx = canvas.getContext('2d');
 
-        // UI Elements
+        // Configuration State
+        const CONFIG = {
+            width: 800,
+            height: 600, // Will be updated by resize
+            colors: {
+                bg: '#0f0b1e',
+                player: '#22d3ee',
+                playerGlow: '#06b6d4',
+                enemy: '#f472b6',
+                enemyGlow: '#db2777',
+                bullet: '#facc15',
+                bulletGlow: '#eab308'
+            }
+        };
+
+        // Resize Logic
+        function resize() {
+            const rect = wrapper.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            CONFIG.width = rect.width;
+            CONFIG.height = rect.height;
+
+            // Reposition player if exists
+            if (player) {
+                player.x = CONFIG.width / 2;
+                player.y = CONFIG.height - 80;
+                player.targetX = player.x;
+            }
+        }
+        window.addEventListener('resize', resize);
+        // Call resize immediately and after short delay to ensure layout is settled
+        resize();
+        setTimeout(resize, 100);
+
+        // UI References
         const scoreDisplay = document.getElementById('scoreDisplay');
         const livesDisplay = document.getElementById('livesDisplay');
         const questionDisplay = document.getElementById('questionDisplay');
@@ -155,33 +191,6 @@
         const celebrationScreen = document.getElementById('celebrationScreen');
         const finalScoreDisplay = document.getElementById('finalScore');
         const restartGameButton = document.getElementById('restartGameButton');
-
-        // Game Configuration
-        const CONFIG = {
-            width: 800,
-            height: 600, // Increased internal vertical resolution
-            colors: {
-                bg: '#0f0b1e',
-                player: '#22d3ee', // Cyan
-                playerGlow: '#06b6d4',
-                enemy: '#f472b6',  // Pink
-                enemyGlow: '#db2777',
-                bullet: '#facc15', // Yellow
-                bulletGlow: '#eab308'
-            }
-        };
-
-        // Resize handling
-        function resize() {
-            const container = document.getElementById('game-container');
-            const aspect = CONFIG.width / CONFIG.height;
-            // Fit to container width
-            canvas.width = CONFIG.width;
-            canvas.height = CONFIG.height;
-            // CSS handles visual scaling
-        }
-        window.addEventListener('resize', resize);
-        resize();
 
         // Game State
         let state = {
