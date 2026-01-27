@@ -147,7 +147,7 @@
     <!-- Celebration Overlay -->
     <div id="celebrationScreen"
         class="absolute inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div class="neon-box animate-bounce-3 mx-4 max-w-sm rounded-2xl p-8 text-center hover:animation-none">
+        <div class="neon-box mx-4 max-w-sm rounded-2xl p-8 text-center">
             <div class="mb-4 text-6xl">🎉</div>
             <h2 class="neon-text mb-2 text-3xl font-bold text-purple-400">MISSION COMPLETE!</h2>
             <p class="mb-2 text-gray-300">FINAL SCORE</p>
@@ -341,9 +341,9 @@
                 this.w = 40;
                 this.h = 40;
 
-                // Difficulty Scaling: Base speed 0.75 (slow start), increases by 1.2x every 1000 points
+                // Difficulty Scaling: Base speed 0.375 (very slow start), increases by 1.2x every 1000 points
                 const difficultyMultiplier = Math.pow(1.2, Math.floor(state.score / 1000));
-                this.speed = 0.75 * difficultyMultiplier;
+                this.speed = 0.375 * difficultyMultiplier;
 
                 this.rotation = 0;
             }
