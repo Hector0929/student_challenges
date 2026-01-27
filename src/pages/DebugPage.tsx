@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDailyLogs, useStarBalance } from '../hooks/useQuests';
 import { RefreshCw, Play, PlusCircle, Wrench } from 'lucide-react';
-import { GAMES, Game } from '../components/RewardTime';
+import { GAMES, type Game } from '../components/RewardTime';
 import { GameModal } from '../components/GameModal';
 import { useUser } from '../contexts/UserContext';
 import { supabase } from '../lib/supabase';
