@@ -11,6 +11,7 @@ import { useUser } from '../contexts/UserContext';
 
 export const ParentControl: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'active' | 'pending'>('active');
+    const { user } = useUser();
 
     // Fetch both active and pending quests
     const { data: activeQuests, isLoading: activeLoading } = useQuests('active');
@@ -100,7 +101,8 @@ export const ParentControl: React.FC = () => {
         } else {
             const newQuest = await createQuestMutation.mutateAsync({
                 ...formData,
-                status: 'active'
+                status: 'active',
+                created_by: user?.id
             });
             questId = newQuest.id;
         }
@@ -157,7 +159,7 @@ export const ParentControl: React.FC = () => {
     return (
         <div className="max-w-6xl mx-auto">
             {/* PIN Warning Banner */}
-            {useUser().user?.pin_code === '0000' && (
+            {user?.pin_code === '0000' && (
                 <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 flex justify-between items-center animate-pulse">
                     <div>
                         <p className="font-bold font-pixel">⚠️ 安全提醒</p>
