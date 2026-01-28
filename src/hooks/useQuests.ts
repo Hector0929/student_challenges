@@ -1,35 +1,48 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, getTodayDate } from '../lib/supabase';
 import type { Quest, DailyLog, DailyProgress } from '../types/database';
+import { useUser } from '../contexts/UserContext';
 
 // Fetch all active quests
 export const useQuests = (status: 'active' | 'pending' | 'archived' = 'active') => {
-    return useQuery({
-        queryKey: ['quests', status],
-        queryFn: async () => {
-            console.log('🔍 useQuests fetching with status:', status);
+    const { user } = useUser();
+    const familyId = user?.family_id;
 
-            // Try using status column first, fallback to is_active for backward compatibility
+    return useQuery({
+        queryKey: ['quests', status, familyId],
+        queryFn: async () => {
+            console.log('🔍 useQuests fetching with status:', status, 'familyId:', familyId);
+
+            if (!familyId) {
+                console.log('⚠️ No familyId found, returning empty quests');
+                return [];
+            }
+
+            // JOIN profiles to filter by family_id
+            // We use !inner to enforce that the creator must belong to the same family
             let query = supabase
                 .from('quests')
-                .select('*, quest_assignments(*)');
+                .select('*, quest_assignments(*), profiles!inner(family_id)');
 
-            // Check if status column exists by attempting to query with it
-            // If it fails, we'll use is_active instead
             try {
+                // Filter by family_id through the profiles relation
+                // Assuming 'created_by' is the FK to 'profiles.id'
                 const { data, error } = await query
                     .eq('status', status)
+                    .eq('profiles.family_id', familyId)
                     .order('created_at', { ascending: true });
 
                 if (error) {
-                    // If column doesn't exist, fallback to is_active
+                    // Fallback for missing status column (backward compatibility)
                     if (error.message?.includes('column') || error.code === '42703') {
                         console.warn('⚠️ status column not found, using is_active fallback');
                         const isActive = status === 'active';
+
                         const fallbackQuery = await supabase
                             .from('quests')
-                            .select('*, quest_assignments(*)')
+                            .select('*, quest_assignments(*), profiles!inner(family_id)')
                             .eq('is_active', isActive)
+                            .eq('profiles.family_id', familyId)
                             .order('created_at', { ascending: true });
 
                         if (fallbackQuery.error) throw fallbackQuery.error;
@@ -46,6 +59,7 @@ export const useQuests = (status: 'active' | 'pending' | 'archived' = 'active') 
                 throw e;
             }
         },
+        enabled: !!familyId, // Only fetch if we have a familyId
     });
 };
 
