@@ -485,25 +485,25 @@ export const useStarBalance = (childId: string) => {
 
             const earned = totalPoints || 0;
 
-            // 2. Get total spent from star_transactions
-            let spent = 0;
+            // 2. Get total net transactions (spend is negative, manual adjustment can be pos/neg)
+            let netTransactions = 0;
             try {
                 const { data: transactions } = await supabase
                     .from('star_transactions')
                     .select('amount')
                     .eq('user_id', childId)
-                    .eq('type', 'spend');
+                    .in('type', ['spend', 'adjustment']); // Include adjustments
 
                 if (transactions) {
-                    spent = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+                    // Sum up direct values (spend is stored as negative)
+                    netTransactions = transactions.reduce((sum, t) => sum + t.amount, 0);
                 }
             } catch (e) {
-                // star_transactions table might not exist yet
-                console.log('⚠️ star_transactions table not available');
+                console.log('⚠️ star_transactions error', e);
             }
 
-            const balance = earned - spent;
-            console.log('💰 Star balance calculated:', { earned, spent, balance });
+            const balance = earned + netTransactions;
+            console.log('💰 Star balance calculated:', { earned, netTransactions, balance });
             return balance;
         },
         enabled: !!childId,
@@ -605,3 +605,44 @@ export const useSpendStars = () => {
         }
     });
 };
+
+// Manually adjust stars (Parent only)
+export const useAdjustStars = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            childId,
+            amount,
+            description,
+            parentId
+        }: {
+            childId: string;
+            amount: number;
+            description: string;
+            parentId: string;
+        }) => {
+            console.log('👮 Parent adjusting stars:', { childId, amount });
+
+            const { data, error } = await supabase
+                .from('star_transactions')
+                .insert({
+                    user_id: childId,
+                    amount: amount, // Can be positive or negative
+                    type: 'adjustment',
+                    description: description,
+                    created_by: parentId // Track who did it
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['star_balance', variables.childId] });
+            queryClient.invalidateQueries({ queryKey: ['star_transactions'] });
+        },
+    });
+};
+
