@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Memory Matrix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: #050510;
+            overflow: hidden;
+            touch-action: none;
+            perspective: 1000px;
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px #22d3ee, 0 0 20px #22d3ee;
+        }
+
+        /* Card Flip Styles */
+        .card-container {
+            perspective: 1000px;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.2);
+            border: 2px solid #22d3ee;
+        }
+
+        .card-back {
+            background: #0f172a;
+            /* Slate 900 */
+            color: #22d3ee;
+        }
+
+        .card-front {
+            background: #0891b2;
+            /* Cyan 600 */
+            color: white;
+            transform: rotateY(180deg);
+            border-color: #ec4899;
+            /* Pink border when revealed */
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.5);
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Header -->
+    <div class="w-full max-w-lg flex justify-between items-center mb-8">
+        <div>
+            <div class="text-cyan-400 text-xs tracking-widest">LEVEL</div>
+            <div id="level-display" class="text-2xl text-white font-bold">1</div>
+        </div>
+        <div class="text-center">
+            <h1
+                class="text-2xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 font-bold neon-text">
+                MEMORY MATRIX
+            </h1>
+        </div>
+        <div class="text-right">
+            <div class="text-pink-400 text-xs tracking-widest">TIME</div>
+            <div id="time-display" class="text-2xl text-white font-bold">60</div>
+        </div>
+    </div>
+
+    <!-- Grid Container -->
+    <div id="game-grid" class="grid gap-3 w-full max-w-lg aspect-square">
+        <!-- Cards injected by JS -->
+    </div>
+
+    <!-- Start / Game Over Overlay -->
+    <div id="overlay" class="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
+        <div class="text-center">
+            <div class="text-6xl mb-6">🧠</div>
+            <h2 id="overlay-title" class="text-4xl font-bold text-white mb-4">READY?</h2>
+            <p id="overlay-msg" class="text-cyan-200 mb-8">Memorize the matrix.</p>
+            <button onclick="startGame()"
+                class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-12 rounded-full shadow-lg shadow-cyan-500/50 transition-all hover:scale-105">
+                START
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const grid = document.getElementById('game-grid');
+        const overlay = document.getElementById('overlay');
+        const timeDisplay = document.getElementById('time-display');
+        const levelDisplay = document.getElementById('level-display');
+
+        const ICONS = ['🚀', '👾', '💎', '🥝', '🎸', '🧬', '🔮', '🧸', '🌈', '🍕', '🐱', '🦄', '⭐', '🔥', '⚡', '❄️'];
+
+        let state = {
+            level: 1,
+            timeLeft: 60,
+            cards: [], // { id, icon, flipped, matched }
+            firstCard: null,
+            isLocked: false,
+            timer: null,
+            cols: 3,
+            rows: 2
+        };
+
+        function getLayout(level) {
+            // Level 1: 2x3 (6 cards, 3 pairs)
+            // Level 2: 3x4 (12 cards, 6 pairs)
+            // Level 3: 4x4 (16 cards, 8 pairs)
+            // Level 4: 4x5 (20 cards, 10 pairs)
+            if (level === 1) return { rows: 3, cols: 2, time: 30 };
+            if (level === 2) return { rows: 4, cols: 3, time: 45 };
+            if (level === 3) return { rows: 4, cols: 4, time: 60 };
+            return { rows: 5, cols: 4, time: 75 }; // Max
+        }
+
+        function startGame() {
+            state.level = 1;
+            startLevel();
+        }
+
+        function startLevel() {
+            const layout = getLayout(state.level);
+            state.rows = layout.rows;
+            state.cols = layout.cols;
+            state.timeLeft = layout.time;
+            state.firstCard = null;
+            state.isLocked = true; // Wait for preview
+
+            levelDisplay.innerText = state.level;
+            timeDisplay.innerText = state.timeLeft;
+
+            overlay.classList.add('hidden');
+
+            // Generate Cards
+            const pairCount = (state.rows * state.cols) / 2;
+            const selectedIcons = ICONS.slice(0, pairCount);
+            const cardValues = [...selectedIcons, ...selectedIcons];
+
+            // Shuffle
+            for (let i = cardValues.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cardValues[i], cardValues[j]] = [cardValues[j], cardValues[i]];
+            }
+
+            // Render
+            grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${state.cols}, 1fr)`;
+
+            state.cards = cardValues.map((icon, index) => {
+                const el = document.createElement('div');
+                el.className = 'card-container aspect-square';
+                el.innerHTML = `
+                    <div class="card flipped" data-index="${index}">
+                        <div class="card-face card-back text-2xl">?</div>
+                        <div class="card-face card-front">${icon}</div>
+                    </div>
+                `;
+                el.querySelector('.card').onclick = () => handleCardClick(index);
+                grid.appendChild(el);
+                return { id: index, icon, flipped: true, matched: false, element: el.querySelector('.card') };
+            });
+
+            // Preview Phase
+            setTimeout(() => {
+                // Flip all back
+                state.cards.forEach(c => {
+                    c.flipped = false;
+                    c.element.classList.remove('flipped');
+                });
+                state.isLocked = false;
+                startTimer();
+            }, 2000); // 2 seconds to memorize
+        }
+
+        function handleCardClick(index) {
+            if (state.isLocked) return;
+            const card = state.cards[index];
+            if (card.flipped || card.matched) return;
+
+            // Flip
+            card.flipped = true;
+            card.element.classList.add('flipped');
+
+            if (!state.firstCard) {
+                state.firstCard = card;
+            } else {
+                // Check Match
+                checkForMatch(state.firstCard, card);
+                state.firstCard = null;
+            }
+        }
+
+        function checkForMatch(card1, card2) {
+            state.isLocked = true;
+            if (card1.icon === card2.icon) {
+                // Match
+                card1.matched = true;
+                card2.matched = true;
+
+                // Visual feedback
+                setTimeout(() => {
+                    card1.element.children[1].style.borderColor = '#10b981'; // Green
+                    card2.element.children[1].style.borderColor = '#10b981';
+                    state.isLocked = false;
+
+                    if (state.cards.every(c => c.matched)) {
+                        levelComplete();
+                    }
+                }, 500);
+            } else {
+                // No Match
+                setTimeout(() => {
+                    card1.flipped = false;
+                    card2.flipped = false;
+                    card1.element.classList.remove('flipped');
+                    card2.element.classList.remove('flipped');
+                    state.isLocked = false;
+                }, 1000);
+            }
+        }
+
+        function startTimer() {
+            if (state.timer) clearInterval(state.timer);
+            state.timer = setInterval(() => {
+                state.timeLeft--;
+                timeDisplay.innerText = state.timeLeft;
+                if (state.timeLeft <= 0) {
+                    gameOver();
+                }
+            }, 1000);
+        }
+
+        function levelComplete() {
+            clearInterval(state.timer);
+            if (state.level >= 4) {
+                showOverlay("VICTORY!", "Your brain is massive.");
+            } else {
+                state.level++;
+                setTimeout(startLevel, 1000);
+            }
+        }
+
+        function gameOver() {
+            clearInterval(state.timer);
+            showOverlay("GAME OVER", "Out of time.");
+        }
+
+        function showOverlay(title, msg) {
+            overlay.classList.remove('hidden');
+            document.getElementById('overlay-title').innerText = title;
+            document.getElementById('overlay-msg').innerText = msg;
+        }
+
+    </script>
+</body>
+
+</html>

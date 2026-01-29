@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Snake</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: #050510;
+            overflow: hidden;
+            touch-action: none;
+            /* Prevent zoom/scroll */
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px #22d3ee, 0 0 20px #22d3ee;
+        }
+
+        .neon-border {
+            box-shadow: 0 0 10px #22d3ee, inset 0 0 10px #22d3ee;
+            border: 2px solid #22d3ee;
+        }
+
+        .glass-panel {
+            background: rgba(10, 10, 30, 0.8);
+            backdrop-filter: blur(8px);
+        }
+
+        canvas {
+            image-rendering: pixelated;
+        }
+
+        /* Mobile Controls */
+        .d-pad-btn {
+            background: rgba(34, 211, 238, 0.1);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #22d3ee;
+            transition: all 0.1s;
+        }
+
+        .d-pad-btn:active {
+            background: rgba(34, 211, 238, 0.4);
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col items-center justify-center">
+
+    <!-- UI Overlay -->
+    <div id="ui-layer"
+        class="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-10 w-full max-w-lg mx-auto">
+        <!-- Header -->
+        <div class="flex justify-between items-start">
+            <div class="glass-panel rounded-xl px-4 py-2 border border-cyan-500/50">
+                <div class="text-cyan-400 text-xs">SCORE</div>
+                <div id="score" class="text-2xl text-white font-bold">0</div>
+            </div>
+            <div class="glass-panel rounded-xl px-4 py-2 border border-cyan-500/50">
+                <div class="text-cyan-400 text-xs">HIGH</div>
+                <div id="high-score" class="text-2xl text-white font-bold">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start / Game Over Screen -->
+    <div id="menu-screen" class="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div
+            class="glass-panel rounded-2xl p-8 text-center max-w-sm mx-4 border border-cyan-500 shadow-2xl shadow-cyan-500/20">
+            <div class="text-6xl mb-4 animate-pulse">🐍</div>
+            <h1
+                class="text-4xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 font-bold mb-2 neon-text">
+                NEON SNAKE
+            </h1>
+            <p id="menu-message" class="text-cyan-200/70 mb-8 tracking-wider">CYBERPUNK EATER</p>
+
+            <button onclick="startGame()"
+                class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-cyan-500/50">
+                START GAME
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <div
+        class="relative w-full max-w-lg aspect-square neon-border rounded-lg bg-black/50 overflow-hidden shadow-2xl shadow-cyan-900/50">
+        <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+    </div>
+
+    <!-- Mobile Controls (Visible only on touch devices) -->
+    <div id="mobile-controls"
+        class="hidden absolute bottom-8 w-full max-w-md justify-center gap-4 z-20 pointer-events-auto">
+        <div class="grid grid-cols-3 gap-2">
+            <div></div> <!-- Empty -->
+            <button class="d-pad-btn" ontouchstart="handleInput('ArrowUp', event)">▲</button>
+            <div></div> <!-- Empty -->
+
+            <button class="d-pad-btn" ontouchstart="handleInput('ArrowLeft', event)">◀</button>
+            <button class="d-pad-btn" ontouchstart="handleInput('ArrowDown', event)">▼</button>
+            <button class="d-pad-btn" ontouchstart="handleInput('ArrowRight', event)">▶</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const highScoreDisplay = document.getElementById('high-score');
+        const menuScreen = document.getElementById('menu-screen');
+        const mobileControls = document.getElementById('mobile-controls');
+
+        // Config
+        const GRID_SIZE = 20;
+        let TILE_COUNT = 20; // Will be calculated based on canvas size
+        const GAME_SPEED_START = 150;
+
+        let state = {
+            isPlaying: false,
+            score: 0,
+            highScore: localStorage.getItem('snake_highscore') || 0,
+            snake: [],
+            vel: { x: 0, y: 0 },
+            food: { x: 15, y: 15 },
+            nextVel: { x: 0, y: 0 }, // Buffered input prevent self-collision
+            speed: GAME_SPEED_START,
+            lastTime: 0,
+            accumulatedTime: 0
+        };
+
+        // Initialize High Score
+        highScoreDisplay.innerText = state.highScore;
+
+        // Resize Logic
+        function resize() {
+            // Make canvas square within the container
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+
+            // Calculate tile count based on size
+            // Try to keep TILE_COUNT around 20-25 for gameplay balance
+            TILE_COUNT = 25;
+
+            // Check if mobile
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                mobileControls.classList.remove('hidden');
+                mobileControls.classList.add('flex');
+            }
+
+            if (!state.isPlaying) draw();
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function startGame() {
+            menuScreen.classList.add('hidden');
+            state.score = 0;
+            state.speed = GAME_SPEED_START;
+            scoreDisplay.innerText = 0;
+
+            // Reset Snake
+            state.snake = [
+                { x: 10, y: 10 },
+                { x: 10, y: 11 },
+                { x: 10, y: 12 }
+            ];
+            state.vel = { x: 0, y: -1 }; // Start moving up
+            state.nextVel = { x: 0, y: -1 };
+
+            spawnFood();
+
+            state.isPlaying = true;
+            state.lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function gameOver() {
+            state.isPlaying = false;
+            menuScreen.classList.remove('hidden');
+
+            // Update High Score
+            if (state.score > state.highScore) {
+                state.highScore = state.score;
+                localStorage.setItem('snake_highscore', state.highScore);
+                highScoreDisplay.innerText = state.highScore;
+            }
+
+            document.getElementById('menu-message').innerText = `GAME OVER - SCORE: ${state.score}`;
+            document.querySelector('#menu-screen h1').innerText = "CRASHED";
+        }
+
+        function spawnFood() {
+            let valid = false;
+            while (!valid) {
+                state.food = {
+                    x: Math.floor(Math.random() * TILE_COUNT),
+                    y: Math.floor(Math.random() * TILE_COUNT)
+                };
+                // Check if food spawns on snake
+                valid = !state.snake.some(segment => segment.x === state.food.x && segment.y === state.food.y);
+            }
+        }
+
+        function handleInput(key, e) {
+            if (e) e.preventDefault(); // Prevent scroll on mobile
+            if (!state.isPlaying && (key === 'Enter' || key === ' ')) {
+                startGame();
+                return;
+            }
+
+            // Prevent reversing direction directly
+            switch (key) {
+                case 'ArrowUp':
+                    if (state.vel.y !== 1) state.nextVel = { x: 0, y: -1 };
+                    break;
+                case 'ArrowDown':
+                    if (state.vel.y !== -1) state.nextVel = { x: 0, y: 1 };
+                    break;
+                case 'ArrowLeft':
+                    if (state.vel.x !== 1) state.nextVel = { x: -1, y: 0 };
+                    break;
+                case 'ArrowRight':
+                    if (state.vel.x !== -1) state.nextVel = { x: 1, y: 0 };
+                    break;
+            }
+        }
+
+        document.addEventListener('keydown', e => handleInput(e.key));
+
+        // Touch Swipe Support
+        let touchStart = { x: 0, y: 0 };
+        document.addEventListener('touchstart', e => {
+            touchStart.x = e.touches[0].clientX;
+            touchStart.y = e.touches[0].clientY;
+        }, { passive: false });
+
+        document.addEventListener('touchend', e => {
+            if (!state.isPlaying) return;
+            const dx = e.changedTouches[0].clientX - touchStart.x;
+            const dy = e.changedTouches[0].clientY - touchStart.y;
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // Horizontal
+                if (Math.abs(dx) > 30) handleInput(dx > 0 ? 'ArrowRight' : 'ArrowLeft');
+            } else {
+                // Vertical
+                if (Math.abs(dy) > 30) handleInput(dy > 0 ? 'ArrowDown' : 'ArrowUp');
+            }
+        }, { passive: false });
+
+        function update() {
+            // Apply next velocity
+            state.vel = state.nextVel;
+
+            const head = {
+                x: state.snake[0].x + state.vel.x,
+                y: state.snake[0].y + state.vel.y
+            };
+
+            // Wall Collision
+            if (head.x < 0 || head.x >= TILE_COUNT || head.y < 0 || head.y >= TILE_COUNT) {
+                gameOver();
+                return;
+            }
+
+            // Self Collision
+            if (state.snake.some(s => s.x === head.x && s.y === head.y)) {
+                gameOver();
+                return;
+            }
+
+            state.snake.unshift(head);
+
+            // Eat Food
+            if (head.x === state.food.x && head.y === state.food.y) {
+                state.score += 10;
+                scoreDisplay.innerText = state.score;
+                spawnFood();
+
+                // Speed up slightly
+                if (state.speed > 50) state.speed -= 2;
+            } else {
+                state.snake.pop(); // Remove tail
+            }
+        }
+
+        function draw() {
+            // Clear
+            ctx.fillStyle = '#050510';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const tileSize = canvas.width / TILE_COUNT;
+
+            // Draw Grid (Optional, simple)
+            ctx.strokeStyle = '#22d3ee11'; // Very faint cyan
+            ctx.lineWidth = 1;
+            /*
+            ctx.beginPath();
+            for(let i=0; i<=TILE_COUNT; i++) {
+                ctx.moveTo(i*tileSize, 0); ctx.lineTo(i*tileSize, canvas.height);
+                ctx.moveTo(0, i*tileSize); ctx.lineTo(canvas.width, i*tileSize);
+            }
+            ctx.stroke();
+            */
+
+            // Draw Food
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#f472b6'; // Pink glow
+            ctx.fillStyle = '#f472b6';
+            ctx.beginPath();
+            ctx.arc(
+                state.food.x * tileSize + tileSize / 2,
+                state.food.y * tileSize + tileSize / 2,
+                tileSize / 3, 0, Math.PI * 2
+            );
+            ctx.fill();
+
+            // Draw Snake
+            state.snake.forEach((seg, index) => {
+                const x = seg.x * tileSize;
+                const y = seg.y * tileSize;
+
+                ctx.shadowBlur = index === 0 ? 20 : 10;
+                ctx.shadowColor = '#22d3ee'; // Cyan glow
+                ctx.fillStyle = index === 0 ? '#ccfbf1' : '#22d3ee'; // Head is lighter
+
+                // Rounded Rect for segments
+                ctx.fillRect(x + 1, y + 1, tileSize - 2, tileSize - 2);
+
+                // Eyes for head
+                if (index === 0) {
+                    ctx.fillStyle = '#000';
+                    const eyeSize = tileSize / 5;
+                    // Simple logic for eyes based on direction could go here
+                    ctx.fillRect(x + tileSize / 3, y + tileSize / 3, eyeSize, eyeSize);
+                }
+            });
+
+            ctx.shadowBlur = 0;
+        }
+
+        function gameLoop(time) {
+            if (!state.isPlaying) return;
+
+            const dt = time - state.lastTime;
+            state.lastTime = time;
+            state.accumulatedTime += dt;
+
+            if (state.accumulatedTime > state.speed) {
+                update();
+                state.accumulatedTime = 0;
+                draw();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initial Draw
+        draw();
+
+    </script>
+</body>
+
+</html>

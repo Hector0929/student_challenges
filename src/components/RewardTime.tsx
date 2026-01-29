@@ -93,6 +93,69 @@ export const GAMES: Game[] = [
         url: '/games/Tetris.html',
         color: 'bg-green-400 hover:bg-green-500',
         category: 'fun'
+    },
+    {
+        id: 'snake',
+        name: '貪食蛇',
+        icon: '🐍',
+        description: '經典霓虹挑戰',
+        url: '/games/snake_game.html',
+        color: 'bg-cyan-400 hover:bg-cyan-500',
+        category: 'fun'
+    },
+    {
+        id: 'ns_shaft',
+        name: '小朋友下樓梯',
+        icon: '🧗',
+        description: '是男人就下100層',
+        url: '/games/ns_shaft.html',
+        color: 'bg-purple-400 hover:bg-purple-500',
+        category: 'fun'
+    },
+    {
+        id: 'neon_breaker',
+        name: '霓虹打磚塊',
+        icon: '🧱',
+        description: '經典撞擊挑戰',
+        url: '/games/neon_breaker.html',
+        color: 'bg-pink-500 hover:bg-pink-600',
+        category: 'fun'
+    },
+    {
+        id: 'memory_matrix',
+        name: '記憶矩陣',
+        icon: '🧠',
+        description: '極限腦力訓練',
+        url: '/games/memory_matrix.html',
+        color: 'bg-cyan-500 hover:bg-cyan-600',
+        category: 'learning'
+    },
+    {
+        id: 'neon_slicer',
+        name: '光劍切切樂',
+        icon: '⚔️',
+        description: '反應力極限',
+        url: '/games/neon_slicer.html',
+        color: 'bg-amber-500 hover:bg-amber-600',
+        category: 'fun'
+    },
+    {
+        id: '2048_cyber',
+        name: '2048 Cyber',
+        icon: '🔢',
+        description: '邏輯方塊合成',
+        url: '/games/2048_cyber.html',
+        color: 'bg-blue-500 hover:bg-blue-600',
+        category: 'learning'
+    },
+    {
+        id: 'bubble_shooter',
+        name: '霓虹泡泡龍',
+        icon: '🔴',
+        description: '射擊消除挑戰',
+        url: '/games/bubble_shooter.html',
+        color: 'bg-red-500 hover:bg-red-600',
+        category: 'fun'
     }
 ];
 

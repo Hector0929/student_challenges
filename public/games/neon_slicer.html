@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Slicer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: #0c0a09;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px #f59e0b, 0 0 20px #f59e0b;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col items-center justify-center">
+
+    <!-- UI Overlay -->
+    <div class="absolute top-4 left-4 z-10">
+        <div class="text-amber-400 text-xs">SCORE</div>
+        <div id="score" class="text-4xl text-white font-bold neon-text">0</div>
+    </div>
+
+    <div class="absolute top-4 right-4 z-10 flex gap-2 text-2xl" id="lives">
+        ❤️❤️❤️
+    </div>
+
+    <!-- Start / Game Over Screen -->
+    <div id="menu-screen" class="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="bg-gray-900 rounded-2xl p-8 text-center max-w-md mx-4 border-2 border-amber-500 shadow-2xl">
+            <div class="text-6xl mb-4 animate-spin-slow">⚔️</div>
+            <h1
+                class="text-4xl text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-red-600 font-bold mb-2 neon-text">
+                NEON SLICER
+            </h1>
+            <p id="menu-message" class="text-amber-200/70 mb-8 tracking-wider">
+                SLICE SHAPES • AVOID BOMBS
+            </p>
+
+            <button onclick="startGame()"
+                class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-amber-500/50">
+                START BLADE
+            </button>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const menuScreen = document.getElementById('menu-screen');
+
+        let state = {
+            isPlaying: false,
+            score: 0,
+            lives: 3,
+            objects: [], // {x, y, vx, vy, type, size, color, angle, vAngle}
+            particles: [],
+            blade: [], // Array of points {x, y, life}
+            lastTime: 0,
+            spawnTimer: 0
+        };
+
+        const CONFIG = {
+            gravity: 0.15,
+            bladeLife: 10,
+            bladeWidth: 4,
+            colors: ['#22d3ee', '#a855f7', '#bef264', '#f472b6']
+        };
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function startGame() {
+            menuScreen.classList.add('hidden');
+            state = {
+                isPlaying: true,
+                score: 0,
+                lives: 3,
+                objects: [],
+                particles: [],
+                blade: [],
+                lastTime: performance.now(),
+                spawnTimer: 0
+            };
+            scoreDisplay.innerText = 0;
+            updateLives();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updateLives() {
+            let s = '';
+            for (let i = 0; i < state.lives; i++) s += '❤️';
+            livesDisplay.innerText = s;
+        }
+
+        function spawnObject() {
+            const type = Math.random() < 0.15 ? 'bomb' : 'shape';
+            const size = type === 'bomb' ? 30 : 25 + Math.random() * 20;
+            const x = 50 + Math.random() * (canvas.width - 100);
+
+            // Launch logic
+            // Aim roughly towards center top area
+            const targetX = canvas.width / 2 + (Math.random() - 0.5) * 300;
+            const flightTime = 60 + Math.random() * 30; // Frames approx
+
+            const vy = -10 - Math.random() * 4;
+            const vx = (targetX - x) / flightTime; // Basic arc aiming
+
+            state.objects.push({
+                x,
+                y: canvas.height + 50,
+                vx,
+                vy,
+                type,
+                size,
+                color: type === 'bomb' ? '#ef4444' : CONFIG.colors[Math.floor(Math.random() * CONFIG.colors.length)],
+                angle: 0,
+                vAngle: (Math.random() - 0.5) * 0.2,
+                active: true
+            });
+        }
+
+        function spawnParticles(x, y, color, count = 10) {
+            for (let i = 0; i < count; i++) {
+                state.particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 1.0,
+                    color
+                });
+            }
+        }
+
+        // Input Handling
+        function addBladePoint(x, y) {
+            state.blade.push({ x, y, life: CONFIG.bladeLife });
+            checkBladeCollisions({ x, y });
+        }
+
+        document.addEventListener('mousemove', e => {
+            if (state.isPlaying) addBladePoint(e.clientX, e.clientY);
+        });
+        document.addEventListener('touchmove', e => {
+            if (state.isPlaying) {
+                e.preventDefault();
+                addBladePoint(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
+
+        function checkBladeCollisions(p2) {
+            // Need at least 2 points for a line
+            if (state.blade.length < 2) return;
+            const p1 = state.blade[state.blade.length - 2];
+
+            // For each object
+            state.objects.forEach(obj => {
+                if (!obj.active) return;
+
+                // Simple line-circle collision / Distance check
+                // Actually distance to segment
+                const dist = pointLineDistance(obj.x, obj.y, p1.x, p1.y, p2.x, p2.y);
+
+                if (dist < obj.size) {
+                    // SLICED
+                    obj.active = false;
+
+                    if (obj.type === 'bomb') {
+                        state.lives--;
+                        updateLives();
+                        spawnParticles(obj.x, obj.y, '#ef4444', 30);
+                        // Flash Screen
+                        canvas.style.backgroundColor = 'white';
+                        setTimeout(() => canvas.style.backgroundColor = '', 50);
+
+                        if (state.lives <= 0) {
+                            gameOver();
+                        }
+                    } else {
+                        state.score += 10;
+                        scoreDisplay.innerText = state.score;
+                        spawnParticles(obj.x, obj.y, obj.color, 15);
+                    }
+                }
+            });
+        }
+
+        // Math helper
+        function pointLineDistance(px, py, x1, y1, x2, y2) {
+            const A = px - x1;
+            const B = py - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
+            const dot = A * C + B * D;
+            const len_sq = C * C + D * D;
+            let param = -1;
+            if (len_sq != 0) param = dot / len_sq;
+            let xx, yy;
+            if (param < 0) { xx = x1; yy = y1; }
+            else if (param > 1) { xx = x2; yy = y2; }
+            else { xx = x1 + param * C; yy = y1 + param * D; }
+            const dx = px - xx;
+            const dy = py - yy;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function gameOver() {
+            state.isPlaying = false;
+            menuScreen.classList.remove('hidden');
+            document.querySelector('#menu-screen h1').innerText = "GAME OVER";
+            document.getElementById('menu-message').innerText = `SCORE: ${state.score}`;
+        }
+
+        function update() {
+            // Spawn
+            state.spawnTimer++;
+            // Difficulty ramps up
+            const spawnRate = Math.max(20, 60 - Math.floor(state.score / 50));
+            if (state.spawnTimer > spawnRate) {
+                spawnObject();
+                state.spawnTimer = 0;
+            }
+
+            // Update Objects
+            for (let i = state.objects.length - 1; i >= 0; i--) {
+                const obj = state.objects[i];
+                obj.x += obj.vx;
+                obj.y += obj.vy;
+                obj.vy += CONFIG.gravity;
+                obj.angle += obj.vAngle;
+
+                // Remove if out of bounds (bottom)
+                if (obj.y > canvas.height + 100) {
+                    // Penalty for missing non-bomb?
+                    // Fruit Ninja usually: -1 life for missed fruit.
+                    if (obj.active && obj.type === 'shape') {
+                        state.lives--;
+                        updateLives();
+                        if (state.lives <= 0) gameOver();
+                    }
+                    state.objects.splice(i, 1);
+                } else if (!obj.active) {
+                    state.objects.splice(i, 1); // Remove sliced
+                }
+            }
+
+            // Update Particles
+            for (let i = state.particles.length - 1; i >= 0; i--) {
+                const p = state.particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                if (p.life <= 0) state.particles.splice(i, 1);
+            }
+
+            // Update Blade Life
+            for (let i = state.blade.length - 1; i >= 0; i--) {
+                state.blade[i].life--;
+                if (state.blade[i].life <= 0) state.blade.splice(i, 1);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Standard clear
+
+            // Objects
+            state.objects.forEach(obj => {
+                if (!obj.active) return;
+                ctx.save();
+                ctx.translate(obj.x, obj.y);
+                ctx.rotate(obj.angle);
+
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = obj.color;
+                ctx.fillStyle = obj.color;
+
+                if (obj.type === 'bomb') {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, obj.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = 'black';
+                    ctx.font = '24px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('💣', 0, 0);
+                } else {
+                    // Square shape (rotated)
+                    ctx.fillRect(-obj.size / 2, -obj.size / 2, obj.size, obj.size);
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(-obj.size / 2, -obj.size / 2, obj.size, obj.size);
+                }
+
+                ctx.restore();
+            });
+
+            // Particles
+            state.particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 4, 4);
+            });
+            ctx.globalAlpha = 1;
+
+            // Blade
+            if (state.blade.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(state.blade[0].x, state.blade[0].y);
+                for (let i = 1; i < state.blade.length; i++) {
+                    ctx.lineTo(state.blade[i].x, state.blade[i].y);
+                }
+
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#fff';
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = CONFIG.bladeWidth;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.stroke();
+
+                // Outer glow
+                ctx.strokeStyle = '#22d3ee';
+                ctx.lineWidth = CONFIG.bladeWidth + 4;
+                ctx.globalAlpha = 0.5;
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        function gameLoop() {
+            if (!state.isPlaying) return;
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Draw static
+        ctx.fillStyle = '#0c0a09';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    </script>
+</body>
+
+</html>

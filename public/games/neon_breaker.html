@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Breaker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: #050510;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px #f472b6, 0 0 20px #f472b6;
+        }
+
+        .neon-border {
+            box-shadow: 0 0 10px #f472b6, inset 0 0 10px #f472b6;
+            border: 2px solid #f472b6;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col items-center justify-center">
+
+    <!-- UI Overlay -->
+    <div id="ui-layer"
+        class="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-10 w-full max-w-lg mx-auto">
+        <div class="flex justify-between items-start">
+            <div class="bg-black/50 backdrop-blur rounded-xl px-4 py-2 border border-pink-500/50">
+                <div class="text-pink-400 text-xs">SCORE</div>
+                <div id="score" class="text-2xl text-white font-bold">0</div>
+            </div>
+            <div class="bg-black/50 backdrop-blur rounded-xl px-4 py-2 border border-pink-500/50">
+                <div class="text-pink-400 text-xs">LIVES</div>
+                <div id="lives" class="text-2xl text-white font-bold">❤️❤️❤️</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start / Game Over Screen -->
+    <div id="menu-screen" class="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="bg-gray-900 rounded-2xl p-8 text-center max-w-md mx-4 border-2 border-pink-500 shadow-2xl">
+            <div class="text-6xl mb-4 animate-pulse">🧱</div>
+            <h1
+                class="text-4xl text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-600 font-bold mb-2 neon-text">
+                NEON BREAKER
+            </h1>
+            <p id="menu-message" class="text-pink-200/70 mb-8 tracking-wider">
+                SMASH THE SYSTEM
+            </p>
+
+            <button onclick="startGame()"
+                class="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-pink-500/50">
+                LAUNCH BALL
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <div class="relative w-full h-full max-w-lg bg-gray-900/90 overflow-hidden shadow-2xl border-x-2 border-gray-800">
+        <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const menuScreen = document.getElementById('menu-screen');
+
+        // Config
+        const CONFIG = {
+            paddleWidth: 100,
+            paddleHeight: 16,
+            ballRadius: 8,
+            brickRows: 6,
+            brickCols: 6,
+            brickHeight: 24,
+            brickGap: 8,
+            colors: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7']
+        };
+
+        let state = {
+            isPlaying: false,
+            score: 0,
+            lives: 3,
+            paddle: { x: 0, y: 0 },
+            ball: { x: 0, y: 0, dx: 0, dy: 0, active: false },
+            bricks: [],
+            particles: [],
+            lastTime: 0
+        };
+
+        // Resize
+        function resize() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            state.paddle.y = canvas.height - 50;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function initBricks() {
+            state.bricks = [];
+            const totalBrickWidth = canvas.width - (CONFIG.brickGap * (CONFIG.brickCols + 1));
+            const brickWidth = totalBrickWidth / CONFIG.brickCols;
+
+            for (let r = 0; r < CONFIG.brickRows; r++) {
+                for (let c = 0; c < CONFIG.brickCols; c++) {
+                    state.bricks.push({
+                        x: CONFIG.brickGap + c * (brickWidth + CONFIG.brickGap),
+                        y: 60 + r * (CONFIG.brickHeight + CONFIG.brickGap),
+                        w: brickWidth,
+                        h: CONFIG.brickHeight,
+                        color: CONFIG.colors[r % CONFIG.colors.length],
+                        active: true
+                    });
+                }
+            }
+        }
+
+        function startGame() {
+            menuScreen.classList.add('hidden');
+            state.score = 0;
+            state.lives = 3;
+            updateLives();
+            scoreDisplay.innerText = 0;
+
+            initBricks();
+            resetBall();
+
+            state.isPlaying = true;
+            state.lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resetBall() {
+            state.paddle.x = (canvas.width - CONFIG.paddleWidth) / 2;
+            state.ball.x = canvas.width / 2;
+            state.ball.y = state.paddle.y - CONFIG.ballRadius - 2;
+            state.ball.active = false;
+        }
+
+        function launchBall() {
+            if (!state.ball.active) {
+                state.ball.active = true;
+                state.ball.dx = 4 * (Math.random() > 0.5 ? 1 : -1);
+                state.ball.dy = -6;
+            }
+        }
+
+        function updateLives() {
+            let hearts = '';
+            for (let i = 0; i < state.lives; i++) hearts += '❤️';
+            livesDisplay.innerText = hearts;
+        }
+
+        function gameOver(win) {
+            state.isPlaying = false;
+            menuScreen.classList.remove('hidden');
+            const msg = win ? "YOU WIN!" : "GAME OVER";
+            document.querySelector('#menu-screen h1').innerText = msg;
+            document.getElementById('menu-message').innerText = `SCORE: ${state.score}`;
+        }
+
+        // Input
+        function handleMove(clientX) {
+            const rect = canvas.getBoundingClientRect();
+            let relativeX = clientX - rect.left;
+
+            // Mouse center to paddle center
+            let paddleX = relativeX - CONFIG.paddleWidth / 2;
+
+            // Clamp
+            if (paddleX < 0) paddleX = 0;
+            if (paddleX > canvas.width - CONFIG.paddleWidth) paddleX = canvas.width - CONFIG.paddleWidth;
+
+            state.paddle.x = paddleX;
+
+            if (!state.ball.active) {
+                state.ball.x = state.paddle.x + CONFIG.paddleWidth / 2;
+            }
+        }
+
+        document.addEventListener('mousemove', e => {
+            if (state.isPlaying) handleMove(e.clientX);
+        });
+
+        document.addEventListener('touchmove', e => {
+            if (state.isPlaying) {
+                e.preventDefault();
+                handleMove(e.touches[0].clientX);
+            }
+        }, { passive: false });
+
+        document.addEventListener('mousedown', launchBall);
+        document.addEventListener('touchstart', launchBall);
+        document.addEventListener('keydown', e => {
+            if (e.code === 'Space') launchBall();
+        });
+
+        function spawnParticles(x, y, color) {
+            for (let i = 0; i < 8; i++) {
+                state.particles.push({
+                    x, y,
+                    dx: (Math.random() - 0.5) * 6,
+                    dy: (Math.random() - 0.5) * 6,
+                    life: 1.0,
+                    color
+                });
+            }
+        }
+
+        function update() {
+            if (!state.ball.active) return;
+
+            // Move Ball
+            state.ball.x += state.ball.dx;
+            state.ball.y += state.ball.dy;
+
+            // Walls
+            if (state.ball.x + CONFIG.ballRadius > canvas.width || state.ball.x - CONFIG.ballRadius < 0) {
+                state.ball.dx = -state.ball.dx;
+            }
+            if (state.ball.y - CONFIG.ballRadius < 0) {
+                state.ball.dy = -state.ball.dy;
+            }
+
+            // Bottom (Death)
+            if (state.ball.y - CONFIG.ballRadius > canvas.height) {
+                state.lives--;
+                updateLives();
+                if (state.lives <= 0) {
+                    gameOver(false);
+                } else {
+                    resetBall();
+                }
+                return;
+            }
+
+            // Paddle Collision
+            if (state.ball.dy > 0) { // Only checking when falling
+                if (state.ball.y + CONFIG.ballRadius >= state.paddle.y &&
+                    state.ball.y - CONFIG.ballRadius <= state.paddle.y + CONFIG.paddleHeight &&
+                    state.ball.x >= state.paddle.x &&
+                    state.ball.x <= state.paddle.x + CONFIG.paddleWidth
+                ) {
+                    state.ball.dy = -Math.abs(state.ball.dy); // Force up
+
+                    // Angle control
+                    const hitPoint = state.ball.x - (state.paddle.x + CONFIG.paddleWidth / 2);
+                    state.ball.dx = hitPoint * 0.15; // Influence angle
+
+                    // Speed up slightly
+                    // state.ball.dx *= 1.05;
+                    // state.ball.dy *= 1.05;
+                }
+            }
+
+            // Brick Collision
+            let hit = false;
+            for (let b of state.bricks) {
+                if (!b.active) continue;
+
+                if (state.ball.x + CONFIG.ballRadius > b.x &&
+                    state.ball.x - CONFIG.ballRadius < b.x + b.w &&
+                    state.ball.y + CONFIG.ballRadius > b.y &&
+                    state.ball.y - CONFIG.ballRadius < b.y + b.h
+                ) {
+                    b.active = false;
+                    state.ball.dy = -state.ball.dy; // Bounce
+                    state.score += 100;
+                    scoreDisplay.innerText = state.score;
+                    spawnParticles(b.x + b.w / 2, b.y + b.h / 2, b.color);
+                    hit = true;
+                    break; // Only hit one brick per frame (simple)
+                }
+            }
+
+            // Win Condition
+            if (!state.bricks.some(b => b.active)) {
+                gameOver(true);
+            }
+
+            // Particles
+            for (let i = state.particles.length - 1; i >= 0; i--) {
+                const p = state.particles[i];
+                p.x += p.dx;
+                p.y += p.dy;
+                p.life -= 0.05;
+                if (p.life <= 0) state.particles.splice(i, 1);
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#050510';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Paddle
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ec4899';
+            ctx.fillStyle = '#ec4899';
+            ctx.fillRect(state.paddle.x, state.paddle.y, CONFIG.paddleWidth, CONFIG.paddleHeight);
+
+            // Ball
+            if (state.ball.active || state.isPlaying) {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#fff';
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(state.ball.x, state.ball.y, CONFIG.ballRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Bricks
+            state.bricks.forEach(b => {
+                if (!b.active) return;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = b.color;
+                ctx.fillStyle = b.color;
+                ctx.fillRect(b.x, b.y, b.w, b.h);
+
+                // Bevel
+                ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                ctx.fillRect(b.x, b.y, b.w, 4);
+            });
+
+            // Particles
+            state.particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 4, 4);
+            });
+            ctx.globalAlpha = 1;
+
+            ctx.shadowBlur = 0;
+        }
+
+        function gameLoop(time) {
+            if (!state.isPlaying) return;
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        draw(); // Initial
+    </script>
+</body>
+
+</html>

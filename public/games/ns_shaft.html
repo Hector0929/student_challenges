@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Shaft</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: #0f0f15;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px #e879f9, 0 0 20px #e879f9;
+        }
+
+        .neon-border {
+            box-shadow: 0 0 10px #e879f9, inset 0 0 10px #e879f9;
+            border: 2px solid #e879f9;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+        }
+
+        /* Touch Zones */
+        .touch-zone {
+            position: absolute;
+            bottom: 0;
+            height: 50%;
+            width: 50%;
+            z-index: 20;
+            /* background: rgba(255,0,0,0.1); Debug */
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col items-center justify-center">
+
+    <!-- UI Overlay -->
+    <div id="ui-layer"
+        class="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-10 w-full max-w-lg mx-auto">
+        <!-- Stats -->
+        <div class="flex justify-between items-start">
+            <div class=" rounded-xl px-4 py-2 bg-black/50 border border-purple-500/50">
+                <div class="text-purple-400 text-xs">DEPTH</div>
+                <div id="score" class="text-2xl text-white font-bold">0 m</div>
+            </div>
+            <!-- Health Bar -->
+            <div class="w-32 h-6 bg-gray-900 border border-white/20 rounded-full overflow-hidden mt-2">
+                <div id="hp-bar"
+                    class="h-full bg-gradient-to-r from-red-500 to-green-500 w-full transition-all duration-200"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start / Game Over Screen -->
+    <div id="menu-screen" class="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="bg-gray-900 rounded-2xl p-8 text-center max-w-md mx-4 border-2 border-purple-500 shadow-2xl">
+            <div class="text-6xl mb-4 animate-bounce">🧗</div>
+            <h1
+                class="text-4xl text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 font-bold mb-2 neon-text">
+                NEON SHAFT
+            </h1>
+            <p id="menu-message" class="text-purple-200/70 mb-8 tracking-wider">
+                DESCEND OR DIE<br>
+                <span class="text-xs">Avoid Spikes (Top) • Don't Fall (Bottom)</span>
+            </p>
+
+            <button onclick="startGame()"
+                class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-purple-500/50">
+                DESCEND
+            </button>
+        </div>
+    </div>
+
+    <!-- Ceiling Spikes Visual -->
+    <div class="absolute top-0 w-full h-8 z-10 bg-repeat-x pointer-events-none opacity-80"
+        style="background-image: linear-gradient(135deg, transparent 50%, #ef4444 50%), linear-gradient(-135deg, transparent 50%, #ef4444 50%); background-size: 20px 20px;">
+    </div>
+
+    <!-- Warning Overlay for Top Spikes -->
+    <div id="spike-warning"
+        class="absolute top-0 w-full h-32 bg-gradient-to-b from-red-600/50 to-transparent pointer-events-none hidden z-0">
+    </div>
+
+    <!-- Game Canvas -->
+    <div class="relative w-full h-full max-w-lg bg-gray-900/90 overflow-hidden shadow-2xl border-x-2 border-gray-800">
+        <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+    </div>
+
+    <!-- Touch Controls -->
+    <div id="left-zone" class="touch-zone left-0" ontouchstart="handleTouch('left', true)"
+        ontouchend="handleTouch('left', false)"></div>
+    <div id="right-zone" class="touch-zone right-0" ontouchstart="handleTouch('right', true)"
+        ontouchend="handleTouch('right', false)"></div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const hpBar = document.getElementById('hp-bar');
+        const menuScreen = document.getElementById('menu-screen');
+        const spikeWarning = document.getElementById('spike-warning');
+
+        // Config
+        const CONFIG = {
+            gravity: 0.5,
+            jumpForce: -8, // Small bounce when hitting standard platform? Or just stop? Standard NS-SHAFT usually just lands.
+            moveSpeed: 5,
+            scrollSpeedBase: 1.5,
+            scrollSpeedMax: 5,
+            platformW: 100,
+            platformH: 16,
+            playerSize: 24,
+            maxHP: 12,
+        };
+
+        let state = {
+            isPlaying: false,
+            score: 0, // Depth
+            hp: 12,
+            player: { x: 0, y: 0, vx: 0, vy: 0, grounded: false, onPlatform: null },
+            platforms: [], // {x, y, type, id}
+            scrollSpeed: CONFIG.scrollSpeedBase,
+            time: 0,
+            lastTime: 0,
+            keys: { left: false, right: false },
+            distanceTraveled: 0
+        };
+
+        const PLATFORM_TYPES = ['normal', 'normal', 'normal', 'normal', 'conveyor_left', 'conveyor_right', 'spring', 'fake', 'spike'];
+
+        // Resize
+        function resize() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function startGame() {
+            menuScreen.classList.add('hidden');
+
+            // Reset State
+            state.hp = CONFIG.maxHP;
+            state.score = 0;
+            state.scrollSpeed = CONFIG.scrollSpeedBase;
+            state.distanceTraveled = 0;
+
+            // Player Start
+            state.player = {
+                x: canvas.width / 2 - CONFIG.playerSize / 2,
+                y: 100, // Start near top
+                vx: 0,
+                vy: 0,
+                grounded: false
+            };
+
+            updateHP();
+
+            // Generate Initial Platforms
+            state.platforms = [];
+            let y = 300;
+            while (y < canvas.height + 200) {
+                spawnPlatform(y);
+                y += 80 + Math.random() * 40; // Gap
+            }
+
+            // Ensure first platform is SAFE and under player
+            state.platforms.unshift({
+                x: canvas.width / 2 - 50,
+                y: 200,
+                w: 100,
+                h: CONFIG.platformH,
+                type: 'normal',
+                active: true
+            });
+
+            state.isPlaying = true;
+            state.lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function spawnPlatform(y) {
+            // Difficulty scaling
+            const difficulty = Math.min(1.0, state.score / 2000);
+
+            // Random type based on difficulty
+            // Start simple, add spikes/fakes later
+            let type = 'normal';
+            if (state.score > 100) {
+                const rand = Math.random();
+                if (rand < 0.2 + difficulty * 0.1) type = 'spike';
+                else if (rand < 0.4) type = 'fake';
+                else if (rand < 0.6) type = 'spring';
+                else if (rand < 0.8) type = Math.random() > 0.5 ? 'conveyor_left' : 'conveyor_right';
+            }
+
+            const w = CONFIG.platformW;
+            const x = Math.random() * (canvas.width - w);
+
+            state.platforms.push({
+                x, y, w, h: CONFIG.platformH,
+                type,
+                active: true
+            });
+        }
+
+        function gameOver() {
+            state.isPlaying = false;
+            menuScreen.classList.remove('hidden');
+            document.getElementById('menu-message').innerHTML = `DEPTH REACHED<br><span class="text-3xl text-white font-bold">${Math.floor(state.score)}m</span>`;
+            document.querySelector('#menu-screen h1').innerText = "GAME OVER";
+        }
+
+        function updateHP() {
+            if (state.hp <= 0) {
+                gameOver();
+                return;
+            }
+            const pct = (state.hp / CONFIG.maxHP) * 100;
+            hpBar.style.width = `${pct}%`;
+
+            // Color change
+            if (pct < 30) hpBar.className = "h-full bg-red-600 transition-all duration-200 animate-pulse";
+            else hpBar.className = "h-full bg-gradient-to-r from-red-500 to-green-500 transition-all duration-200";
+        }
+
+        function handleTouch(side, active) {
+            if (!state.isPlaying) return;
+            if (side === 'left') state.keys.left = active;
+            if (side === 'right') state.keys.right = active;
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') state.keys.left = true;
+            if (e.key === 'ArrowRight') state.keys.right = true;
+            if (e.key === ' ' && !state.isPlaying) startGame();
+        });
+
+        document.addEventListener('keyup', e => {
+            if (e.key === 'ArrowLeft') state.keys.left = false;
+            if (e.key === 'ArrowRight') state.keys.right = false;
+        });
+
+        function update(dt) {
+            const p = state.player;
+
+            // 1. Movement
+            if (state.keys.left) p.vx = -CONFIG.moveSpeed;
+            else if (state.keys.right) p.vx = CONFIG.moveSpeed;
+            else p.vx = 0;
+
+            p.x += p.vx; // No time delta for movement in this simple logic or use dt? Let's use simple frame logic if dt ~ 1
+            // Use dt for consistency
+            // Actually, let's just stick to frame-paced if possible or robust dt
+            // dt is roughly 1.0 on 60fps
+
+            // 2. Physics - Gravity & Scroll
+            // Everything moves UP (visualized as player falling relative to world, but actually world scrolls up)
+            // In NS-SHAFT, player coordinates usually relative to screen.
+            // Platforms move UP. Player falls DOWN (Gravity).
+
+            p.y += p.vy * dt;
+            p.vy += CONFIG.gravity * dt;
+
+            // Scroll Speed Up
+            state.scrollSpeed = CONFIG.scrollSpeedBase + (state.score / 5000);
+            if (state.scrollSpeed > CONFIG.scrollSpeedMax) state.scrollSpeed = CONFIG.scrollSpeedMax;
+
+            // Move Platforms Up
+            state.platforms.forEach(plat => {
+                plat.y -= state.scrollSpeed * dt;
+            });
+
+            // Move Player Up (if on platform)
+            if (p.grounded && p.onPlatform) {
+                p.y -= state.scrollSpeed * dt;
+
+                // Conveyor effect
+                if (p.onPlatform.type === 'conveyor_left') p.x -= 2 * dt;
+                if (p.onPlatform.type === 'conveyor_right') p.x += 2 * dt;
+            }
+
+            // Cleanup & Spawn Platforms
+            state.platforms = state.platforms.filter(plat => plat.y > -50);
+            const lastPlat = state.platforms[state.platforms.length - 1];
+            if (lastPlat && lastPlat.y < canvas.height - 80) { // Keep spawning ahead
+                spawnPlatform(canvas.height + 50);
+            }
+            if (state.platforms.length < 5) spawnPlatform(canvas.height + 50); // Fallback
+
+            // Wall Collisions
+            if (p.x < 0) p.x = 0;
+            if (p.x > canvas.width - CONFIG.playerSize) p.x = canvas.width - CONFIG.playerSize;
+
+            // Platform Collisions (Only when falling)
+            p.grounded = false;
+            p.onPlatform = null;
+
+            if (p.vy > 0) { // Falling
+                for (let plat of state.platforms) {
+                    if (!plat.active) continue;
+
+                    // Simple AABB
+                    if (p.x + CONFIG.playerSize > plat.x &&
+                        p.x < plat.x + plat.w &&
+                        p.y + CONFIG.playerSize >= plat.y &&
+                        p.y + CONFIG.playerSize <= plat.y + 20 // Tolerence
+                    ) {
+                        // Landed
+                        p.y = plat.y - CONFIG.playerSize;
+                        p.vy = 0;
+                        p.grounded = true;
+                        p.onPlatform = plat;
+
+                        // Effects
+                        if (plat.type === 'spring') {
+                            p.vy = -15; // Bounce
+                            p.grounded = false;
+                        }
+                        else if (plat.type === 'fake') {
+                            plat.active = false; // Break immediately
+                            // p.grounded = false; // Player continues falling next frame
+                        }
+                        else if (plat.type === 'spike') {
+                            if (state.time % 20 < 1) { // Damage tick
+                                state.hp -= 1; // Instant damage? classic is -5
+                                updateHP();
+                            }
+                            // Visual feedback?
+                            p.vy = 0; // Stand on spikes but get hurt
+                        }
+                        else {
+                            // Normal / Conveyor: Heal?
+                            // In classic, landing on normal platform stops score drop (if health drops over time?)
+                            // Let's do: Recover 1 HP if touched? No, that's too easy.
+                        }
+
+                        break; // Only land on one
+                    }
+                }
+            }
+
+            // Ceiling Spikes (Top of screen)
+            if (p.y < 20) {
+                // Warning
+                spikeWarning.classList.remove('hidden');
+                // Damage
+                state.hp -= 0.2 * dt; // Fast drain
+                updateHP();
+                // Push down ?? No, just hurt
+                // p.y = 20; 
+            } else {
+                spikeWarning.classList.add('hidden');
+            }
+
+            // Bottom Death
+            if (p.y > canvas.height) {
+                state.hp = 0;
+                updateHP();
+            }
+
+            // Score Logic (Depth)
+            if (state.isPlaying) {
+                state.distanceTraveled += state.scrollSpeed * dt;
+                state.score = Math.floor(state.distanceTraveled / 10);
+                scoreDisplay.innerText = state.score + ' m';
+            }
+        }
+
+        function draw() {
+            // Background
+            ctx.fillStyle = '#0f0f15';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Platforms
+            state.platforms.forEach(p => {
+                if (!p.active && p.type === 'fake') return; // Don't draw broken fake
+
+                ctx.save();
+
+                // Style based on type
+                switch (p.type) {
+                    case 'normal':
+                        ctx.fillStyle = '#6b7280'; // Gray
+                        ctx.strokeStyle = '#e5e7eb';
+                        break;
+                    case 'conveyor_left':
+                        ctx.fillStyle = '#1e3a8a'; // Blue
+                        ctx.strokeStyle = '#60a5fa';
+                        // Arrows <<
+                        break;
+                    case 'conveyor_right':
+                        ctx.fillStyle = '#1e3a8a';
+                        ctx.strokeStyle = '#60a5fa';
+                        break;
+                    case 'spring':
+                        ctx.fillStyle = '#065f46'; // Green
+                        ctx.strokeStyle = '#34d399';
+                        break;
+                    case 'spike':
+                        ctx.fillStyle = '#7f1d1d'; // Red
+                        ctx.strokeStyle = '#f87171';
+                        break;
+                    case 'fake':
+                        ctx.fillStyle = '#9ca3af';
+                        ctx.strokeStyle = '#d1d5db';
+                        ctx.globalAlpha = 0.5;
+                        break;
+                }
+
+                ctx.lineWidth = 2;
+                ctx.fillRect(p.x, p.y, p.w, p.h);
+                ctx.strokeRect(p.x, p.y, p.w, p.h);
+
+                // Details
+                if (p.type === 'spike') {
+                    // Draw spikes on top
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    for (let i = 0; i < p.w; i += 10) {
+                        ctx.lineTo(p.x + i + 5, p.y - 10);
+                        ctx.lineTo(p.x + i + 10, p.y);
+                    }
+                    ctx.lineTo(p.x, p.y);
+                    ctx.fill();
+                } else if (p.type.includes('conveyor')) {
+                    ctx.fillStyle = '#fff';
+                    // Arrows
+                    const dir = p.type === 'conveyor_left' ? -1 : 1;
+                    const offset = (state.time * 2) % 20;
+                    for (let i = 0; i < p.w; i += 20) {
+                        const ax = p.x + i + (dir === 1 ? offset : -offset);
+                        // Wrap
+                        if (ax > p.x && ax < p.x + p.w) {
+                            ctx.fillText(dir === 1 ? '>>' : '<<', ax, p.y + 12);
+                        }
+                    }
+                }
+
+                ctx.restore();
+            });
+
+            // Player
+            const p = state.player;
+            // Simple Avatar
+            ctx.fillStyle = p.grounded ? '#22d3ee' : '#e879f9'; // Cyan grounded, Pink jump
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = ctx.fillStyle;
+
+            // Draw Ball
+            ctx.beginPath();
+            ctx.arc(p.x + CONFIG.playerSize / 2, p.y + CONFIG.playerSize / 2, CONFIG.playerSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eyes
+            ctx.fillStyle = '#000';
+            const lookDir = state.keys.left ? -2 : (state.keys.right ? 2 : 0);
+            ctx.fillRect(p.x + 8 + lookDir, p.y + 8, 3, 6);
+            ctx.fillRect(p.x + 16 + lookDir, p.y + 8, 3, 6);
+
+            ctx.shadowBlur = 0;
+        }
+
+        function gameLoop(time) {
+            if (!state.isPlaying) return;
+            const deltaTime = time - state.lastTime;
+            state.lastTime = time;
+            state.time += 1; // Frames
+
+            // Normalize delta (target 60fps)
+            const dt = Math.min(deltaTime / 16.67, 4);
+
+            update(dt);
+            draw();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        draw(); // Title bg
+
+    </script>
+</body>
+
+</html>
