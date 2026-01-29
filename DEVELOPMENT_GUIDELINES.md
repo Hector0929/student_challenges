@@ -85,7 +85,37 @@ export const MyComponent = () => {
 }
 ```
 
-## 4. 測試檢查清單 (Validations)
+---
+
+## 4. 權限與 RLS 特殊案例 (RLS & Permissions)
+
+在部分情況下（如：孩子建立願望任務），我們需要特別注意 Supabase RLS (Row Level Security) 與 App 邏輯的差異。
+
+### 問題情境
+當使用「切換 Profile」功能登入孩子帳號時，底層的 Supabase Auth User 仍然是 **家長 (Parent)**。
+如果 RLS 設定為 `check (auth.uid() = created_by)`，但前端傳入的是 `created_by: childProfileId`，寫入就會失敗。
+
+### 解決方案
+在這種情況下，應使用 `session.user.id` (Auth ID) 作為 `created_by`，並在其他欄位 (如 `description`) 註記實際請求者。
+
+**範例 (ChildDashboard.tsx):**
+```typescript
+const { user, session } = useUser();
+
+// 即使是孩子操作，created_by 仍需填入 Auth User ID (Parent) 以通過 RLS
+const creatorId = session?.user?.id || user.id;
+
+createQuestMutation.mutateAsync({
+    // ...
+    title: formData.title,
+    created_by: creatorId,
+    description: `由 ${user.name} 建立的願望任務` // 在內容中註記實際來源
+});
+```
+
+---
+
+## 5. 測試檢查清單 (Validations)
 
 在提交程式碼前，請自我檢查：
 - [ ] **新增功能**：新增的資料是否包含 `created_by` 或 `user_id`？

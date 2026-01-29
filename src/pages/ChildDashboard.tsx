@@ -10,9 +10,12 @@ import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQ
 
 import { COMMON_EMOJIS, DAILY_QUEST_TARGET } from '../lib/constants';
 
+import { useUser } from '../contexts/UserContext';
+
 interface ChildDashboardProps {
     userId: string;
 }
+
 
 export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
     // Log current user ID for debugging cross-browser issues
@@ -102,20 +105,30 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
 
     const handleCloseDialog = () => setIsDialogOpen(false);
 
+    const { user, session } = useUser();
+
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         console.log('📝 handleSubmit triggered!', formData);
 
         try {
             console.log('🚀 Sending quest mutation...');
+
+            // Critical Fix: Use session.user.id (Parent Auth ID) to satisfy RLS
+            // Logic: The "Quest" is technically created by the Account Owner (Parent)
+            // but we note the Child's name in the description.
+            const creatorId = session?.user?.id || userId;
+            const childName = user?.name || '孩子';
+
             await createQuestMutation.mutateAsync({
                 title: formData.title,
-                description: '由孩子建立的任務',
+                description: `由 ${childName} 建立的願望任務`,
                 icon: formData.icon,
                 reward_points: 10,
-                is_active: true, // Legacy support
+                is_active: true, // Required by TS
                 status: 'pending',
-                created_by: userId,
+                created_by: creatorId,
             });
             console.log('✅ Quest created successfully');
             alert('✅ 任務已送出審核！\n\n請等待爸爸媽媽核准。');

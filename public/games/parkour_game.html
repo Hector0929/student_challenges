@@ -920,6 +920,12 @@
             initBackground();
             player.reset();
 
+            // Critical Fix: Reset Score & Speed
+            state.score = 0;
+            state.distance = 0;
+            state.speed = CONFIG.initialSpeed;
+            document.getElementById('score').innerText = '0';
+
             // Reset Lives & UI
             state.lives = 3;
             state.invincible = false;
