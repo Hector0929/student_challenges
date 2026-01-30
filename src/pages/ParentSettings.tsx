@@ -317,7 +317,7 @@ export const ParentSettings: React.FC = () => {
                                 }`}
                         >
                             <Plus size={24} />
-                            發放獎勵
+                            增加
                         </button>
                         <button
                             type="button"
@@ -326,7 +326,7 @@ export const ParentSettings: React.FC = () => {
                                 }`}
                         >
                             <Minus size={24} />
-                            扣除懲罰
+                            刪除
                         </button>
                     </div>
 
