@@ -277,7 +277,7 @@ export const useCompleteQuest = () => {
                 userId: variables.userId.substring(0, 8) + '...',
                 questId: variables.questId.substring(0, 8) + '...',
                 returnedStatus: data?.status,
-                wasSkipped: (data as any)?._skipped
+                wasSkipped: (data as { _skipped?: boolean })?._skipped
             });
 
             // Always invalidate queries to refresh UI

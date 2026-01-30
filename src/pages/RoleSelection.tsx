@@ -14,7 +14,7 @@ interface RoleSelectionProps {
 import { useUser } from '../contexts/UserContext';
 
 export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, onParentAuthenticated }) => {
-    const { loginAsParent } = useUser();
+    const { loginAsParent, familyName, logout } = useUser();
     const [showParentDialog, setShowParentDialog] = useState(false);
     const [parentPassword, setParentPassword] = useState('');
     const [error, setError] = useState('');
@@ -56,7 +56,8 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
             sessionStorage.setItem('parent-auth', 'verified');
             setShowParentDialog(false);
             onParentAuthenticated();
-        } catch (err) {
+            onParentAuthenticated();
+        } catch {
             // Error handling is done in UserContext, but we can clear input here
             setParentPassword('');
         }
@@ -79,10 +80,10 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
             <div className="max-w-6xl mx-auto mb-16 flex justify-between items-center bg-white/80 p-2 rounded-lg border-2 border-deep-black shadow-md">
                 <div className="font-pixel text-lg flex items-center gap-2">
                     <span className="text-xl">🏠</span>
-                    <span>{useUser().familyName || '歡迎回來'}</span>
+                    <span>{familyName || '歡迎回來'}</span>
                 </div>
                 <button
-                    onClick={() => useUser().logout()}
+                    onClick={() => logout()}
                     className="flex items-center gap-2 px-3 py-1 bg-red-100 border-2 border-deep-black hover:bg-red-200 transition-colors font-pixel text-xs text-red-600"
                 >
                     登出系統

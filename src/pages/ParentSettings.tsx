@@ -124,9 +124,10 @@ export const ParentSettings: React.FC = () => {
             }
 
             setMessage({ text: '設定已更新！', type: 'success' });
-        } catch (error: any) {
+        } catch (error) {
             console.error('Update failed:', error);
-            setMessage({ text: error.message || '更新失敗', type: 'error' });
+            const msg = error instanceof Error ? error.message : '更新失敗';
+            setMessage({ text: msg, type: 'error' });
         } finally {
             setLoading(false);
         }

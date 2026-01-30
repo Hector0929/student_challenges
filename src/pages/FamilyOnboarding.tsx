@@ -27,8 +27,9 @@ export const FamilyOnboarding: React.FC = () => {
                 password
             });
             if (error) throw error;
-        } catch (err: any) {
-            setError(err.message || '登入失敗');
+        } catch (err) {
+            const message = err instanceof Error ? err.message : '登入失敗';
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -68,9 +69,10 @@ export const FamilyOnboarding: React.FC = () => {
                 throw new Error('註冊失敗，請重試');
             }
 
-        } catch (err: any) {
+        } catch (err) {
             console.error('Registration error:', err);
-            setError(err.message || '註冊失敗');
+            const message = err instanceof Error ? err.message : '註冊失敗';
+            setError(message);
         } finally {
             setLoading(false);
         }

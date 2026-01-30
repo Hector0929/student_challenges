@@ -5,6 +5,12 @@ import { GAMES, type Game } from '../components/RewardTime';
 import { GameModal } from '../components/GameModal';
 import { useUser } from '../contexts/UserContext';
 import { supabase } from '../lib/supabase';
+import type { DailyLog } from '../types/database';
+
+interface DailyLogWithRelations extends DailyLog {
+    quests?: { title: string };
+    profiles?: { name: string; student_id?: string };
+}
 
 export const DebugPage: React.FC = () => {
     const { user } = useUser();
@@ -154,49 +160,52 @@ export const DebugPage: React.FC = () => {
                     </div>
 
                     {allLogs && allLogs.length > 0 ? (
-                        allLogs.map(log => (
-                            <div
-                                key={log.id}
-                                className={`rpg-panel p-4 border-l-4 ${getStatusColor(log.status)}`}
-                            >
-                                <div className="flex items-start justify-between mb-2">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-2xl">{getStatusEmoji(log.status)}</span>
-                                        <div>
-                                            <h3 className="font-pixel text-lg">
-                                                {(log as any).quests?.title || '未知任務'}
-                                            </h3>
-                                            <p className="text-sm text-gray-600">
-                                                {(log as any).profiles?.name || '未知孩子'} ({(log as any).profiles?.student_id || 'N/A'})
-                                            </p>
+                        allLogs.map((item) => {
+                            const log = item as unknown as DailyLogWithRelations;
+                            return (
+                                <div
+                                    key={log.id}
+                                    className={`rpg-panel p-4 border-l-4 ${getStatusColor(log.status)}`}
+                                >
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-2xl">{getStatusEmoji(log.status)}</span>
+                                            <div>
+                                                <h3 className="font-pixel text-lg">
+                                                    {log.quests?.title || '未知任務'}
+                                                </h3>
+                                                <p className="text-sm text-gray-600">
+                                                    {log.profiles?.name || '未知孩子'} ({log.profiles?.student_id || 'N/A'})
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className={`
+                                        <div className="text-right">
+                                            <span className={`
                                             px-2 py-1 text-xs font-pixel rounded
                                             ${log.status === 'verified' ? 'bg-green-500 text-white' :
-                                                log.status === 'completed' ? 'bg-yellow-500 text-white' :
-                                                    'bg-blue-500 text-white'}
+                                                    log.status === 'completed' ? 'bg-yellow-500 text-white' :
+                                                        'bg-blue-500 text-white'}
                                         `}>
-                                            {log.status.toUpperCase()}
-                                        </span>
+                                                {log.status.toUpperCase()}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600 mt-3 pt-3 border-t border-gray-200">
-                                    <div><strong>ID:</strong> {log.id.slice(0, 8)}...</div>
-                                    <div><strong>日期:</strong> {log.date}</div>
-                                    <div>
-                                        <strong>完成:</strong>{' '}
-                                        {log.completed_at ? new Date(log.completed_at).toLocaleString('zh-TW') : 'N/A'}
-                                    </div>
-                                    <div>
-                                        <strong>建立:</strong>{' '}
-                                        {new Date(log.created_at).toLocaleString('zh-TW')}
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600 mt-3 pt-3 border-t border-gray-200">
+                                        <div><strong>ID:</strong> {log.id.slice(0, 8)}...</div>
+                                        <div><strong>日期:</strong> {log.date}</div>
+                                        <div>
+                                            <strong>完成:</strong>{' '}
+                                            {log.completed_at ? new Date(log.completed_at).toLocaleString('zh-TW') : 'N/A'}
+                                        </div>
+                                        <div>
+                                            <strong>建立:</strong>{' '}
+                                            {new Date(log.created_at).toLocaleString('zh-TW')}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     ) : (
                         <div className="rpg-panel p-8 text-center text-gray-500">
                             <div className="text-4xl mb-2">📭</div>

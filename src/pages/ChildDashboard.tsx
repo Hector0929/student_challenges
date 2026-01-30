@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { ParentsMessageCard, ExchangeRateCard } from '../components/ChildDashboardWidgets';
+
 import { Trophy, Star, Plus, X, Save, ChevronDown, ChevronUp, RefreshCw, Trash2 } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
 import { ProgressBar } from '../components/ProgressBar';
@@ -133,9 +135,10 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             console.log('✅ Quest created successfully');
             alert('✅ 任務已送出審核！\n\n請等待爸爸媽媽核准。');
             handleCloseDialog();
-        } catch (error: any) {
+        } catch (error) {
             console.error('Failed to create quest', error);
-            alert(`❌ 建立失敗\n\n錯誤：${error.message || error}\n\n請告訴爸爸媽媽這個錯誤訊息`);
+            const msg = error instanceof Error ? error.message : String(error);
+            alert(`❌ 建立失敗\n\n錯誤：${msg}\n\n請告訴爸爸媽媽這個錯誤訊息`);
         }
     };
 
@@ -157,10 +160,13 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                 questId,
                 isParentApproved,
             });
-        } catch (error: any) {
+        } catch (error) {
             // 409 means already completed - this shouldn't happen due to UI check above
             // but handle it gracefully just in case
-            if (error?.message?.includes('409') || error?.code === '23505') {
+            const msg = error instanceof Error ? error.message : '';
+            const code = (error as { code?: string })?.code;
+
+            if (msg.includes('409') || code === '23505') {
                 console.log('Quest already completed today (409 conflict)');
                 return;
             }
@@ -205,13 +211,13 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             await new Promise(resolve => setTimeout(resolve, 150));
             setConfirmDialogOpen(false);
             setSelectedQuestId(null);
-        } catch (error: any) {
+        } catch (error) {
             console.error('❌ Failed to complete quest:', error);
             setConfirmDialogOpen(false);
             setSelectedQuestId(null);
 
             // Show user-friendly error message
-            const errorMessage = error?.message || String(error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
             if (errorMessage.includes('任務不存在')) {
                 alert('❌ 任務不存在\n\n資料庫中找不到這個任務，可能已被刪除。\n請重新整理頁面（按 F5）。');
                 // Force reload after user dismisses alert
@@ -253,6 +259,12 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
 
     return (
         <div className="max-w-4xl mx-auto">
+            {/* Widgets Section */}
+            <div className="grid gap-4 mb-6 md:grid-cols-[2fr_1fr]">
+                <ParentsMessageCard />
+                <ExchangeRateCard />
+            </div>
+
             {/* Header Section */}
             <div className="rpg-dialog mb-6 animate-bounce-in">
                 <div className="flex items-center justify-between mb-4">
