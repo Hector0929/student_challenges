@@ -139,8 +139,8 @@ export const ParentSettings: React.FC = () => {
         setAdjustReason('');
     };
 
-    const handleAdjustSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleAdjustSubmit = async (e?: React.SyntheticEvent) => {
+        if (e) e.preventDefault();
         if (!adjustChild || !user) return;
 
         try {
