@@ -1,7 +1,7 @@
--- Family Settings Table
+-- Family Settings Table (Safe to re-run)
 -- 家庭設定表：儲存父母叮嚀、星幣匯率等家庭層級的設定
 
--- 1. Create the table
+-- 1. Create the table (if not exists)
 CREATE TABLE IF NOT EXISTS family_settings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   family_id UUID REFERENCES families(id) ON DELETE CASCADE UNIQUE,
@@ -22,23 +22,25 @@ CREATE TABLE IF NOT EXISTS family_settings (
 -- 2. Enable RLS
 ALTER TABLE family_settings ENABLE ROW LEVEL SECURITY;
 
--- 3. RLS Policies
--- 所有登入用戶可以讀取 (前端會過濾 family_id)
+-- 3. Drop existing policies first (to avoid conflicts)
+DROP POLICY IF EXISTS "Anyone can view family settings" ON family_settings;
+DROP POLICY IF EXISTS "Anyone can insert family settings" ON family_settings;
+DROP POLICY IF EXISTS "Anyone can update family settings" ON family_settings;
+
+-- 4. Create RLS Policies
 CREATE POLICY "Anyone can view family settings" ON family_settings
   FOR SELECT USING (true);
 
--- 所有登入用戶可以新增 (用於初始化)
 CREATE POLICY "Anyone can insert family settings" ON family_settings
   FOR INSERT WITH CHECK (true);
 
--- 所有登入用戶可以更新 (前端會驗證權限)
 CREATE POLICY "Anyone can update family settings" ON family_settings
   FOR UPDATE USING (true);
 
--- 4. Index for faster lookups
+-- 5. Index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_family_settings_family ON family_settings(family_id);
 
--- 5. Auto-update updated_at trigger
+-- 6. Auto-update updated_at trigger
 CREATE OR REPLACE FUNCTION update_family_settings_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -53,7 +55,7 @@ CREATE TRIGGER update_family_settings_timestamp
   FOR EACH ROW
   EXECUTE FUNCTION update_family_settings_updated_at();
 
--- 6. Add to realtime publication (if exists)
+-- 7. Add to realtime publication (if exists)
 DO $$
 BEGIN
   ALTER PUBLICATION supabase_realtime ADD TABLE family_settings;
