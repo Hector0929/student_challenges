@@ -1,77 +1,48 @@
-# 遊戲優化實作計畫
+# Vocabulary Games Upgrade Plan
 
-## 優化目標
+## Overview
+Replace "Echo Dungeon" with a new "Pronunciation Selection" game and upgrade "Spelling Summoner" to support category selection and a vastly expanded vocabulary (300 words).
 
-根據用戶反饋，需要優化以下 4 個遊戲：
+## 📊 Shared Data Structure
+Create `public/games/lib/vocab_data.js` to store the 8 themes and their words. This ensures consistency between the two games.
 
-### 1. 貪食蛇 (snake_game.html) - 放大尺寸
-**問題**：遊戲畫面太小，難以觀看
-**解決方案**：
-- 增大 `TILE_COUNT` 從 25 改為 15 (每格變大)
-- 增大行動按鈕尺寸從 60px 改為 80px
-- 調整 canvas 最小高度確保可見性
+## 🎮 Game 1: Pronunciation Selection (發音選單字)
+**File**: `public/games/pronunciation_game.html`
+- **Aesthetic**: Neon Cyber / Pixel RPG.
+- **Features**:
+  - Theme selection screen.
+  - Listen to pronunciation (Web Speech API).
+  - Choose correct word from 4 options.
+  - Show Chinese meaning on feedback.
+  - Score tracking and progress.
 
-### 2. 下樓梯 (ns_shaft.html) - 改為方塊風格
-**問題**：角色是圓形，與其他方塊遊戲風格不一致
-**解決方案**：
-- 將角色從圓形改為方塊 (使用 fillRect)
-- 加入像素化眼睛
-- 維持霓虹發光效果
-- 風格參考：方塊跑酷 (Geometry Dash 風格)
+## 🛡️ Game 2: Spelling Summoner (單字招喚術)
+**File**: `public/games/spelling_game.html` (Existing file update)
+- **Aesthetic**: Wizard/Summoning theme.
+- **Features**:
+  - Theme selection screen (New).
+  - Expanded library (300 words).
+  - Spell word by clicking letters.
+  - Direct feedback on spelling errors.
+  - Monster-slaying visual progression.
 
-### 3. 記憶矩陣 (memory_matrix.html) - 修正可視範圍
-**問題**：某些卡片超出視窗，無法點擊
-**解決方案**：
-- 調整 grid 最大寬度為視窗寬度
-- 確保 aspect-ratio 不會導致溢出
-- 減小間距 gap 從 0.75rem 改為 0.5rem
-- 添加 overflow 保護
-- 限制最大關卡數
+## 📁 File Structure
+- `public/games/lib/vocab_data.js` - [NEW] Shared vocabulary database.
+- `public/games/pronunciation_game.html` - [NEW] Pronunciation game.
+- `public/games/spelling_game.html` - [UPDATE] Integrated with categories.
+- `public/games/echo_game.html` - [DELETE] Removed as requested.
 
-### 4. 2048 (2048_cyber.html) - 加入手機控制
-**問題**：手機上沒有方向鍵，無法操作
-**解決方案**：
-- ✅ 已有 swipe 支援 (確認有效)
-- ✅ 已有鍵盤支援
-- 加入可視化的方向按鈕 (D-Pad)
-- 參考俄羅斯方塊的控制方式
+## 🛠️ Integration Steps
+1. **Remove "Echo Dungeon"** from `src/components/RewardTime.tsx`.
+2. **Add "Pronunciation Game"** to `GAMES` list.
+3. Update `Spelling Game` description to include category selection.
 
----
-
-## 設計規範
-
-### 共通風格
-- **字體**: Orbitron (科技感)
-- **主色調**: Cyan (#22d3ee) / Purple (#e879f9)
-- **發光效果**: box-shadow + text-shadow
-- **背景**: 深色 (#050510 ~ #0f0f15)
-
-### D-Pad 按鈕規範 (方向控制)
-```css
-.d-pad-btn {
-    width: 80px;
-    height: 80px;
-    background: rgba(34, 211, 238, 0.15);
-    border: 2px solid rgba(34, 211, 238, 0.4);
-    border-radius: 12px;
-    font-size: 32px;
-    color: #22d3ee;
-    transition: all 0.1s;
-}
-
-.d-pad-btn:active {
-    background: rgba(34, 211, 238, 0.5);
-    transform: scale(0.95);
-}
-```
-
----
-
-## 檔案修改清單
-
-| 遊戲 | 檔案 | 修改內容 |
-|------|------|----------|
-| 貪食蛇 | `snake_game.html` | TILE_COUNT=15, 按鈕放大 |
-| 下樓梯 | `ns_shaft.html` | 角色改為方塊 |
-| 記憶矩陣 | `memory_matrix.html` | 限制 grid 尺寸, 防止溢出 |
-| 2048 | `2048_cyber.html` | 新增 D-Pad 控制區 |
+## 📝 Vocabulary Categories
+1. **Numbers (數字)** - 1-100, tens.
+2. **People (人物)** - Pronouns, family, occupations.
+3. **Body & Clothing (身體部位與服飾)**.
+4. **Animals (動物)** - Common & Wildlife.
+5. **Things & Environment (物品與環境)** - Stationery, furniture, weather, transport.
+6. **Food & Places (食物與地方)** - Meals, drinks, rooms, locations.
+7. **Time, Verbs & Adjectives (時間、動詞與形容詞)**.
+8. **Prepositions & Questions (介係詞與疑問字)**.

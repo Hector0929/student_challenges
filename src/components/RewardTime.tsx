@@ -35,17 +35,17 @@ export const GAMES: Game[] = [
         id: 'spelling',
         name: '單字召喚術',
         icon: '🅰️',
-        description: '英文拼字戰鬥',
+        description: '拼字主題挑戰',
         url: '/games/spelling_game.html',
         color: 'bg-teal-400 hover:bg-teal-500',
         category: 'learning'
     },
     {
-        id: 'echo',
-        name: '聽音辨位',
+        id: 'pronunciation',
+        name: '發音選單字',
         icon: '👂',
-        description: '英文聽力迷宮',
-        url: '/games/echo_game.html',
+        description: '聽力主題挑戰',
+        url: '/games/pronunciation_game.html',
         color: 'bg-indigo-400 hover:bg-indigo-500',
         category: 'learning'
     },

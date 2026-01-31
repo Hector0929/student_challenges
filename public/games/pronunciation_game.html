@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocab Listener</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="lib/vocab_data.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'DotGothic16', sans-serif;
+            background-color: #0f172a;
+            color: white;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .pixel-border {
+            border: 4px solid #1e293b;
+            box-shadow: 4px 4px 0px #000;
+        }
+
+        .pixel-btn {
+            position: relative;
+            display: inline-block;
+            padding: 10px 20px;
+            background: #1e293b;
+            color: white;
+            text-decoration: none;
+            border: 4px solid #334155;
+            box-shadow: 4px 4px 0px #000;
+            transition: all 0.1s;
+            cursor: pointer;
+        }
+
+        .pixel-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #000;
+        }
+
+        .pixel-btn.correct {
+            background: #059669;
+            border-color: #10b981;
+        }
+
+        .pixel-btn.wrong {
+            background: #dc2626;
+            border-color: #ef4444;
+        }
+
+        @keyframes bounce-slow {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .animate-bounce-slow {
+            animation: bounce-slow 2s infinite ease-in-out;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+
+<body class="h-screen flex items-center justify-center p-4">
+
+    <!-- Category Selection Screen -->
+    <div id="category-screen" class="w-full max-w-lg">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-yellow-400 mb-2">發音選單字</h1>
+            <p class="text-slate-400">請選擇一個主題開始遊戲</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Categories will be injected here -->
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="hidden w-full max-w-lg bg-slate-800 p-6 rounded-2xl pixel-border relative">
+        <!-- HUD -->
+        <div class="flex justify-between items-center mb-8">
+            <div class="flex items-center gap-2">
+                <span id="theme-icon" class="text-2xl">🔢</span>
+                <span id="theme-title" class="text-lg text-slate-300">數字</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-yellow-400">⭐ <span id="score">0</span></div>
+                <div class="text-red-400">❤️ <span id="hp">3</span></div>
+            </div>
+        </div>
+
+        <!-- Question Area -->
+        <div class="text-center mb-8 py-12 bg-slate-900/50 rounded-xl border-2 border-slate-700 relative">
+            <div id="sound-wave" class="flex justify-center items-center gap-1 mb-4 h-8">
+                <div class="w-1 bg-cyan-400 h-2 rounded-full"></div>
+                <div class="w-1 bg-cyan-400 h-4 rounded-full"></div>
+                <div class="w-1 bg-cyan-400 h-8 rounded-full"></div>
+                <div class="w-1 bg-cyan-400 h-4 rounded-full"></div>
+                <div class="w-1 bg-cyan-400 h-2 rounded-full"></div>
+            </div>
+
+            <button onclick="playVoice()" class="pixel-btn text-4xl mb-4 p-6 rounded-full hover:bg-slate-700">
+                🔊
+            </button>
+            <p class="text-slate-500 text-sm">點擊按鈕重聽發音</p>
+        </div>
+
+        <!-- Options Area -->
+        <div id="options-container" class="grid grid-cols-2 gap-4">
+            <!-- Options injected here -->
+        </div>
+
+        <!-- Feedback Overlay -->
+        <div id="feedback-panel"
+            class="hidden absolute left-0 bottom-0 w-full p-4 bg-slate-900 border-t-4 border-slate-700 flex flex-col items-center gap-2 fade-in">
+            <div id="feedback-text" class="text-2xl font-bold">正確!</div>
+            <div class="flex items-center gap-2 text-slate-400">
+                <span id="result-en" class="text-white font-bold">Apple</span>
+                <span>=</span>
+                <span id="result-zh" class="text-cyan-400">蘋果</span>
+            </div>
+            <button onclick="nextQuestion()" class="pixel-btn w-full mt-2 bg-yellow-600 border-yellow-700">繼續</button>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 p-8 rounded-2xl pixel-border text-center max-w-sm w-full">
+            <h2 class="text-3xl font-bold text-red-500 mb-4">挑戰結束</h2>
+            <p class="text-slate-400 mb-6 font-pixel">你的最終得分: <span id="final-score"
+                    class="text-yellow-400 text-2xl">0</span></p>
+            <button onclick="location.reload()" class="pixel-btn w-full bg-cyan-600 border-cyan-700">重新開始</button>
+        </div>
+    </div>
+
+    <script>
+        const categoryScreen = document.getElementById('category-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackPanel = document.getElementById('feedback-panel');
+        const feedbackText = document.getElementById('feedback-text');
+        const resultEn = document.getElementById('result-en');
+        const resultZh = document.getElementById('result-zh');
+
+        let currentTheme = null;
+        let currentWord = null;
+        let score = 0;
+        let hp = 3;
+        let isAnswered = false;
+
+        // Init categories
+        function initCategories() {
+            const grid = categoryScreen.querySelector('.grid');
+            Object.entries(window.VOCAB_DATA).forEach(([key, data]) => {
+                const btn = document.createElement('button');
+                btn.className = 'pixel-btn text-left flex flex-col gap-2 items-center justify-center py-6';
+                btn.innerHTML = `
+                    <span class="text-4xl mb-2">${data.icon}</span>
+                    <span class="text-lg font-bold">${data.title}</span>
+                `;
+                btn.onclick = () => startTheme(key);
+                grid.appendChild(btn);
+            });
+        }
+
+        function startTheme(key) {
+            currentTheme = window.VOCAB_DATA[key];
+            categoryScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+
+            document.getElementById('theme-icon').textContent = currentTheme.icon;
+            document.getElementById('theme-title').textContent = currentTheme.title;
+
+            score = 0;
+            hp = 3;
+            updateHUD();
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            if (hp <= 0) return gameOver();
+
+            isAnswered = false;
+            feedbackPanel.classList.add('hidden');
+
+            // Pick random word
+            const words = currentTheme.words;
+            currentWord = words[Math.floor(Math.random() * words.length)];
+
+            // Pick distractors (3 from other words in the same theme)
+            const distractors = words
+                .filter(w => w.en !== currentWord.en)
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 3);
+
+            const options = [currentWord, ...distractors].sort(() => 0.5 - Math.random());
+
+            // Render options
+            optionsContainer.innerHTML = '';
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'pixel-btn text-xl py-6 font-bold';
+                btn.textContent = opt.en;
+                btn.onclick = () => checkAnswer(opt, btn);
+                optionsContainer.appendChild(btn);
+            });
+
+            playVoice();
+        }
+
+        function playVoice() {
+            if (!currentWord) return;
+            const u = new SpeechSynthesisUtterance(currentWord.en);
+            u.lang = 'en-US';
+            u.rate = 0.8;
+            window.speechSynthesis.speak(u);
+
+            // Visual effect
+            const bars = document.querySelectorAll('#sound-wave div');
+            bars.forEach((bar, i) => {
+                bar.animate([
+                    { height: '8px' },
+                    { height: i % 2 === 0 ? '32px' : '24px' },
+                    { height: '8px' }
+                ], {
+                    duration: 200,
+                    iterations: 3,
+                    delay: i * 50
+                });
+            });
+        }
+
+        function checkAnswer(selected, btn) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const isCorrect = selected.en === currentWord.en;
+
+            // Feedback UI
+            resultEn.textContent = currentWord.en;
+            resultZh.textContent = currentWord.zh;
+
+            if (isCorrect) {
+                btn.classList.add('correct');
+                feedbackText.textContent = "正確! 🎉";
+                feedbackText.className = "text-2xl font-bold text-emerald-400";
+                score += 10;
+            } else {
+                btn.classList.add('wrong');
+                // Find and highlight correct one
+                Array.from(optionsContainer.children).forEach(b => {
+                    if (b.textContent === currentWord.en) b.classList.add('correct');
+                });
+                feedbackText.textContent = "打錯了! 😢";
+                feedbackText.className = "text-2xl font-bold text-rose-400";
+                hp--;
+            }
+
+            updateHUD();
+            feedbackPanel.classList.remove('hidden');
+        }
+
+        function updateHUD() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('hp').textContent = hp;
+        }
+
+        function gameOver() {
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('game-over-modal').classList.remove('hidden');
+        }
+
+        initCategories();
+    </script>
+</body>
+
+</html>

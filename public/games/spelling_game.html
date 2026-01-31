@@ -6,336 +6,268 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spelling Summoner</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="lib/vocab_data.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'DotGothic16', sans-serif;
+            background-color: #1e1b4b;
+            color: white;
+            overflow: hidden;
+            touch-action: manipulation;
         }
 
-        .pixel-font {
-            font-family: 'DotGothic16', sans-serif;
+        .pixel-card {
+            background: #2e1065;
+            border: 4px solid #4c1d95;
+            box-shadow: 4px 4px 0px #000;
         }
 
-        .clay-card {
-            background: white;
-            border-radius: 1.5rem;
-            box-shadow: 8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff;
-            border: 4px solid #eef2f6;
+        .pixel-btn {
+            background: #4c1d95;
+            border: 4px solid #5b21b6;
+            box-shadow: 4px 4px 0px #000;
+            transition: all 0.1s;
         }
 
-        .clay-btn {
-            border-radius: 1rem;
-            box-shadow: 4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff;
-            transition: all 0.2s;
-        }
-
-        .clay-btn:active {
-            box-shadow: inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff;
-            transform: scale(0.98);
+        .pixel-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #000;
         }
 
         @keyframes shake {
-            0% {
-                transform: translate(1px, 1px) rotate(0deg);
-            }
 
-            10% {
-                transform: translate(-1px, -2px) rotate(-1deg);
-            }
-
-            20% {
-                transform: translate(-3px, 0px) rotate(1deg);
-            }
-
-            30% {
-                transform: translate(3px, 2px) rotate(0deg);
-            }
-
-            40% {
-                transform: translate(1px, -1px) rotate(1deg);
-            }
-
-            50% {
-                transform: translate(-1px, 2px) rotate(-1deg);
-            }
-
-            60% {
-                transform: translate(-3px, 1px) rotate(0deg);
-            }
-
-            70% {
-                transform: translate(3px, 1px) rotate(-1deg);
-            }
-
-            80% {
-                transform: translate(-1px, -1px) rotate(1deg);
-            }
-
-            90% {
-                transform: translate(1px, 2px) rotate(0deg);
-            }
-
+            0%,
             100% {
-                transform: translate(1px, -2px) rotate(-1deg);
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
             }
         }
 
         .shake {
-            animation: shake 0.5s;
+            animation: shake 0.2s 2;
         }
 
-        .damage-text {
-            animation: float-up 1s forwards;
+        .vibrate {
+            animation: vibrate 0.1s infinite;
         }
 
-        @keyframes float-up {
+        @keyframes vibrate {
             0% {
-                opacity: 1;
-                transform: translateY(0);
+                transform: translate(0);
+            }
+
+            50% {
+                transform: translate(1px, 1px);
             }
 
             100% {
-                opacity: 0;
-                transform: translateY(-50px);
+                transform: translate(0);
             }
         }
     </style>
 </head>
 
-<body class="bg-indigo-50 h-screen overflow-hidden flex flex-col items-center justify-center select-none">
+<body class="h-screen flex items-center justify-center p-4">
 
-    <!-- Game Container -->
-    <div class="w-full max-w-2xl px-4 flex flex-col gap-2 h-full max-h-[800px] justify-between py-4">
+    <!-- Category Selection Screen -->
+    <div id="category-screen" class="w-full max-w-lg">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-indigo-400 mb-2 font-pixel">單字招喚術</h1>
+            <p class="text-slate-400">選擇主題開始拼字挑戰</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Categories injected here -->
+        </div>
+    </div>
 
-        <!-- Header: Score & Level -->
-        <div class="flex justify-between items-center shrink-0">
-            <div class="clay-card px-4 py-2 flex items-center gap-2">
-                <span class="text-xl">🏆</span>
-                <span id="score" class="text-lg text-indigo-800 font-bold">0</span>
+    <!-- Game Screen -->
+    <div id="game-screen" class="hidden w-full max-w-lg h-full flex flex-col justify-between py-6">
+        <!-- HUD -->
+        <div class="flex justify-between items-center px-4 shrink-0">
+            <div class="pixel-card px-4 py-2 flex items-center gap-2">
+                <span id="theme-icon">🦁</span>
+                <span id="score" class="text-yellow-400">0</span>
             </div>
-            <div class="clay-card px-4 py-2 flex items-center gap-2 bg-yellow-100">
-                <span class="text-xl">❤️</span>
-                <span id="hp" class="text-lg text-red-600 font-bold">3</span>
+            <div class="pixel-card px-4 py-2 text-red-400">
+                ❤️ <span id="hp">3</span>
             </div>
         </div>
 
         <!-- Monster Area -->
         <div class="flex-1 flex flex-col items-center justify-center relative min-h-0">
-            <div id="monster-container" class="relative transition-transform duration-300">
-                <div class="text-8xl sm:text-9xl filter drop-shadow-xl" id="monster-emoji">🐲</div>
-                <!-- HP Bar -->
-                <div class="w-40 h-3 bg-gray-200 rounded-full mt-4 overflow-hidden border-2 border-gray-300">
-                    <div id="monster-hp-bar" class="h-full bg-red-500 transition-all duration-300" style="width: 100%">
-                    </div>
+            <div id="monster" class="text-9xl mb-4 transition-all duration-300">🐲</div>
+            <div class="w-48 h-4 bg-slate-900 border-2 border-slate-700 rounded-full overflow-hidden">
+                <div id="hp-bar" class="h-full bg-red-600 w-full transition-all duration-300"></div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="pixel-card p-4 flex flex-col items-center gap-4 shrink-0">
+            <div class="text-center">
+                <p id="hint-zh" class="text-cyan-400 text-xl font-bold mb-1">蘋果</p>
+                <div class="flex items-center justify-center gap-2">
+                    <button onclick="playVoice()" class="text-slate-400 hover:text-white">🔊</button>
+                    <span class="text-xs text-slate-500">聽發音拼出單字</span>
                 </div>
             </div>
 
-            <!-- Damage Overlay -->
-            <div id="effects-layer" class="absolute inset-0 pointer-events-none flex justify-center items-center"></div>
-        </div>
-
-        <!-- Word Input Area -->
-        <div class="clay-card p-4 flex flex-col items-center gap-3 w-full shrink-0">
-            <div class="text-center mb-1">
-                <p class="text-gray-500 text-xs mb-1">拼出這個單字！</p>
-                <h2 id="question-hint" class="text-xl text-indigo-900 font-bold">Apple</h2>
-                <button onclick="speakWord()" class="mt-1 text-indigo-400 hover:text-indigo-600 text-sm">
-                    🔊 聽發音
-                </button>
+            <div id="slots" class="flex flex-wrap justify-center gap-2 min-h-[40px]">
+                <!-- Letter slots -->
             </div>
 
-            <div id="input-display" class="flex gap-1 justify-center flex-wrap min-h-[50px]">
-                <!-- Input slots will be generated here -->
-            </div>
-
-            <div id="keyboard" class="grid grid-cols-9 gap-1 w-full max-w-lg mt-2">
-                <!-- Virtual Keyboard -->
+            <div id="keyboard" class="grid grid-cols-9 gap-1 w-full">
+                <!-- Buttons A-Z -->
             </div>
         </div>
     </div>
 
     <!-- Game Over Modal -->
-    <div id="game-over-modal"
-        class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
-        <div class="clay-card p-8 text-center max-w-sm mx-4 animate-bounce-in">
-            <div class="text-6xl mb-4">💀</div>
-            <h2 class="text-3xl text-indigo-900 mb-2 font-bold">Game Over</h2>
-            <p class="text-gray-600 mb-6">本次得分: <span id="final-score" class="font-bold text-indigo-600">0</span></p>
-            <button onclick="restartGame()"
-                class="clay-btn bg-indigo-500 text-white px-8 py-3 w-full text-lg hover:bg-indigo-600">
-                再次挑戰
-            </button>
+    <div id="game-over-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+        <div class="pixel-card p-10 text-center">
+            <h2 class="text-3xl text-red-500 font-bold mb-4">法力耗盡!</h2>
+            <p class="mb-8">最終積分: <span id="final-score" class="text-yellow-400">0</span></p>
+            <button onclick="location.reload()" class="pixel-btn px-8 py-3 rounded text-xl">重新挑戰</button>
         </div>
     </div>
 
     <script>
-        // Game Data
-        const VOCABULARY = [
-            { word: 'APPLE', emoji: '🍎', hint: '紅色的水果' },
-            { word: 'BANANA', emoji: '🍌', hint: '黃色的水果' },
-            { word: 'CAT', emoji: '🐱', hint: '會喵喵叫的動物' },
-            { word: 'DOG', emoji: '🐶', hint: '人類最好的朋友' },
-            { word: 'ELEPHANT', emoji: '🐘', hint: '有長鼻子的動物' },
-            { word: 'FISH', emoji: '🐟', hint: '在水裡游泳' },
-            { word: 'GIRAFFE', emoji: '🦒', hint: '脖子很長的動物' },
-            { word: 'HOUSE', emoji: '🏠', hint: '我們住的地方' },
-            { word: 'ICE', emoji: '🧊', hint: '很冷的水' },
-            { word: 'JUMP', emoji: '🦘', hint: '跳躍' },
-            { word: 'KITE', emoji: '🪁', hint: '在風中飛' },
-            { word: 'LION', emoji: '🦁', hint: '萬獸之王' },
-            { word: 'MONKEY', emoji: '🐒', hint: '喜歡吃香蕉' },
-            { word: 'NIGHT', emoji: '🌙', hint: '晚上' },
-            { word: 'ORANGE', emoji: '🍊', hint: '橘色的水果' },
-            { word: 'PIG', emoji: '🐷', hint: '粉紅色的動物' },
-            { word: 'QUEEN', emoji: '👸', hint: '國王的太太' },
-            { word: 'RABBIT', emoji: '🐰', hint: '長耳朵的動物' },
-            { word: 'SNAKE', emoji: '🐍', hint: '沒腳的動物' },
-            { word: 'TIGER', emoji: '🐯', hint: '大貓咪' },
-            { word: 'UMBRELLA', emoji: '☂️', hint: '下雨時用' },
-            { word: 'VAN', emoji: '🚐', hint: '廂型車' },
-            { word: 'WATER', emoji: '💧', hint: '口渴時喝' },
-            { word: 'XYLOPHONE', emoji: '🎹', hint: '木琴' },
-            { word: 'YELLOW', emoji: '🟨', hint: '黃色' },
-            { word: 'ZEBRA', emoji: '🦓', hint: '有斑馬線的動物' }
-        ];
+        const categoryScreen = document.getElementById('category-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const slotsContainer = document.getElementById('slots');
+        const keyboard = document.getElementById('keyboard');
 
-        // State
-        let currentWordObj = null;
-        let currentInput = [];
+        let currentTheme = null;
+        let currentWord = null;
+        let inputIndex = 0;
         let score = 0;
         let hp = 3;
         let monsterHp = 100;
 
-        // Init
         function init() {
-            renderKeyboard();
-            nextLevel();
-            updateUI();
-        }
-
-        function renderKeyboard() {
-            const keyboard = document.getElementById('keyboard');
-            keyboard.innerHTML = '';
-            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-            letters.forEach(char => {
+            const grid = categoryScreen.querySelector('.grid');
+            Object.entries(window.VOCAB_DATA).forEach(([key, data]) => {
                 const btn = document.createElement('button');
-                btn.className = 'clay-btn bg-white text-indigo-900 font-bold p-2 text-lg hover:bg-indigo-50 active:bg-indigo-100 disabled:opacity-30 disabled:cursor-not-allowed';
-                btn.textContent = char;
-                btn.onclick = () => handleInput(char);
-                btn.id = `key-${char}`;
-                keyboard.appendChild(btn);
+                btn.className = 'pixel-btn text-left flex flex-col gap-2 items-center justify-center py-6';
+                btn.innerHTML = `<span class="text-4xl capitalize">${data.icon}</span><span class="font-bold">${data.title}</span>`;
+                btn.onclick = () => startTheme(key);
+                grid.appendChild(btn);
             });
 
-            // Add backspace
-            const delBtn = document.createElement('button');
-            delBtn.className = 'clay-btn bg-red-100 text-red-900 font-bold p-2 hover:bg-red-200';
-            delBtn.textContent = '⌫';
-            delBtn.onclick = handleBackspace;
-            keyboard.appendChild(delBtn);
+            // Init Keyboard
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(letter => {
+                const btn = document.createElement('button');
+                btn.className = 'pixel-btn py-2 text-sm font-bold active:scale-95';
+                btn.textContent = letter;
+                btn.onclick = () => handleInput(letter);
+                keyboard.appendChild(btn);
+            });
+            // Backspace
+            const del = document.createElement('button');
+            del.className = 'pixel-btn py-2 text-sm font-bold bg-slate-700';
+            del.textContent = '⌫';
+            del.onclick = () => {
+                if (inputIndex > 0) {
+                    inputIndex--;
+                    slotsContainer.children[inputIndex].textContent = '';
+                    slotsContainer.children[inputIndex].classList.remove('bg-indigo-600', 'border-indigo-400');
+                }
+            };
+            keyboard.appendChild(del);
         }
 
-        function nextLevel() {
-            currentWordObj = VOCABULARY[Math.floor(Math.random() * VOCABULARY.length)];
-            currentInput = [];
+        function startTheme(key) {
+            currentTheme = window.VOCAB_DATA[key];
+            categoryScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            document.getElementById('theme-icon').textContent = currentTheme.icon;
+            nextWord();
+        }
+
+        function nextWord() {
+            inputIndex = 0;
             monsterHp = 100;
+            currentWord = currentTheme.words[Math.floor(Math.random() * currentTheme.words.length)];
 
-            // UI
-            document.getElementById('monster-emoji').textContent = currentWordObj.emoji;
-            document.getElementById('monster-hp-bar').style.width = '100%';
-            document.getElementById('question-hint').textContent = currentWordObj.hint || '???';
+            document.getElementById('hint-zh').textContent = currentWord.zh;
+            document.getElementById('hp-bar').style.width = '100%';
 
-            // Reset keyboard
-            document.querySelectorAll('#keyboard button').forEach(b => b.disabled = false);
+            // Render slots (clean text, handle spaces)
+            slotsContainer.innerHTML = '';
+            const wordRaw = currentWord.en.toUpperCase();
+            for (let char of wordRaw) {
+                const slot = document.createElement('div');
+                if (char === ' ') {
+                    slot.className = 'w-4 h-10'; // Space
+                } else {
+                    slot.className = 'w-8 h-10 border-b-4 border-slate-600 flex items-center justify-center text-xl font-bold transition-all';
+                }
+                slotsContainer.appendChild(slot);
+            }
 
-            updateInputDisplay();
-            speakWord();
+            // Random monster emoji
+            const monsters = ['🐲', '👾', '🧟', '👹', '👻'];
+            document.getElementById('monster').textContent = monsters[Math.floor(Math.random() * monsters.length)];
+
+            playVoice();
         }
 
-        function handleInput(char) {
-            if (currentInput.length >= currentWordObj.word.length) return;
+        function handleInput(letter) {
+            if (hp <= 0) return;
 
-            const expectedChar = currentWordObj.word[currentInput.length];
+            const wordUpper = currentWord.en.toUpperCase();
+            const slots = slotsContainer.children;
 
-            if (char === expectedChar) {
+            // Skip space index
+            while (inputIndex < wordUpper.length && wordUpper[inputIndex] === ' ') inputIndex++;
+            if (inputIndex >= wordUpper.length) return;
+
+            if (letter === wordUpper[inputIndex]) {
                 // Correct
-                currentInput.push(char);
-                updateInputDisplay();
-                playSound('hit');
-                damageMonster(30); // Visual damage
+                slots[inputIndex].textContent = letter;
+                slots[inputIndex].classList.add('bg-indigo-600', 'border-indigo-400');
+                inputIndex++;
+                damageMonster(25);
 
-                // Disable key visual
-                // document.getElementById(`key-${char}`).disabled = true;
-
-                if (currentInput.length === currentWordObj.word.length) {
-                    // Win level
-                    setTimeout(() => {
-                        score += 10;
-                        playSound('win');
-                        showDamageEffect('PERFECT!', 'text-yellow-500');
-                        nextLevel();
-                        updateUI();
-                    }, 500);
+                // Finished?
+                if (Array.from(slots).every(s => s.textContent !== '' || s.className.includes('w-4'))) {
+                    score += 10;
+                    updateHUD();
+                    setTimeout(nextWord, 1000);
                 }
             } else {
                 // Wrong
-                shakeScreen();
+                gameScreen.classList.add('shake');
+                setTimeout(() => gameScreen.classList.remove('shake'), 200);
                 hp--;
-                playSound('hurt');
-                updateUI();
+                updateHUD();
                 if (hp <= 0) gameOver();
             }
         }
 
-        function handleBackspace() {
-            if (currentInput.length > 0) {
-                currentInput.pop();
-                updateInputDisplay();
-            }
+        function damageMonster(amt) {
+            monsterHp -= amt;
+            document.getElementById('hp-bar').style.width = `${Math.max(0, monsterHp)}%`;
+            const m = document.getElementById('monster');
+            m.classList.add('vibrate');
+            setTimeout(() => m.classList.remove('vibrate'), 300);
         }
 
-        function updateInputDisplay() {
-            const container = document.getElementById('input-display');
-            container.innerHTML = '';
-
-            const wordLength = currentWordObj.word.length;
-
-            for (let i = 0; i < wordLength; i++) {
-                const char = currentInput[i] || '';
-                const slot = document.createElement('div');
-                slot.className = `w-10 h-12 flex items-center justify-center text-2xl font-bold rounded-lg border-2 ${char ? 'bg-indigo-500 text-white border-indigo-600' : 'bg-gray-100 border-gray-300'}`;
-                slot.textContent = char;
-                container.appendChild(slot);
-            }
+        function playVoice() {
+            const u = new SpeechSynthesisUtterance(currentWord.en);
+            u.lang = 'en-US';
+            u.rate = 0.8;
+            window.speechSynthesis.speak(u);
         }
 
-        function damageMonster(amount) {
-            monsterHp = Math.max(0, monsterHp - amount);
-            document.getElementById('monster-hp-bar').style.width = `${monsterHp}%`;
-
-            const monster = document.getElementById('monster-container');
-            monster.classList.add('shake');
-            setTimeout(() => monster.classList.remove('shake'), 500);
-
-            showDamageEffect(`-${amount}`, 'text-red-500');
-        }
-
-        function showDamageEffect(text, colorClass) {
-            const el = document.createElement('div');
-            el.className = `damage-text absolute text-4xl font-bold ${colorClass}`;
-            el.style.left = '50%';
-            el.style.top = '40%';
-            el.style.transform = 'translate(-50%, -50%)';
-            el.textContent = text;
-            document.getElementById('effects-layer').appendChild(el);
-            setTimeout(() => el.remove(), 1000);
-        }
-
-        function shakeScreen() {
-            document.body.classList.add('shake');
-            setTimeout(() => document.body.classList.remove('shake'), 500);
-        }
-
-        function updateUI() {
+        function updateHUD() {
             document.getElementById('score').textContent = score;
             document.getElementById('hp').textContent = hp;
         }
@@ -343,61 +275,6 @@
         function gameOver() {
             document.getElementById('final-score').textContent = score;
             document.getElementById('game-over-modal').classList.remove('hidden');
-        }
-
-        function restartGame() {
-            score = 0;
-            hp = 3;
-            document.getElementById('game-over-modal').classList.add('hidden');
-            nextLevel();
-            updateUI();
-        }
-
-        function speakWord() {
-            if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(currentWordObj.word);
-                utterance.lang = 'en-US';
-                utterance.rate = 0.8;
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-
-        function playSound(type) {
-            // Simple synth sounds
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (!AudioContext) return;
-            const ctx = new AudioContext();
-            const osc = ctx.createOscillator();
-            const g = ctx.createGain();
-            osc.connect(g);
-            g.connect(ctx.destination);
-
-            if (type === 'hit') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(440, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
-                g.gain.setValueAtTime(0.1, ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.1);
-            } else if (type === 'hurt') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, ctx.currentTime);
-                osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.3);
-                g.gain.setValueAtTime(0.2, ctx.currentTime);
-                g.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.3);
-            } else if (type === 'win') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
-                osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
-                g.gain.setValueAtTime(0.1, ctx.currentTime);
-                g.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.4);
-            }
         }
 
         init();
