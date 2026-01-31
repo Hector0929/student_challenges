@@ -491,11 +491,10 @@ export const useStarBalance = (childId: string) => {
                 const { data: transactions } = await supabase
                     .from('star_transactions')
                     .select('amount')
-                    .eq('user_id', childId)
-                    .in('type', ['spend', 'adjustment']); // Include adjustments
+                    .eq('user_id', childId);
 
                 if (transactions) {
-                    // Sum up direct values (spend is stored as negative)
+                    // Sum up all transactions (spend is negative, earn/adjustment can be pos/neg)
                     netTransactions = transactions.reduce((sum, t) => sum + t.amount, 0);
                 }
             } catch (e) {

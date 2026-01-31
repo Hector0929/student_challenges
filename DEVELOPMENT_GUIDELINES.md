@@ -124,3 +124,53 @@ createQuestMutation.mutateAsync({
     1. 登入家庭 A，新增一個項目。
     2. 登入家庭 B，確認**看不到**該項目。
     3. 切回家庭 A，確認**看得到**該項目。
+
+---
+
+## 6. 星幣系統與餘額計算 (Star System & Balance)
+
+星幣系統採用「雙軌制」計算，修改相關功能時請務必遵守以下邏輯，否則會導致餘額錯誤。
+
+### 計算公式
+```
+總餘額 = (任務獎勵總和) + (交易紀錄總和)
+Balance = Sum(Verified Quests) + Sum(Star Transactions)
+```
+
+### 資料來源
+1. **任務獎勵 (Daily Logs)**
+   - 來源：`daily_logs` 表格 (status = verified)
+   - 邏輯：只要任務被核准，其獎勵點數自動計入餘額。
+   - **注意**：這部分不需要寫入 `star_transactions`，系統會自動加總。
+
+2. **交易紀錄 (Star Transactions)**
+   - 來源：`star_transactions` 表格
+   - 用途：紀錄「消費」、「額外獎勵」或「懲罰扣款」。
+   - **Type 欄位定義**：
+     - `spend`：消費（如玩遊戲），金額必須為 **負數**。
+     - `adjustment`：家長手動調整，金額可正可負。
+     - `earn`：非任務類獲得（較少用，通常由 adjustment 取代）。
+
+### 實作規範 (`useAdjustStars` 範例)
+
+當實作家長手動調整星幣功能時，請遵循以下模式：
+
+1. **必須寫入 `star_transactions`**。
+2. **Type 設為 `adjustment`** (需確保 DB Constraint 允許此類型)。
+3. **金額符號要正確**：扣款給負數，獎勵給正數。
+
+```typescript
+// ✅ 正確寫法
+supabase.from('star_transactions').insert({
+    user_id: childId,
+    amount: -50,         // 扣除 50 星幣
+    type: 'adjustment',  // 明確標記為調整
+    description: '沒收玩具',
+    created_by: parentId // 記錄操作者
+});
+```
+
+### 常見錯誤
+- **錯誤 1**：以為餘額只看 `star_transactions`，試圖把任務獎勵也寫進去 -> **導致重複計算**。
+- **錯誤 2**：忽略 SQL Function (`get_child_star_balance`) 與前端 JS 計算 (`useStarBalance`) 的一致性。修改邏輯時兩邊都要改。
+- **錯誤 3**：使用 Database 不支援的 `type` (如 `correction`) 導致 400 Error。
