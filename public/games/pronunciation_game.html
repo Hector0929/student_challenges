@@ -233,9 +233,24 @@
 
         function playVoice() {
             if (!currentWord) return;
+
+            // 強制停止之前的聲音，避免重疊
+            window.speechSynthesis.cancel();
+
             const u = new SpeechSynthesisUtterance(currentWord.en);
+            const voices = window.speechSynthesis.getVoices();
+
+            // 優先選擇高品質語音 (macOS/iOS 優先選 Samantha 或 Siri)
+            const preferredVoice = voices.find(v => v.name.includes('Samantha') || v.name.includes('Siri'))
+                || voices.find(v => v.name.includes('Google US English'))
+                || voices.find(v => v.lang.startsWith('en-US'))
+                || voices.find(v => v.lang.startsWith('en'));
+
+            if (preferredVoice) u.voice = preferredVoice;
             u.lang = 'en-US';
-            u.rate = 0.8;
+            u.rate = 0.95; // 稍微提高語速，讓發音更清晰自然
+            u.pitch = 1.0;
+
             window.speechSynthesis.speak(u);
 
             // Visual effect
@@ -252,6 +267,11 @@
                 });
             });
         }
+
+        // 確保語音清單已載入 (適用於 iOS/Chrome)
+        window.speechSynthesis.onvoiceschanged = () => {
+            window.speechSynthesis.getVoices();
+        };
 
         function checkAnswer(selected, btn) {
             if (isAnswered) return;

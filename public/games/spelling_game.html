@@ -261,11 +261,26 @@
         }
 
         function playVoice() {
+            if (!currentWord) return;
+            window.speechSynthesis.cancel();
+
             const u = new SpeechSynthesisUtterance(currentWord.en);
+            const voices = window.speechSynthesis.getVoices();
+
+            const preferredVoice = voices.find(v => v.name.includes('Samantha') || v.name.includes('Siri'))
+                || voices.find(v => v.name.includes('Google US English'))
+                || voices.find(v => v.lang.startsWith('en-US'))
+                || voices.find(v => v.lang.startsWith('en'));
+
+            if (preferredVoice) u.voice = preferredVoice;
             u.lang = 'en-US';
-            u.rate = 0.8;
+            u.rate = 0.95;
             window.speechSynthesis.speak(u);
         }
+
+        window.speechSynthesis.onvoiceschanged = () => {
+            window.speechSynthesis.getVoices();
+        };
 
         function updateHUD() {
             document.getElementById('score').textContent = score;
