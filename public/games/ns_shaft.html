@@ -448,23 +448,35 @@
                 ctx.restore();
             });
 
-            // Player
+            // Player - 方塊風格 (Geometry Dash 風格)
             const p = state.player;
-            // Simple Avatar
-            ctx.fillStyle = p.grounded ? '#22d3ee' : '#e879f9'; // Cyan grounded, Pink jump
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = ctx.fillStyle;
+            const size = CONFIG.playerSize;
 
-            // Draw Ball
-            ctx.beginPath();
-            ctx.arc(p.x + CONFIG.playerSize / 2, p.y + CONFIG.playerSize / 2, CONFIG.playerSize / 2, 0, Math.PI * 2);
-            ctx.fill();
+            // 發光效果
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = p.grounded ? '#22d3ee' : '#e879f9';
 
-            // Eyes
+            // 主體方塊
+            ctx.fillStyle = p.grounded ? '#22d3ee' : '#e879f9';
+            ctx.fillRect(p.x, p.y, size, size);
+
+            // 邊框
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(p.x, p.y, size, size);
+
+            // 像素風格眼睛
             ctx.fillStyle = '#000';
             const lookDir = state.keys.left ? -2 : (state.keys.right ? 2 : 0);
-            ctx.fillRect(p.x + 8 + lookDir, p.y + 8, 3, 6);
-            ctx.fillRect(p.x + 16 + lookDir, p.y + 8, 3, 6);
+            // 左眼
+            ctx.fillRect(p.x + 5 + lookDir, p.y + 7, 4, 5);
+            // 右眼
+            ctx.fillRect(p.x + 15 + lookDir, p.y + 7, 4, 5);
+
+            // 眼睛高光
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(p.x + 6 + lookDir, p.y + 8, 2, 2);
+            ctx.fillRect(p.x + 16 + lookDir, p.y + 8, 2, 2);
 
             ctx.shadowBlur = 0;
         }

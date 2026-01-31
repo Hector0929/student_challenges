@@ -14,6 +14,9 @@
             overflow: hidden;
             touch-action: none;
             perspective: 1000px;
+            /* 確保視窗不會超出 */
+            max-height: 100vh;
+            max-height: 100dvh;
         }
 
         .neon-text {
@@ -70,7 +73,7 @@
     </style>
 </head>
 
-<body class="h-screen flex flex-col items-center justify-center p-4">
+<body class="h-screen flex flex-col items-center justify-center p-4 overflow-hidden">
 
     <!-- Header -->
     <div class="w-full max-w-lg flex justify-between items-center mb-8">
@@ -90,8 +93,8 @@
         </div>
     </div>
 
-    <!-- Grid Container -->
-    <div id="game-grid" class="grid gap-3 w-full max-w-lg aspect-square">
+    <!-- Grid Container - 限制最大尺寸防止溢出 -->
+    <div id="game-grid" class="grid gap-2 w-full max-w-sm mx-auto" style="max-height: 60vh;">
         <!-- Cards injected by JS -->
     </div>
 
@@ -128,14 +131,13 @@
         };
 
         function getLayout(level) {
+            // 限制關卡數，避免格子太多超出螢幕
             // Level 1: 2x3 (6 cards, 3 pairs)
             // Level 2: 3x4 (12 cards, 6 pairs)
-            // Level 3: 4x4 (16 cards, 8 pairs)
-            // Level 4: 4x5 (20 cards, 10 pairs)
+            // Level 3: 4x4 (16 cards, 8 pairs) - 最大
             if (level === 1) return { rows: 3, cols: 2, time: 30 };
             if (level === 2) return { rows: 4, cols: 3, time: 45 };
-            if (level === 3) return { rows: 4, cols: 4, time: 60 };
-            return { rows: 5, cols: 4, time: 75 }; // Max
+            return { rows: 4, cols: 4, time: 60 }; // Level 3+ 固定 4x4
         }
 
         function startGame() {
@@ -257,7 +259,8 @@
 
         function levelComplete() {
             clearInterval(state.timer);
-            if (state.level >= 4) {
+            if (state.level >= 3) {
+                // 最多只有 3 關，防止格子太多
                 showOverlay("VICTORY!", "Your brain is massive.");
             } else {
                 state.level++;

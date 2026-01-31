@@ -34,24 +34,27 @@
             image-rendering: pixelated;
         }
 
-        /* Mobile Controls */
+        /* Mobile Controls - 放大版 */
         .d-pad-btn {
-            background: rgba(34, 211, 238, 0.1);
-            border: 1px solid rgba(34, 211, 238, 0.3);
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
+            background: rgba(34, 211, 238, 0.15);
+            border: 2px solid rgba(34, 211, 238, 0.4);
+            border-radius: 12px;
+            width: 80px;
+            height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 32px;
             color: #22d3ee;
             transition: all 0.1s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .d-pad-btn:active {
-            background: rgba(34, 211, 238, 0.4);
+            background: rgba(34, 211, 238, 0.5);
             transform: scale(0.95);
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.5);
         }
     </style>
 </head>
@@ -120,9 +123,9 @@
         const menuScreen = document.getElementById('menu-screen');
         const mobileControls = document.getElementById('mobile-controls');
 
-        // Config
+        // Config - 放大遊戲畫面
         const GRID_SIZE = 20;
-        let TILE_COUNT = 20; // Will be calculated based on canvas size
+        let TILE_COUNT = 15; // 減少格數 = 放大每格尺寸
         const GAME_SPEED_START = 150;
 
         let state = {
@@ -148,9 +151,8 @@
             canvas.width = container.clientWidth;
             canvas.height = container.clientHeight;
 
-            // Calculate tile count based on size
-            // Try to keep TILE_COUNT around 20-25 for gameplay balance
-            TILE_COUNT = 25;
+            // 固定 TILE_COUNT = 15 讓格子更大更容易看
+            TILE_COUNT = 15;
 
             // Check if mobile
             if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {

@@ -135,14 +135,48 @@
         </div>
     </div>
 
-    <div class="mt-8 text-gray-500 text-sm">
-        Swipe or Arrow Keys to Move
+    <!-- Mobile D-Pad Controls - 手機操作按鈕 -->
+    <div id="mobile-controls" class="hidden mt-6 w-full max-w-md px-4">
+        <div class="flex flex-col items-center gap-2">
+            <!-- Up Button -->
+            <button onclick="move(0)"
+                class="d-pad-btn w-20 h-20 bg-blue-900/50 border-2 border-blue-500/50 rounded-xl flex items-center justify-center text-3xl text-blue-400 active:bg-blue-600/50 active:scale-95 transition-all">
+                ▲
+            </button>
+            <!-- Left, Down, Right Row -->
+            <div class="flex gap-2">
+                <button onclick="move(3)"
+                    class="d-pad-btn w-20 h-20 bg-blue-900/50 border-2 border-blue-500/50 rounded-xl flex items-center justify-center text-3xl text-blue-400 active:bg-blue-600/50 active:scale-95 transition-all">
+                    ◀
+                </button>
+                <button onclick="move(2)"
+                    class="d-pad-btn w-20 h-20 bg-blue-900/50 border-2 border-blue-500/50 rounded-xl flex items-center justify-center text-3xl text-blue-400 active:bg-blue-600/50 active:scale-95 transition-all">
+                    ▼
+                </button>
+                <button onclick="move(1)"
+                    class="d-pad-btn w-20 h-20 bg-blue-900/50 border-2 border-blue-500/50 rounded-xl flex items-center justify-center text-3xl text-blue-400 active:bg-blue-600/50 active:scale-95 transition-all">
+                    ▶
+                </button>
+            </div>
+        </div>
+        <p class="text-center text-blue-400/50 text-xs mt-3">Tap buttons or swipe to move</p>
+    </div>
+
+    <div class="mt-4 text-gray-500 text-sm hidden md:block">
+        ⌨️ Arrow Keys to Move
     </div>
 
     <script>
         const container = document.getElementById('tile-container');
         const scoreDisplay = document.getElementById('score');
         const gameOverScreen = document.getElementById('game-over');
+        const mobileControls = document.getElementById('mobile-controls');
+
+        // 檢測觸控裝置並顯示 D-Pad
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+            mobileControls.classList.remove('hidden');
+            mobileControls.classList.add('flex', 'flex-col', 'items-center');
+        }
 
         const SIZE = 4;
         let grid = [];
