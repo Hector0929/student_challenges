@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ParentsMessageCard, ExchangeRateCard } from '../components/ChildDashboardWidgets';
+import { ExchangeRequestDialog } from '../components/ExchangeRequestDialog';
 
 import { Trophy, Star, Plus, X, Save, ChevronDown, ChevronUp, RefreshCw, Trash2 } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
@@ -9,6 +10,7 @@ import { RPGButton } from '../components/RPGButton';
 import { RewardTime } from '../components/RewardTime';
 import { LearningArea } from '../components/LearningArea';
 import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useStarBalance } from '../hooks/useQuests';
+import { useFamilySettings } from '../hooks/useFamilySettings';
 
 import { COMMON_EMOJIS, DAILY_QUEST_TARGET } from '../lib/constants';
 
@@ -42,6 +44,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
     const { data: starBalance } = useStarBalance(userId);
     const completeQuestMutation = useCompleteQuest();
     const createQuestMutation = useCreateQuest();
+    const { data: familySettings } = useFamilySettings();
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isQuestSectionCollapsed, setIsQuestSectionCollapsed] = useState(false);
@@ -51,6 +54,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
         title: '',
         icon: '👾',
     });
+    const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false);
 
     const questTarget = Math.max(0, progress.total_quests > 0 ? Math.min(progress.total_quests, DAILY_QUEST_TARGET) : DAILY_QUEST_TARGET);
     const isUnlocked = progress.completed_quests >= questTarget && progress.total_quests > 0;
@@ -333,6 +337,15 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                                 <div className="font-pixel text-lg text-yellow-600">
                                     {starBalance || 0}
                                 </div>
+                                {/* Exchange Button - only show if exchange rate is enabled */}
+                                {familySettings?.exchange_rate_enabled && (starBalance || 0) > 0 && (
+                                    <button
+                                        onClick={() => setIsExchangeDialogOpen(true)}
+                                        className="mt-2 px-2 py-1 bg-yellow-400 hover:bg-yellow-500 border-2 border-deep-black font-pixel text-xs transition-colors w-full"
+                                    >
+                                        💱 兒换
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </>
@@ -485,6 +498,12 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                     完成後將送出給爸爸媽媽審核喔！
                 </p>
             </RPGDialog>
+
+            {/* Exchange Request Dialog */}
+            <ExchangeRequestDialog
+                isOpen={isExchangeDialogOpen}
+                onClose={() => setIsExchangeDialogOpen(false)}
+            />
         </div >
     );
 };

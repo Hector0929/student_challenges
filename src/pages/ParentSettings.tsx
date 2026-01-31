@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Lock, Home, Coins, Plus, Minus, X } from 'lucide-react';
+import { Save, Lock, Home, Coins, Plus, Minus, X, MessageCircle, ArrowRightLeft } from 'lucide-react';
 import { RPGButton } from '../components/RPGButton';
+import { ToggleSwitch } from '../components/ToggleSwitch';
 import { useUser } from '../contexts/UserContext';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../types/database';
 import { useAdjustStars, useStarBalance } from '../hooks/useQuests';
+import { useFamilySettings, useUpdateFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
 import { useQuery } from '@tanstack/react-query';
 import { RPGDialog } from '../components/RPGDialog';
 
@@ -49,6 +51,14 @@ export const ParentSettings: React.FC = () => {
     const [adjustReason, setAdjustReason] = useState<string>('');
     const adjustStarsMutation = useAdjustStars();
 
+    // Family Settings
+    const { data: familySettings } = useFamilySettings();
+    const updateFamilySettingsMutation = useUpdateFamilySettings();
+    const [parentMessageEnabled, setParentMessageEnabled] = useState(false);
+    const [parentMessage, setParentMessage] = useState(DEFAULT_FAMILY_SETTINGS.parent_message);
+    const [exchangeRateEnabled, setExchangeRateEnabled] = useState(false);
+    const [starToTwdRate, setStarToTwdRate] = useState(DEFAULT_FAMILY_SETTINGS.star_to_twd_rate);
+
     // Fetch children
     const { data: children } = useQuery({
         queryKey: ['children'],
@@ -83,6 +93,16 @@ export const ParentSettings: React.FC = () => {
 
         fetchData();
     }, [user]);
+
+    // Sync family settings to local state
+    useEffect(() => {
+        if (familySettings) {
+            setParentMessageEnabled(familySettings.parent_message_enabled);
+            setParentMessage(familySettings.parent_message);
+            setExchangeRateEnabled(familySettings.exchange_rate_enabled);
+            setStarToTwdRate(familySettings.star_to_twd_rate);
+        }
+    }, [familySettings]);
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -122,6 +142,14 @@ export const ParentSettings: React.FC = () => {
             if (updatedUser) {
                 setUser(updatedUser);
             }
+
+            // Update Family Settings
+            await updateFamilySettingsMutation.mutateAsync({
+                parent_message_enabled: parentMessageEnabled,
+                parent_message: parentMessage,
+                exchange_rate_enabled: exchangeRateEnabled,
+                star_to_twd_rate: starToTwdRate,
+            });
 
             setMessage({ text: '設定已更新！', type: 'success' });
         } catch (error) {
@@ -210,6 +238,73 @@ export const ParentSettings: React.FC = () => {
                                 placeholder="例如：陳家大冒險"
                                 required
                             />
+                        </div>
+                    </div>
+
+                    {/* Parent Message & Exchange Rate Section */}
+                    <div className="border-b-2 border-dashed border-gray-300 pb-6">
+                        <h3 className="font-pixel text-lg mb-4 flex items-center gap-2">
+                            <div className="bg-purple-100 p-1 rounded text-purple-600">
+                                <MessageCircle size={20} />
+                            </div>
+                            訊息與匯率設定
+                        </h3>
+                        <div className="space-y-6">
+                            {/* Parent Message Toggle */}
+                            <div className="bg-white border-2 border-deep-black p-4 rounded-lg">
+                                <ToggleSwitch
+                                    enabled={parentMessageEnabled}
+                                    onChange={setParentMessageEnabled}
+                                    label="📢 父母叮囑"
+                                    description="在孩子的首頁顯示一段鼓勵的話"
+                                />
+                                {parentMessageEnabled && (
+                                    <div className="mt-4">
+                                        <textarea
+                                            value={parentMessage}
+                                            onChange={(e) => setParentMessage(e.target.value)}
+                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm resize-none"
+                                            rows={2}
+                                            placeholder="例如：今天也要加油嗎！"
+                                            maxLength={100}
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1 text-right">
+                                            {parentMessage.length}/100
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Exchange Rate Toggle */}
+                            <div className="bg-white border-2 border-deep-black p-4 rounded-lg">
+                                <ToggleSwitch
+                                    enabled={exchangeRateEnabled}
+                                    onChange={setExchangeRateEnabled}
+                                    label="💱 星幣匯率"
+                                    description="讓孩子知道星幣可以換成多少零用錢"
+                                />
+                                {exchangeRateEnabled && (
+                                    <div className="mt-4 flex items-center gap-3">
+                                        <div className="flex items-center gap-2 bg-yellow-100 px-3 py-2 border-2 border-deep-black">
+                                            <span className="text-xl">⭐</span>
+                                            <span className="font-pixel">1 星</span>
+                                        </div>
+                                        <ArrowRightLeft size={20} className="text-gray-400" />
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xl">💰</span>
+                                            <input
+                                                type="number"
+                                                value={starToTwdRate}
+                                                onChange={(e) => setStarToTwdRate(parseFloat(e.target.value) || 0)}
+                                                className="w-20 px-2 py-2 border-2 border-deep-black text-sm font-pixel text-center"
+                                                min="0.01"
+                                                step="0.01"
+                                            />
+                                            <span className="font-pixel text-sm">TWD</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 

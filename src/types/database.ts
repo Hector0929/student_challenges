@@ -8,6 +8,35 @@ export interface Family {
     created_at: string;
 }
 
+export interface FamilySettings {
+    id: string;
+    family_id: string;
+    parent_message_enabled: boolean;
+    parent_message: string;
+    exchange_rate_enabled: boolean;
+    star_to_twd_rate: number;
+    updated_at: string;
+    updated_by?: string;
+}
+
+export interface ExchangeRequest {
+    id: string;
+    child_id: string;
+    family_id: string;
+    star_amount: number;
+    twd_amount: number;
+    exchange_rate: number;
+    status: 'pending' | 'approved' | 'rejected';
+    reviewed_by?: string;
+    reviewed_at?: string;
+    reject_reason?: string;
+    created_at: string;
+}
+
+export interface ExchangeRequestWithChild extends ExchangeRequest {
+    profiles?: Profile; // The child who made the request
+}
+
 export interface Profile {
     id: string;
     role: 'parent' | 'child';

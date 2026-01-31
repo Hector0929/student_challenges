@@ -9,6 +9,7 @@ import { ParentApproval } from './pages/ParentApproval';
 import { ChildManagement } from './pages/ChildManagement';
 import { ParentSettings } from './pages/ParentSettings';
 import { DebugPage } from './pages/DebugPage';
+import { HomeButton } from './components/HomeButton';
 import { useRealtimeSubscription } from './hooks/useRealtime';
 import { LogOut, ArrowLeft, Lock } from 'lucide-react';
 import type { Profile } from './types/database';
@@ -223,6 +224,9 @@ function AppContent() {
           )}
         </>
       )}
+
+      {/* Global Home Button - visible when user is logged in */}
+      <HomeButton onClick={exitProfile} show={true} />
     </div>
   );
 }
