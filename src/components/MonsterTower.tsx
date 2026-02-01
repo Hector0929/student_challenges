@@ -152,8 +152,8 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                             <div
                                 key={monster.id}
                                 className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition-all ${monstersCollected.includes(monster.id)
-                                        ? 'border-yellow-400 bg-yellow-500/30 scale-110 shadow-lg shadow-yellow-500/30'
-                                        : 'border-gray-600 bg-gray-800/50 opacity-40'
+                                    ? 'border-yellow-400 bg-yellow-500/30 scale-110 shadow-lg shadow-yellow-500/30'
+                                    : 'border-gray-600 bg-gray-800/50 opacity-40'
                                     }`}
                             >
                                 <img
@@ -168,11 +168,11 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
 
                 {/* Game Board */}
                 <div className="flex-1 relative p-2 overflow-hidden" style={{ minHeight: '300px' }}>
-                    {/* Torch decorations */}
-                    <img src={GAME_ASSETS.torch} alt="torch" className="absolute left-0 top-8 w-10 h-16 object-contain opacity-90" />
-                    <img src={GAME_ASSETS.torch} alt="torch" className="absolute right-0 top-8 w-10 h-16 object-contain opacity-90 scale-x-[-1]" />
-                    <img src={GAME_ASSETS.torch} alt="torch" className="absolute left-0 bottom-16 w-10 h-16 object-contain opacity-90" />
-                    <img src={GAME_ASSETS.torch} alt="torch" className="absolute right-0 bottom-16 w-10 h-16 object-contain opacity-90 scale-x-[-1]" />
+                    {/* Torch decorations with flicker */}
+                    <img src={GAME_ASSETS.torch} alt="torch" className="absolute left-0 top-8 w-10 h-16 object-contain animate-torch-flicker" style={{ animationDelay: '0s' }} />
+                    <img src={GAME_ASSETS.torch} alt="torch" className="absolute right-0 top-8 w-10 h-16 object-contain animate-torch-flicker scale-x-[-1]" style={{ animationDelay: '0.2s' }} />
+                    <img src={GAME_ASSETS.torch} alt="torch" className="absolute left-0 bottom-16 w-10 h-16 object-contain animate-torch-flicker" style={{ animationDelay: '0.4s' }} />
+                    <img src={GAME_ASSETS.torch} alt="torch" className="absolute right-0 bottom-16 w-10 h-16 object-contain animate-torch-flicker scale-x-[-1]" style={{ animationDelay: '0.6s' }} />
 
                     {/* Grid of tiles */}
                     <div className="flex flex-col gap-1 px-10 py-2">
@@ -191,14 +191,12 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                                             className={`
                                                 relative w-9 h-9 rounded-md flex items-center justify-center
                                                 transition-all duration-300 overflow-hidden
-                                                ${isCurrentFloor ? 'scale-110 z-20' : ''}
+                                                ${isCurrentFloor ? 'animate-floor-glow z-20' : 'hover:scale-105'}
                                             `}
                                             style={{
                                                 backgroundImage: `url(${GAME_ASSETS.tile})`,
                                                 backgroundSize: 'cover',
-                                                boxShadow: isCurrentFloor
-                                                    ? '0 0 12px 4px rgba(251, 191, 36, 0.8), inset 0 0 8px rgba(255, 255, 255, 0.5)'
-                                                    : 'inset 0 -2px 4px rgba(0,0,0,0.3)'
+                                                boxShadow: !isCurrentFloor ? 'inset 0 -2px 4px rgba(0,0,0,0.3)' : undefined
                                             }}
                                         >
                                             {/* Content */}
@@ -206,29 +204,29 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                                                 <img
                                                     src={GAME_ASSETS.player}
                                                     alt="player"
-                                                    className="w-8 h-8 object-contain animate-bounce drop-shadow-lg"
+                                                    className="w-8 h-8 object-contain animate-player-hop drop-shadow-lg"
                                                 />
                                             ) : isLadder ? (
                                                 <img
                                                     src={GAME_ASSETS.ladder}
                                                     alt="ladder"
-                                                    className="w-7 h-7 object-contain"
+                                                    className="w-7 h-7 object-contain hover:scale-110 transition-transform"
                                                 />
                                             ) : isTrap ? (
                                                 <img
                                                     src={GAME_ASSETS.snake}
                                                     alt="snake"
-                                                    className="w-7 h-7 object-contain"
+                                                    className="w-7 h-7 object-contain hover:scale-110 transition-transform"
                                                 />
                                             ) : isEgg ? (
-                                                <span className="text-lg">🥚</span>
+                                                <span className="text-lg animate-star-twinkle">🥚</span>
                                             ) : (
                                                 <span className="font-bold text-amber-900 text-xs drop-shadow-sm">{floor}</span>
                                             )}
 
                                             {/* Target floor indicator */}
                                             {!isCurrentFloor && (isLadder || isTrap) && event?.target_floor && (
-                                                <div className={`absolute -bottom-0.5 text-[7px] px-1 rounded font-bold ${isLadder ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                                                <div className={`absolute -bottom-0.5 text-[7px] px-1 rounded font-bold animate-arrow-bounce ${isLadder ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
                                                     }`}>
                                                     →{event.target_floor}
                                                 </div>
@@ -248,12 +246,14 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                 {/* Action Bar */}
                 <div className="bg-gradient-to-t from-stone-900 via-stone-800 to-amber-900/50 p-3 border-t-4 border-amber-700">
                     <div className="flex items-center gap-4 mb-3">
-                        {/* Dice */}
+                        {/* Dice with 3D roll animation */}
                         <div className={`
                             w-16 h-16 rounded-xl bg-gradient-to-br from-white to-gray-200 flex items-center justify-center 
                             shadow-xl border-4 border-amber-500
-                            ${isRolling ? 'animate-spin' : ''}
-                        `}>
+                            ${isRolling ? 'animate-dice-roll' : rollResult ? 'animate-dice-shake' : ''}
+                        `}
+                            style={{ perspective: '1000px', transformStyle: 'preserve-3d' }}
+                        >
                             <span className="text-4xl">
                                 {['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][displayDice - 1] || '🎲'}
                             </span>
@@ -287,9 +287,9 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
 
                 {/* Event Popup */}
                 {showEvent && (
-                    <div className="absolute inset-0 bg-black/90 flex items-center justify-center p-4 z-30 animate-fade-in">
+                    <div className="absolute inset-0 bg-black/90 flex items-center justify-center p-4 z-30">
                         <div className={`
-                            rounded-2xl p-6 text-center max-w-xs border-4 shadow-2xl
+                            rounded-2xl p-6 text-center max-w-xs border-4 shadow-2xl animate-popup-in
                             ${showEvent.event_type === 'ladder'
                                 ? 'bg-gradient-to-br from-green-500 to-emerald-700 border-green-300'
                                 : showEvent.event_type === 'trap'
@@ -331,11 +331,11 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                 {/* Victory */}
                 {showVictory && (
                     <div className="absolute inset-0 bg-black/95 flex items-center justify-center p-4 z-40">
-                        <div className="text-center">
-                            <Sparkles className="mx-auto text-yellow-400 mb-3 animate-pulse" size={60} />
-                            <h2 className="font-pixel text-3xl text-yellow-400 mb-3 animate-bounce">🎉 恭喜攻頂！</h2>
+                        <div className="text-center animate-victory-burst">
+                            <Sparkles className="mx-auto text-yellow-400 mb-3 animate-star-twinkle" size={60} />
+                            <h2 className="font-pixel text-3xl text-yellow-400 mb-3">🎉 恭喜攻頂！</h2>
                             <p className="text-white mb-4 text-lg">成功登上怪獸塔第 100 層！</p>
-                            <img src={MONSTERS.rainbow_dragon.image} alt="Rainbow Dragon" className="w-36 h-36 mx-auto mb-6 animate-bounce drop-shadow-2xl" />
+                            <img src={MONSTERS.rainbow_dragon.image} alt="Rainbow Dragon" className="w-36 h-36 mx-auto mb-6 animate-player-hop drop-shadow-2xl" />
                             <RPGButton onClick={handleReset} variant="primary" className="text-lg">
                                 🔄 再次挑戰 (+5 骰子)
                             </RPGButton>
