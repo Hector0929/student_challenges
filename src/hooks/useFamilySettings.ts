@@ -82,4 +82,8 @@ export const DEFAULT_FAMILY_SETTINGS: Omit<FamilySettings, 'id' | 'family_id' | 
     parent_message: '完成今天的任務，就離夢想更近一步喔！',
     exchange_rate_enabled: false,
     star_to_twd_rate: 1.00,
+    // Game permissions - all enabled by default
+    fun_games_enabled: true,
+    learning_area_enabled: true,
+    disabled_games: [],
 };

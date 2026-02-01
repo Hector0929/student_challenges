@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Lock, Home, Coins, Plus, Minus, X, MessageCircle, ArrowRightLeft } from 'lucide-react';
+import { Save, Lock, Home, Coins, Plus, Minus, X, MessageCircle, ArrowRightLeft, Gamepad2, BookOpen } from 'lucide-react';
 import { RPGButton } from '../components/RPGButton';
 import { ToggleSwitch } from '../components/ToggleSwitch';
 import { useUser } from '../contexts/UserContext';
@@ -9,6 +9,32 @@ import { useAdjustStars, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings, useUpdateFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
 import { useQuery } from '@tanstack/react-query';
 import { RPGDialog } from '../components/RPGDialog';
+import { GAMES, type Game } from '../components/RewardTime';
+
+// Component for individual game toggle
+const GameToggleRow = ({
+    game,
+    isEnabled,
+    isDisabled,
+    onToggle
+}: {
+    game: Game;
+    isEnabled: boolean;
+    isDisabled: boolean;
+    onToggle: (gameId: string, enabled: boolean) => void;
+}) => (
+    <div className={`flex items-center justify-between bg-white border-2 border-gray-200 p-2 rounded-lg ${isDisabled ? 'opacity-50' : ''}`}>
+        <div className="flex items-center gap-2">
+            <span className="text-xl">{game.icon}</span>
+            <span className="font-pixel text-xs">{game.name}</span>
+        </div>
+        <ToggleSwitch
+            enabled={isEnabled}
+            onChange={(enabled) => onToggle(game.id, enabled)}
+            disabled={isDisabled}
+        />
+    </div>
+);
 
 const ChildStarRow = ({ child, onAdjust }: { child: Profile; onAdjust: (child: Profile) => void }) => {
     const { data: balance, isLoading } = useStarBalance(child.id);
@@ -59,6 +85,11 @@ export const ParentSettings: React.FC = () => {
     const [exchangeRateEnabled, setExchangeRateEnabled] = useState(false);
     const [starToTwdRate, setStarToTwdRate] = useState(DEFAULT_FAMILY_SETTINGS.star_to_twd_rate);
 
+    // Game Permission States
+    const [funGamesEnabled, setFunGamesEnabled] = useState(true);
+    const [learningAreaEnabled, setLearningAreaEnabled] = useState(true);
+    const [disabledGames, setDisabledGames] = useState<string[]>([]);
+
     // Fetch children
     const { data: children } = useQuery({
         queryKey: ['children'],
@@ -101,6 +132,10 @@ export const ParentSettings: React.FC = () => {
             setParentMessage(familySettings.parent_message);
             setExchangeRateEnabled(familySettings.exchange_rate_enabled);
             setStarToTwdRate(familySettings.star_to_twd_rate);
+            // Game permissions
+            setFunGamesEnabled(familySettings.fun_games_enabled ?? true);
+            setLearningAreaEnabled(familySettings.learning_area_enabled ?? true);
+            setDisabledGames(familySettings.disabled_games ?? []);
         }
     }, [familySettings]);
 
@@ -149,6 +184,10 @@ export const ParentSettings: React.FC = () => {
                 parent_message: parentMessage,
                 exchange_rate_enabled: exchangeRateEnabled,
                 star_to_twd_rate: starToTwdRate,
+                // Game permissions
+                fun_games_enabled: funGamesEnabled,
+                learning_area_enabled: learningAreaEnabled,
+                disabled_games: disabledGames,
             });
 
             setMessage({ text: '設定已更新！', type: 'success' });
@@ -327,6 +366,87 @@ export const ParentSettings: React.FC = () => {
                                     onAdjust={handleOpenAdjust}
                                 />
                             ))}
+                        </div>
+                    </div>
+
+                    {/* Game & Learning Management Section */}
+                    <div className="border-b-2 border-dashed border-gray-300 pb-6">
+                        <h3 className="font-pixel text-lg mb-4 flex items-center gap-2">
+                            <div className="bg-green-100 p-1 rounded text-green-600">
+                                <Gamepad2 size={20} />
+                            </div>
+                            遊戲與學習管理
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                            控制孩子可以玩的遊戲和使用的學習功能。
+                        </p>
+
+                        <div className="space-y-6">
+                            {/* Fun Games Section */}
+                            <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-lg">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Gamepad2 size={18} className="text-orange-600" />
+                                    <span className="font-pixel text-sm text-orange-800">獎勵遊戲</span>
+                                </div>
+                                <ToggleSwitch
+                                    enabled={funGamesEnabled}
+                                    onChange={setFunGamesEnabled}
+                                    label="🎮 開啟獎勵遊戲區"
+                                    description="關閉後，孩子將看不到獎勵時間區塊"
+                                />
+                                {funGamesEnabled && (
+                                    <div className="mt-4 grid grid-cols-2 gap-2">
+                                        {GAMES.filter(g => g.category === 'fun').map(game => (
+                                            <GameToggleRow
+                                                key={game.id}
+                                                game={game}
+                                                isEnabled={!disabledGames.includes(game.id)}
+                                                isDisabled={!funGamesEnabled}
+                                                onToggle={(gameId, enabled) => {
+                                                    if (enabled) {
+                                                        setDisabledGames(prev => prev.filter(id => id !== gameId));
+                                                    } else {
+                                                        setDisabledGames(prev => [...prev, gameId]);
+                                                    }
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Learning Area Section */}
+                            <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-lg">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <BookOpen size={18} className="text-blue-600" />
+                                    <span className="font-pixel text-sm text-blue-800">學習書桌</span>
+                                </div>
+                                <ToggleSwitch
+                                    enabled={learningAreaEnabled}
+                                    onChange={setLearningAreaEnabled}
+                                    label="📚 開啟學習書桌"
+                                    description="關閉後，孩子將看不到學習區塊"
+                                />
+                                {learningAreaEnabled && (
+                                    <div className="mt-4 grid grid-cols-2 gap-2">
+                                        {GAMES.filter(g => g.category === 'learning').map(game => (
+                                            <GameToggleRow
+                                                key={game.id}
+                                                game={game}
+                                                isEnabled={!disabledGames.includes(game.id)}
+                                                isDisabled={!learningAreaEnabled}
+                                                onToggle={(gameId, enabled) => {
+                                                    if (enabled) {
+                                                        setDisabledGames(prev => prev.filter(id => id !== gameId));
+                                                    } else {
+                                                        setDisabledGames(prev => [...prev, gameId]);
+                                                    }
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 

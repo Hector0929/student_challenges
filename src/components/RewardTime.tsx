@@ -3,6 +3,7 @@ import { Gamepad2, Lock, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { GameModal } from './GameModal';
 import { useStarBalance, useSpendStars } from '../hooks/useQuests';
 import { GAME_COST } from '../lib/constants';
+import { useFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
 
 interface RewardTimeProps {
     isUnlocked: boolean;
@@ -172,6 +173,16 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
     const { data: starBalance = 0, refetch: refetchBalance } = useStarBalance(userId);
     const spendStarsMutation = useSpendStars();
 
+    // Fetch family settings for game permissions
+    const { data: familySettings } = useFamilySettings();
+    const funGamesEnabled = familySettings?.fun_games_enabled ?? DEFAULT_FAMILY_SETTINGS.fun_games_enabled;
+    const disabledGames = familySettings?.disabled_games ?? DEFAULT_FAMILY_SETTINGS.disabled_games;
+
+    // Filter games based on settings
+    const availableFunGames = GAMES.filter(
+        g => g.category === 'fun' && !disabledGames.includes(g.id)
+    );
+
     const progressPercentage = totalQuests > 0 ? ((totalQuests - remainingQuests) / totalQuests) * 100 : 0;
 
     // Handle spending stars for a game
@@ -191,6 +202,11 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
             return false;
         }
     };
+
+    // If fun games are disabled by parent, don't show reward section at all
+    if (!funGamesEnabled) {
+        return null;
+    }
 
     if (!isUnlocked) {
         // Locked state
@@ -258,7 +274,7 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
 
                         {/* Game Cards Grid */}
                         <div className="grid grid-cols-2 gap-4">
-                            {GAMES.filter(g => g.category === 'fun').map((game) => (
+                            {availableFunGames.map((game) => (
                                 <button
                                     key={game.id}
                                     onClick={() => setSelectedGame(game)}

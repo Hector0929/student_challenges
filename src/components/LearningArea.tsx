@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { GameModal } from './GameModal';
 import { GAMES, type Game } from './RewardTime';
+import { useFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
 
 interface LearningAreaProps {
     userId: string;
@@ -11,8 +12,20 @@ export const LearningArea: React.FC<LearningAreaProps> = ({ userId }) => {
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
 
-    // Filter only learning games
-    const learningGames = GAMES.filter(game => game.category === 'learning');
+    // Fetch family settings for learning area permissions
+    const { data: familySettings } = useFamilySettings();
+    const learningAreaEnabled = familySettings?.learning_area_enabled ?? DEFAULT_FAMILY_SETTINGS.learning_area_enabled;
+    const disabledGames = familySettings?.disabled_games ?? DEFAULT_FAMILY_SETTINGS.disabled_games;
+
+    // Filter only learning games that are not disabled
+    const learningGames = GAMES.filter(
+        game => game.category === 'learning' && !disabledGames.includes(game.id)
+    );
+
+    // If learning area is disabled by parent, don't show at all
+    if (!learningAreaEnabled) {
+        return null;
+    }
 
     return (
         <div className="rpg-dialog mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 animate-bounce-in">

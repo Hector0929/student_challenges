@@ -15,6 +15,10 @@ export interface FamilySettings {
     parent_message: string;
     exchange_rate_enabled: boolean;
     star_to_twd_rate: number;
+    // Game permission controls
+    fun_games_enabled: boolean;
+    learning_area_enabled: boolean;
+    disabled_games: string[];  // Array of disabled game IDs
     updated_at: string;
     updated_by?: string;
 }
