@@ -31,7 +31,7 @@ export const ParentsMessageCard: React.FC<ParentsMessageCardProps> = ({
                     <MessageCircle size={12} />
                     父母的叮嚀
                 </h3>
-                <p className="font-pixel text-sm md:text-base leading-relaxed text-deep-black">
+                <p className="font-pixel text-base md:text-lg leading-relaxed text-deep-black font-medium">
                     {displayMessage}
                 </p>
             </div>
@@ -64,7 +64,7 @@ export const ExchangeRateCard: React.FC<ExchangeRateCardProps> = ({
         <div className="bg-yellow-400 border-4 border-deep-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between animate-bounce-in h-full">
             <div className="flex items-center gap-2">
                 <span className="text-2xl filter drop-shadow-md">⭐</span>
-                <span className="font-pixel text-xl font-bold">1</span>
+                <span className="font-mono text-2xl font-bold">1</span>
             </div>
 
             <ArrowRight size={20} className="text-deep-black" />
@@ -72,8 +72,8 @@ export const ExchangeRateCard: React.FC<ExchangeRateCardProps> = ({
             <div className="flex items-center gap-2">
                 <span className="text-2xl filter drop-shadow-md">💰</span>
                 <div className="flex flex-col items-end">
-                    <span className="font-pixel text-xl font-bold">{displayRate}</span>
-                    <span className="font-pixel text-[10px] uppercase">{currency}</span>
+                    <span className="font-mono text-2xl font-bold">{displayRate}</span>
+                    <span className="font-mono text-xs font-bold uppercase">{currency}</span>
                 </div>
             </div>
         </div>

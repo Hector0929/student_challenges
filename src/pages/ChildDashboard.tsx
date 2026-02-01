@@ -334,16 +334,16 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                             <div className="bg-white border-2 border-deep-black p-3 text-center">
                                 <div className="text-2xl mb-1">⭐</div>
                                 <div className="font-pixel text-xs text-gray-600">可用星幣</div>
-                                <div className="font-pixel text-lg text-yellow-600">
+                                <div className="font-mono text-xl font-bold text-yellow-600">
                                     {starBalance || 0}
                                 </div>
                                 {/* Exchange Button - only show if exchange rate is enabled */}
                                 {familySettings?.exchange_rate_enabled && (starBalance || 0) > 0 && (
                                     <button
                                         onClick={() => setIsExchangeDialogOpen(true)}
-                                        className="mt-2 px-2 py-1 bg-yellow-400 hover:bg-yellow-500 border-2 border-deep-black font-pixel text-xs transition-colors w-full"
+                                        className="mt-2 px-2 py-1 bg-yellow-400 hover:bg-yellow-500 border-2 border-deep-black font-pixel text-sm font-bold transition-colors w-full"
                                     >
-                                        💱 兒换
+                                        💱 兌換
                                     </button>
                                 )}
                             </div>

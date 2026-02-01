@@ -80,11 +80,11 @@ export const QuestCard: React.FC<QuestCardProps> = ({
 
                 {/* Quest Info */}
                 <div className="flex-1">
-                    <h3 className="text-sm font-pixel mb-2 leading-relaxed">
+                    <h3 className="text-base md:text-lg font-pixel mb-1 leading-relaxed font-bold">
                         {quest.title}
                     </h3>
                     {quest.description && (
-                        <p className="text-xs text-gray-600 leading-relaxed">
+                        <p className="text-xs text-gray-600 leading-relaxed font-pixel">
                             {quest.description}
                         </p>
                     )}
@@ -92,9 +92,9 @@ export const QuestCard: React.FC<QuestCardProps> = ({
 
                 {/* Reward Badge */}
                 <div className="flex-shrink-0">
-                    <div className="bg-yellow-400 border-2 border-deep-black px-3 py-2 text-center">
-                        <div className="text-xs font-pixel">⭐</div>
-                        <div className="text-xs font-pixel">{quest.reward_points}</div>
+                    <div className="bg-yellow-400 border-2 border-deep-black px-3 py-2 text-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        <div className="text-xs font-pixel mb-1">⭐</div>
+                        <div className="text-sm font-mono font-bold">{quest.reward_points}</div>
                     </div>
                 </div>
             </div>
@@ -102,9 +102,9 @@ export const QuestCard: React.FC<QuestCardProps> = ({
             {/* Completion Status */}
             {status === 'completed' && (
                 <div className="mt-3 pt-3 border-t-2 border-deep-black">
-                    <div className="inline-flex items-center gap-2 bg-orange-100 border-2 border-deep-black px-3 py-1">
+                    <div className="inline-flex items-center gap-1 bg-orange-100 border-2 border-deep-black px-3 py-1">
                         <span className="text-sm">⏰</span>
-                        <span className="text-xs font-pixel text-orange-600">等待家長審核</span>
+                        <span className="text-xs font-pixel text-orange-600 font-bold">等待家長審核</span>
                     </div>
                 </div>
             )}
@@ -112,7 +112,7 @@ export const QuestCard: React.FC<QuestCardProps> = ({
                 <div className="mt-3 pt-3 border-t-2 border-deep-black">
                     <div className="flex items-center justify-center gap-2">
                         <span className="text-lg">✅</span>
-                        <span className="text-xs font-pixel text-hp-green">已完成！</span>
+                        <span className="text-xs font-pixel text-hp-green font-bold">已完成！</span>
                     </div>
                 </div>
             )}

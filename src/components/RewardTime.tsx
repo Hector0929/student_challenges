@@ -199,8 +199,8 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
                 <div className="text-center py-8">
                     <Lock className="mx-auto mb-4 text-gray-400" size={48} />
                     <h3 className="font-pixel text-lg mb-2 text-gray-600">🔒 獎勵時間（未解鎖）</h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                        還差 <span className="font-pixel text-pokeball-red text-lg">{remainingQuests}</span> 個任務就能玩遊戲囉！
+                    <p className="text-base text-gray-700 mb-4">
+                        還差 <span className="font-mono text-pokeball-red text-2xl font-bold">{remainingQuests}</span> 個任務就能玩遊戲囉！
                     </p>
                     <div className="max-w-md mx-auto">
                         <div className="w-full bg-gray-200 border-2 border-deep-black h-6 relative">
@@ -208,7 +208,7 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
                                 className="bg-gradient-to-r from-yellow-400 to-pokeball-red h-full transition-all duration-500"
                                 style={{ width: `${progressPercentage}%` }}
                             />
-                            <span className="absolute inset-0 flex items-center justify-center font-pixel text-xs">
+                            <span className="absolute inset-0 flex items-center justify-center font-mono text-sm font-bold text-white drop-shadow-md">
                                 {Math.round(progressPercentage)}%
                             </span>
                         </div>
@@ -251,8 +251,8 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
                             {/* Star Balance Display */}
                             <div className="mt-4 inline-flex items-center gap-2 bg-yellow-100 border-2 border-yellow-400 rounded-full px-4 py-2">
                                 <Star className="text-yellow-500" fill="currentColor" size={20} />
-                                <span className="font-pixel text-lg text-yellow-700">{starBalance}</span>
-                                <span className="text-xs text-yellow-600">可用星幣</span>
+                                <span className="font-mono text-2xl font-bold text-yellow-700">{starBalance}</span>
+                                <span className="text-sm font-pixel font-bold text-yellow-700">可用星幣</span>
                             </div>
                         </div>
 
@@ -268,9 +268,9 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
                                     <div className="font-pixel text-sm text-white mb-1">{game.name}</div>
                                     <div className="text-xs text-white opacity-90">{game.description}</div>
                                     {/* Cost badge */}
-                                    <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 rounded-full px-2 py-1 text-xs font-bold flex items-center gap-1">
+                                    <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 rounded-full px-2 py-1 text-xs font-bold flex items-center gap-1 shadow-sm">
                                         <Star size={12} fill="currentColor" />
-                                        {GAME_COST}
+                                        <span className="font-mono">{GAME_COST}</span>
                                     </div>
                                 </button>
                             ))}

@@ -19,7 +19,7 @@ export const RPGButton = ({
     className = '',
     form,
 }: RPGButtonProps) => {
-    const baseStyles = 'px-6 py-3 font-pixel text-sm border-4 border-deep-black transition-all btn-press disabled:opacity-50 disabled:cursor-not-allowed';
+    const baseStyles = 'px-6 py-3 font-pixel text-base font-bold border-4 border-deep-black transition-all btn-press disabled:opacity-50 disabled:cursor-not-allowed';
 
     const variantStyles = {
         primary: 'bg-pokeball-red text-white hover:bg-red-600',
