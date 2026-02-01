@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Dices, Trophy, Sparkles, X, ArrowUp, ArrowDown } from 'lucide-react';
+import { Dices, Trophy, Sparkles, X, ArrowUp, ArrowDown, Move } from 'lucide-react';
 import { useTowerProgress, useTowerEvents, useRollDice, useResetTower, MONSTERS, GAME_ASSETS, type MonsterId } from '../hooks/useTowerProgress';
 import { RPGButton } from './RPGButton';
 import type { TowerEvent } from '../types/database';
@@ -18,21 +18,19 @@ const getZoneInfo = (floor: number) => {
     return { name: '☁️ 雲端天空', monster: 'thunder_cloud' as MonsterId, color: 'from-purple-500 to-indigo-600' };
 };
 
-// Grid layout: 5 columns x 5 rows (fewer rows for more spacing)
+// Grid layout for FULL 100 floors
 const COLS = 5;
-const ROWS = 5;
-const TILE_SIZE = 44;  // Tile size
-const COL_GAP = 4;     // Horizontal gap
-const ROW_GAP = 20;    // Vertical gap - INCREASED for connector visibility
+const ROWS = 20;  // 5 columns x 20 rows = 100 floors
+const TILE_SIZE = 44;
+const COL_GAP = 4;
+const ROW_GAP = 16;
 
-// Generate S-path grid
-const generateGridRows = (centerFloor: number): number[][] => {
+// Generate FULL S-path grid for all 100 floors
+const generateFullGrid = (): number[][] => {
     const rows: number[][] = [];
-    const pageStart = Math.floor((centerFloor - 1) / 25) * 25 + 1; // 25 tiles per page (5x5)
-    const pageEnd = Math.min(pageStart + 24, 100);
 
     for (let rowIdx = 0; rowIdx < ROWS; rowIdx++) {
-        const rowEndFloor = pageEnd - (rowIdx * COLS);
+        const rowEndFloor = 100 - (rowIdx * COLS);
         const isReversed = rowIdx % 2 === 1;
 
         const row: number[] = [];
@@ -40,7 +38,7 @@ const generateGridRows = (centerFloor: number): number[][] => {
             const floor = isReversed
                 ? rowEndFloor - (COLS - 1) + col
                 : rowEndFloor - col;
-            if (floor >= pageStart && floor <= pageEnd && floor >= 1) {
+            if (floor >= 1 && floor <= 100) {
                 row.push(floor);
             }
         }
@@ -51,18 +49,25 @@ const generateGridRows = (centerFloor: number): number[][] => {
 };
 
 // Get tile position on grid
-const getTilePosition = (floor: number, gridRows: number[][]): { x: number; y: number } | null => {
-    for (let row = 0; row < gridRows.length; row++) {
-        const col = gridRows[row].indexOf(floor);
-        if (col !== -1) {
-            return {
-                x: col * (TILE_SIZE + COL_GAP) + TILE_SIZE / 2,
-                y: row * (TILE_SIZE + ROW_GAP) + TILE_SIZE / 2
-            };
-        }
+const getTilePosition = (floor: number): { x: number; y: number } => {
+    const rowIdx = Math.floor((100 - floor) / COLS);
+    const isReversed = rowIdx % 2 === 1;
+    let col: number;
+
+    if (isReversed) {
+        col = (floor - 1) % COLS;
+    } else {
+        col = (COLS - 1) - ((floor - 1) % COLS);
     }
-    return null;
+
+    return {
+        x: col * (TILE_SIZE + COL_GAP) + TILE_SIZE / 2,
+        y: rowIdx * (TILE_SIZE + ROW_GAP) + TILE_SIZE / 2
+    };
 };
+
+// Pre-generate the full grid
+const FULL_GRID = generateFullGrid();
 
 export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onClose }) => {
     const { data: progress, isLoading } = useTowerProgress(userId);
@@ -77,13 +82,97 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
     const [showVictory, setShowVictory] = useState(false);
     const [displayDice, setDisplayDice] = useState<number>(1);
     const [animatingFloor, setAnimatingFloor] = useState<number | null>(null);
-    const previousFloorRef = useRef<number>(1);
+
+    // Drag scrolling state
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [scrollStart, setScrollStart] = useState({ x: 0, y: 0 });
 
     const currentFloor = progress?.current_floor || 1;
     const diceCount = progress?.dice_count || 0;
 
     const eventMap = new Map(events.map(e => [e.floor_number, e]));
-    const gridRows = generateGridRows(currentFloor);
+
+    // Calculate board dimensions
+    const boardWidth = COLS * TILE_SIZE + (COLS - 1) * COL_GAP;
+    const boardHeight = ROWS * TILE_SIZE + (ROWS - 1) * ROW_GAP;
+
+    // Scroll to player position
+    const scrollToPlayer = useCallback((floor: number, smooth = true) => {
+        if (!scrollContainerRef.current) return;
+
+        const pos = getTilePosition(floor);
+        const container = scrollContainerRef.current;
+        const containerHeight = container.clientHeight;
+
+        const targetScrollTop = pos.y - containerHeight / 2;
+
+        container.scrollTo({
+            top: Math.max(0, targetScrollTop),
+            behavior: smooth ? 'smooth' : 'auto'
+        });
+    }, []);
+
+    // Scroll to player on initial load
+    useEffect(() => {
+        if (!isLoading && scrollContainerRef.current) {
+            setTimeout(() => scrollToPlayer(currentFloor, false), 100);
+        }
+    }, [isLoading, currentFloor, scrollToPlayer]);
+
+    // Mouse drag handlers
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (isRolling || isMoving) return;
+        setIsDragging(true);
+        setDragStart({ x: e.clientX, y: e.clientY });
+        setScrollStart({
+            x: scrollContainerRef.current?.scrollLeft || 0,
+            y: scrollContainerRef.current?.scrollTop || 0
+        });
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging || !scrollContainerRef.current) return;
+        e.preventDefault();
+
+        const dx = e.clientX - dragStart.x;
+        const dy = e.clientY - dragStart.y;
+
+        scrollContainerRef.current.scrollLeft = scrollStart.x - dx;
+        scrollContainerRef.current.scrollTop = scrollStart.y - dy;
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    // Touch drag handlers
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (isRolling || isMoving) return;
+        const touch = e.touches[0];
+        setIsDragging(true);
+        setDragStart({ x: touch.clientX, y: touch.clientY });
+        setScrollStart({
+            x: scrollContainerRef.current?.scrollLeft || 0,
+            y: scrollContainerRef.current?.scrollTop || 0
+        });
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging || !scrollContainerRef.current) return;
+
+        const touch = e.touches[0];
+        const dx = touch.clientX - dragStart.x;
+        const dy = touch.clientY - dragStart.y;
+
+        scrollContainerRef.current.scrollLeft = scrollStart.x - dx;
+        scrollContainerRef.current.scrollTop = scrollStart.y - dy;
+    };
+
+    const handleTouchEnd = () => {
+        setIsDragging(false);
+    };
 
     // Step-by-step movement animation
     const animateMovement = useCallback(async (fromFloor: number, toFloor: number, onComplete: () => void) => {
@@ -95,22 +184,21 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
         for (let i = 0; i <= steps; i++) {
             const stepFloor = fromFloor + (i * direction);
             setAnimatingFloor(stepFloor);
-            await new Promise(resolve => setTimeout(resolve, 250));
+            scrollToPlayer(stepFloor, true);
+            await new Promise(resolve => setTimeout(resolve, 300));
         }
 
         setIsMoving(false);
         setAnimatingFloor(null);
         onComplete();
-    }, []);
-
-    useEffect(() => {
-        if (!isMoving && currentFloor !== previousFloorRef.current) {
-            previousFloorRef.current = currentFloor;
-        }
-    }, [currentFloor, isMoving]);
+    }, [scrollToPlayer]);
 
     const handleRoll = useCallback(async () => {
         if (diceCount <= 0 || isRolling || isMoving) return;
+
+        // First, scroll to player position smoothly
+        scrollToPlayer(currentFloor, true);
+        await new Promise(resolve => setTimeout(resolve, 400)); // Wait for scroll
 
         setIsRolling(true);
         setRollResult(null);
@@ -131,6 +219,7 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
 
             const intermediateFloor = Math.min(startFloor + result.roll, 100);
 
+            // Animate movement step by step
             animateMovement(startFloor, intermediateFloor, () => {
                 if (result.event) {
                     setTimeout(() => setShowEvent(result.event), 400);
@@ -144,11 +233,12 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
             console.error('Roll failed:', error);
             setIsRolling(false);
         }
-    }, [diceCount, isRolling, isMoving, rollDiceMutation, userId, currentFloor, animateMovement]);
+    }, [diceCount, isRolling, isMoving, rollDiceMutation, userId, currentFloor, animateMovement, scrollToPlayer]);
 
     const handleReset = async () => {
         await resetTowerMutation.mutateAsync({ userId });
         setShowVictory(false);
+        setTimeout(() => scrollToPlayer(1, true), 300);
     };
 
     if (!isOpen) return null;
@@ -157,17 +247,12 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
     const zoneMonster = MONSTERS[zone.monster];
     const displayFloor = animatingFloor ?? currentFloor;
 
-    // Calculate board dimensions with larger row gap
-    const boardWidth = COLS * TILE_SIZE + (COLS - 1) * COL_GAP;
-    const boardHeight = ROWS * TILE_SIZE + (ROWS - 1) * ROW_GAP;
-
     // Generate SVG ladder/snake connectors
     const connectorLines = events
         .filter(e => e.target_floor && (e.event_type === 'ladder' || e.event_type === 'trap'))
         .map(event => {
-            const fromPos = getTilePosition(event.floor_number, gridRows);
-            const toPos = getTilePosition(event.target_floor!, gridRows);
-            if (!fromPos || !toPos) return null;
+            const fromPos = getTilePosition(event.floor_number);
+            const toPos = getTilePosition(event.target_floor!);
 
             return {
                 id: event.id,
@@ -175,8 +260,7 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                 from: fromPos,
                 to: toPos
             };
-        })
-        .filter(Boolean);
+        });
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -187,7 +271,7 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                 className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-amber-600"
                 style={{
                     width: '340px',
-                    maxHeight: '90vh',
+                    height: 'min(90vh, 700px)',
                     background: 'linear-gradient(180deg, #5d3a1a 0%, #3d2510 50%, #2d1a0a 100%)',
                     display: 'flex',
                     flexDirection: 'column'
@@ -221,17 +305,37 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                             {displayFloor}/100
                         </span>
                     </div>
+
+                    {/* Drag hint */}
+                    <div className="flex items-center justify-center gap-1 mt-1 text-white/60 text-xs">
+                        <Move size={12} />
+                        <span>拖曳瀏覽地圖</span>
+                    </div>
                 </div>
 
-                {/* Game Board - Scrollable if needed */}
+                {/* Scrollable Game Board with Drag Support */}
                 <div
-                    className="flex-1 overflow-auto flex items-center justify-center p-4"
-                    style={{ minHeight: '0' }}
+                    ref={scrollContainerRef}
+                    className={`flex-1 overflow-auto p-4 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                    style={{
+                        minHeight: 0,
+                        scrollBehavior: isDragging ? 'auto' : 'smooth'
+                    }}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
                 >
                     {/* Board Container with SVG overlay */}
-                    <div className="relative" style={{ width: boardWidth, height: boardHeight }}>
+                    <div
+                        className="relative mx-auto"
+                        style={{ width: boardWidth, height: boardHeight }}
+                    >
 
-                        {/* SVG Layer for Ladder/Snake Connectors - BEHIND tiles */}
+                        {/* SVG Layer for Ladder/Snake Connectors */}
                         <svg
                             className="absolute inset-0 pointer-events-none z-0"
                             width={boardWidth}
@@ -239,7 +343,6 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                             style={{ overflow: 'visible' }}
                         >
                             {connectorLines.map((line) => {
-                                if (!line) return null;
                                 const isLadder = line.type === 'ladder';
                                 return (
                                     <g key={line.id}>
@@ -268,8 +371,8 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                                             />
                                         )}
                                         {/* Rungs for ladder */}
-                                        {isLadder && Array.from({ length: 4 }).map((_, i) => {
-                                            const t = (i + 1) / 5;
+                                        {isLadder && Array.from({ length: Math.min(6, Math.abs(line.from.y - line.to.y) / 30) }).map((_, i, arr) => {
+                                            const t = (i + 1) / (arr.length + 1);
                                             const x = line.from.x + (line.to.x - line.from.x) * t;
                                             const y = line.from.y + (line.to.y - line.from.y) * t;
                                             const angle = Math.atan2(line.to.y - line.from.y, line.to.x - line.from.x) + Math.PI / 2;
@@ -287,7 +390,7 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                                                 />
                                             );
                                         })}
-                                        {/* Snake wave pattern */}
+                                        {/* Snake markers */}
                                         {!isLadder && (
                                             <>
                                                 <circle cx={line.from.x} cy={line.from.y} r={6} fill="#ef4444" />
@@ -299,7 +402,7 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                             })}
                         </svg>
 
-                        {/* Tiles Grid - ABOVE SVG */}
+                        {/* Tiles Grid */}
                         <div
                             className="relative z-10"
                             style={{
@@ -309,12 +412,13 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                                 rowGap: `${ROW_GAP}px`
                             }}
                         >
-                            {gridRows.flat().map((floor) => {
+                            {FULL_GRID.flat().map((floor) => {
                                 const isCurrentFloor = floor === displayFloor;
                                 const event = eventMap.get(floor);
                                 const isLadder = event?.event_type === 'ladder';
                                 const isTrap = event?.event_type === 'trap';
                                 const isEgg = event?.event_type === 'egg';
+                                const floorZone = getZoneInfo(floor);
 
                                 return (
                                     <div
@@ -357,6 +461,14 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                                             </div>
                                         ) : isEgg ? (
                                             <span className="text-xl animate-star-twinkle">🥚</span>
+                                        ) : floor % 25 === 0 ? (
+                                            // Zone milestone markers
+                                            <div className="relative w-full h-full flex items-center justify-center">
+                                                <span className="font-bold text-amber-900 text-sm">{floor}</span>
+                                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] bg-amber-600 text-white px-1 rounded">
+                                                    {floorZone.name.split(' ')[0]}
+                                                </div>
+                                            </div>
                                         ) : (
                                             <span className="font-bold text-amber-900 text-sm drop-shadow-sm">{floor}</span>
                                         )}
@@ -371,7 +483,7 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                     </div>
                 </div>
 
-                {/* Action Bar - Always visible at bottom */}
+                {/* Action Bar */}
                 <div className="bg-gradient-to-t from-stone-900 via-stone-800 to-amber-900/50 p-4 border-t-4 border-amber-700 flex-shrink-0">
                     <div className="flex items-center gap-4 mb-3">
                         {/* Dice Display */}
