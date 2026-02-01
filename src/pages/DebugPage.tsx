@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useDailyLogs, useStarBalance } from '../hooks/useQuests';
-import { RefreshCw, Play, PlusCircle, Wrench } from 'lucide-react';
+import { RefreshCw, Play, PlusCircle, Wrench, Dices } from 'lucide-react';
 import { GAMES, type Game } from '../components/RewardTime';
 import { GameModal } from '../components/GameModal';
+import { MonsterTower, TowerPreview } from '../components/MonsterTower';
+import { useTowerProgress, useAddDice } from '../hooks/useTowerProgress';
 import { useUser } from '../contexts/UserContext';
 import { supabase } from '../lib/supabase';
 import type { DailyLog } from '../types/database';
@@ -19,7 +21,12 @@ export const DebugPage: React.FC = () => {
 
     // QA State
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-    const [activeTab, setActiveTab] = useState<'games' | 'logs'>('games');
+    const [activeTab, setActiveTab] = useState<'games' | 'logs' | 'tower'>('games');
+    const [isTowerOpen, setIsTowerOpen] = useState(false);
+
+    // Tower data
+    const { data: towerProgress, refetch: refetchTower } = useTowerProgress(user?.id || '');
+    const addDiceMutation = useAddDice();
 
     // Add Stars Mutation (Quick Hack for QA)
     const addStars = async (amount: number) => {
@@ -94,6 +101,13 @@ export const DebugPage: React.FC = () => {
                             }`}
                     >
                         📋 每日任務紀錄
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('tower')}
+                        className={`px-4 py-2 font-pixel rounded-lg transition-colors ${activeTab === 'tower' ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 border border-gray-300'
+                            }`}
+                    >
+                        🏰 怪獸塔
                     </button>
                     <button
                         onClick={() => { refetch(); refetchBalance(); }}
@@ -227,6 +241,90 @@ export const DebugPage: React.FC = () => {
                     starBalance={99999} // Unlimited balance for testing
                     onSpendStars={async () => true} // Always succeed
                     onRefreshBalance={refetchBalance}
+                />
+            )}
+
+            {/* Tower Tab Content */}
+            {activeTab === 'tower' && user && (
+                <div className="space-y-4">
+                    {/* Tower Preview Card */}
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                        <h3 className="font-pixel text-lg mb-3 flex items-center gap-2">
+                            🏰 怪獸塔預覽
+                        </h3>
+                        <TowerPreview userId={user.id} onClick={() => setIsTowerOpen(true)} />
+                    </div>
+
+                    {/* Tower Stats */}
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                        <h3 className="font-pixel text-lg mb-3">📊 塔樓狀態</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
+                                <p className="text-xs text-amber-600">目前樓層</p>
+                                <p className="font-pixel text-2xl text-amber-800">{towerProgress?.current_floor || 1}</p>
+                            </div>
+                            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                                <p className="text-xs text-yellow-600">可用骰子</p>
+                                <p className="font-pixel text-2xl text-yellow-800">{towerProgress?.dice_count || 0} 🎲</p>
+                            </div>
+                            <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                                <p className="text-xs text-purple-600">怪獸收集</p>
+                                <p className="font-pixel text-2xl text-purple-800">{towerProgress?.monsters_collected?.length || 0}/4</p>
+                            </div>
+                            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                                <p className="text-xs text-green-600">最高紀錄</p>
+                                <p className="font-pixel text-2xl text-green-800">{towerProgress?.highest_floor || 1} 層</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* QA Controls */}
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                        <h3 className="font-pixel text-lg mb-3 flex items-center gap-2">
+                            <Dices size={20} /> QA 工具 - 骰子控制
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                onClick={async () => {
+                                    await addDiceMutation.mutateAsync({ userId: user.id, amount: 1 });
+                                    refetchTower();
+                                }}
+                                className="px-4 py-2 bg-green-100 text-green-700 rounded-lg border border-green-300 hover:bg-green-200 flex items-center gap-2"
+                            >
+                                <PlusCircle size={16} /> +1 骰子
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    await addDiceMutation.mutateAsync({ userId: user.id, amount: 10 });
+                                    refetchTower();
+                                }}
+                                className="px-4 py-2 bg-green-100 text-green-700 rounded-lg border border-green-300 hover:bg-green-200 flex items-center gap-2"
+                            >
+                                <PlusCircle size={16} /> +10 骰子
+                            </button>
+                            <button
+                                onClick={() => setIsTowerOpen(true)}
+                                className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 flex items-center gap-2"
+                            >
+                                🏰 開啟怪獸塔
+                            </button>
+                            <button
+                                onClick={() => refetchTower()}
+                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-2"
+                            >
+                                <RefreshCw size={16} /> 重新整理
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Monster Tower Modal */}
+            {user && (
+                <MonsterTower
+                    userId={user.id}
+                    isOpen={isTowerOpen}
+                    onClose={() => setIsTowerOpen(false)}
                 />
             )}
         </div>
