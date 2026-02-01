@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Dices, Trophy, Sparkles, X } from 'lucide-react';
-import { useTowerProgress, useTowerEvents, useRollDice, useResetTower, MONSTERS, type MonsterId } from '../hooks/useTowerProgress';
+import { useTowerProgress, useTowerEvents, useRollDice, useResetTower, MONSTERS, GAME_ASSETS, type MonsterId } from '../hooks/useTowerProgress';
 import { RPGButton } from './RPGButton';
 import type { TowerEvent } from '../types/database';
 
@@ -12,33 +12,30 @@ interface MonsterTowerProps {
 
 // Zone info
 const getZoneInfo = (floor: number) => {
-    if (floor <= 25) return { name: '🌲 森林入口', monster: 'slime' as MonsterId };
-    if (floor <= 50) return { name: '💎 水晶洞穴', monster: 'water_spirit' as MonsterId };
-    if (floor <= 75) return { name: '🔥 熔岩地帶', monster: 'flame_bird' as MonsterId };
-    return { name: '☁️ 雲端天空', monster: 'thunder_cloud' as MonsterId };
+    if (floor <= 25) return { name: '🌲 森林入口', monster: 'slime' as MonsterId, color: 'from-green-600 to-emerald-700' };
+    if (floor <= 50) return { name: '💎 水晶洞穴', monster: 'water_spirit' as MonsterId, color: 'from-blue-600 to-cyan-700' };
+    if (floor <= 75) return { name: '🔥 熔岩地帶', monster: 'flame_bird' as MonsterId, color: 'from-orange-500 to-red-600' };
+    return { name: '☁️ 雲端天空', monster: 'thunder_cloud' as MonsterId, color: 'from-purple-500 to-indigo-600' };
 };
 
-// Generate S-path: returns array of rows, each row has 8 tiles
-// Row 0 is TOP (highest floors), last row is BOTTOM (lowest floors)
-const generateVisibleTiles = (centerFloor: number): number[][] => {
+// Generate S-path grid (蛇梯棋風格)
+const generateGridRows = (centerFloor: number): number[][] => {
     const COLS = 8;
     const ROWS = 5;
     const rows: number[][] = [];
 
-    // Calculate which "page" we're on (each page shows 40 floors)
     const pageStart = Math.floor((centerFloor - 1) / 40) * 40 + 1;
     const pageEnd = Math.min(pageStart + 39, 100);
 
-    // Build rows from top (high floors) to bottom (low floors)
     for (let rowIdx = 0; rowIdx < ROWS; rowIdx++) {
-        const rowStartFloor = pageEnd - (rowIdx * COLS);
-        const isReversed = rowIdx % 2 === 1; // Odd rows go left-to-right
+        const rowEndFloor = pageEnd - (rowIdx * COLS);
+        const isReversed = rowIdx % 2 === 1;
 
         const row: number[] = [];
         for (let col = 0; col < COLS; col++) {
             const floor = isReversed
-                ? rowStartFloor - (COLS - 1) + col
-                : rowStartFloor - col;
+                ? rowEndFloor - (COLS - 1) + col
+                : rowEndFloor - col;
             if (floor >= pageStart && floor <= pageEnd && floor >= 1) {
                 row.push(floor);
             }
@@ -65,13 +62,9 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
     const diceCount = progress?.dice_count || 0;
     const monstersCollected = progress?.monsters_collected || [];
 
-    // Create event map
     const eventMap = new Map(events.map(e => [e.floor_number, e]));
+    const gridRows = generateGridRows(currentFloor);
 
-    // Generate visible grid
-    const gridRows = generateVisibleTiles(currentFloor);
-
-    // Handle dice roll
     const handleRoll = useCallback(async () => {
         if (diceCount <= 0 || isRolling) return;
 
@@ -116,37 +109,38 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2">
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/85" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/90" onClick={onClose} />
 
-            {/* Main Container */}
-            <div className="relative w-full max-w-md bg-gradient-to-b from-amber-900 via-amber-800 to-stone-900 rounded-2xl overflow-hidden shadow-2xl border-4 border-amber-700 max-h-[95vh] flex flex-col">
+            <div className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl border-4 border-amber-600 max-h-[95vh] flex flex-col"
+                style={{ background: 'linear-gradient(180deg, #5d3a1a 0%, #3d2510 50%, #2d1a0a 100%)' }}>
 
-                {/* Header with progress */}
-                <div className="bg-gradient-to-r from-amber-700 to-orange-700 p-3 border-b-4 border-amber-900">
+                {/* Header */}
+                <div className={`bg-gradient-to-r ${zone.color} p-3 border-b-4 border-amber-900`}>
                     <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center gap-2">
-                            <img src={zoneMonster.image} alt={zoneMonster.name} className="w-10 h-10 object-contain" />
+                            <img src={zoneMonster.image} alt={zoneMonster.name} className="w-12 h-12 object-contain drop-shadow-lg" />
                             <div>
-                                <h2 className="font-pixel text-white text-base">🏰 怪獸塔</h2>
-                                <p className="text-xs text-amber-200">{zone.name}</p>
+                                <h2 className="font-pixel text-white text-lg drop-shadow-md">🏰 怪獸塔</h2>
+                                <p className="text-xs text-white/80">{zone.name}</p>
                             </div>
                         </div>
-                        <button onClick={onClose} className="p-1 hover:bg-black/30 rounded-full">
-                            <X className="text-white" size={20} />
+                        <button onClick={onClose} className="p-2 hover:bg-black/30 rounded-full transition-colors">
+                            <X className="text-white" size={22} />
                         </button>
                     </div>
 
                     {/* Progress bar */}
-                    <div className="bg-amber-950/50 rounded-full p-1">
-                        <div className="flex items-center gap-1">
-                            <div className="flex-1 h-3 bg-amber-950 rounded-full overflow-hidden">
+                    <div className="bg-black/30 rounded-full p-1">
+                        <div className="flex items-center gap-2">
+                            <div className="flex-1 h-4 bg-black/50 rounded-full overflow-hidden border border-amber-400/50">
                                 <div
-                                    className="h-full bg-gradient-to-r from-yellow-400 to-amber-500 transition-all duration-500"
+                                    className="h-full bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-500 transition-all duration-700 relative"
                                     style={{ width: `${currentFloor}%` }}
-                                />
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent" />
+                                </div>
                             </div>
-                            <span className="text-white font-bold text-sm min-w-[50px] text-right">
+                            <span className="text-white font-bold text-sm bg-black/40 px-2 py-0.5 rounded">
                                 {currentFloor}/100
                             </span>
                         </div>
@@ -157,53 +151,31 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                         {Object.values(MONSTERS).slice(0, 4).map(monster => (
                             <div
                                 key={monster.id}
-                                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${monstersCollected.includes(monster.id)
-                                        ? 'border-yellow-400 bg-yellow-500/30 scale-110'
-                                        : 'border-amber-700 bg-amber-900/50 opacity-50'
+                                className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition-all ${monstersCollected.includes(monster.id)
+                                        ? 'border-yellow-400 bg-yellow-500/30 scale-110 shadow-lg shadow-yellow-500/30'
+                                        : 'border-gray-600 bg-gray-800/50 opacity-40'
                                     }`}
                             >
                                 <img
                                     src={monster.image}
                                     alt={monster.name}
-                                    className={`w-6 h-6 object-contain ${!monstersCollected.includes(monster.id) ? 'grayscale' : ''}`}
+                                    className={`w-8 h-8 object-contain ${!monstersCollected.includes(monster.id) ? 'grayscale' : ''}`}
                                 />
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Game Board - Brick Wall Style */}
-                <div
-                    className="flex-1 relative p-2 overflow-hidden"
-                    style={{
-                        backgroundImage: `
-                            linear-gradient(to bottom, rgba(120,53,15,0.3), rgba(68,32,8,0.5)),
-                            repeating-linear-gradient(
-                                0deg,
-                                transparent,
-                                transparent 46px,
-                                rgba(0,0,0,0.2) 46px,
-                                rgba(0,0,0,0.2) 48px
-                            ),
-                            repeating-linear-gradient(
-                                90deg,
-                                rgba(180,83,9,0.3),
-                                rgba(180,83,9,0.3) 48px,
-                                rgba(146,64,14,0.3) 48px,
-                                rgba(146,64,14,0.3) 96px
-                            )
-                        `,
-                        backgroundColor: '#78350f'
-                    }}
-                >
-                    {/* Side decorations - torches */}
-                    <div className="absolute left-1 top-1/4 text-2xl animate-pulse">🔥</div>
-                    <div className="absolute right-1 top-1/4 text-2xl animate-pulse">🔥</div>
-                    <div className="absolute left-1 top-2/3 text-2xl animate-pulse">🔥</div>
-                    <div className="absolute right-1 top-2/3 text-2xl animate-pulse">🔥</div>
+                {/* Game Board */}
+                <div className="flex-1 relative p-2 overflow-hidden" style={{ minHeight: '300px' }}>
+                    {/* Torch decorations */}
+                    <img src={GAME_ASSETS.torch} alt="torch" className="absolute left-0 top-8 w-10 h-16 object-contain opacity-90" />
+                    <img src={GAME_ASSETS.torch} alt="torch" className="absolute right-0 top-8 w-10 h-16 object-contain opacity-90 scale-x-[-1]" />
+                    <img src={GAME_ASSETS.torch} alt="torch" className="absolute left-0 bottom-16 w-10 h-16 object-contain opacity-90" />
+                    <img src={GAME_ASSETS.torch} alt="torch" className="absolute right-0 bottom-16 w-10 h-16 object-contain opacity-90 scale-x-[-1]" />
 
                     {/* Grid of tiles */}
-                    <div className="flex flex-col gap-1 px-6">
+                    <div className="flex flex-col gap-1 px-10 py-2">
                         {gridRows.map((row, rowIndex) => (
                             <div key={rowIndex} className="flex justify-center gap-1">
                                 {row.map((floor) => {
@@ -212,52 +184,58 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                                     const isLadder = event?.event_type === 'ladder';
                                     const isTrap = event?.event_type === 'trap';
                                     const isEgg = event?.event_type === 'egg';
-                                    const targetFloor = event?.target_floor;
 
                                     return (
                                         <div
                                             key={floor}
                                             className={`
-                                                relative w-9 h-9 rounded-md flex flex-col items-center justify-center
-                                                text-xs font-bold transition-all duration-300
-                                                ${isCurrentFloor
-                                                    ? 'bg-gradient-to-br from-yellow-300 to-amber-400 shadow-lg shadow-yellow-500/50 scale-110 z-10 ring-2 ring-white'
-                                                    : 'bg-gradient-to-br from-amber-200 to-amber-300 hover:from-amber-100 hover:to-amber-200'
-                                                }
-                                                border-b-2 border-r-2 border-amber-600
+                                                relative w-9 h-9 rounded-md flex items-center justify-center
+                                                transition-all duration-300 overflow-hidden
+                                                ${isCurrentFloor ? 'scale-110 z-20' : ''}
                                             `}
                                             style={{
-                                                boxShadow: isCurrentFloor ? undefined : 'inset 0 -2px 4px rgba(0,0,0,0.2)'
+                                                backgroundImage: `url(${GAME_ASSETS.tile})`,
+                                                backgroundSize: 'cover',
+                                                boxShadow: isCurrentFloor
+                                                    ? '0 0 12px 4px rgba(251, 191, 36, 0.8), inset 0 0 8px rgba(255, 255, 255, 0.5)'
+                                                    : 'inset 0 -2px 4px rgba(0,0,0,0.3)'
                                             }}
                                         >
-                                            {/* Floor number or player */}
+                                            {/* Content */}
                                             {isCurrentFloor ? (
-                                                <div className="text-lg animate-bounce">👤</div>
+                                                <img
+                                                    src={GAME_ASSETS.player}
+                                                    alt="player"
+                                                    className="w-8 h-8 object-contain animate-bounce drop-shadow-lg"
+                                                />
+                                            ) : isLadder ? (
+                                                <img
+                                                    src={GAME_ASSETS.ladder}
+                                                    alt="ladder"
+                                                    className="w-7 h-7 object-contain"
+                                                />
+                                            ) : isTrap ? (
+                                                <img
+                                                    src={GAME_ASSETS.snake}
+                                                    alt="snake"
+                                                    className="w-7 h-7 object-contain"
+                                                />
+                                            ) : isEgg ? (
+                                                <span className="text-lg">🥚</span>
                                             ) : (
-                                                <span className="text-amber-800">{floor}</span>
+                                                <span className="font-bold text-amber-900 text-xs drop-shadow-sm">{floor}</span>
                                             )}
 
-                                            {/* Event indicator */}
-                                            {!isCurrentFloor && isLadder && (
-                                                <div className="absolute -top-1 -right-1 text-xs">⬆️</div>
-                                            )}
-                                            {!isCurrentFloor && isTrap && (
-                                                <div className="absolute -top-1 -right-1 text-xs">⬇️</div>
-                                            )}
-                                            {!isCurrentFloor && isEgg && (
-                                                <div className="absolute -top-1 -right-1 text-xs">🥚</div>
-                                            )}
-
-                                            {/* Ladder/Trap target indicator */}
-                                            {!isCurrentFloor && (isLadder || isTrap) && targetFloor && (
-                                                <div className={`absolute -bottom-0.5 text-[8px] font-normal ${isLadder ? 'text-green-700' : 'text-red-700'}`}>
-                                                    →{targetFloor}
+                                            {/* Target floor indicator */}
+                                            {!isCurrentFloor && (isLadder || isTrap) && event?.target_floor && (
+                                                <div className={`absolute -bottom-0.5 text-[7px] px-1 rounded font-bold ${isLadder ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                                                    }`}>
+                                                    →{event.target_floor}
                                                 </div>
                                             )}
 
-                                            {/* Floor 100 crown */}
-                                            {floor === 100 && (
-                                                <Trophy className="absolute -top-2 left-1/2 -translate-x-1/2 text-yellow-600" size={12} />
+                                            {floor === 100 && !isCurrentFloor && (
+                                                <Trophy className="absolute -top-1 left-1/2 -translate-x-1/2 text-yellow-500" size={12} />
                                             )}
                                         </div>
                                     );
@@ -265,42 +243,30 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                             </div>
                         ))}
                     </div>
-
-                    {/* Rope/connection visual hints */}
-                    <div className="absolute inset-x-8 top-12 bottom-12 pointer-events-none">
-                        {/* Decorative ropes on sides */}
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600 opacity-50"
-                            style={{ backgroundSize: '100% 20px', backgroundImage: 'repeating-linear-gradient(to bottom, #d97706 0px, #fbbf24 10px, #d97706 20px)' }} />
-                        <div className="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-600 via-amber-400 to-amber-600 opacity-50"
-                            style={{ backgroundSize: '100% 20px', backgroundImage: 'repeating-linear-gradient(to bottom, #d97706 0px, #fbbf24 10px, #d97706 20px)' }} />
-                    </div>
                 </div>
 
-                {/* Action Bar - Dice Area */}
-                <div className="bg-gradient-to-t from-stone-900 to-amber-900 p-3 border-t-4 border-amber-700">
-                    <div className="flex items-center gap-3 mb-3">
-                        {/* Dice Display */}
+                {/* Action Bar */}
+                <div className="bg-gradient-to-t from-stone-900 via-stone-800 to-amber-900/50 p-3 border-t-4 border-amber-700">
+                    <div className="flex items-center gap-4 mb-3">
+                        {/* Dice */}
                         <div className={`
-                            w-16 h-16 rounded-xl bg-white flex items-center justify-center 
-                            shadow-xl border-4 border-amber-600
-                            ${isRolling ? 'animate-bounce' : ''}
+                            w-16 h-16 rounded-xl bg-gradient-to-br from-white to-gray-200 flex items-center justify-center 
+                            shadow-xl border-4 border-amber-500
+                            ${isRolling ? 'animate-spin' : ''}
                         `}>
                             <span className="text-4xl">
-                                {isRolling ? ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][displayDice - 1] :
-                                    rollResult ? ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][rollResult - 1] : '🎲'}
+                                {['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][displayDice - 1] || '🎲'}
                             </span>
                         </div>
 
                         <div className="flex-1">
-                            <div className="flex items-center gap-2 text-lg">
-                                <Dices className="text-yellow-400" size={24} />
-                                <span className="font-bold text-yellow-400">×{diceCount}</span>
-                                <span className="text-amber-300 text-sm">顆骰子</span>
+                            <div className="flex items-center gap-2">
+                                <Dices className="text-yellow-400" size={22} />
+                                <span className="font-bold text-2xl text-yellow-400">×{diceCount}</span>
                             </div>
+                            <p className="text-amber-300 text-sm">可用骰子</p>
                             {rollResult && !isRolling && (
-                                <p className="text-green-400 text-sm animate-pulse">
-                                    擲出 {rollResult} 點！前進中...
-                                </p>
+                                <p className="text-green-400 font-bold animate-pulse">+{rollResult} 步！</p>
                             )}
                         </div>
                     </div>
@@ -308,49 +274,55 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                     <RPGButton
                         onClick={handleRoll}
                         disabled={diceCount <= 0 || isRolling}
-                        className="w-full"
+                        className="w-full text-lg"
                         variant={diceCount > 0 ? 'primary' : 'secondary'}
                     >
                         {isRolling ? '🎲 擲骰中...' : diceCount > 0 ? '🎲 擲骰子！' : '完成任務獲得骰子'}
                     </RPGButton>
 
-                    <p className="text-xs text-amber-400/70 text-center mt-2">
+                    <p className="text-xs text-amber-500/80 text-center mt-2">
                         💡 完成每日任務 = 獲得 1 顆骰子
                     </p>
                 </div>
 
                 {/* Event Popup */}
                 {showEvent && (
-                    <div className="absolute inset-0 bg-black/90 flex items-center justify-center p-4 z-30">
+                    <div className="absolute inset-0 bg-black/90 flex items-center justify-center p-4 z-30 animate-fade-in">
                         <div className={`
-                            rounded-2xl p-5 text-center max-w-xs border-4 shadow-2xl
+                            rounded-2xl p-6 text-center max-w-xs border-4 shadow-2xl
                             ${showEvent.event_type === 'ladder'
-                                ? 'bg-gradient-to-br from-green-600 to-emerald-700 border-green-400'
+                                ? 'bg-gradient-to-br from-green-500 to-emerald-700 border-green-300'
                                 : showEvent.event_type === 'trap'
-                                    ? 'bg-gradient-to-br from-red-600 to-rose-700 border-red-400'
-                                    : 'bg-gradient-to-br from-purple-600 to-violet-700 border-purple-400'
+                                    ? 'bg-gradient-to-br from-red-500 to-rose-700 border-red-300'
+                                    : 'bg-gradient-to-br from-purple-500 to-violet-700 border-purple-300'
                             }
                         `}>
-                            <div className="text-5xl mb-3">
-                                {showEvent.event_type === 'ladder' && '⬆️🪜'}
-                                {showEvent.event_type === 'trap' && '⬇️🕳️'}
-                                {showEvent.event_type === 'egg' && '🥚✨'}
+                            <div className="mb-3">
+                                {showEvent.event_type === 'ladder' && (
+                                    <img src={GAME_ASSETS.ladder} alt="ladder" className="w-20 h-20 mx-auto" />
+                                )}
+                                {showEvent.event_type === 'trap' && (
+                                    <img src={GAME_ASSETS.snake} alt="snake" className="w-20 h-20 mx-auto" />
+                                )}
+                                {showEvent.event_type === 'egg' && (
+                                    <span className="text-6xl">🥚✨</span>
+                                )}
                             </div>
-                            <h3 className="font-pixel text-xl text-white mb-2">
+                            <h3 className="font-pixel text-2xl text-white mb-2 drop-shadow-lg">
                                 {showEvent.event_type === 'ladder' && '發現捷徑！'}
-                                {showEvent.event_type === 'trap' && '踩到陷阱！'}
-                                {showEvent.event_type === 'egg' && '怪獸蛋！'}
+                                {showEvent.event_type === 'trap' && '哎呀滑倒了！'}
+                                {showEvent.event_type === 'egg' && '獲得怪獸蛋！'}
                             </h3>
-                            <p className="text-white/90 mb-3 text-sm">{showEvent.description}</p>
+                            <p className="text-white/90 mb-4">{showEvent.description}</p>
                             {showEvent.monster_id && MONSTERS[showEvent.monster_id as MonsterId] && (
                                 <img
                                     src={MONSTERS[showEvent.monster_id as MonsterId].image}
                                     alt="monster"
-                                    className="w-16 h-16 mx-auto mb-3 animate-bounce"
+                                    className="w-20 h-20 mx-auto mb-4 animate-bounce drop-shadow-lg"
                                 />
                             )}
                             <RPGButton onClick={() => setShowEvent(null)} variant="primary">
-                                繼續！
+                                繼續冒險！
                             </RPGButton>
                         </div>
                     </div>
@@ -360,22 +332,22 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                 {showVictory && (
                     <div className="absolute inset-0 bg-black/95 flex items-center justify-center p-4 z-40">
                         <div className="text-center">
-                            <Sparkles className="mx-auto text-yellow-400 mb-3" size={50} />
-                            <h2 className="font-pixel text-2xl text-yellow-400 mb-2">🎉 恭喜攻頂！</h2>
-                            <img src={MONSTERS.rainbow_dragon.image} alt="Rainbow Dragon" className="w-28 h-28 mx-auto mb-4 animate-bounce" />
-                            <RPGButton onClick={handleReset} variant="primary">
+                            <Sparkles className="mx-auto text-yellow-400 mb-3 animate-pulse" size={60} />
+                            <h2 className="font-pixel text-3xl text-yellow-400 mb-3 animate-bounce">🎉 恭喜攻頂！</h2>
+                            <p className="text-white mb-4 text-lg">成功登上怪獸塔第 100 層！</p>
+                            <img src={MONSTERS.rainbow_dragon.image} alt="Rainbow Dragon" className="w-36 h-36 mx-auto mb-6 animate-bounce drop-shadow-2xl" />
+                            <RPGButton onClick={handleReset} variant="primary" className="text-lg">
                                 🔄 再次挑戰 (+5 骰子)
                             </RPGButton>
                         </div>
                     </div>
                 )}
 
-                {/* Loading */}
                 {isLoading && (
                     <div className="absolute inset-0 bg-amber-900/95 flex items-center justify-center z-50">
                         <div className="text-center">
-                            <div className="text-4xl animate-bounce mb-2">🏰</div>
-                            <p className="text-amber-200 animate-pulse">載入中...</p>
+                            <div className="text-5xl animate-bounce mb-3">🏰</div>
+                            <p className="text-amber-200 font-pixel text-lg animate-pulse">載入中...</p>
                         </div>
                     </div>
                 )}
@@ -384,7 +356,7 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
     );
 };
 
-// Dashboard Preview Card
+// Dashboard Preview
 export const TowerPreview: React.FC<{ userId: string; onClick: () => void }> = ({ userId, onClick }) => {
     const { data: progress } = useTowerProgress(userId);
 
@@ -396,27 +368,29 @@ export const TowerPreview: React.FC<{ userId: string; onClick: () => void }> = (
     return (
         <button
             onClick={onClick}
-            className="w-full bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 rounded-xl p-4 border-2 border-amber-400/50 shadow-xl hover:scale-[1.02] hover:shadow-2xl transition-all text-left group"
+            className={`w-full bg-gradient-to-r ${zone.color} rounded-xl p-4 border-2 border-white/30 shadow-xl hover:scale-[1.02] hover:shadow-2xl transition-all text-left group`}
         >
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className="relative">
-                        <img src={zoneMonster.image} alt={zoneMonster.name} className="w-12 h-12 object-contain group-hover:scale-110 transition-transform" />
+                        <img src={zoneMonster.image} alt={zoneMonster.name} className="w-14 h-14 object-contain group-hover:scale-110 transition-transform drop-shadow-lg" />
                         {diceCount > 0 && (
-                            <div className="absolute -top-1 -right-1 bg-yellow-400 text-amber-900 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold animate-pulse">
+                            <div className="absolute -top-1 -right-1 bg-yellow-400 text-amber-900 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold border-2 border-white animate-pulse">
                                 {diceCount}
                             </div>
                         )}
                     </div>
                     <div>
-                        <h3 className="font-pixel text-white text-lg">🏰 怪獸塔</h3>
-                        <p className="text-amber-200 text-sm">{zone.name}</p>
+                        <h3 className="font-pixel text-white text-lg drop-shadow-md flex items-center gap-2">
+                            🏰 怪獸塔
+                        </h3>
+                        <p className="text-white/80 text-sm">{zone.name}</p>
                     </div>
                 </div>
                 <div className="text-right">
-                    <div className="text-2xl font-bold text-white">{currentFloor}<span className="text-sm opacity-70">/100</span></div>
-                    <div className="w-16 h-2 bg-amber-900 rounded-full overflow-hidden">
-                        <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${currentFloor}%` }} />
+                    <div className="text-3xl font-bold text-white drop-shadow-lg">{currentFloor}<span className="text-lg opacity-70">/100</span></div>
+                    <div className="w-20 h-3 bg-black/30 rounded-full overflow-hidden mt-1">
+                        <div className="h-full bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full" style={{ width: `${currentFloor}%` }} />
                     </div>
                 </div>
             </div>

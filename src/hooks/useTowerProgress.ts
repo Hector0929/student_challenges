@@ -195,21 +195,21 @@ export const useResetTower = () => {
     });
 };
 
-// Monster info helper
+// Monster info helper - using new generated pixel art assets
 export const MONSTERS = {
     slime: {
         id: 'slime',
         name: '小綠球',
         emoji: '🟢',
-        image: '/images/monsters/slime.png',
+        image: '/images/monsters/slime_new.png',
         zone: '森林入口',
         unlockFloor: 25,
     },
     water_spirit: {
         id: 'water_spirit',
-        name: '水滴精',
+        name: '水晶精靈',
         emoji: '🔵',
-        image: '/images/monsters/water_spirit.png',
+        image: '/images/monsters/crystal.png',
         zone: '水晶洞穴',
         unlockFloor: 50,
     },
@@ -217,7 +217,7 @@ export const MONSTERS = {
         id: 'flame_bird',
         name: '火焰鳥',
         emoji: '🟠',
-        image: '/images/monsters/flame_bird.png',
+        image: '/images/monsters/fire.png',
         zone: '熔岩地帶',
         unlockFloor: 75,
     },
@@ -225,7 +225,7 @@ export const MONSTERS = {
         id: 'thunder_cloud',
         name: '雷雲君',
         emoji: '🟣',
-        image: '/images/monsters/thunder_cloud.png',
+        image: '/images/monsters/thunder.png',
         zone: '雲端天空',
         unlockFloor: 100,
     },
@@ -233,10 +233,19 @@ export const MONSTERS = {
         id: 'rainbow_dragon',
         name: '彩虹龍',
         emoji: '🌈',
-        image: '/images/monsters/rainbow_dragon.png',
+        image: '/images/monsters/dragon.png',
         zone: '塔頂',
         unlockFloor: 100, // Special unlock
     },
 };
 
 export type MonsterId = keyof typeof MONSTERS;
+
+// Game assets paths
+export const GAME_ASSETS = {
+    tile: '/images/monsters/tile.png',
+    ladder: '/images/monsters/ladder_new.png',
+    snake: '/images/monsters/snake.png',
+    player: '/images/monsters/player.png',
+    torch: '/images/monsters/torch.png',
+};
