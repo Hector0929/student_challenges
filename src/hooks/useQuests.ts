@@ -272,7 +272,7 @@ export const useCompleteQuest = () => {
 
             return data;
         },
-        onSuccess: (data, variables) => {
+        onSuccess: async (data, variables) => {
             console.log('🎉 Mutation onSuccess:', {
                 userId: variables.userId.substring(0, 8) + '...',
                 questId: variables.questId.substring(0, 8) + '...',
@@ -289,6 +289,48 @@ export const useCompleteQuest = () => {
                 queryKey: ['total_points'],
                 refetchType: 'all'
             });
+
+            // 🎲 Award dice for Monster Tower (only if not skipped)
+            if (!(data as { _skipped?: boolean })?._skipped) {
+                try {
+                    // Check if tower_progress exists for this user
+                    const { data: progress, error: checkError } = await supabase
+                        .from('tower_progress')
+                        .select('dice_count')
+                        .eq('user_id', variables.userId)
+                        .single();
+
+                    if (checkError && checkError.code === 'PGRST116') {
+                        // No record exists, create one with 1 dice
+                        await supabase
+                            .from('tower_progress')
+                            .insert({
+                                user_id: variables.userId,
+                                current_floor: 1,
+                                dice_count: 1,
+                                monsters_collected: [],
+                                total_climbs: 0,
+                                highest_floor: 1,
+                            });
+                        console.log('🎲 Created tower_progress with 1 dice');
+                    } else if (progress) {
+                        // Update existing record
+                        await supabase
+                            .from('tower_progress')
+                            .update({ dice_count: (progress.dice_count || 0) + 1 })
+                            .eq('user_id', variables.userId);
+                        console.log('🎲 Added 1 dice, new count:', (progress.dice_count || 0) + 1);
+                    }
+
+                    // Invalidate tower progress cache
+                    queryClient.invalidateQueries({
+                        queryKey: ['tower-progress', variables.userId],
+                        refetchType: 'all'
+                    });
+                } catch (diceError) {
+                    console.warn('⚠️ Failed to award dice (tower table may not exist):', diceError);
+                }
+            }
 
             console.log('🔄 Cache invalidated, queries should refetch');
         },
