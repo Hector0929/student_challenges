@@ -14,7 +14,6 @@
             overflow: hidden;
             touch-action: none;
             perspective: 1000px;
-            /* 確保視窗不會超出 */
             max-height: 100vh;
             max-height: 100dvh;
         }
@@ -57,18 +56,36 @@
 
         .card-back {
             background: #0f172a;
-            /* Slate 900 */
             color: #22d3ee;
         }
 
         .card-front {
             background: #0891b2;
-            /* Cyan 600 */
             color: white;
             transform: rotateY(180deg);
             border-color: #ec4899;
-            /* Pink border when revealed */
             box-shadow: 0 0 20px rgba(236, 72, 153, 0.5);
+        }
+
+        .matched .card-front {
+            border-color: #10b981;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        }
+
+        /* Responsive card sizing */
+        @media (max-height: 700px) {
+            .card-face {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Level badge styling */
+        .level-badge {
+            background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            margin-left: 4px;
         }
     </style>
 </head>
@@ -76,14 +93,17 @@
 <body class="h-screen flex flex-col items-center justify-center p-4 overflow-hidden">
 
     <!-- Header -->
-    <div class="w-full max-w-lg flex justify-between items-center mb-8">
+    <div class="w-full max-w-lg flex justify-between items-center mb-6">
         <div>
             <div class="text-cyan-400 text-xs tracking-widest">LEVEL</div>
-            <div id="level-display" class="text-2xl text-white font-bold">1</div>
+            <div class="flex items-baseline gap-1">
+                <span id="level-display" class="text-2xl text-white font-bold">1</span>
+                <span id="cycle-badge" class="level-badge text-white hidden">Cycle 2</span>
+            </div>
         </div>
         <div class="text-center">
             <h1
-                class="text-2xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 font-bold neon-text">
+                class="text-xl sm:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 font-bold neon-text">
                 MEMORY MATRIX
             </h1>
         </div>
@@ -93,17 +113,24 @@
         </div>
     </div>
 
-    <!-- Grid Container - 限制最大尺寸防止溢出 -->
-    <div id="game-grid" class="grid gap-2 w-full max-w-sm mx-auto" style="max-height: 60vh;">
-        <!-- Cards injected by JS -->
+    <!-- Score Display -->
+    <div class="w-full max-w-lg flex justify-center gap-4 mb-4">
+        <div class="bg-slate-800/50 px-4 py-1 rounded-full border border-cyan-500/30">
+            <span class="text-cyan-400 text-xs">PAIRS</span>
+            <span id="pairs-display" class="text-white font-bold ml-2">0/3</span>
+        </div>
     </div>
+
+    <!-- Grid Container -->
+    <div id="game-grid" class="grid gap-2 w-full max-w-sm mx-auto" style="max-height: 55vh;"></div>
 
     <!-- Start / Game Over Overlay -->
     <div id="overlay" class="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
-        <div class="text-center">
+        <div class="text-center px-4">
             <div class="text-6xl mb-6">🧠</div>
-            <h2 id="overlay-title" class="text-4xl font-bold text-white mb-4">READY?</h2>
-            <p id="overlay-msg" class="text-cyan-200 mb-8">Memorize the matrix.</p>
+            <h2 id="overlay-title" class="text-3xl sm:text-4xl font-bold text-white mb-4">READY?</h2>
+            <p id="overlay-msg" class="text-cyan-200 mb-2">記住圖案的位置！</p>
+            <p id="overlay-sub" class="text-cyan-400/70 text-sm mb-8">找出所有配對的卡片</p>
             <button onclick="startGame()"
                 class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-12 rounded-full shadow-lg shadow-cyan-500/50 transition-all hover:scale-105">
                 START
@@ -116,60 +143,123 @@
         const overlay = document.getElementById('overlay');
         const timeDisplay = document.getElementById('time-display');
         const levelDisplay = document.getElementById('level-display');
+        const pairsDisplay = document.getElementById('pairs-display');
+        const cycleBadge = document.getElementById('cycle-badge');
 
-        const ICONS = ['🚀', '👾', '💎', '🥝', '🎸', '🧬', '🔮', '🧸', '🌈', '🍕', '🐱', '🦄', '⭐', '🔥', '⚡', '❄️'];
+        // Extended icon set for more variety across cycles
+        const ICON_SETS = [
+            ['🚀', '👾', '💎', '🥝', '🎸', '🧬', '🔮', '🧸', '🌈', '🍕'],
+            ['🐱', '🦄', '⭐', '🔥', '⚡', '❄️', '🎯', '🎨', '🎭', '🎪'],
+            ['🌸', '🌺', '🌻', '🍀', '🌙', '☀️', '🌊', '⛰️', '🏝️', '🌵'],
+            ['🦋', '🐝', '🐞', '🦎', '🐙', '🦀', '🦈', '🐬', '🦩', '🦚'],
+            ['🍎', '🍊', '🍋', '🍇', '🍓', '🥑', '🍩', '🍪', '🧁', '🍰']
+        ];
+
+        // Flatten all icons for use
+        const ALL_ICONS = ICON_SETS.flat();
 
         let state = {
             level: 1,
+            cycle: 1, // Cycle number (restarts card count but with new icons)
             timeLeft: 60,
-            cards: [], // { id, icon, flipped, matched }
+            cards: [],
             firstCard: null,
             isLocked: false,
             timer: null,
-            cols: 3,
-            rows: 2
+            cols: 4,
+            rows: 2,
+            matchedPairs: 0,
+            totalPairs: 0
         };
 
+        // Layout progression with visual balance in mind
+        // Max is 5x4 (20 cards = 10 pairs), then cycle restarts
         function getLayout(level) {
-            // 限制關卡數，避免格子太多超出螢幕
-            // Level 1: 2x3 (6 cards, 3 pairs)
-            // Level 2: 3x4 (12 cards, 6 pairs)
-            // Level 3: 4x4 (16 cards, 8 pairs) - 最大
-            if (level === 1) return { rows: 3, cols: 2, time: 30 };
-            if (level === 2) return { rows: 4, cols: 3, time: 45 };
-            return { rows: 4, cols: 4, time: 60 }; // Level 3+ 固定 4x4
+            const layouts = [
+                { rows: 2, cols: 4, time: 25, pairs: 4 },   // Level 1: 2x4 = 8 cards (4 pairs) - 更寬的佈局
+                { rows: 3, cols: 4, time: 35, pairs: 6 },   // Level 2: 3x4 = 12 cards (6 pairs)
+                { rows: 4, cols: 4, time: 45, pairs: 8 },   // Level 3: 4x4 = 16 cards (8 pairs)
+                { rows: 4, cols: 5, time: 55, pairs: 10 },  // Level 4: 4x5 = 20 cards (10 pairs) - MAX
+                { rows: 4, cols: 5, time: 50, pairs: 10 },  // Level 5+: 維持 4x5，時間稍減
+            ];
+
+            // After level 4, keep max layout but cycle with different icons
+            if (level <= 4) {
+                return layouts[level - 1];
+            } else {
+                // Level 5+: Use last layout with decreasing time (more challenging)
+                const baseLayout = layouts[4];
+                const extraLevels = level - 4;
+                return {
+                    ...baseLayout,
+                    time: Math.max(35, baseLayout.time - (extraLevels * 3)) // Reduce time gradually, min 35s
+                };
+            }
+        }
+
+        function getCycleNumber(level) {
+            if (level <= 4) return 1;
+            return Math.floor((level - 1) / 4) + 1;
+        }
+
+        function getIconsForLevel(level, pairCount) {
+            const cycle = getCycleNumber(level);
+            // Use different icon sets based on cycle number
+            const startIndex = ((cycle - 1) * 10) % ALL_ICONS.length;
+            const available = [];
+
+            // Collect enough icons, wrapping around if needed
+            for (let i = 0; i < pairCount; i++) {
+                available.push(ALL_ICONS[(startIndex + i) % ALL_ICONS.length]);
+            }
+            return available;
         }
 
         function startGame() {
             state.level = 1;
+            state.cycle = 1;
             startLevel();
         }
 
         function startLevel() {
             const layout = getLayout(state.level);
+            const cycle = getCycleNumber(state.level);
+
             state.rows = layout.rows;
             state.cols = layout.cols;
             state.timeLeft = layout.time;
             state.firstCard = null;
-            state.isLocked = true; // Wait for preview
+            state.isLocked = true;
+            state.matchedPairs = 0;
+            state.totalPairs = layout.pairs;
+            state.cycle = cycle;
 
             levelDisplay.innerText = state.level;
             timeDisplay.innerText = state.timeLeft;
+            pairsDisplay.innerText = `0/${state.totalPairs}`;
+
+            // Show cycle badge if cycle > 1
+            if (cycle > 1) {
+                cycleBadge.classList.remove('hidden');
+                cycleBadge.innerText = `Cycle ${cycle}`;
+            } else {
+                cycleBadge.classList.add('hidden');
+            }
 
             overlay.classList.add('hidden');
 
-            // Generate Cards
+            // Generate Cards with level-appropriate icons
             const pairCount = (state.rows * state.cols) / 2;
-            const selectedIcons = ICONS.slice(0, pairCount);
+            const selectedIcons = getIconsForLevel(state.level, pairCount);
             const cardValues = [...selectedIcons, ...selectedIcons];
 
-            // Shuffle
+            // Shuffle (Fisher-Yates)
             for (let i = cardValues.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [cardValues[i], cardValues[j]] = [cardValues[j], cardValues[i]];
             }
 
-            // Render
+            // Render Grid
             grid.innerHTML = '';
             grid.style.gridTemplateColumns = `repeat(${state.cols}, 1fr)`;
 
@@ -187,16 +277,16 @@
                 return { id: index, icon, flipped: true, matched: false, element: el.querySelector('.card') };
             });
 
-            // Preview Phase
+            // Preview Phase - show all cards briefly
+            const previewTime = Math.min(2000 + (pairCount * 100), 4000); // More pairs = more preview time, max 4s
             setTimeout(() => {
-                // Flip all back
                 state.cards.forEach(c => {
                     c.flipped = false;
                     c.element.classList.remove('flipped');
                 });
                 state.isLocked = false;
                 startTimer();
-            }, 2000); // 2 seconds to memorize
+            }, previewTime);
         }
 
         function handleCardClick(index) {
@@ -204,14 +294,13 @@
             const card = state.cards[index];
             if (card.flipped || card.matched) return;
 
-            // Flip
+            // Flip card
             card.flipped = true;
             card.element.classList.add('flipped');
 
             if (!state.firstCard) {
                 state.firstCard = card;
             } else {
-                // Check Match
                 checkForMatch(state.firstCard, card);
                 state.firstCard = null;
             }
@@ -219,30 +308,32 @@
 
         function checkForMatch(card1, card2) {
             state.isLocked = true;
+
             if (card1.icon === card2.icon) {
-                // Match
+                // Match!
                 card1.matched = true;
                 card2.matched = true;
+                state.matchedPairs++;
+                pairsDisplay.innerText = `${state.matchedPairs}/${state.totalPairs}`;
 
-                // Visual feedback
                 setTimeout(() => {
-                    card1.element.children[1].style.borderColor = '#10b981'; // Green
-                    card2.element.children[1].style.borderColor = '#10b981';
+                    card1.element.classList.add('matched');
+                    card2.element.classList.add('matched');
                     state.isLocked = false;
 
                     if (state.cards.every(c => c.matched)) {
                         levelComplete();
                     }
-                }, 500);
+                }, 300);
             } else {
-                // No Match
+                // No match - flip back
                 setTimeout(() => {
                     card1.flipped = false;
                     card2.flipped = false;
                     card1.element.classList.remove('flipped');
                     card2.element.classList.remove('flipped');
                     state.isLocked = false;
-                }, 1000);
+                }, 800);
             }
         }
 
@@ -259,26 +350,51 @@
 
         function levelComplete() {
             clearInterval(state.timer);
-            if (state.level >= 3) {
-                // 最多只有 3 關，防止格子太多
-                showOverlay("VICTORY!", "Your brain is massive.");
+
+            // No max level - game continues infinitely
+            state.level++;
+
+            // Show brief celebration, then continue
+            const nextLayout = getLayout(state.level);
+            const nextCycle = getCycleNumber(state.level);
+
+            if (nextCycle > state.cycle) {
+                // New cycle - show special message
+                showTransition(`🎉 CYCLE ${nextCycle}!`, `新的圖案挑戰！`, () => {
+                    startLevel();
+                });
             } else {
-                state.level++;
-                setTimeout(startLevel, 1000);
+                // Same cycle - quick transition
+                setTimeout(startLevel, 800);
             }
+        }
+
+        function showTransition(title, msg, callback) {
+            overlay.classList.remove('hidden');
+            document.getElementById('overlay-title').innerText = title;
+            document.getElementById('overlay-msg').innerText = msg;
+            document.getElementById('overlay-sub').innerText = '準備好了嗎？';
+
+            // Auto-continue after 2 seconds
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                callback();
+            }, 2000);
         }
 
         function gameOver() {
             clearInterval(state.timer);
-            showOverlay("GAME OVER", "Out of time.");
+            const cycle = getCycleNumber(state.level);
+            const cycleText = cycle > 1 ? ` (Cycle ${cycle})` : '';
+            showOverlay("GAME OVER", `最高達到 Level ${state.level}${cycleText}`);
         }
 
         function showOverlay(title, msg) {
             overlay.classList.remove('hidden');
             document.getElementById('overlay-title').innerText = title;
             document.getElementById('overlay-msg').innerText = msg;
+            document.getElementById('overlay-sub').innerText = '再挑戰一次？';
         }
-
     </script>
 </body>
 
