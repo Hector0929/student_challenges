@@ -109,3 +109,30 @@ export interface DailyProgress {
     earned_points: number;
     completion_percentage: number;
 }
+
+// Monster Tower types
+export interface TowerProgress {
+    id: string;
+    user_id: string;
+    current_floor: number;
+    dice_count: number;
+    monsters_collected: string[];
+    total_climbs: number;
+    highest_floor: number;
+    last_roll_result?: number;
+    last_event_type?: string;
+    last_event_floor?: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface TowerEvent {
+    id: string;
+    floor_number: number;
+    event_type: 'ladder' | 'trap' | 'monster' | 'treasure' | 'egg';
+    target_floor?: number;
+    reward_stars?: number;
+    monster_id?: string;
+    description?: string;
+    is_active: boolean;
+}

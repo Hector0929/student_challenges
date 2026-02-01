@@ -1,0 +1,242 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../lib/supabase';
+import type { TowerProgress, TowerEvent } from '../types/database';
+
+// Default tower progress for new users
+const DEFAULT_TOWER_PROGRESS: Omit<TowerProgress, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
+    current_floor: 1,
+    dice_count: 3, // Start with 3 free dice
+    monsters_collected: [],
+    total_climbs: 0,
+    highest_floor: 1,
+};
+
+// Fetch user's tower progress
+export const useTowerProgress = (userId?: string) => {
+    return useQuery({
+        queryKey: ['tower-progress', userId],
+        queryFn: async () => {
+            if (!userId) return null;
+
+            const { data, error } = await supabase
+                .from('tower_progress')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+
+            if (error && error.code === 'PGRST116') {
+                // No record exists, create one
+                const { data: newProgress, error: insertError } = await supabase
+                    .from('tower_progress')
+                    .insert({
+                        user_id: userId,
+                        ...DEFAULT_TOWER_PROGRESS
+                    })
+                    .select()
+                    .single();
+
+                if (insertError) throw insertError;
+                return newProgress as TowerProgress;
+            }
+
+            if (error) throw error;
+            return data as TowerProgress;
+        },
+        enabled: !!userId,
+    });
+};
+
+// Fetch all tower events
+export const useTowerEvents = () => {
+    return useQuery({
+        queryKey: ['tower-events'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('tower_events')
+                .select('*')
+                .eq('is_active', true)
+                .order('floor_number');
+
+            if (error) throw error;
+            return data as TowerEvent[];
+        },
+        staleTime: 1000 * 60 * 60, // Cache for 1 hour
+    });
+};
+
+// Roll dice and move
+export const useRollDice = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ userId, currentFloor }: { userId: string; currentFloor: number }) => {
+            // Generate random roll (1-6)
+            const roll = Math.floor(Math.random() * 6) + 1;
+            let newFloor = Math.min(currentFloor + roll, 100);
+
+            // Check for events at the new floor
+            const { data: event } = await supabase
+                .from('tower_events')
+                .select('*')
+                .eq('floor_number', newFloor)
+                .eq('is_active', true)
+                .single();
+
+            let eventResult: TowerEvent | null = null;
+            let monstersToAdd: string[] = [];
+
+            if (event) {
+                eventResult = event as TowerEvent;
+
+                if (event.event_type === 'ladder' && event.target_floor) {
+                    newFloor = event.target_floor;
+                } else if (event.event_type === 'trap' && event.target_floor) {
+                    newFloor = event.target_floor;
+                } else if (event.event_type === 'egg' && event.monster_id) {
+                    monstersToAdd = [event.monster_id];
+                }
+            }
+
+            // Get current progress to update monsters_collected
+            const { data: currentProgress } = await supabase
+                .from('tower_progress')
+                .select('monsters_collected, total_climbs, highest_floor, dice_count')
+                .eq('user_id', userId)
+                .single();
+
+            const currentMonsters = currentProgress?.monsters_collected || [];
+            const newMonsters = [...new Set([...currentMonsters, ...monstersToAdd])];
+            const newHighest = Math.max(currentProgress?.highest_floor || 1, newFloor);
+
+            // Update progress
+            const { data: updated, error } = await supabase
+                .from('tower_progress')
+                .update({
+                    current_floor: newFloor,
+                    dice_count: (currentProgress?.dice_count || 1) - 1,
+                    monsters_collected: newMonsters,
+                    total_climbs: (currentProgress?.total_climbs || 0) + 1,
+                    highest_floor: newHighest,
+                    last_roll_result: roll,
+                    last_event_type: eventResult?.event_type || null,
+                    last_event_floor: eventResult?.floor_number || null,
+                })
+                .eq('user_id', userId)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            return {
+                progress: updated as TowerProgress,
+                roll,
+                event: eventResult,
+                reachedTop: newFloor >= 100,
+            };
+        },
+        onSuccess: (_, { userId }) => {
+            queryClient.invalidateQueries({ queryKey: ['tower-progress', userId] });
+        },
+    });
+};
+
+// Add dice (called when completing quests)
+export const useAddDice = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ userId, amount }: { userId: string; amount: number }) => {
+            const { data: current } = await supabase
+                .from('tower_progress')
+                .select('dice_count')
+                .eq('user_id', userId)
+                .single();
+
+            const newCount = (current?.dice_count || 0) + amount;
+
+            const { data, error } = await supabase
+                .from('tower_progress')
+                .update({ dice_count: newCount })
+                .eq('user_id', userId)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data as TowerProgress;
+        },
+        onSuccess: (_, { userId }) => {
+            queryClient.invalidateQueries({ queryKey: ['tower-progress', userId] });
+        },
+    });
+};
+
+// Reset tower (when reaching top, start over with bonus)
+export const useResetTower = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ userId }: { userId: string }) => {
+            const { data, error } = await supabase
+                .from('tower_progress')
+                .update({
+                    current_floor: 1,
+                    dice_count: 5, // Bonus dice for completing tower
+                })
+                .eq('user_id', userId)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data as TowerProgress;
+        },
+        onSuccess: (_, { userId }) => {
+            queryClient.invalidateQueries({ queryKey: ['tower-progress', userId] });
+        },
+    });
+};
+
+// Monster info helper
+export const MONSTERS = {
+    slime: {
+        id: 'slime',
+        name: '小綠球',
+        emoji: '🟢',
+        image: '/images/monsters/slime.png',
+        zone: '森林入口',
+        unlockFloor: 25,
+    },
+    water_spirit: {
+        id: 'water_spirit',
+        name: '水滴精',
+        emoji: '🔵',
+        image: '/images/monsters/water_spirit.png',
+        zone: '水晶洞穴',
+        unlockFloor: 50,
+    },
+    flame_bird: {
+        id: 'flame_bird',
+        name: '火焰鳥',
+        emoji: '🟠',
+        image: '/images/monsters/flame_bird.png',
+        zone: '熔岩地帶',
+        unlockFloor: 75,
+    },
+    thunder_cloud: {
+        id: 'thunder_cloud',
+        name: '雷雲君',
+        emoji: '🟣',
+        image: '/images/monsters/thunder_cloud.png',
+        zone: '雲端天空',
+        unlockFloor: 100,
+    },
+    rainbow_dragon: {
+        id: 'rainbow_dragon',
+        name: '彩虹龍',
+        emoji: '🌈',
+        image: '/images/monsters/rainbow_dragon.png',
+        zone: '塔頂',
+        unlockFloor: 100, // Special unlock
+    },
+};
+
+export type MonsterId = keyof typeof MONSTERS;

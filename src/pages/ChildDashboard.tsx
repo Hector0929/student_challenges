@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ParentsMessageCard, ExchangeRateCard } from '../components/ChildDashboardWidgets';
 import { ExchangeRequestDialog } from '../components/ExchangeRequestDialog';
+import { MonsterTower, TowerPreview } from '../components/MonsterTower';
 
 import { Trophy, Star, Plus, X, Save, ChevronDown, ChevronUp, RefreshCw, Trash2 } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
@@ -55,6 +56,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
         icon: '👾',
     });
     const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false);
+    const [isTowerOpen, setIsTowerOpen] = useState(false);
 
     const questTarget = Math.max(0, progress.total_quests > 0 ? Math.min(progress.total_quests, DAILY_QUEST_TARGET) : DAILY_QUEST_TARGET);
     const isUnlocked = progress.completed_quests >= questTarget && progress.total_quests > 0;
@@ -267,6 +269,11 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             <div className="grid gap-4 mb-6 md:grid-cols-[2fr_1fr]">
                 <ParentsMessageCard />
                 <ExchangeRateCard />
+            </div>
+
+            {/* Monster Tower Preview */}
+            <div className="mb-6">
+                <TowerPreview userId={userId} onClick={() => setIsTowerOpen(true)} />
             </div>
 
             {/* Header Section */}
@@ -503,6 +510,13 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             <ExchangeRequestDialog
                 isOpen={isExchangeDialogOpen}
                 onClose={() => setIsExchangeDialogOpen(false)}
+            />
+
+            {/* Monster Tower Modal */}
+            <MonsterTower
+                userId={userId}
+                isOpen={isTowerOpen}
+                onClose={() => setIsTowerOpen(false)}
             />
         </div >
     );
