@@ -195,6 +195,36 @@ export const useResetTower = () => {
     });
 };
 
+// Purchase dice with stars
+export const usePurchaseDice = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ userId, diceAmount }: { userId: string; diceAmount: number }) => {
+            const { data, error } = await supabase.rpc('purchase_dice', {
+                p_user_id: userId,
+                p_dice_amount: diceAmount
+            });
+
+            if (error) throw error;
+
+            // Check application-level success
+            if (data && data.success === false) {
+                throw new Error(data.message || '購買失敗');
+            }
+
+            return data;
+        },
+        onSuccess: (_data, { userId }) => {
+            // Invalidate queries to update UI
+            queryClient.invalidateQueries({ queryKey: ['tower-progress', userId] });
+            queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+            // Also invalidate star balance usually in useStarBalance
+            queryClient.invalidateQueries({ queryKey: ['starBalance', userId] });
+        },
+    });
+};
+
 // Monster info helper - using new generated pixel art assets
 export const MONSTERS = {
     slime: {

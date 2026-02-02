@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Dices, Trophy, Sparkles, X, ArrowUp, ArrowDown, Move } from 'lucide-react';
-import { useTowerProgress, useTowerEvents, useRollDice, useResetTower, MONSTERS, GAME_ASSETS, type MonsterId } from '../hooks/useTowerProgress';
+import { Dices, Trophy, Sparkles, X, ArrowUp, ArrowDown, Move, ShoppingCart, Coins, Plus, Minus } from 'lucide-react';
+import { useTowerProgress, useTowerEvents, useRollDice, useResetTower, usePurchaseDice, MONSTERS, GAME_ASSETS, type MonsterId } from '../hooks/useTowerProgress';
+import { useStarBalance } from '../hooks/useQuests';
 import { RPGButton } from './RPGButton';
 import type { TowerEvent } from '../types/database';
 
@@ -82,6 +83,10 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
     const [showVictory, setShowVictory] = useState(false);
     const [displayDice, setDisplayDice] = useState<number>(1);
     const [animatingFloor, setAnimatingFloor] = useState<number | null>(null);
+
+    // Dice Purchase State
+    const [showPurchase, setShowPurchase] = useState(false);
+    // Removed unused purchaseAmount state, using local state in modal instead
 
     // Drag scrolling state
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -525,7 +530,25 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                     >
                         {isRolling ? '🎲 擲骰中...' : isMoving ? '🚶 移動中...' : diceCount > 0 ? '🎲 擲骰子！' : '完成任務獲得骰子'}
                     </RPGButton>
+
+                    {/* Purchase Dice Button */}
+                    <button
+                        onClick={() => setShowPurchase(true)}
+                        className="w-full mt-2 text-xs text-amber-300 hover:text-amber-100 flex items-center justify-center gap-1 py-1"
+                    >
+                        <ShoppingCart size={14} />
+                        <span>沒有骰子了嗎？購買骰子</span>
+                    </button>
                 </div>
+
+                {/* Purchase Modal */}
+                {showPurchase && (
+                    <DicePurchaseModal
+                        userId={userId}
+                        currentDice={diceCount}
+                        onClose={() => setShowPurchase(false)}
+                    />
+                )}
 
                 {/* Event Popup */}
                 {showEvent && (
@@ -601,6 +624,103 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                         <div className="text-center">
                             <div className="text-4xl animate-bounce mb-2">🏰</div>
                             <p className="text-amber-200 font-pixel animate-pulse">載入中...</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// Purchase Modal Component
+const DicePurchaseModal: React.FC<{ userId: string; currentDice: number; onClose: () => void }> = ({ userId, onClose }) => {
+    const { data: starBalance = 0 } = useStarBalance(userId);
+    const purchaseMutation = usePurchaseDice();
+    const [amount, setAmount] = useState(2); // Buy in pairs: 2, 4, 6...
+
+    const cost = (amount / 2) * 5;
+    const canAfford = starBalance >= cost;
+
+    const handlePurchase = async () => {
+        if (!canAfford) return;
+        try {
+            await purchaseMutation.mutateAsync({ userId, diceAmount: amount });
+            // Close after short delay or show success? Mutation handles toast usually or we can rely on UI update
+            setTimeout(onClose, 500);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    return (
+        <div className="absolute inset-0 bg-black/95 flex items-center justify-center p-4 z-50 animate-popup-in">
+            <div className="bg-gradient-to-br from-stone-800 to-stone-900 border-4 border-amber-500 rounded-2xl p-5 w-full max-w-xs text-center shadow-2xl relative">
+                <button onClick={onClose} className="absolute top-2 right-2 text-white/50 hover:text-white">
+                    <X size={20} />
+                </button>
+
+                <h3 className="font-pixel text-xl text-yellow-400 mb-4 flex items-center justify-center gap-2">
+                    <ShoppingCart size={24} />
+                    購買骰子
+                </h3>
+
+                <div className="bg-black/40 rounded-xl p-4 mb-4 border border-white/10">
+                    <div className="flex justify-between items-center mb-4">
+                        <span className="text-gray-400 text-sm">現有星幣</span>
+                        <div className="flex items-center gap-1 text-yellow-400 font-bold">
+                            <Coins size={16} />
+                            <span>{starBalance}</span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-4 mb-4">
+                        <button
+                            onClick={() => setAmount(prev => Math.max(2, prev - 2))}
+                            className="bg-stone-700 hover:bg-stone-600 w-10 h-10 rounded-full flex items-center justify-center border-2 border-stone-500 transition-colors"
+                        >
+                            <Minus size={20} className="text-white" />
+                        </button>
+
+                        <div className="text-center">
+                            <div className="text-3xl font-bold text-white mb-1">{amount}</div>
+                            <div className="text-xs text-gray-400">顆骰子</div>
+                        </div>
+
+                        <button
+                            onClick={() => setAmount(prev => prev + 2)}
+                            className="bg-amber-700 hover:bg-amber-600 w-10 h-10 rounded-full flex items-center justify-center border-2 border-amber-500 transition-colors"
+                        >
+                            <Plus size={20} className="text-white" />
+                        </button>
+                    </div>
+
+                    <div className="border-t border-white/10 pt-3 flex justify-between items-center">
+                        <span className="text-gray-300">總花費</span>
+                        <div className={`flex items-center gap-1 font-bold text-xl ${canAfford ? 'text-red-400' : 'text-gray-500'}`}>
+                            <Coins size={18} />
+                            <span>{cost}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <RPGButton
+                    onClick={handlePurchase}
+                    disabled={!canAfford || purchaseMutation.isPending}
+                    variant={canAfford ? 'primary' : 'secondary'}
+                    className="w-full"
+                >
+                    {purchaseMutation.isPending ? '購買中...' : !canAfford ? '星幣不足' : '確認購買'}
+                </RPGButton>
+
+                <p className="text-xs text-gray-500 mt-3">
+                    匯率：5 星幣 = 2 顆骰子
+                </p>
+
+                {purchaseMutation.isSuccess && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-2xl z-20">
+                        <div className="text-center animate-bounce">
+                            <div className="text-4xl mb-2">✅</div>
+                            <div className="text-green-400 font-bold">購買成功！</div>
                         </div>
                     </div>
                 )}

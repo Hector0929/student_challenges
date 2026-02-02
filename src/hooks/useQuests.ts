@@ -294,32 +294,43 @@ export const useCompleteQuest = () => {
             if (!(data as { _skipped?: boolean })?._skipped) {
                 try {
                     // Check if tower_progress exists for this user
-                    const { data: progress, error: checkError } = await supabase
+                    const { data: progress } = await supabase
                         .from('tower_progress')
                         .select('dice_count')
                         .eq('user_id', variables.userId)
-                        .single();
+                        .maybeSingle(); // Changed from single() to avoid throwing error immediately
 
-                    if (checkError && checkError.code === 'PGRST116') {
-                        // No record exists, create one with 1 dice
-                        await supabase
+                    if (!progress) {
+                        // No record exists, create one with 1 dice (start with 1 + default 3 = 4?) 
+                        // Actually default is 3, so if we create new, maybe use default logic?
+                        // Let's stick to adding 1. If row missing, create with default + 1 = 4.
+
+                        // Check if we have a default constant available or just hardcode
+                        const defaultCount = 3;
+
+                        const { error: insertError } = await supabase
                             .from('tower_progress')
                             .insert({
                                 user_id: variables.userId,
                                 current_floor: 1,
-                                dice_count: 1,
+                                dice_count: defaultCount + 1, // Default + reward
                                 monsters_collected: [],
                                 total_climbs: 0,
                                 highest_floor: 1,
                             });
-                        console.log('🎲 Created tower_progress with 1 dice');
-                    } else if (progress) {
+
+                        if (insertError) throw insertError;
+                        console.log('🎲 Created tower_progress with reward dice');
+                    } else {
                         // Update existing record
-                        await supabase
+                        const currentDice = progress.dice_count || 0;
+                        const { error: updateError } = await supabase
                             .from('tower_progress')
-                            .update({ dice_count: (progress.dice_count || 0) + 1 })
+                            .update({ dice_count: currentDice + 1 })
                             .eq('user_id', variables.userId);
-                        console.log('🎲 Added 1 dice, new count:', (progress.dice_count || 0) + 1);
+
+                        if (updateError) throw updateError;
+                        console.log('🎲 Added 1 dice, new count:', currentDice + 1);
                     }
 
                     // Invalidate tower progress cache
