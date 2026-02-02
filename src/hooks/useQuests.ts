@@ -293,44 +293,18 @@ export const useCompleteQuest = () => {
             // 🎲 Award dice for Monster Tower (only if not skipped)
             if (!(data as { _skipped?: boolean })?._skipped) {
                 try {
-                    // Check if tower_progress exists for this user
-                    const { data: progress } = await supabase
-                        .from('tower_progress')
-                        .select('dice_count')
-                        .eq('user_id', variables.userId)
-                        .maybeSingle(); // Changed from single() to avoid throwing error immediately
+                    // Use RPC function to bypass RLS issues
+                    const { data: result, error: diceError } = await supabase.rpc('award_dice', {
+                        p_user_id: variables.userId,
+                        p_dice_amount: 1
+                    });
 
-                    if (!progress) {
-                        // No record exists, create one with 1 dice (start with 1 + default 3 = 4?) 
-                        // Actually default is 3, so if we create new, maybe use default logic?
-                        // Let's stick to adding 1. If row missing, create with default + 1 = 4.
-
-                        // Check if we have a default constant available or just hardcode
-                        const defaultCount = 3;
-
-                        const { error: insertError } = await supabase
-                            .from('tower_progress')
-                            .insert({
-                                user_id: variables.userId,
-                                current_floor: 1,
-                                dice_count: defaultCount + 1, // Default + reward
-                                monsters_collected: [],
-                                total_climbs: 0,
-                                highest_floor: 1,
-                            });
-
-                        if (insertError) throw insertError;
-                        console.log('🎲 Created tower_progress with reward dice');
+                    if (diceError) {
+                        console.warn('⚠️ RPC award_dice failed:', diceError);
+                    } else if (result && result.success) {
+                        console.log('🎲 Dice awarded via RPC! New count:', result.new_dice_count);
                     } else {
-                        // Update existing record
-                        const currentDice = progress.dice_count || 0;
-                        const { error: updateError } = await supabase
-                            .from('tower_progress')
-                            .update({ dice_count: currentDice + 1 })
-                            .eq('user_id', variables.userId);
-
-                        if (updateError) throw updateError;
-                        console.log('🎲 Added 1 dice, new count:', currentDice + 1);
+                        console.warn('⚠️ award_dice returned failure:', result?.message);
                     }
 
                     // Invalidate tower progress cache
