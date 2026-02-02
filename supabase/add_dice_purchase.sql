@@ -1,12 +1,52 @@
 -- Dice System Functions
--- 骰子系統 - 獎勵與購買
+-- 骰子系統 - 獎勵、購買、讀取
 
 -- ============================================
--- 1. Award Dice Function (任務完成獎勵骰子)
+-- 1. Get Tower Progress (讀取塔進度 - 繞過 RLS)
+-- ============================================
+CREATE OR REPLACE FUNCTION get_tower_progress(p_user_id UUID)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_progress tower_progress%ROWTYPE;
+BEGIN
+  -- Try to get existing progress
+  SELECT * INTO v_progress
+  FROM tower_progress
+  WHERE user_id = p_user_id;
+  
+  -- If no record exists, create one with defaults
+  IF NOT FOUND THEN
+    INSERT INTO tower_progress (user_id, dice_count, current_floor, highest_floor, monsters_collected, total_climbs)
+    VALUES (p_user_id, 3, 1, 1, '{}', 0)
+    RETURNING * INTO v_progress;
+  END IF;
+  
+  RETURN jsonb_build_object(
+    'id', v_progress.id,
+    'user_id', v_progress.user_id,
+    'current_floor', v_progress.current_floor,
+    'dice_count', v_progress.dice_count,
+    'monsters_collected', v_progress.monsters_collected,
+    'total_climbs', v_progress.total_climbs,
+    'highest_floor', v_progress.highest_floor,
+    'last_roll_result', v_progress.last_roll_result,
+    'last_event_type', v_progress.last_event_type,
+    'last_event_floor', v_progress.last_event_floor,
+    'created_at', v_progress.created_at,
+    'updated_at', v_progress.updated_at
+  );
+END;
+$$;
+
+-- ============================================
+-- 2. Award Dice Function (任務完成獎勵骰子)
 -- ============================================
 CREATE OR REPLACE FUNCTION award_dice(
   p_user_id UUID,
-  p_dice_amount INTEGER DEFAULT 1
+  p_dice_amount INTEGER DEFAULT 2  -- Changed default to 2 dice per quest
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -37,6 +77,7 @@ BEGIN
   RETURN jsonb_build_object(
     'success', true,
     'new_dice_count', v_new_dice_count,
+    'awarded', p_dice_amount,
     'message', '骰子已添加'
   );
 
@@ -46,10 +87,8 @@ END;
 $$;
 
 -- ============================================
--- 2. Purchase Dice Function (使用星幣購買骰子)
+-- 3. Purchase Dice Function (使用星幣購買骰子)
 -- ============================================
--- IMPORTANT: Uses star_transactions table instead of profiles.star_balance
--- Star balance is calculated via get_child_star_balance() function
 CREATE OR REPLACE FUNCTION purchase_dice(
   p_user_id UUID,
   p_dice_amount INTEGER
@@ -108,6 +147,59 @@ BEGIN
     'new_dice_count', v_new_dice_count,
     'spent', v_star_cost,
     'message', '購買成功'
+  );
+
+EXCEPTION WHEN OTHERS THEN
+  RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END;
+$$;
+
+-- ============================================
+-- 4. Update Tower Progress (更新塔進度 - 繞過 RLS)
+-- ============================================
+CREATE OR REPLACE FUNCTION update_tower_progress(
+  p_user_id UUID,
+  p_current_floor INTEGER DEFAULT NULL,
+  p_dice_count INTEGER DEFAULT NULL,
+  p_monsters_collected TEXT[] DEFAULT NULL,
+  p_total_climbs INTEGER DEFAULT NULL,
+  p_highest_floor INTEGER DEFAULT NULL,
+  p_last_roll_result INTEGER DEFAULT NULL,
+  p_last_event_type TEXT DEFAULT NULL,
+  p_last_event_floor INTEGER DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_progress tower_progress%ROWTYPE;
+BEGIN
+  -- Ensure record exists
+  IF NOT EXISTS (SELECT 1 FROM tower_progress WHERE user_id = p_user_id) THEN
+    INSERT INTO tower_progress (user_id, dice_count, current_floor, highest_floor, monsters_collected, total_climbs)
+    VALUES (p_user_id, 3, 1, 1, '{}', 0);
+  END IF;
+  
+  -- Update only provided fields
+  UPDATE tower_progress SET
+    current_floor = COALESCE(p_current_floor, current_floor),
+    dice_count = COALESCE(p_dice_count, dice_count),
+    monsters_collected = COALESCE(p_monsters_collected, monsters_collected),
+    total_climbs = COALESCE(p_total_climbs, total_climbs),
+    highest_floor = COALESCE(p_highest_floor, highest_floor),
+    last_roll_result = COALESCE(p_last_roll_result, last_roll_result),
+    last_event_type = COALESCE(p_last_event_type, last_event_type),
+    last_event_floor = COALESCE(p_last_event_floor, last_event_floor),
+    updated_at = NOW()
+  WHERE user_id = p_user_id
+  RETURNING * INTO v_progress;
+  
+  RETURN jsonb_build_object(
+    'success', true,
+    'current_floor', v_progress.current_floor,
+    'dice_count', v_progress.dice_count,
+    'highest_floor', v_progress.highest_floor
   );
 
 EXCEPTION WHEN OTHERS THEN

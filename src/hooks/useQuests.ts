@@ -296,7 +296,7 @@ export const useCompleteQuest = () => {
                     // Use RPC function to bypass RLS issues
                     const { data: result, error: diceError } = await supabase.rpc('award_dice', {
                         p_user_id: variables.userId,
-                        p_dice_amount: 1
+                        p_dice_amount: 2  // Award 2 dice per quest completion
                     });
 
                     if (diceError) {

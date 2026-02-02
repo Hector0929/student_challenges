@@ -2,44 +2,37 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { TowerProgress, TowerEvent } from '../types/database';
 
-// Default tower progress for new users
-const DEFAULT_TOWER_PROGRESS: Omit<TowerProgress, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
-    current_floor: 1,
-    dice_count: 3, // Start with 3 free dice
-    monsters_collected: [],
-    total_climbs: 0,
-    highest_floor: 1,
-};
-
-// Fetch user's tower progress
+// Fetch user's tower progress via RPC (bypasses RLS)
 export const useTowerProgress = (userId?: string) => {
     return useQuery({
         queryKey: ['tower-progress', userId],
         queryFn: async () => {
             if (!userId) return null;
 
-            const { data, error } = await supabase
-                .from('tower_progress')
-                .select('*')
-                .eq('user_id', userId)
-                .single();
+            // Use RPC to bypass RLS issues with child profiles
+            const { data, error } = await supabase.rpc('get_tower_progress', {
+                p_user_id: userId
+            });
 
-            if (error && error.code === 'PGRST116') {
-                // No record exists, create one
-                const { data: newProgress, error: insertError } = await supabase
-                    .from('tower_progress')
-                    .insert({
-                        user_id: userId,
-                        ...DEFAULT_TOWER_PROGRESS
-                    })
-                    .select()
-                    .single();
-
-                if (insertError) throw insertError;
-                return newProgress as TowerProgress;
+            if (error) {
+                console.error('Failed to get tower progress:', error);
+                // Return default values on error
+                return {
+                    id: '',
+                    user_id: userId,
+                    current_floor: 1,
+                    dice_count: 3,
+                    monsters_collected: [] as string[],
+                    total_climbs: 0,
+                    highest_floor: 1,
+                    last_roll_result: undefined,
+                    last_event_type: undefined,
+                    last_event_floor: undefined,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                } as TowerProgress;
             }
 
-            if (error) throw error;
             return data as TowerProgress;
         },
         enabled: !!userId,
