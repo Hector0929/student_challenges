@@ -174,3 +174,73 @@ supabase.from('star_transactions').insert({
 - **錯誤 1**：以為餘額只看 `star_transactions`，試圖把任務獎勵也寫進去 -> **導致重複計算**。
 - **錯誤 2**：忽略 SQL Function (`get_child_star_balance`) 與前端 JS 計算 (`useStarBalance`) 的一致性。修改邏輯時兩邊都要改。
 - **錯誤 3**：使用 Database 不支援的 `type` (如 `correction`) 導致 400 Error。
+
+---
+
+## 7. 數字輸入欄位規範 (Number Input Fields)
+
+為確保良好的使用者體驗，所有數字輸入欄位必須遵循以下規範。
+
+### 問題描述
+使用 `type="number"` 搭配 `parseInt(e.target.value) || 0` 會造成：
+- 使用者無法直接刪除數字並輸入新值
+- 空白時立刻變成 0，需要將游標移到 0 前面才能編輯
+- 行動裝置上體驗不佳
+
+### 正確實作方式
+
+```tsx
+// ✅ 正確：允許空字串，提交時才轉換
+const [value, setValue] = useState<number | string>(10);
+
+<input
+    type="text"
+    inputMode="numeric"  // 行動裝置顯示數字鍵盤
+    pattern="[0-9]*"     // iOS 顯示數字鍵盤
+    value={value}
+    onChange={(e) => {
+        const v = e.target.value;
+        // 允許空字串或純數字
+        if (v === '' || /^\d+$/.test(v)) {
+            setValue(v === '' ? '' : parseInt(v, 10));
+        }
+    }}
+    onBlur={(e) => {
+        // 失焦時，空值預設為 0
+        if (e.target.value === '') {
+            setValue(0);
+        }
+    }}
+/>
+
+// 提交時確保轉為數字
+const handleSubmit = () => {
+    const numericValue = typeof value === 'string' 
+        ? (parseInt(value, 10) || 0) 
+        : value;
+    // 使用 numericValue 進行 API 呼叫
+};
+```
+
+### 錯誤方式
+
+```tsx
+// ❌ 錯誤：空字串立即轉為 0
+<input
+    type="number"
+    value={formData.points}
+    onChange={(e) => setFormData({ 
+        ...formData, 
+        points: parseInt(e.target.value) || 0  // 這會讓使用者無法自然編輯
+    })}
+/>
+```
+
+### 替代方案：按鈕式選擇器
+對於有明確最小/最大值或步進值的數字（如骰子數量），可使用按鈕式選擇器：
+
+```tsx
+<button onClick={() => setValue(prev => Math.max(0, prev - 1))}>-</button>
+<span>{value}</span>
+<button onClick={() => setValue(prev => prev + 1)}>+</button>
+```

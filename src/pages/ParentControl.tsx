@@ -41,13 +41,20 @@ export const ParentControl: React.FC = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [selectedChildren, setSelectedChildren] = useState<string[]>([]);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        title: string;
+        description: string;
+        icon: string;
+        reward_points: number | string;
+        is_active: boolean;
+        status: 'active' | 'pending' | 'archived';
+    }>({
         title: '',
         description: '',
         icon: '👾',
         reward_points: 10,
         is_active: true,
-        status: 'active' as 'active' | 'pending' | 'archived',
+        status: 'active',
     });
 
     const handleOpenDialog = (quest?: Quest) => {
@@ -92,15 +99,22 @@ export const ParentControl: React.FC = () => {
         e.preventDefault();
         let questId = '';
 
+        // Ensure reward_points is a number before mutation
+        const rewardPoints = typeof formData.reward_points === 'string'
+            ? (parseInt(formData.reward_points, 10) || 0)
+            : formData.reward_points;
+
         if (editingQuest) {
             questId = editingQuest.id;
             await updateQuestMutation.mutateAsync({
                 id: questId,
                 ...formData,
+                reward_points: rewardPoints,
             });
         } else {
             const newQuest = await createQuestMutation.mutateAsync({
                 ...formData,
+                reward_points: rewardPoints,
                 status: 'active',
                 created_by: user?.id
             });
@@ -358,11 +372,25 @@ export const ParentControl: React.FC = () => {
                     <div>
                         <label className="block font-pixel text-xs mb-2">獎勵點數 *</label>
                         <input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             value={formData.reward_points}
-                            onChange={(e) => setFormData({ ...formData, reward_points: parseInt(e.target.value) || 0 })}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                // Allow empty string or valid numbers only
+                                if (value === '' || /^\d+$/.test(value)) {
+                                    setFormData({ ...formData, reward_points: value === '' ? '' : parseInt(value, 10) });
+                                }
+                            }}
+                            onBlur={(e) => {
+                                // On blur, default empty to 0
+                                if (e.target.value === '' || formData.reward_points === '') {
+                                    setFormData({ ...formData, reward_points: 0 });
+                                }
+                            }}
                             className="w-full px-3 py-2 border-2 border-deep-black text-sm"
-                            min="0"
+                            placeholder="輸入獎勵點數"
                             required
                         />
                     </div>
