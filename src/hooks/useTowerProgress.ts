@@ -57,7 +57,7 @@ export const useTowerEvents = () => {
     });
 };
 
-// Roll dice and move
+// Roll dice and move - uses RPC to bypass RLS
 export const useRollDice = () => {
     const queryClient = useQueryClient();
 
@@ -90,38 +90,55 @@ export const useRollDice = () => {
                 }
             }
 
-            // Get current progress to update monsters_collected
-            const { data: currentProgress } = await supabase
-                .from('tower_progress')
-                .select('monsters_collected, total_climbs, highest_floor, dice_count')
-                .eq('user_id', userId)
-                .single();
+            // Get current progress via RPC (bypasses RLS)
+            const { data: currentProgress, error: fetchError } = await supabase.rpc('get_tower_progress', {
+                p_user_id: userId
+            });
+
+            if (fetchError) {
+                console.error('Roll failed:', fetchError);
+                throw new Error('無法取得塔進度');
+            }
 
             const currentMonsters = currentProgress?.monsters_collected || [];
             const newMonsters = [...new Set([...currentMonsters, ...monstersToAdd])];
             const newHighest = Math.max(currentProgress?.highest_floor || 1, newFloor);
+            const newDiceCount = Math.max(0, (currentProgress?.dice_count || 1) - 1);
 
-            // Update progress
-            const { data: updated, error } = await supabase
-                .from('tower_progress')
-                .update({
+            // Update progress via RPC (bypasses RLS)
+            const { data: updateResult, error: updateError } = await supabase.rpc('update_tower_progress', {
+                p_user_id: userId,
+                p_current_floor: newFloor,
+                p_dice_count: newDiceCount,
+                p_monsters_collected: newMonsters,
+                p_total_climbs: (currentProgress?.total_climbs || 0) + 1,
+                p_highest_floor: newHighest,
+                p_last_roll_result: roll,
+                p_last_event_type: eventResult?.event_type || null,
+                p_last_event_floor: eventResult?.floor_number || null,
+            });
+
+            if (updateError) {
+                console.error('Roll failed:', updateError);
+                throw new Error('無法更新塔進度');
+            }
+
+            if (updateResult?.success === false) {
+                throw new Error(updateResult.message || '更新失敗');
+            }
+
+            return {
+                progress: {
+                    ...currentProgress,
                     current_floor: newFloor,
-                    dice_count: (currentProgress?.dice_count || 1) - 1,
+                    dice_count: newDiceCount,
                     monsters_collected: newMonsters,
                     total_climbs: (currentProgress?.total_climbs || 0) + 1,
                     highest_floor: newHighest,
                     last_roll_result: roll,
                     last_event_type: eventResult?.event_type || null,
                     last_event_floor: eventResult?.floor_number || null,
-                })
-                .eq('user_id', userId)
-                .select()
-                .single();
-
-            if (error) throw error;
-
-            return {
-                progress: updated as TowerProgress,
+                } as TowerProgress,
                 roll,
                 event: eventResult,
                 reachedTop: newFloor >= 100,
@@ -129,6 +146,9 @@ export const useRollDice = () => {
         },
         onSuccess: (_, { userId }) => {
             queryClient.invalidateQueries({ queryKey: ['tower-progress', userId] });
+        },
+        onError: (error) => {
+            console.error('Roll failed:', error);
         },
     });
 };
