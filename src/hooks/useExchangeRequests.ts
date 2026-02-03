@@ -17,7 +17,8 @@ export const usePendingExchangeRequests = () => {
 
             const { data, error } = await supabase
                 .from('exchange_requests')
-                .select('*, profiles(id, name, avatar_url)')
+                // Use !child_id to disambiguate the profiles FK (there's also reviewed_by -> profiles)
+                .select('*, profiles!child_id(id, name, avatar_url)')
                 .eq('family_id', familyId)
                 .eq('status', 'pending')
                 .order('created_at', { ascending: false });
