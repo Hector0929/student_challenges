@@ -110,6 +110,7 @@ export const useCreateExchangeRequest = () => {
 /**
  * Approve an exchange request (parent action)
  * This will also create a star_transaction to deduct stars
+ * Optimized with optimistic updates for better INP
  */
 export const useApproveExchangeRequest = () => {
     const queryClient = useQueryClient();
@@ -159,24 +160,45 @@ export const useApproveExchangeRequest = () => {
 
             if (transactionError) {
                 console.error('Error creating star transaction:', transactionError);
-                // Note: The request is already approved, but transaction failed
-                // In production, this should be a database transaction
                 throw new Error('星幣扣款失敗，請手動調整');
             }
 
-            return request;
+            return { requestId, request };
         },
-        onSuccess: () => {
-            // Refresh all related queries
-            queryClient.invalidateQueries({ queryKey: ['exchange_requests'], refetchType: 'all' });
-            queryClient.invalidateQueries({ queryKey: ['star_balance'], refetchType: 'all' });
-            queryClient.invalidateQueries({ queryKey: ['star_transactions'], refetchType: 'all' });
+        // Optimistic update: remove from pending list immediately
+        onMutate: async (requestId) => {
+            await queryClient.cancelQueries({ queryKey: ['exchange_requests', 'pending'] });
+
+            const previousData = queryClient.getQueryData(['exchange_requests', 'pending', user?.family_id]);
+
+            queryClient.setQueryData(
+                ['exchange_requests', 'pending', user?.family_id],
+                (old: ExchangeRequestWithChild[] | undefined) =>
+                    old?.filter(req => req.id !== requestId) ?? []
+            );
+
+            return { previousData };
+        },
+        onError: (_err, _requestId, context) => {
+            if (context?.previousData) {
+                queryClient.setQueryData(
+                    ['exchange_requests', 'pending', user?.family_id],
+                    context.previousData
+                );
+            }
+        },
+        onSettled: () => {
+            // Targeted invalidation instead of refetchType: 'all'
+            queryClient.invalidateQueries({ queryKey: ['exchange_requests', 'pending'] });
+            queryClient.invalidateQueries({ queryKey: ['star_balance'] });
+            queryClient.invalidateQueries({ queryKey: ['star_transactions'] });
         },
     });
 };
 
 /**
  * Reject an exchange request (parent action)
+ * Optimized with optimistic updates for better INP
  */
 export const useRejectExchangeRequest = () => {
     const queryClient = useQueryClient();
@@ -201,11 +223,39 @@ export const useRejectExchangeRequest = () => {
             if (error) {
                 throw error;
             }
+
+            return { requestId: params.requestId };
         },
-        onSuccess: () => {
+        // Optimistic update: remove from pending list immediately
+        onMutate: async (params) => {
+            // Cancel outgoing refetches
+            await queryClient.cancelQueries({ queryKey: ['exchange_requests', 'pending'] });
+
+            // Snapshot previous value
+            const previousData = queryClient.getQueryData(['exchange_requests', 'pending', user?.family_id]);
+
+            // Optimistically update: filter out the rejected request
+            queryClient.setQueryData(
+                ['exchange_requests', 'pending', user?.family_id],
+                (old: ExchangeRequestWithChild[] | undefined) =>
+                    old?.filter(req => req.id !== params.requestId) ?? []
+            );
+
+            return { previousData };
+        },
+        onError: (_err, _params, context) => {
+            // Rollback on error
+            if (context?.previousData) {
+                queryClient.setQueryData(
+                    ['exchange_requests', 'pending', user?.family_id],
+                    context.previousData
+                );
+            }
+        },
+        onSettled: () => {
+            // Refetch to ensure consistency (but UI already updated)
             queryClient.invalidateQueries({
-                queryKey: ['exchange_requests'],
-                refetchType: 'all',
+                queryKey: ['exchange_requests', 'pending'],
             });
         },
     });
