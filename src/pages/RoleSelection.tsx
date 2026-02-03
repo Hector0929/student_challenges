@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { RPGButton } from '../components/RPGButton';
 import { RPGDialog } from '../components/RPGDialog';
 import { useQuery } from '@tanstack/react-query';
@@ -82,12 +82,20 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                     <span className="text-xl">🏠</span>
                     <span>{familyName || '歡迎回來'}</span>
                 </div>
-                <button
-                    onClick={() => logout()}
-                    className="flex items-center gap-2 px-3 py-1 bg-red-100 border-2 border-deep-black hover:bg-red-200 transition-colors font-pixel text-xs text-red-600"
-                >
-                    登出系統
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleParentClick}
+                        className="flex items-center gap-2 px-3 py-1 bg-amber-100 border-2 border-deep-black hover:bg-amber-200 transition-colors font-pixel text-xs text-amber-700"
+                    >
+                        🔐 家長模式
+                    </button>
+                    <button
+                        onClick={() => logout()}
+                        className="flex items-center gap-2 px-3 py-1 bg-red-100 border-2 border-deep-black hover:bg-red-200 transition-colors font-pixel text-xs text-red-600"
+                    >
+                        登出系統
+                    </button>
+                </div>
             </div>
 
             <div className="flex flex-col items-center justify-center">
@@ -126,19 +134,7 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                         )}
                     </div>
 
-                    {/* Parent Button */}
-                    <div className="border-t-2 border-deep-black pt-6">
-                        <RPGButton
-                            onClick={handleParentClick}
-                            className="w-full"
-                            variant="secondary"
-                        >
-                            <div className="flex items-center justify-center gap-2">
-                                <User size={20} />
-                                <span>🔐 我是家長</span>
-                            </div>
-                        </RPGButton>
-                    </div>
+
                 </div>
             </div>
 
