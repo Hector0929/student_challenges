@@ -10,29 +10,45 @@ import { useFamilySettings, useUpdateFamilySettings, DEFAULT_FAMILY_SETTINGS } f
 import { useQuery } from '@tanstack/react-query';
 import { RPGDialog } from '../components/RPGDialog';
 import { GAMES, type Game } from '../components/RewardTime';
+import { SentenceSettingsDialog } from '../components/SentenceSettingsDialog';
 
 // Component for individual game toggle
 const GameToggleRow = ({
     game,
     isEnabled,
     isDisabled,
-    onToggle
+    onToggle,
+    onSettings
 }: {
     game: Game;
     isEnabled: boolean;
     isDisabled: boolean;
     onToggle: (gameId: string, enabled: boolean) => void;
+    onSettings?: () => void;
 }) => (
     <div className={`flex items-center justify-between bg-white border-2 border-gray-200 p-2 rounded-lg ${isDisabled ? 'opacity-50' : ''}`}>
         <div className="flex items-center gap-2">
             <span className="text-xl">{game.icon}</span>
             <span className="font-pixel text-xs">{game.name}</span>
         </div>
-        <ToggleSwitch
-            enabled={isEnabled}
-            onChange={(enabled) => onToggle(game.id, enabled)}
-            disabled={isDisabled}
-        />
+        <div className="flex items-center gap-2">
+            {/* Settings gear for sentence game */}
+            {onSettings && (
+                <button
+                    type="button"
+                    onClick={onSettings}
+                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    title="設定自訂句子"
+                >
+                    ⚙️
+                </button>
+            )}
+            <ToggleSwitch
+                enabled={isEnabled}
+                onChange={(enabled) => onToggle(game.id, enabled)}
+                disabled={isDisabled}
+            />
+        </div>
     </div>
 );
 
@@ -89,6 +105,7 @@ export const ParentSettings: React.FC = () => {
     const [funGamesEnabled, setFunGamesEnabled] = useState(true);
     const [learningAreaEnabled, setLearningAreaEnabled] = useState(true);
     const [disabledGames, setDisabledGames] = useState<string[]>([]);
+    const [showSentenceSettings, setShowSentenceSettings] = useState(false);
 
     // Fetch children
     const { data: children } = useQuery({
@@ -442,6 +459,7 @@ export const ParentSettings: React.FC = () => {
                                                         setDisabledGames(prev => [...prev, gameId]);
                                                     }
                                                 }}
+                                                onSettings={game.id === 'sentence' ? () => setShowSentenceSettings(true) : undefined}
                                             />
                                         ))}
                                     </div>
@@ -573,6 +591,16 @@ export const ParentSettings: React.FC = () => {
                     </div>
                 </form>
             </RPGDialog>
+
+            {/* Sentence Settings Dialog */}
+            {user?.family_id && (
+                <SentenceSettingsDialog
+                    isOpen={showSentenceSettings}
+                    onClose={() => setShowSentenceSettings(false)}
+                    familyId={user.family_id}
+                    userId={user.id}
+                />
+            )}
         </div>
     );
 };

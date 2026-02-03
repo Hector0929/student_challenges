@@ -124,10 +124,38 @@
             { en: "My name is John", zh: "我的名字是 John", audio: "My name is John" }
         ];
 
+        let currentSortables = [];
         let state = {
             currentLevel: 0,
             score: 0,
-            currentSentence: null
+            currentSentence: null,
+            sentences: SENTENCES // Will be replaced with custom sentences if available
+        };
+
+        // Try to load custom sentences from localStorage
+        function loadCustomSentences() {
+            try {
+                const customData = localStorage.getItem('customSentences');
+                if (customData) {
+                    const parsed = JSON.parse(customData);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        // Convert to game format
+                        state.sentences = parsed.map(s => ({
+                            en: s.en,
+                            zh: s.zh,
+                            audio: s.en
+                        }));
+                        console.log('Loaded', state.sentences.length, 'custom sentences');
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to load custom sentences:', e);
+            }
+        }
+
+        // Preload voices for better TTS
+        window.speechSynthesis.onvoiceschanged = () => {
+            window.speechSynthesis.getVoices();
         };
 
         // Sortable instances
@@ -150,13 +178,16 @@
                 ghostClass: 'ghost'
             });
 
+            // Load custom sentences if available
+            loadCustomSentences();
             nextLevel();
         }
 
         function nextLevel() {
-            // Pick random sentence
-            const idx = Math.floor(Math.random() * SENTENCES.length);
-            state.currentSentence = SENTENCES[idx];
+            // Pick random sentence from custom or default sentences
+            const sentences = state.sentences;
+            const idx = Math.floor(Math.random() * sentences.length);
+            state.currentSentence = sentences[idx];
 
             // Update UI
             document.getElementById('translation').textContent = state.currentSentence.zh;
@@ -185,9 +216,20 @@
 
         function playTargetSentence() {
             if (!state.currentSentence) return;
-            const u = new SpeechSynthesisUtterance(state.currentSentence.audio);
+            window.speechSynthesis.cancel();
+
+            const u = new SpeechSynthesisUtterance(state.currentSentence.en);
+            const voices = window.speechSynthesis.getVoices();
+
+            // Prefer high-quality voices (same as spelling_game.html)
+            const preferredVoice = voices.find(v => v.name.includes('Samantha') || v.name.includes('Siri'))
+                || voices.find(v => v.name.includes('Google US English'))
+                || voices.find(v => v.lang.startsWith('en-US'))
+                || voices.find(v => v.lang.startsWith('en'));
+
+            if (preferredVoice) u.voice = preferredVoice;
             u.lang = 'en-US';
-            u.rate = 0.8;
+            u.rate = 0.85;
             window.speechSynthesis.speak(u);
         }
 
