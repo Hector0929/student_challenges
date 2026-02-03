@@ -152,6 +152,7 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                 <form onSubmit={handleParentLogin} className="space-y-4">
                     <p className="text-sm text-gray-600 mb-4">
                         請輸入家長密碼以進入管理介面
+                        <span className="block text-xs mt-1 opacity-60">(預設 0000)</span>
                     </p>
 
                     <div>

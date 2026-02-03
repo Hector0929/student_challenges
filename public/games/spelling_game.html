@@ -96,8 +96,8 @@
                 <span id="theme-icon">🦁</span>
                 <span id="score" class="text-yellow-400">0</span>
             </div>
-            <div class="pixel-card px-4 py-2 text-red-400">
-                ❤️ <span id="hp">3</span>
+            <div class="pixel-card px-4 py-2 flex items-center gap-1 text-yellow-400">
+                <span id="stars-display">☆ ☆ ☆ ☆ ☆</span>
             </div>
         </div>
 
@@ -129,12 +129,13 @@
         </div>
     </div>
 
-    <!-- Game Over Modal -->
+    <!-- Level Complete Modal -->
     <div id="game-over-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
         <div class="pixel-card p-10 text-center">
-            <h2 class="text-3xl text-red-500 font-bold mb-4">法力耗盡!</h2>
-            <p class="mb-8">最終積分: <span id="final-score" class="text-yellow-400">0</span></p>
-            <button onclick="location.reload()" class="pixel-btn px-8 py-3 rounded text-xl">重新挑戰</button>
+            <h2 id="modal-title" class="text-3xl text-yellow-400 font-bold mb-4">🌟 太棒了！</h2>
+            <p class="mb-2 text-xl">你收集了 5 顆星星!</p>
+            <p class="mb-8">獲得積分: <span id="final-score" class="text-yellow-400">0</span></p>
+            <button onclick="location.reload()" class="pixel-btn px-8 py-3 rounded text-xl">再玩一次</button>
         </div>
     </div>
 
@@ -148,7 +149,7 @@
         let currentWord = null;
         let inputIndex = 0;
         let score = 0;
-        let hp = 3;
+        let starsCollected = 0; // Changed from hp - collect stars instead of losing lives
         let monsterHp = 100;
 
         function init() {
@@ -220,8 +221,6 @@
         }
 
         function handleInput(letter) {
-            if (hp <= 0) return;
-
             const wordUpper = currentWord.en.toUpperCase();
             const slots = slotsContainer.children;
 
@@ -236,19 +235,23 @@
                 inputIndex++;
                 damageMonster(25);
 
-                // Finished?
+                // Finished word?
                 if (Array.from(slots).every(s => s.textContent !== '' || s.className.includes('w-4'))) {
                     score += 10;
+                    starsCollected++;
                     updateHUD();
-                    setTimeout(nextWord, 1000);
+
+                    // Check if collected 5 stars (level complete!)
+                    if (starsCollected >= 5) {
+                        setTimeout(levelComplete, 800);
+                    } else {
+                        setTimeout(nextWord, 1000);
+                    }
                 }
             } else {
-                // Wrong
+                // Wrong - just shake, no penalty
                 gameScreen.classList.add('shake');
                 setTimeout(() => gameScreen.classList.remove('shake'), 200);
-                hp--;
-                updateHUD();
-                if (hp <= 0) gameOver();
             }
         }
 
@@ -284,10 +287,13 @@
 
         function updateHUD() {
             document.getElementById('score').textContent = score;
-            document.getElementById('hp').textContent = hp;
+            // Update stars display
+            const starsDisplay = '⭐'.repeat(starsCollected) + '☆'.repeat(5 - starsCollected);
+            document.getElementById('stars-display').textContent = starsDisplay;
         }
 
-        function gameOver() {
+        function levelComplete() {
+            document.getElementById('modal-title').textContent = '🌟 太棒了！';
             document.getElementById('final-score').textContent = score;
             document.getElementById('game-over-modal').classList.remove('hidden');
         }
