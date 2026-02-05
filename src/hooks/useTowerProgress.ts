@@ -204,13 +204,13 @@ export const useLotteryReward = () => {
             console.log('🎰 Claiming lottery reward:', { userId, prizeType, prizeValue, monsterId });
 
             if (prizeType === 'coins' && prizeValue) {
-                // Add stars via star_transactions
+                // Add stars via star_transactions (type must be 'earn')
                 const { error } = await supabase
                     .from('star_transactions')
                     .insert({
                         user_id: userId,
                         amount: prizeValue,
-                        type: 'lottery_reward',
+                        type: 'earn',
                         description: `🎰 抽獎獲得 ${prizeValue} 星幣`,
                     });
 
@@ -267,33 +267,27 @@ export const useResetTower = () => {
         mutationFn: async ({ userId }: { userId: string }) => {
             console.log('🏰 Resetting tower for user:', userId);
 
-            // Use RPC to ensure proper reset
-            const { data, error } = await supabase.rpc('reset_tower_progress', {
-                p_user_id: userId
-            });
+            // Direct update to reset floor to 1 and give 5 bonus dice
+            const { data, error } = await supabase
+                .from('tower_progress')
+                .update({
+                    current_floor: 1,
+                    dice_count: 5,
+                })
+                .eq('user_id', userId)
+                .select()
+                .single();
 
-            // If RPC doesn't exist, fallback to direct update
-            if (error && error.code === 'PGRST116') {
-                console.log('⚠️ RPC not found, using direct update');
-                const { data: updateData, error: updateError } = await supabase
-                    .from('tower_progress')
-                    .update({
-                        current_floor: 1,
-                        dice_count: 5, // Bonus dice for completing tower
-                    })
-                    .eq('user_id', userId)
-                    .select()
-                    .single();
-
-                if (updateError) throw updateError;
-                return updateData as TowerProgress;
+            if (error) {
+                console.error('❌ Reset tower failed:', error);
+                throw error;
             }
 
-            if (error) throw error;
+            console.log('✅ Tower reset success:', data);
             return data as TowerProgress;
         },
         onSuccess: (_, { userId }) => {
-            // Force immediate refetch
+            // Force immediate refetch to update UI
             queryClient.invalidateQueries({ queryKey: ['tower-progress', userId] });
             queryClient.refetchQueries({ queryKey: ['tower-progress', userId] });
         },
