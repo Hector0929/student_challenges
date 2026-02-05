@@ -83,7 +83,7 @@ export const LotteryWheel: React.FC<LotteryWheelProps> = ({ onComplete }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/95 animate-popup-in">
+        <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/95 animate-popup-in" style={{ zIndex: 9999 }}>
             <div className="relative text-center max-w-sm w-full">
                 {/* Title */}
                 <div className="mb-6">
