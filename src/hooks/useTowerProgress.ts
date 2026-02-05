@@ -267,16 +267,10 @@ export const useResetTower = () => {
         mutationFn: async ({ userId }: { userId: string }) => {
             console.log('🏰 Resetting tower for user:', userId);
 
-            // Direct update to reset floor to 1 and give 5 bonus dice
-            const { data, error } = await supabase
-                .from('tower_progress')
-                .update({
-                    current_floor: 1,
-                    dice_count: 5,
-                })
-                .eq('user_id', userId)
-                .select()
-                .single();
+            // Use RPC function with SECURITY DEFINER to bypass RLS
+            const { data, error } = await supabase.rpc('reset_tower_progress', {
+                p_user_id: userId
+            });
 
             if (error) {
                 console.error('❌ Reset tower failed:', error);
