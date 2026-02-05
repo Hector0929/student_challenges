@@ -119,18 +119,23 @@ export const LotteryWheel: React.FC<LotteryWheelProps> = ({ onComplete }) => {
                         {/* Prize Labels */}
                         {LOTTERY_PRIZES.map((prize, index) => {
                             const angle = index * segmentAngle + segmentAngle / 2;
+                            // Show icon + value for coins and dice
+                            const label = prize.type === 'monster'
+                                ? prize.icon
+                                : `${prize.icon}${prize.value}`;
                             return (
                                 <div
                                     key={prize.id}
-                                    className="absolute text-lg font-bold drop-shadow-lg"
+                                    className="absolute font-bold drop-shadow-lg text-center"
                                     style={{
                                         left: '50%',
                                         top: '50%',
-                                        transform: `rotate(${angle}deg) translateY(-90px) rotate(-${angle}deg)`,
+                                        transform: `rotate(${angle}deg) translateY(-85px) rotate(-${angle}deg)`,
                                         transformOrigin: 'center center',
+                                        textShadow: '0 1px 2px rgba(0,0,0,0.8)',
                                     }}
                                 >
-                                    <span className="text-2xl">{prize.icon}</span>
+                                    <span className="text-xl">{label}</span>
                                 </div>
                             );
                         })}

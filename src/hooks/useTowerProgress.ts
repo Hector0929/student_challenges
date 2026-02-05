@@ -265,21 +265,37 @@ export const useResetTower = () => {
 
     return useMutation({
         mutationFn: async ({ userId }: { userId: string }) => {
-            const { data, error } = await supabase
-                .from('tower_progress')
-                .update({
-                    current_floor: 1,
-                    dice_count: 5, // Bonus dice for completing tower
-                })
-                .eq('user_id', userId)
-                .select()
-                .single();
+            console.log('🏰 Resetting tower for user:', userId);
+
+            // Use RPC to ensure proper reset
+            const { data, error } = await supabase.rpc('reset_tower_progress', {
+                p_user_id: userId
+            });
+
+            // If RPC doesn't exist, fallback to direct update
+            if (error && error.code === 'PGRST116') {
+                console.log('⚠️ RPC not found, using direct update');
+                const { data: updateData, error: updateError } = await supabase
+                    .from('tower_progress')
+                    .update({
+                        current_floor: 1,
+                        dice_count: 5, // Bonus dice for completing tower
+                    })
+                    .eq('user_id', userId)
+                    .select()
+                    .single();
+
+                if (updateError) throw updateError;
+                return updateData as TowerProgress;
+            }
 
             if (error) throw error;
             return data as TowerProgress;
         },
         onSuccess: (_, { userId }) => {
+            // Force immediate refetch
             queryClient.invalidateQueries({ queryKey: ['tower-progress', userId] });
+            queryClient.refetchQueries({ queryKey: ['tower-progress', userId] });
         },
     });
 };
