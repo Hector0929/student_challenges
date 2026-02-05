@@ -259,10 +259,18 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
             console.error('Failed to award lottery prize:', error);
         }
 
-        // Reset and continue
-        setShowLotteryWheel(false);
-        await resetTowerMutation.mutateAsync({ userId });
+        // Close all modals FIRST to prevent UI flickering
         setShowVictory(false);
+        setShowLotteryWheel(false);
+
+        // Then reset the tower
+        try {
+            await resetTowerMutation.mutateAsync({ userId });
+        } catch (error) {
+            console.error('Failed to reset tower:', error);
+        }
+
+        // Scroll to player after reset
         setTimeout(() => scrollToPlayer(1, true), 300);
     };
 
