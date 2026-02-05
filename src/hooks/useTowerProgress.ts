@@ -183,6 +183,82 @@ export const useAddDice = () => {
     });
 };
 
+// Claim lottery reward (coins, dice, or monster)
+export const useLotteryReward = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            userId,
+            prizeType,
+            prizeValue,
+            monsterId,
+            prizeName
+        }: {
+            userId: string;
+            prizeType: 'coins' | 'dice' | 'monster';
+            prizeValue?: number;
+            monsterId?: string;
+            prizeName: string;
+        }) => {
+            console.log('🎰 Claiming lottery reward:', { userId, prizeType, prizeValue, monsterId });
+
+            if (prizeType === 'coins' && prizeValue) {
+                // Add stars via star_transactions
+                const { error } = await supabase
+                    .from('star_transactions')
+                    .insert({
+                        user_id: userId,
+                        amount: prizeValue,
+                        type: 'lottery_reward',
+                        description: `🎰 抽獎獲得 ${prizeValue} 星幣`,
+                    });
+
+                if (error) throw error;
+            } else if (prizeType === 'dice' && prizeValue) {
+                // Add dice via RPC
+                const { error } = await supabase.rpc('award_dice', {
+                    p_user_id: userId,
+                    p_dice_amount: prizeValue
+                });
+
+                if (error) throw error;
+            } else if (prizeType === 'monster' && monsterId) {
+                // Get current monsters and add new one
+                const { data: currentProgress } = await supabase.rpc('get_tower_progress', {
+                    p_user_id: userId
+                });
+
+                const currentMonsters = currentProgress?.monsters_collected || [];
+                if (!currentMonsters.includes(monsterId)) {
+                    const newMonsters = [...currentMonsters, monsterId];
+
+                    const { error } = await supabase.rpc('update_tower_progress', {
+                        p_user_id: userId,
+                        p_current_floor: currentProgress?.current_floor || 1,
+                        p_dice_count: currentProgress?.dice_count || 0,
+                        p_monsters_collected: newMonsters,
+                        p_total_climbs: currentProgress?.total_climbs || 0,
+                        p_highest_floor: currentProgress?.highest_floor || 1,
+                        p_last_roll_result: null,
+                        p_last_event_type: null,
+                        p_last_event_floor: null,
+                    });
+
+                    if (error) throw error;
+                }
+            }
+
+            return { success: true, prizeType, prizeValue, monsterId, prizeName };
+        },
+        onSuccess: (_, { userId }) => {
+            queryClient.invalidateQueries({ queryKey: ['tower-progress', userId] });
+            queryClient.invalidateQueries({ queryKey: ['starBalance', userId] });
+            queryClient.invalidateQueries({ queryKey: ['star_balance', userId] });
+        },
+    });
+};
+
 // Reset tower (when reaching top, start over with bonus)
 export const useResetTower = () => {
     const queryClient = useQueryClient();
@@ -279,6 +355,23 @@ export const MONSTERS = {
         image: '/images/monsters/dragon.png',
         zone: '塔頂',
         unlockFloor: 100, // Special unlock
+    },
+    // Lottery-exclusive rare monsters
+    star_fairy: {
+        id: 'star_fairy',
+        name: '星光精靈',
+        emoji: '🌟',
+        image: '/images/monsters/star_fairy.png',
+        zone: '抽獎限定',
+        unlockFloor: 999, // Lottery only
+    },
+    lucky_clover: {
+        id: 'lucky_clover',
+        name: '幸運草寶寶',
+        emoji: '🍀',
+        image: '/images/monsters/lucky_clover.png',
+        zone: '抽獎限定',
+        unlockFloor: 999, // Lottery only
     },
 };
 

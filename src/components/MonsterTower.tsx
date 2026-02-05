@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Dices, Trophy, Sparkles, X, ArrowUp, ArrowDown, Move, ShoppingCart, Coins, Plus, Minus } from 'lucide-react';
-import { useTowerProgress, useTowerEvents, useRollDice, useResetTower, usePurchaseDice, MONSTERS, GAME_ASSETS, type MonsterId } from '../hooks/useTowerProgress';
+import { useTowerProgress, useTowerEvents, useRollDice, useResetTower, usePurchaseDice, useLotteryReward, MONSTERS, GAME_ASSETS, type MonsterId } from '../hooks/useTowerProgress';
 import { useStarBalance } from '../hooks/useQuests';
 import { RPGButton } from './RPGButton';
+import { LotteryWheel, type Prize } from './LotteryWheel';
 import type { TowerEvent } from '../types/database';
 
 interface MonsterTowerProps {
@@ -81,6 +82,7 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
     const [rollResult, setRollResult] = useState<number | null>(null);
     const [showEvent, setShowEvent] = useState<TowerEvent | null>(null);
     const [showVictory, setShowVictory] = useState(false);
+    const [showLotteryWheel, setShowLotteryWheel] = useState(false);
     const [displayDice, setDisplayDice] = useState<number>(1);
     const [animatingFloor, setAnimatingFloor] = useState<number | null>(null);
 
@@ -240,7 +242,25 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
         }
     }, [diceCount, isRolling, isMoving, rollDiceMutation, userId, currentFloor, animateMovement, scrollToPlayer]);
 
-    const handleReset = async () => {
+    // Hooks for lottery rewards
+    const lotteryRewardMutation = useLotteryReward();
+
+    const handleLotteryComplete = async (prize: Prize) => {
+        // Award the prize using the lottery reward mutation
+        try {
+            await lotteryRewardMutation.mutateAsync({
+                userId,
+                prizeType: prize.type,
+                prizeValue: prize.value,
+                monsterId: prize.monsterId,
+                prizeName: prize.name,
+            });
+        } catch (error) {
+            console.error('Failed to award lottery prize:', error);
+        }
+
+        // Reset and continue
+        setShowLotteryWheel(false);
         await resetTowerMutation.mutateAsync({ userId });
         setShowVictory(false);
         setTimeout(() => scrollToPlayer(1, true), 300);
@@ -604,19 +624,24 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
                     </div>
                 )}
 
-                {/* Victory */}
-                {showVictory && (
+                {/* Victory - Show Lottery Wheel */}
+                {showVictory && !showLotteryWheel && (
                     <div className="absolute inset-0 bg-black/95 flex items-center justify-center p-4 z-40">
                         <div className="text-center animate-victory-burst">
                             <Sparkles className="mx-auto text-yellow-400 mb-2 animate-star-twinkle" size={40} />
                             <h2 className="font-pixel text-xl text-yellow-400 mb-2">🎉 恭喜攻頂！</h2>
                             <p className="text-white text-sm mb-2">成功登上怪獸塔第 100 層！</p>
                             <img src={MONSTERS.rainbow_dragon.image} alt="Rainbow Dragon" className="w-24 h-24 mx-auto mb-3 animate-player-hop drop-shadow-2xl" />
-                            <RPGButton onClick={handleReset} variant="primary">
-                                🔄 再次挑戰 (+5 骰子)
+                            <RPGButton onClick={() => setShowLotteryWheel(true)} variant="primary">
+                                🎡 轉動抽獎輪盤！
                             </RPGButton>
                         </div>
                     </div>
+                )}
+
+                {/* Lottery Wheel Modal */}
+                {showLotteryWheel && (
+                    <LotteryWheel onComplete={handleLotteryComplete} />
                 )}
 
                 {isLoading && (
@@ -735,6 +760,7 @@ export const TowerPreview: React.FC<{ userId: string; onClick: () => void }> = (
 
     const currentFloor = progress?.current_floor || 1;
     const diceCount = progress?.dice_count || 0;
+    const monstersCollected = progress?.monsters_collected || [];
     const zone = getZoneInfo(currentFloor);
     const zoneMonster = MONSTERS[zone.monster];
 
@@ -767,6 +793,43 @@ export const TowerPreview: React.FC<{ userId: string; onClick: () => void }> = (
                     </div>
                 </div>
             </div>
+
+            {/* Collected Monsters Display */}
+            {monstersCollected.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-white/20">
+                    <p className="text-white/60 text-xs mb-2">已收集的怪獸：</p>
+                    <div className="flex flex-wrap gap-1">
+                        {monstersCollected.slice(0, 8).map((monsterId) => {
+                            const monster = MONSTERS[monsterId as keyof typeof MONSTERS];
+                            if (!monster) return null;
+                            return (
+                                <div
+                                    key={monsterId}
+                                    className="w-8 h-8 rounded-lg bg-white/20 p-0.5 border border-white/30 flex items-center justify-center"
+                                    title={monster.name}
+                                >
+                                    <img
+                                        src={monster.image}
+                                        alt={monster.name}
+                                        className="w-full h-full object-contain"
+                                        onError={(e) => {
+                                            // Fallback to emoji if image not found
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                            const parent = (e.target as HTMLImageElement).parentElement;
+                                            if (parent) parent.textContent = monster.emoji;
+                                        }}
+                                    />
+                                </div>
+                            );
+                        })}
+                        {monstersCollected.length > 8 && (
+                            <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white text-xs font-bold">
+                                +{monstersCollected.length - 8}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </button>
     );
 };
