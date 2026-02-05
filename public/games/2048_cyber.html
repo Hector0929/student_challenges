@@ -297,12 +297,8 @@
 
                     if (tile) {
                         let far = findFarthestPosition(cell, vector);
-                        let next = getCellContent({ x: far.x + vector.x, y: far.y + vector.y }); // Next cell logic?
 
-                        // Check merge
-                        // getCellContent returns null if out of bounds
-                        // wait, findFarthestPosition finds the empty slot.
-                        // We check the neighbor of that slot.
+                        // Check merge with next cell in direction
 
                         let nextPos = { x: far.x + vector.x, y: far.y + vector.y };
                         // Boundary check
