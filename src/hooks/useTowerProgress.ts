@@ -251,10 +251,14 @@ export const useLotteryReward = () => {
 
             return { success: true, prizeType, prizeValue, monsterId, prizeName };
         },
-        onSuccess: (_, { userId }) => {
+        onSuccess: (result, { userId }) => {
+            console.log('🎰 Lottery reward claimed, refreshing queries...', result);
+            // Invalidate and refetch to ensure immediate UI update
             queryClient.invalidateQueries({ queryKey: ['tower-progress', userId] });
-            queryClient.invalidateQueries({ queryKey: ['starBalance', userId] });
             queryClient.invalidateQueries({ queryKey: ['star_balance', userId] });
+            // Force immediate refetch
+            queryClient.refetchQueries({ queryKey: ['tower-progress', userId] });
+            queryClient.refetchQueries({ queryKey: ['star_balance', userId] });
         },
     });
 };
