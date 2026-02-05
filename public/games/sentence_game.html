@@ -154,14 +154,34 @@
         }
 
         // Preload voices for better TTS
-        window.speechSynthesis.onvoiceschanged = () => {
-            window.speechSynthesis.getVoices();
-        };
+        let voicesReady = false;
+        function ensureVoices() {
+            return new Promise((resolve) => {
+                const voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    voicesReady = true;
+                    resolve(voices);
+                } else {
+                    window.speechSynthesis.onvoiceschanged = () => {
+                        voicesReady = true;
+                        resolve(window.speechSynthesis.getVoices());
+                    };
+                    // Fallback timeout
+                    setTimeout(() => {
+                        voicesReady = true;
+                        resolve(window.speechSynthesis.getVoices());
+                    }, 500);
+                }
+            });
+        }
 
         // Sortable instances
         let sourceSortable, targetSortable;
 
-        function init() {
+        async function init() {
+            // Preload voices first
+            await ensureVoices();
+
             // Initialize Sortable based on IDs
             const sourceEl = document.getElementById('source-area');
             const targetEl = document.getElementById('construct-area');
