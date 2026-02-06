@@ -342,7 +342,8 @@ textarea {
 
 /* Dialog with pattern background */
 .clay-dialog {
-  background-color: var(--bg-card);
+  background-color: #FFF9E8;
+  /* Solid fallback */
   background-image: url('/patterns/dialog_bg.png');
   background-repeat: repeat;
   background-size: 200px;
@@ -357,8 +358,8 @@ textarea {
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(255, 249, 232, 0.85);
-  /* Semi-transparent overlay to keep text readable */
+  background: rgba(255, 249, 232, 0.92);
+  /* More opaque for readability */
   z-index: 0;
 }
 
