@@ -13,6 +13,7 @@ import { HomeButton } from './components/HomeButton';
 import { useRealtimeSubscription } from './hooks/useRealtime';
 import { LogOut, ArrowLeft, Lock } from 'lucide-react';
 import type { Profile } from './types/database';
+import { FloatingEncouragement } from './components/FloatingEncouragement';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -102,7 +103,9 @@ function AppContent() {
 
   // 3. Authenticated and Role Selected -> Show Dashboard
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pokeball-red to-pink-100 py-8 px-4">
+    <div className="min-h-screen py-8 px-4 relative overflow-hidden"
+      style={{ background: 'linear-gradient(180deg, #B8E0F6 0%, #E8F4FC 100%)' }}>
+      {user && <FloatingEncouragement userName={user.name} />}
       {/* Header / Logout Area */}
       <div className="max-w-6xl mx-auto mb-4 flex justify-between items-center bg-white/80 p-2 rounded-lg border-2 border-deep-black shadow-md sticky top-2 z-50">
         <div className="font-pixel text-sm flex items-center gap-2">
