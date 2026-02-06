@@ -64,7 +64,7 @@ export const useUpdateFamilySettings = () => {
 
             return data as FamilySettings;
         },
-        onSuccess: (_, __, ___) => {
+        onSuccess: () => {
             // Invalidate to refetch the latest data
             queryClient.invalidateQueries({
                 queryKey: ['family_settings'],

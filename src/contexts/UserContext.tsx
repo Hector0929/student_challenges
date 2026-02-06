@@ -1,23 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import type { Profile } from '../types/database';
 import { supabase } from '../lib/supabase';
 import type { Session } from '@supabase/supabase-js';
-
-interface UserContextType {
-    session: Session | null;
-    user: Profile | null; // The currently active profile (Child or Parent)
-    familyName: string | null; // Family name for the authenticated session
-    loading: boolean;
-    setUser: (user: Profile | null) => void;
-    registerUser: (userData: Omit<Profile, 'id' | 'created_at' | 'family_id'>) => Promise<void>;
-    loginAsChild: (childId: string) => Promise<void>;
-    loginAsParent: (pin?: string) => Promise<void>;
-    logout: () => Promise<void>; // Logout from Auth (Family transaction)
-    exitProfile: () => void; // Go back to Role Selection
-    lockParent: () => void; // Lock parent mode (require PIN next time)
-}
-
-const UserContext = createContext<UserContextType | undefined>(undefined);
+import { UserContext } from './UserContextDefinition';
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [session, setSession] = useState<Session | null>(null);
@@ -122,7 +107,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session && !loading && !user) {
             restoreProfile();
         }
-    }, [session, loading]);
+    }, [session, loading, user]);
 
     const setUser = (newUser: Profile | null) => {
         setUserState(newUser);
@@ -248,7 +233,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.error('Profile not found for authenticated user');
                 throw new Error('找不到家長檔案，請重新註冊');
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error('家長登入失敗:', error);
             // Alert is handled by UI caller if needed, or we just throw
             // But usually contexts verify silent or loud. 
@@ -292,6 +277,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useUser = () => {
     const context = useContext(UserContext);
     if (!context) {

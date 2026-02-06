@@ -19,12 +19,12 @@ export const RPGButton = ({
     className = '',
     form,
 }: RPGButtonProps) => {
-    const baseStyles = 'px-6 py-3 font-pixel text-base font-bold border-4 border-deep-black transition-all btn-press disabled:opacity-50 disabled:cursor-not-allowed';
+    const baseStyles = 'px-6 py-3 font-pixel text-sm rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transform active:translate-y-1';
 
     const variantStyles = {
-        primary: 'bg-pokeball-red text-white hover:bg-red-600',
-        secondary: 'bg-white text-deep-black hover:bg-gray-100',
-        danger: 'bg-red-700 text-white hover:bg-red-800',
+        primary: 'clay-btn',
+        secondary: 'clay-btn-secondary',
+        danger: 'clay-btn-danger',
     };
 
     return (
@@ -34,9 +34,6 @@ export const RPGButton = ({
             disabled={disabled}
             form={form}
             className={`${baseStyles} ${variantStyles[variant]} ${className}`}
-            style={{
-                boxShadow: disabled ? 'none' : '4px 4px 0 rgba(0, 0, 0, 0.3)',
-            }}
         >
             {children}
         </button>

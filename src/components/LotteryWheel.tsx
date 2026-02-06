@@ -1,30 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { Sparkles, Gift, Coins, Dices } from 'lucide-react';
 import { RPGButton } from './RPGButton';
-import { MONSTERS, type MonsterId } from '../hooks/useTowerProgress';
+import { MONSTERS } from '../hooks/useTowerProgress';
 
-// Prize configuration
-export interface Prize {
-    id: string;
-    name: string;
-    type: 'coins' | 'dice' | 'monster';
-    value?: number;
-    monsterId?: MonsterId;
-    weight: number;
-    color: string;
-    icon: string;
-}
-
-export const LOTTERY_PRIZES: Prize[] = [
-    { id: 'coins_10', name: '10 星幣', type: 'coins', value: 10, weight: 30, color: '#FCD34D', icon: '⭐' },
-    { id: 'coins_20', name: '20 星幣', type: 'coins', value: 20, weight: 25, color: '#FB923C', icon: '✨' },
-    { id: 'coins_50', name: '50 星幣', type: 'coins', value: 50, weight: 15, color: '#F87171', icon: '💫' },
-    { id: 'coins_100', name: '100 星幣', type: 'coins', value: 100, weight: 5, color: '#A78BFA', icon: '🌟' },
-    { id: 'dice_2', name: '2 顆骰子', type: 'dice', value: 2, weight: 15, color: '#4ADE80', icon: '🎲' },
-    { id: 'dice_5', name: '5 顆骰子', type: 'dice', value: 5, weight: 5, color: '#60A5FA', icon: '🎯' },
-    { id: 'monster_star', name: '星光精靈', type: 'monster', monsterId: 'star_fairy' as MonsterId, weight: 3, color: '#F472B6', icon: '🌠' },
-    { id: 'monster_lucky', name: '幸運草寶寶', type: 'monster', monsterId: 'lucky_clover' as MonsterId, weight: 2, color: '#34D399', icon: '🍀' },
-];
+import { LOTTERY_PRIZES, type Prize } from '../lib/gameConfig';
 
 interface LotteryWheelProps {
     onComplete: (prize: Prize) => void;

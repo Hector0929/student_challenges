@@ -5,10 +5,17 @@ import { supabase } from '../lib/supabase';
 // Helper to get LIFF ID from env
 const LIFF_ID = import.meta.env.VITE_LIFF_ID;
 
+interface LineProfile {
+    userId: string;
+    displayName: string;
+    pictureUrl?: string;
+    statusMessage?: string;
+}
+
 export function useLine() {
     const [liffError, setLiffError] = useState<string | null>(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [lineProfile, setLineProfile] = useState<any>(null);
+    const [lineProfile, setLineProfile] = useState<LineProfile | null>(null);
 
     useEffect(() => {
         if (!LIFF_ID) {
@@ -22,13 +29,13 @@ export function useLine() {
                 if (liff.isLoggedIn()) {
                     setIsLoggedIn(true);
                     liff.getProfile().then(profile => {
-                        setLineProfile(profile);
+                        setLineProfile(profile as LineProfile);
                     });
                 }
             })
-            .catch((error: any) => {
+            .catch((error) => {
                 console.error('LIFF Init Error', error);
-                setLiffError(error.toString());
+                setLiffError(String(error));
             });
     }, []);
 
@@ -70,11 +77,12 @@ export function useLine() {
 
             alert(`綁定成功！\nLine 暱稱: ${profile.displayName}`);
             return true;
-        } catch (error: any) {
+        } catch (error) {
             console.error('Bind Error', error);
-            alert(`綁定失敗: ${error.message}`);
+            alert(`綁定失敗: ${(error as Error).message || String(error)}`);
             return false;
         }
+
     };
 
     return {

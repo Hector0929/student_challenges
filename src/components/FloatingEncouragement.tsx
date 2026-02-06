@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 
 interface FloatingEncouragementProps {
     userName: string;
@@ -15,8 +15,18 @@ const MESSAGES = [
 ];
 
 export const FloatingEncouragement: React.FC<FloatingEncouragementProps> = ({ userName }) => {
-    const items = useMemo(() => {
-        return Array.from({ length: 12 }).map((_, i) => ({
+    const [items, setItems] = React.useState<Array<{
+        id: number;
+        text: string;
+        top: string;
+        left: string;
+        delay: string;
+        duration: string;
+        scale: number;
+    }>>([]);
+
+    React.useEffect(() => {
+        const newItems = Array.from({ length: 12 }).map((_, i) => ({
             id: i,
             text: `${userName} ${MESSAGES[Math.floor(Math.random() * MESSAGES.length)]}`,
             top: `${Math.random() * 90}%`,
@@ -25,6 +35,7 @@ export const FloatingEncouragement: React.FC<FloatingEncouragementProps> = ({ us
             duration: `${15 + Math.random() * 10}s`,
             scale: 0.8 + Math.random() * 0.5,
         }));
+        setItems(newItems);
     }, [userName]);
 
     return (

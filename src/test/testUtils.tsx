@@ -33,6 +33,9 @@ export const mockFamilySettings: FamilySettings = {
     parent_message: '今天也要加油喔！',
     exchange_rate_enabled: true,
     star_to_twd_rate: 10,
+    fun_games_enabled: true,
+    learning_area_enabled: true,
+    disabled_games: [],
     updated_at: new Date().toISOString(),
     updated_by: 'parent-123',
 };
@@ -44,6 +47,9 @@ export const mockDisabledSettings: FamilySettings = {
     parent_message: '',
     exchange_rate_enabled: false,
     star_to_twd_rate: 1,
+    fun_games_enabled: false,
+    learning_area_enabled: false,
+    disabled_games: [],
     updated_at: new Date().toISOString(),
 };
 
@@ -73,23 +79,4 @@ export const mockApprovedExchange: ExchangeRequest = {
 };
 
 // Helper to create a wrapper with providers
-import React, { ReactNode } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-export const createTestQueryClient = () => new QueryClient({
-    defaultOptions: {
-        queries: {
-            retry: false,
-            gcTime: 0,
-        },
-    },
-});
-
-export const TestWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const queryClient = createTestQueryClient();
-    return (
-        <QueryClientProvider client={queryClient}>
-            {children}
-        </QueryClientProvider>
-    );
-};
+// moved to TestWrapper.tsx

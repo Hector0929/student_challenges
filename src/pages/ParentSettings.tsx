@@ -9,7 +9,7 @@ import { useAdjustStars, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings, useUpdateFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
 import { useQuery } from '@tanstack/react-query';
 import { RPGDialog } from '../components/RPGDialog';
-import { GAMES, type Game } from '../components/RewardTime';
+import { GAMES, type Game } from '../lib/gameConfig';
 import { SentenceSettingsDialog } from '../components/SentenceSettingsDialog';
 
 // Component for individual game toggle

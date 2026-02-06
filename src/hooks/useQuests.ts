@@ -20,7 +20,7 @@ export const useQuests = (status: 'active' | 'pending' | 'archived' = 'active') 
 
             // JOIN profiles to filter by family_id
             // We use !inner to enforce that the creator must belong to the same family
-            let query = supabase
+            const query = supabase
                 .from('quests')
                 .select('*, quest_assignments(*), profiles!inner(family_id)');
 
@@ -501,7 +501,7 @@ export const useStarBalance = (childId: string) => {
                     console.log('✅ Star balance from RPC:', data);
                     return data as number;
                 }
-            } catch (e) {
+            } catch {
                 console.log('⚠️ RPC not available, calculating manually...');
             }
 
@@ -564,7 +564,7 @@ export const useSpendStars = () => {
                 if (data !== null) {
                     currentBalance = data;
                 }
-            } catch (e) {
+            } catch {
                 // Fallback
                 const { data: totalPoints } = await supabase
                     .rpc('get_child_total_points', { child_id: userId });
@@ -671,4 +671,3 @@ export const useAdjustStars = () => {
         },
     });
 };
-

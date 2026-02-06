@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { GameModal } from './GameModal';
-import { GAMES, type Game } from './RewardTime';
+import { GAMES, type Game } from '../lib/gameConfig';
 import { useFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
 
 interface LearningAreaProps {

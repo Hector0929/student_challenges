@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Check } from 'lucide-react';
 import type { Quest } from '../types/database';
 
@@ -12,7 +12,6 @@ interface QuestCardProps {
 
 export const QuestCard: React.FC<QuestCardProps> = ({
     quest,
-    isCompleted: _isCompleted,
     onComplete,
     disabled = false,
     status = 'pending',
@@ -21,11 +20,16 @@ export const QuestCard: React.FC<QuestCardProps> = ({
     const [isFlashing, setIsFlashing] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    useEffect(() => {
+    // Track previous status to reset processing state
+    const [prevStatus, setPrevStatus] = useState(status);
+
+    // Reset isProcessing when status changes (pattern: Adjusting state during rendering)
+    if (status !== prevStatus) {
+        setPrevStatus(status);
         if (status === 'completed' || status === 'verified') {
             setIsProcessing(false);
         }
-    }, [status]);
+    }
 
     const isDisabled = disabled || status === 'completed' || status === 'verified' || isProcessing;
 

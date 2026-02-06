@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ParentsMessageCard, ExchangeRateCard } from '../components/ChildDashboardWidgets';
-import { TestWrapper } from '../test/testUtils';
+import { TestWrapper } from '../test/TestWrapper';
 
 // Mock the hooks
 vi.mock('../hooks/useFamilySettings', () => ({

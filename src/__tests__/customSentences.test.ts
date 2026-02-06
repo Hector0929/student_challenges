@@ -1,7 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import React from 'react';
 import { playSentence } from '../hooks/useCustomSentences';
 
 // Mock Supabase
@@ -45,7 +42,7 @@ Object.defineProperty(window, 'speechSynthesis', {
 // Proper constructor mock for SpeechSynthesisUtterance
 class MockSpeechSynthesisUtterance {
     text: string;
-    voice: any = null;
+    voice: SpeechSynthesisVoice | null = null;
     lang: string = '';
     rate: number = 1;
 
@@ -152,7 +149,7 @@ describe('Custom Sentences Feature', () => {
         it('should handle invalid JSON gracefully', () => {
             localStorage.setItem('customSentences', 'invalid json');
 
-            let result: any[] = [];
+            let result: unknown[] = [];
             try {
                 result = JSON.parse(localStorage.getItem('customSentences')!);
             } catch {

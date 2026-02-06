@@ -19,10 +19,10 @@ interface GameModalProps {
 type GamePhase = 'confirm' | 'playing' | 'timeup' | 'insufficient';
 
 // Helper Components (Extracted to prevent re-mounting)
-const btnBase = "px-6 py-3 font-pixel text-sm rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_0_0_rgba(0,0,0,0.1)] active:shadow-none active:translate-y-1";
-const btnPrimary = "bg-indigo-500 hover:bg-indigo-600 text-white";
-const btnSecondary = "bg-white text-indigo-900 border-2 border-indigo-100 hover:bg-indigo-50";
-const btnGreen = "bg-green-500 hover:bg-green-600 text-white";
+const btnBase = "px-6 py-3 font-pixel text-sm rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-1";
+const btnPrimary = "clay-btn w-full sm:w-auto";
+const btnSecondary = "clay-btn-secondary w-full sm:w-auto";
+const btnGreen = "bg-green-500 hover:bg-green-600 text-white shadow-[0_4px_0_0_#15803d] active:shadow-none";
 
 const TopHUD = ({
     gameName,
@@ -88,24 +88,23 @@ const TimeUpOverlay = ({
     isProcessing: boolean;
 }) => {
     return (
-        <div className="absolute inset-0 z-50 bg-indigo-900/90 backdrop-blur-sm flex items-center justify-center animate-fade-in">
-            <div className="text-center p-8 bg-white rounded-3xl shadow-2xl border-4 border-indigo-200 max-w-lg w-full mx-4 animate-bounce-in">
+        <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-md flex items-center justify-center animate-fade-in">
+            <div className="text-center p-8 clay-card max-w-lg w-full mx-4 animate-bounce-in bg-white">
                 <div className="relative inline-block mb-4">
                     <div className="text-8xl animate-bounce">⏰</div>
-                    <div className="absolute -bottom-2 w-full h-4 bg-black opacity-10 blur-md rounded-[100%]"></div>
                 </div>
 
-                <h3 className="font-pixel text-3xl mb-2 text-indigo-900">時間到囉！</h3>
-                <p className="text-indigo-400 mb-8 font-pixel">玩得開心嗎？休息一下還是繼續挑戰？</p>
+                <h3 className="font-pixel text-3xl mb-2" style={{ color: 'var(--color-text)' }}>時間到囉！</h3>
+                <p className="mb-8 font-pixel text-sm" style={{ color: 'var(--color-text-light)' }}>玩得開心嗎？休息一下還是繼續挑戰？</p>
 
-                <div className="bg-indigo-50 rounded-3xl p-6 mb-8 border-4 border-indigo-100">
-                    <div className="text-sm text-indigo-400 mb-2 font-bold">再玩 3 分鐘只需要</div>
+                <div className="bg-white/50 rounded-3xl p-6 mb-8 border-4 border-indigo-100 shadow-inner">
+                    <div className="text-sm mb-2 font-bold" style={{ color: 'var(--color-text-light)' }}>再玩 3 分鐘只需要</div>
                     <div className="flex items-center justify-center gap-2">
                         <Star className="text-yellow-500" fill="currentColor" size={32} />
-                        <span className="font-pixel text-4xl text-indigo-900">{GAME_COST}</span>
+                        <span className="font-pixel text-4xl" style={{ color: 'var(--color-text)' }}>{GAME_COST}</span>
                     </div>
-                    <div className="mt-4 pt-4 border-t border-indigo-200 flex justify-between px-4 text-sm">
-                        <span className="text-indigo-400">目前餘額</span>
+                    <div className="mt-4 pt-4 border-t border-indigo-100 flex justify-between px-4 text-sm">
+                        <span style={{ color: 'var(--color-text-muted)' }}>目前餘額</span>
                         <span className="font-pixel text-yellow-600">{starBalance} ⭐</span>
                     </div>
                 </div>
@@ -141,8 +140,8 @@ export const GameModal: React.FC<GameModalProps> = ({
     onClose,
     gameUrl,
     gameName,
-    gameId: _gameId,
-    userId: _userId,
+
+    // gameId and userId are unused in this component but passed in props
     starBalance,
     onSpendStars,
     onRefreshBalance,
@@ -194,7 +193,7 @@ export const GameModal: React.FC<GameModalProps> = ({
                 clearInterval(timerRef.current);
             }
         };
-    }, [isOpen]);
+    }, [isOpen, mode]);
 
     // 2. Focus Management
     useEffect(() => {
@@ -321,7 +320,7 @@ export const GameModal: React.FC<GameModalProps> = ({
         }
 
         switch (phase) {
-            case 'confirm':
+            case 'confirm': {
                 const isPractice = mode === 'practice';
 
                 return (
@@ -333,21 +332,21 @@ export const GameModal: React.FC<GameModalProps> = ({
                             </div>
                         </div>
 
-                        <h3 className="font-pixel text-2xl mb-2 text-indigo-900">{gameName}</h3>
-                        <p className="text-indigo-400 text-sm mb-8 font-pixel">
+                        <h3 className="font-pixel text-2xl mb-2" style={{ color: 'var(--pastel-indigo-text)' }}>{gameName}</h3>
+                        <p className="text-sm mb-8 font-pixel" style={{ color: 'var(--color-text-light)' }}>
                             {isPractice ? '準備好開始學習了嗎？加油！' : '準備好開始挑戰了嗎？'}
                         </p>
 
                         {!isPractice && (
                             <>
-                                <div className="bg-white rounded-3xl p-6 mb-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] border-4 border-indigo-100 transform hover:-translate-y-1 transition-transform">
+                                <div className="bg-white/80 rounded-3xl p-6 mb-8 shadow-clay border-4 border-indigo-100 transform hover:-translate-y-1 transition-transform">
                                     <div className="flex items-center justify-center gap-3 mb-2">
-                                        <div className="bg-yellow-400 p-2 rounded-2xl shadow-inner">
+                                        <div className="bg-yellow-400 p-3 rounded-2xl shadow-inner">
                                             <Star className="text-white" fill="currentColor" size={28} />
                                         </div>
-                                        <span className="font-pixel text-4xl text-indigo-900">{GAME_COST}</span>
+                                        <span className="font-pixel text-4xl" style={{ color: 'var(--color-text)' }}>{GAME_COST}</span>
                                     </div>
-                                    <div className="text-indigo-400 font-pixel text-sm">星幣 / 3分鐘</div>
+                                    <div className="font-pixel text-sm" style={{ color: 'var(--color-text-muted)' }}>星幣 / 3分鐘</div>
                                 </div>
 
                                 <div className="flex justify-center gap-8 mb-8 text-sm font-bold">
@@ -398,32 +397,33 @@ export const GameModal: React.FC<GameModalProps> = ({
                         </div>
                     </div>
                 );
+            }
 
             case 'insufficient':
                 return (
                     <div className="text-center py-8 px-4">
-                        <div className="text-8xl mb-4 grayscale opacity-80">😢</div>
-                        <h3 className="font-pixel text-2xl mb-2 text-red-500">星幣不夠了...</h3>
+                        <div className="text-8xl mb-4 animate-float">😢</div>
+                        <h3 className="font-pixel text-2xl mb-2" style={{ color: 'var(--color-danger)' }}>星幣不夠了...</h3>
 
-                        <div className="bg-white rounded-2xl p-6 shadow-sm border-2 border-red-100 mb-6 mx-auto max-w-xs">
+                        <div className="bg-white/90 rounded-2xl p-6 shadow-clay border-2 border-red-100 mb-6 mx-auto max-w-xs">
                             <div className="flex justify-between items-center mb-2">
-                                <span className="text-gray-500 text-sm">需要</span>
+                                <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>需要</span>
                                 <span className="font-pixel text-red-500">{GAME_COST} ⭐</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-gray-500 text-sm">擁有</span>
-                                <span className="font-pixel text-gray-900">{starBalance} ⭐</span>
+                                <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>擁有</span>
+                                <span className="font-pixel" style={{ color: 'var(--color-text)' }}>{starBalance} ⭐</span>
                             </div>
                         </div>
 
-                        <div className="bg-yellow-50 border-2 border-dashed border-yellow-300 rounded-xl p-4 mb-8">
-                            <h4 className="font-bold text-yellow-800 mb-2">💡 如何獲得星幣？</h4>
-                            <ul className="text-left text-sm text-yellow-700 space-y-2">
-                                <li className="flex items-center gap-2">
-                                    <span className="text-lg">📅</span> 完成每日任務
+                        <div className="bg-yellow-50 border-4 border-dashed border-yellow-200 rounded-3xl p-6 mb-8">
+                            <h4 className="font-bold mb-2" style={{ color: 'var(--color-cta)' }}>💡 如何獲得星幣？</h4>
+                            <ul className="text-left text-sm space-y-2" style={{ color: 'var(--color-text-light)' }}>
+                                <li className="flex items-center gap-3 bg-white/50 p-2 rounded-xl">
+                                    <span className="text-xl">📅</span> 完成每日任務
                                 </li>
-                                <li className="flex items-center gap-2">
-                                    <span className="text-lg">🧹</span> 幫忙做家事
+                                <li className="flex items-center gap-3 bg-white/50 p-2 rounded-xl">
+                                    <span className="text-xl">🧹</span> 幫忙做家事
                                 </li>
                             </ul>
                         </div>

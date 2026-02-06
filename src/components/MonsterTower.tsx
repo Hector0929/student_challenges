@@ -3,7 +3,8 @@ import { Dices, Trophy, Sparkles, X, ArrowUp, ArrowDown, Move, ShoppingCart, Coi
 import { useTowerProgress, useTowerEvents, useRollDice, useResetTower, usePurchaseDice, useLotteryReward, MONSTERS, GAME_ASSETS, type MonsterId } from '../hooks/useTowerProgress';
 import { useStarBalance } from '../hooks/useQuests';
 import { RPGButton } from './RPGButton';
-import { LotteryWheel, type Prize } from './LotteryWheel';
+import { LotteryWheel } from './LotteryWheel';
+import { type Prize } from '../lib/gameConfig';
 import type { TowerEvent } from '../types/database';
 
 interface MonsterTowerProps {
@@ -240,7 +241,7 @@ export const MonsterTower: React.FC<MonsterTowerProps> = ({ userId, isOpen, onCl
             console.error('Roll failed:', error);
             setIsRolling(false);
         }
-    }, [diceCount, isRolling, isMoving, rollDiceMutation, userId, currentFloor, animateMovement, scrollToPlayer]);
+    }, [diceCount, isRolling, isMoving, rollDiceMutation, userId, currentFloor, animateMovement, scrollToPlayer, setShowEvent, setShowVictory, setRollResult, setDisplayDice, setIsRolling]);
 
     // Hooks for lottery rewards
     const lotteryRewardMutation = useLotteryReward();
