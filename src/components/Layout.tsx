@@ -1,5 +1,5 @@
 import React from 'react';
-import { Swords, Shield, LogOut, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import type { Profile } from '../types/database';
 
 interface LayoutProps {
@@ -18,70 +18,68 @@ export const Layout: React.FC<LayoutProps> = ({
     onLogout,
 }) => {
     return (
-        <div className="min-h-screen bg-off-white">
+        <div className="min-h-screen confetti-bg" style={{ backgroundColor: 'var(--bg-main)' }}>
             {/* Header */}
-            <header className="bg-pokeball-red border-b-4 border-deep-black p-4">
-                <div className="container mx-auto">
-                    <div className="flex items-center justify-between">
-                        <h1 className="text-white font-pixel text-lg md:text-xl">
-                            每日怪獸挑戰
+            <header className="clay-card mx-4 mt-4 p-4" style={{ borderRadius: '16px' }}>
+                <div className="flex items-center justify-between">
+                    {/* Logo / Title */}
+                    <div className="flex items-center gap-3">
+                        <span className="text-2xl">🏠</span>
+                        <h1 className="font-heading text-xl font-bold" style={{ color: 'var(--color-text)' }}>
+                            HA family
                         </h1>
+                    </div>
 
-                        <div className="flex items-center gap-4">
-                            {/* User Info */}
-                            {user && (
-                                <div className="hidden md:flex items-center gap-2 bg-white/20 px-3 py-2 border-2 border-white/30">
-                                    <User size={16} className="text-white" />
-                                    <span className="text-white font-pixel text-xs">
-                                        {user.name}
-                                        {user.student_id && ` (${user.student_id})`}
-                                    </span>
-                                </div>
-                            )}
-
-                            {/* Role Switcher */}
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => onRoleChange('child')}
-                                    className={`
-                  px-4 py-2 font-pixel text-xs border-2 border-deep-black
-                  transition-all flex items-center gap-2
-                  ${currentRole === 'child'
-                                            ? 'bg-white text-deep-black'
-                                            : 'bg-pokeball-red text-white hover:bg-red-600'
-                                        }
-                `}
-                                >
-                                    <Swords size={16} />
-                                    <span className="hidden sm:inline">玩家</span>
-                                </button>
-                                <button
-                                    onClick={() => onRoleChange('parent')}
-                                    className={`
-                  px-4 py-2 font-pixel text-xs border-2 border-deep-black
-                  transition-all flex items-center gap-2
-                  ${currentRole === 'parent'
-                                            ? 'bg-white text-deep-black'
-                                            : 'bg-pokeball-red text-white hover:bg-red-600'
-                                        }
-                `}
-                                >
-                                    <Shield size={16} />
-                                    <span className="hidden sm:inline">家長</span>
-                                </button>
+                    <div className="flex items-center gap-3">
+                        {/* User Info (Desktop) */}
+                        {user && (
+                            <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full"
+                                style={{ backgroundColor: 'var(--bg-card)', border: '2px solid var(--border-soft)' }}>
+                                <User size={16} style={{ color: 'var(--color-text-light)' }} />
+                                <span className="font-body font-semibold text-sm" style={{ color: 'var(--color-text)' }}>
+                                    {user.name}
+                                    {user.student_id && ` (${user.student_id})`}
+                                </span>
                             </div>
+                        )}
 
-                            {/* Logout Button */}
-                            {onLogout && (
-                                <button
-                                    onClick={onLogout}
-                                    className="px-3 py-2 bg-white/20 border-2 border-white/30 text-white hover:bg-white/30 transition-colors"
-                                    title="登出"
-                                >
-                                    <LogOut size={16} />
-                                </button>
-                            )}
+                        {/* Role Switcher */}
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => onRoleChange('parent')}
+                                className={`
+                                    px-4 py-2 font-heading text-sm rounded-full
+                                    transition-all flex items-center gap-2 cursor-pointer
+                                    ${currentRole === 'parent'
+                                        ? 'text-white'
+                                        : 'hover:opacity-80'
+                                    }
+                                `}
+                                style={{
+                                    backgroundColor: currentRole === 'parent' ? 'var(--color-cta)' : 'var(--bg-card)',
+                                    color: currentRole === 'parent' ? 'white' : 'var(--color-text)',
+                                    border: `2px solid ${currentRole === 'parent' ? '#E09000' : 'var(--border-soft)'}`,
+                                }}
+                            >
+                                👨‍👩‍👧 家長模式
+                            </button>
                         </div>
+
+                        {/* Logout Button */}
+                        {onLogout && (
+                            <button
+                                onClick={onLogout}
+                                className="px-4 py-2 font-heading text-sm rounded-full transition-all cursor-pointer hover:opacity-80"
+                                style={{
+                                    backgroundColor: 'var(--bg-card)',
+                                    color: 'var(--color-text)',
+                                    border: '2px solid var(--border-soft)',
+                                }}
+                                title="登出系統"
+                            >
+                                登出系統
+                            </button>
+                        )}
                     </div>
                 </div>
             </header>
@@ -90,15 +88,6 @@ export const Layout: React.FC<LayoutProps> = ({
             <main className="container mx-auto p-4 md:p-6">
                 {children}
             </main>
-
-            {/* Footer */}
-            <footer className="bg-deep-black text-white p-4 mt-8">
-                <div className="container mx-auto text-center">
-                    <p className="font-pixel text-xs">
-                        Daily QuestMon © 2026 | 讓每日任務變得有趣！
-                    </p>
-                </div>
-            </footer>
         </div>
     );
 };

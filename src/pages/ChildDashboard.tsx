@@ -3,7 +3,7 @@ import { ParentsMessageCard, ExchangeRateCard } from '../components/ChildDashboa
 import { ExchangeRequestDialog } from '../components/ExchangeRequestDialog';
 import { MonsterTower, TowerPreview } from '../components/MonsterTower';
 
-import { Trophy, Star, Plus, X, Save, ChevronDown, ChevronUp, RefreshCw, Trash2 } from 'lucide-react';
+import { Star, X, Save, ChevronDown, ChevronUp, RefreshCw, Trash2, Check } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { RPGDialog } from '../components/RPGDialog';
@@ -256,8 +256,8 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
-                    <div className="text-6xl mb-4 animate-bounce">👾</div>
-                    <p className="font-pixel text-sm">載入中...</p>
+                    <div className="text-6xl mb-4 animate-float">👾</div>
+                    <p className="font-heading" style={{ color: 'var(--color-text)' }}>載入中...</p>
                 </div>
             </div>
         );
@@ -277,42 +277,46 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             </div>
 
             {/* Header Section */}
-            <div className="rpg-dialog mb-6 animate-bounce-in">
+            <div className="clay-card mb-6 p-5 animate-bounce-in" style={{ borderRadius: '20px' }}>
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                        <Trophy className="text-pokeball-red" size={32} />
-                        <h2 className="font-pixel text-xl">今日挑戰</h2>
-                        {isUnlocked && <span className="text-2xl">✅</span>}
+                        <span className="text-3xl">🎯</span>
+                        <h2 className="font-heading text-xl font-bold" style={{ color: 'var(--color-text)' }}>今日挑戰</h2>
+                        {isUnlocked && <div className="clay-check"><Check size={14} strokeWidth={3} /></div>}
                     </div>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleRefreshData}
-                            className="px-3 py-2 bg-white border-2 border-deep-black hover:bg-gray-100 transition-colors"
+                            className="p-2 rounded-full transition-all cursor-pointer hover:opacity-80"
+                            style={{ backgroundColor: 'var(--bg-card)', border: '2px solid var(--border-soft)' }}
                             title="重新整理"
                         >
-                            <RefreshCw size={16} />
+                            <RefreshCw size={18} style={{ color: 'var(--color-text-light)' }} />
                         </button>
                         <button
                             onClick={handleClearAllCache}
-                            className="px-3 py-2 bg-orange-100 border-2 border-deep-black hover:bg-orange-200 transition-colors"
-                            title="清除所有快取（如果遇到問題）"
+                            className="p-2 rounded-full transition-all cursor-pointer hover:opacity-80"
+                            style={{ backgroundColor: '#FFF3E0', border: '2px solid #FFB74D' }}
+                            title="清除快取"
                         >
-                            <Trash2 size={16} />
+                            <Trash2 size={18} style={{ color: '#E65100' }} />
                         </button>
                         {!isAllQuestsCompleted && (
-                            <RPGButton onClick={handleOpenDialog} className="text-xs">
-                                <div className="flex items-center gap-1">
-                                    <Plus size={14} />
-                                    <span>想要新任務</span>
-                                </div>
-                            </RPGButton>
+                            <button
+                                onClick={handleOpenDialog}
+                                className="clay-btn py-2 px-4 text-sm cursor-pointer flex items-center gap-1"
+                                style={{ borderRadius: '12px' }}
+                            >
+                                ✨ 想要新任務
+                            </button>
                         )}
                         {isAllQuestsCompleted && (
                             <button
                                 onClick={() => setIsQuestSectionCollapsed(!isQuestSectionCollapsed)}
-                                className="px-3 py-2 border-2 border-deep-black bg-white hover:bg-gray-100 transition-colors"
+                                className="p-2 rounded-full transition-all cursor-pointer hover:opacity-80"
+                                style={{ backgroundColor: 'var(--bg-card)', border: '2px solid var(--border-soft)' }}
                             >
-                                {isQuestSectionCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                                {isQuestSectionCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
                             </button>
                         )}
                     </div>
@@ -321,36 +325,36 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                 {!isQuestSectionCollapsed && (
                     <>
                         {/* Progress Section */}
-                        <div className="bg-off-white p-4 border-2 border-deep-black mb-4">
+                        <div className="mb-4">
                             <ProgressBar
                                 current={progress.completed_quests}
                                 total={questTarget}
-                                label={`每日目標 (${Math.min(progress.completed_quests, questTarget)}/${questTarget})`}
+                                label={`每日目標`}
                             />
                         </div>
 
-                        {/* Stats */}
+                        {/* Stats Grid */}
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-white border-2 border-deep-black p-3 text-center">
-                                <div className="text-2xl mb-1">🎯</div>
-                                <div className="font-pixel text-xs text-gray-600">已完成</div>
-                                <div className="font-pixel text-lg text-hp-green">
+                            <div className="clay-card p-4 text-center" style={{ borderRadius: '16px' }}>
+                                <div className="text-3xl mb-2">🎯</div>
+                                <div className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>已完成</div>
+                                <div className="font-heading text-xl font-bold" style={{ color: 'var(--color-primary)' }}>
                                     {progress.completed_quests}/{progress.total_quests}
                                 </div>
                             </div>
-                            <div className="bg-white border-2 border-deep-black p-3 text-center">
-                                <div className="text-2xl mb-1">⭐</div>
-                                <div className="font-pixel text-xs text-gray-600">可用星幣</div>
-                                <div className="font-mono text-xl font-bold text-yellow-600">
+                            <div className="clay-card p-4 text-center" style={{ borderRadius: '16px' }}>
+                                <div className="text-3xl mb-2">⭐</div>
+                                <div className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>可用星幣</div>
+                                <div className="font-heading text-2xl font-bold" style={{ color: 'var(--color-cta)' }}>
                                     {starBalance || 0}
                                 </div>
-                                {/* Exchange Button - only show if exchange rate is enabled */}
                                 {familySettings?.exchange_rate_enabled && (starBalance || 0) > 0 && (
                                     <button
                                         onClick={() => setIsExchangeDialogOpen(true)}
-                                        className="mt-2 px-2 py-1 bg-yellow-400 hover:bg-yellow-500 border-2 border-deep-black font-pixel text-sm font-bold transition-colors w-full"
+                                        className="mt-2 clay-btn w-full py-2 text-sm cursor-pointer"
+                                        style={{ borderRadius: '12px' }}
                                     >
-                                        💱 兌換
+                                        兌換
                                     </button>
                                 )}
                             </div>
@@ -375,10 +379,10 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                             </div>
                         ))
                     ) : (
-                        <div className="rpg-dialog text-center py-8">
+                        <div className="clay-card text-center py-8" style={{ borderRadius: '20px' }}>
                             <div className="text-6xl mb-4">😴</div>
-                            <p className="font-pixel text-sm">目前沒有任務</p>
-                            <p className="text-xs text-gray-600 mt-2">請家長新增每日任務</p>
+                            <p className="font-heading text-lg" style={{ color: 'var(--color-text)' }}>目前沒有任務</p>
+                            <p className="font-body text-sm mt-2" style={{ color: 'var(--color-text-light)' }}>請家長新增每日任務</p>
                         </div>
                     )}
                 </div>
@@ -398,18 +402,23 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             {/* Completion Message */}
             {
                 progress.completed_quests === progress.total_quests && progress.total_quests > 0 && !isQuestSectionCollapsed && (
-                    <div className="rpg-dialog mt-6 bg-yellow-50 text-center py-6 animate-bounce-in">
+                    <div
+                        className="clay-card mt-6 text-center py-8 animate-bounce-in"
+                        style={{ borderRadius: '20px', backgroundColor: '#FFF9E8' }}
+                    >
                         <div className="text-6xl mb-4">🎉</div>
-                        <h3 className="font-pixel text-lg mb-2">太棒了！</h3>
-                        <p className="text-sm text-gray-700">
+                        <h3 className="font-heading text-xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
+                            太棒了！
+                        </h3>
+                        <p className="font-body" style={{ color: 'var(--color-text-light)' }}>
                             你已經完成今天所有的任務！
                         </p>
                         <div className="mt-4 flex items-center justify-center gap-2">
-                            <Star className="text-yellow-500" fill="currentColor" />
-                            <span className="font-pixel text-xl text-yellow-600">
+                            <Star style={{ color: 'var(--color-cta)' }} fill="currentColor" />
+                            <span className="font-heading text-2xl font-bold" style={{ color: 'var(--color-cta)' }}>
                                 +{progress.earned_points}
                             </span>
-                            <Star className="text-yellow-500" fill="currentColor" />
+                            <Star style={{ color: 'var(--color-cta)' }} fill="currentColor" />
                         </div>
                     </div>
                 )

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Check } from 'lucide-react';
 import type { Quest } from '../types/database';
 
 interface QuestCardProps {
@@ -11,7 +12,7 @@ interface QuestCardProps {
 
 export const QuestCard: React.FC<QuestCardProps> = ({
     quest,
-    isCompleted: _isCompleted, // Legacy prop, now using status instead
+    isCompleted: _isCompleted,
     onComplete,
     disabled = false,
     status = 'pending',
@@ -20,99 +21,98 @@ export const QuestCard: React.FC<QuestCardProps> = ({
     const [isFlashing, setIsFlashing] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // Reset processing state when status changes (e.g., after error or completion)
     useEffect(() => {
         if (status === 'completed' || status === 'verified') {
             setIsProcessing(false);
         }
     }, [status]);
 
-    // Check if quest is disabled based on status
     const isDisabled = disabled || status === 'completed' || status === 'verified' || isProcessing;
 
     const handleClick = () => {
-        // Prevent clicks if disabled or already processing
-        if (isDisabled) {
-            console.log('❌ Quest card click blocked:', {
-                disabled,
-                status,
-                isProcessing,
-                questId: quest.id.substring(0, 8)
-            });
-            return;
-        }
-
-        // Set processing state immediately to prevent double clicks
+        if (isDisabled) return;
         setIsProcessing(true);
-        console.log('✅ Quest card clicked, starting animation:', quest.id.substring(0, 8));
-
-        // Trigger shake animation
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 500);
-
-        // Call onComplete after shake animation
         setTimeout(() => {
             onComplete(quest.id);
             setIsFlashing(true);
-            setTimeout(() => {
-                setIsFlashing(false);
-                // Keep processing state to prevent re-clicks until parent updates status
-            }, 300);
+            setTimeout(() => setIsFlashing(false), 300);
         }, 500);
+    };
+
+    // Card border color based on status
+    const getBorderColor = () => {
+        if (status === 'verified') return 'var(--color-primary)';
+        if (status === 'completed') return 'var(--color-cta)';
+        return 'var(--border-card)';
     };
 
     return (
         <div
             onClick={handleClick}
             className={`
-        quest-card p-4 
-        ${isDisabled ? 'opacity-60 bg-gray-100' : 'hover:shadow-lg'}
-        ${isShaking ? 'animate-shake' : ''}
-        ${isFlashing ? 'animate-flash' : ''}
-        ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}
-      `}
+                clay-card p-4 
+                ${isDisabled ? 'opacity-70' : 'cursor-pointer'}
+                ${isShaking ? 'animate-wiggle' : ''}
+                ${isFlashing ? 'animate-pop-in' : ''}
+            `}
+            style={{
+                borderColor: getBorderColor(),
+                backgroundColor: status === 'verified' ? '#E8F5E9' : 'var(--bg-card)',
+            }}
         >
             <div className="flex items-center gap-4">
-                {/* Monster Icon */}
-                <div className="text-5xl flex-shrink-0">
-                    {quest.icon}
+                {/* Icon Circle */}
+                <div
+                    className="clay-icon-circle flex-shrink-0"
+                    style={{
+                        backgroundColor: status === 'verified' ? '#C8E6C9' : 'var(--bg-card)',
+                        borderColor: status === 'verified' ? 'var(--color-primary)' : 'var(--border-soft)',
+                    }}
+                >
+                    <span className="text-2xl">{quest.icon}</span>
                 </div>
 
                 {/* Quest Info */}
-                <div className="flex-1">
-                    <h3 className="text-base md:text-lg font-pixel mb-1 leading-relaxed font-bold">
+                <div className="flex-1 min-w-0">
+                    <h3 className="font-heading font-semibold text-base truncate" style={{ color: 'var(--color-text)' }}>
                         {quest.title}
                     </h3>
                     {quest.description && (
-                        <p className="text-xs text-gray-600 leading-relaxed font-pixel">
+                        <p className="font-body text-sm truncate" style={{ color: 'var(--color-text-light)' }}>
                             {quest.description}
                         </p>
                     )}
                 </div>
 
                 {/* Reward Badge */}
-                <div className="flex-shrink-0">
-                    <div className="bg-yellow-400 border-2 border-deep-black px-3 py-2 text-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                        <div className="text-xs font-pixel mb-1">⭐</div>
-                        <div className="text-sm font-mono font-bold">{quest.reward_points}</div>
+                <div className="flex-shrink-0 flex items-center gap-2">
+                    <div className="clay-star">
+                        <span>⭐</span>
+                        <span>{quest.reward_points}</span>
                     </div>
+
+                    {/* Status Check */}
+                    {status === 'verified' && (
+                        <div className="clay-check">
+                            <Check size={14} strokeWidth={3} />
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Completion Status */}
+            {/* Pending Review Badge */}
             {status === 'completed' && (
-                <div className="mt-3 pt-3 border-t-2 border-deep-black">
-                    <div className="inline-flex items-center gap-1 bg-orange-100 border-2 border-deep-black px-3 py-1">
+                <div className="mt-3 pt-3" style={{ borderTop: '2px dashed var(--border-soft)' }}>
+                    <div
+                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full"
+                        style={{ backgroundColor: '#FFF3E0', border: '2px solid #FFB74D' }}
+                    >
                         <span className="text-sm">⏰</span>
-                        <span className="text-xs font-pixel text-orange-600 font-bold">等待家長審核</span>
-                    </div>
-                </div>
-            )}
-            {status === 'verified' && (
-                <div className="mt-3 pt-3 border-t-2 border-deep-black">
-                    <div className="flex items-center justify-center gap-2">
-                        <span className="text-lg">✅</span>
-                        <span className="text-xs font-pixel text-hp-green font-bold">已完成！</span>
+                        <span className="font-heading text-sm font-semibold" style={{ color: '#E65100' }}>
+                            等待家長審核
+                        </span>
                     </div>
                 </div>
             )}

@@ -19,21 +19,27 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         <div className="w-full">
             {label && (
                 <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-pixel font-bold">{label}</span>
+                    <span className="font-heading font-semibold" style={{ color: 'var(--color-text)' }}>
+                        {label}
+                    </span>
                     {showPercentage && (
-                        <span className="text-sm font-mono font-bold">{current}/{total}</span>
+                        <span className="font-body font-bold" style={{ color: 'var(--color-text-light)' }}>
+                            {current}/{total}
+                        </span>
                     )}
                 </div>
             )}
-            <div className="hp-bar">
+            <div className="clay-progress">
                 <div
-                    className="hp-bar-fill"
+                    className="clay-progress-fill"
                     style={{ width: `${percentage}%` }}
                 />
             </div>
-            {showPercentage && (
-                <div className="text-center mt-1">
-                    <span className="text-lg font-mono font-bold text-hp-green">{percentage}%</span>
+            {showPercentage && !label && (
+                <div className="text-center mt-2">
+                    <span className="font-heading font-bold text-lg" style={{ color: 'var(--color-primary)' }}>
+                        {current}/{total}
+                    </span>
                 </div>
             )}
         </div>
