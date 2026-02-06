@@ -4,6 +4,7 @@ import { RefreshCw, Play, PlusCircle, Wrench, Dices } from 'lucide-react';
 import { GAMES, type Game } from '../lib/gameConfig';
 import { GameModal } from '../components/GameModal';
 import { MonsterTower, TowerPreview } from '../components/MonsterTower';
+import { MonsterTowerV2, TowerV2Preview } from '../components/MonsterTowerV2';
 import { useTowerProgress, useAddDice } from '../hooks/useTowerProgress';
 import { useUser } from '../contexts/UserContext';
 import { supabase } from '../lib/supabase';
@@ -21,8 +22,9 @@ export const DebugPage: React.FC = () => {
 
     // QA State
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-    const [activeTab, setActiveTab] = useState<'games' | 'logs' | 'tower'>('games');
+    const [activeTab, setActiveTab] = useState<'games' | 'logs' | 'tower' | 'towerV2'>('games');
     const [isTowerOpen, setIsTowerOpen] = useState(false);
+    const [isTowerV2Open, setIsTowerV2Open] = useState(false);
 
     // Tower data
     const { data: towerProgress, refetch: refetchTower } = useTowerProgress(user?.id || '');
@@ -107,7 +109,14 @@ export const DebugPage: React.FC = () => {
                         className={`px-4 py-2 font-pixel rounded-lg transition-colors ${activeTab === 'tower' ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 border border-gray-300'
                             }`}
                     >
-                        🏰 怪獸塔
+                        🏰 怪獸塔 V1
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('towerV2')}
+                        className={`px-4 py-2 font-pixel rounded-lg transition-colors ${activeTab === 'towerV2' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 border border-gray-300'
+                            }`}
+                    >
+                        🏰 怪獸塔 V2
                     </button>
                     <button
                         onClick={() => { refetch(); refetchBalance(); }}
@@ -319,12 +328,69 @@ export const DebugPage: React.FC = () => {
                 </div>
             )}
 
+            {/* Tower V2 Tab Content */}
+            {activeTab === 'towerV2' && user && (
+                <div className="space-y-4">
+                    {/* V2 Preview Card */}
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                        <h3 className="font-pixel text-lg mb-3 flex items-center gap-2">
+                            🏰 怪獸塔 V2 - Snakes & Ladders Style
+                        </h3>
+                        <TowerV2Preview userId={user.id} onClick={() => setIsTowerV2Open(true)} />
+                    </div>
+
+                    {/* V2 Info */}
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+                        <h3 className="font-pixel text-lg mb-2">✨ V2 新功能</h3>
+                        <ul className="text-sm text-gray-700 space-y-1">
+                            <li>• 10x10 經典蛇梯棋盤佈局</li>
+                            <li>• 🪜 梯子可以往上爬</li>
+                            <li>• 🐍 蛇會讓你滑下去</li>
+                            <li>• 保留原有：骰子、轉盤、購買功能</li>
+                        </ul>
+                    </div>
+
+                    {/* QA Controls */}
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                        <h3 className="font-pixel text-lg mb-3 flex items-center gap-2">
+                            <Dices size={20} /> QA 工具
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                onClick={async () => {
+                                    await addDiceMutation.mutateAsync({ userId: user.id, amount: 10 });
+                                    refetchTower();
+                                }}
+                                className="px-4 py-2 bg-green-100 text-green-700 rounded-lg border border-green-300 hover:bg-green-200 flex items-center gap-2"
+                            >
+                                <PlusCircle size={16} /> +10 骰子
+                            </button>
+                            <button
+                                onClick={() => setIsTowerV2Open(true)}
+                                className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 flex items-center gap-2"
+                            >
+                                🏰 開啟怪獸塔 V2
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Monster Tower Modal */}
             {user && (
                 <MonsterTower
                     userId={user.id}
                     isOpen={isTowerOpen}
                     onClose={() => setIsTowerOpen(false)}
+                />
+            )}
+
+            {/* Monster Tower V2 Modal */}
+            {user && (
+                <MonsterTowerV2
+                    userId={user.id}
+                    isOpen={isTowerV2Open}
+                    onClose={() => setIsTowerV2Open(false)}
                 />
             )}
         </div>

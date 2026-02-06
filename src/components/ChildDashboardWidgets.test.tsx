@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { ParentsMessageCard, ExchangeRateCard } from '../components/ChildDashboardWidgets';
 import { TestWrapper } from '../test/TestWrapper';
