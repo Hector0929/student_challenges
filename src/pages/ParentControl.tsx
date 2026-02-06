@@ -404,44 +404,26 @@ export const ParentControl: React.FC = () => {
                     </div>
 
                     {/* Reward Points */}
-                    <div className="grid grid-cols-2 gap-6">
-                        <div>
-                            <label className="block font-heading font-bold text-sm mb-2 px-1" style={{ color: 'var(--color-text)' }}>完成獎勵 (星幣) *</label>
-                            <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">⭐</span>
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    pattern="[0-9]*"
-                                    value={formData.reward_points}
-                                    onChange={(e) => {
-                                        const value = e.target.value;
-                                        if (value === '' || /^\d+$/.test(value)) {
-                                            setFormData({ ...formData, reward_points: value === '' ? '' : parseInt(value, 10) });
-                                        }
-                                    }}
-                                    className="clay-input"
-                                    style={{ paddingLeft: '3rem' }}
-                                    placeholder="數量"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 pt-6">
-                            <div className="relative inline-flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    id="is_active"
-                                    checked={formData.is_active}
-                                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                                    className="sr-only peer"
-                                />
-                                <div className="w-13 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 border-2 border-gray-300"></div>
-                                <label htmlFor="is_active" className="ml-3 font-heading font-bold text-sm" style={{ color: 'var(--color-text)' }}>
-                                    立即啟用
-                                </label>
-                            </div>
+                    <div>
+                        <label className="block font-heading font-bold text-sm mb-2 px-1" style={{ color: 'var(--color-text)' }}>完成獎勵 (星幣) *</label>
+                        <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">⭐</span>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={formData.reward_points}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (value === '' || /^\d+$/.test(value)) {
+                                        setFormData({ ...formData, reward_points: value === '' ? '' : parseInt(value, 10) });
+                                    }
+                                }}
+                                className="clay-input"
+                                style={{ paddingLeft: '3rem' }}
+                                placeholder="數量"
+                                required
+                            />
                         </div>
                     </div>
 
