@@ -46,6 +46,39 @@
   --shadow-clay: 4px 4px 0 rgba(0, 0, 0, 0.08), inset 0 -2px 4px rgba(0, 0, 0, 0.04);
   --shadow-clay-hover: 6px 6px 0 rgba(0, 0, 0, 0.12);
   --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  /* Pastel Palette for Game Cards */
+  --pastel-blue-bg: #EBF5FF;
+  --pastel-blue-border: #93C5FD;
+  --pastel-blue-text: #1D4ED8;
+
+  --pastel-green-bg: #F0FDF4;
+  --pastel-green-border: #86EFAC;
+  --pastel-green-text: #16A34A;
+
+  --pastel-purple-bg: #FAF5FF;
+  --pastel-purple-border: #D8B4FE;
+  --pastel-purple-text: #9333EA;
+
+  --pastel-orange-bg: #FFF7ED;
+  --pastel-orange-border: #FDBA74;
+  --pastel-orange-text: #EA580C;
+
+  --pastel-pink-bg: #FFF1F2;
+  --pastel-pink-border: #FDA4AF;
+  --pastel-pink-text: #E11D48;
+
+  --pastel-cyan-bg: #ECFEFF;
+  --pastel-cyan-border: #67E8F9;
+  --pastel-cyan-text: #0891B2;
+
+  --pastel-indigo-bg: #EEF2FF;
+  --pastel-indigo-border: #A5B4FC;
+  --pastel-indigo-text: #4338CA;
+
+  --pastel-teal-bg: #F0FDFA;
+  --pastel-teal-border: #5EEAD4;
+  --pastel-teal-text: #0D9488;
 }
 
 * {
@@ -247,6 +280,77 @@ textarea {
   font-weight: 700;
   font-family: 'Fredoka', sans-serif;
   box-shadow: 0 2px 0 #CC8000;
+}
+
+/* Game Card - TaskCard Style */
+.clay-game-card {
+  background: var(--bg-card);
+  border: 4px solid var(--border-card);
+  border-radius: 2.5rem;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  gap: 0.75rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.clay-game-card:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-clay-hover);
+}
+
+.clay-game-card:active {
+  transform: scale(0.98);
+}
+
+.clay-game-card .icon-circle {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  border: 3px solid currentColor;
+  box-shadow: var(--shadow-soft);
+}
+
+/* Section Header */
+.clay-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.clay-section-header .icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.clay-section-header .title {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.clay-section-header .subtitle {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.75rem;
+  color: var(--color-text-light);
 }
 
 /* ========================================

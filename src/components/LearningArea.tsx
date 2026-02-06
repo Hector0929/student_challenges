@@ -8,6 +8,25 @@ interface LearningAreaProps {
     userId: string;
 }
 
+// Pastel color mapping for learning games
+const LEARNING_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+    'spelling': { bg: 'var(--pastel-teal-bg)', border: 'var(--pastel-teal-border)', text: 'var(--pastel-teal-text)' },
+    'pronunciation': { bg: 'var(--pastel-indigo-bg)', border: 'var(--pastel-indigo-border)', text: 'var(--pastel-indigo-text)' },
+    'sentence': { bg: 'var(--pastel-pink-bg)', border: 'var(--pastel-pink-border)', text: 'var(--pastel-pink-text)' },
+    'akila': { bg: 'var(--pastel-blue-bg)', border: 'var(--pastel-blue-border)', text: 'var(--pastel-blue-text)' },
+    'multiplication': { bg: 'var(--pastel-purple-bg)', border: 'var(--pastel-purple-border)', text: 'var(--pastel-purple-text)' },
+    'memory_matrix': { bg: 'var(--pastel-cyan-bg)', border: 'var(--pastel-cyan-border)', text: 'var(--pastel-cyan-text)' },
+    '2048_cyber': { bg: 'var(--pastel-blue-bg)', border: 'var(--pastel-blue-border)', text: 'var(--pastel-blue-text)' },
+};
+
+const getGameColors = (gameId: string) => {
+    return LEARNING_COLORS[gameId] || {
+        bg: 'var(--pastel-blue-bg)',
+        border: 'var(--pastel-blue-border)',
+        text: 'var(--pastel-blue-text)'
+    };
+};
+
 export const LearningArea: React.FC<LearningAreaProps> = ({ userId }) => {
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -28,46 +47,62 @@ export const LearningArea: React.FC<LearningAreaProps> = ({ userId }) => {
     }
 
     return (
-        <div className="rpg-dialog mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 animate-bounce-in">
+        <div className="clay-card mb-6 p-5 animate-bounce-in" style={{ borderRadius: '20px' }}>
+            {/* Section Header */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="bg-white p-2 rounded-xl shadow-sm">
-                        <BookOpen className="text-blue-500" size={24} />
+                    <div
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                        style={{ backgroundColor: 'var(--pastel-blue-bg)', border: '3px solid var(--pastel-blue-border)' }}
+                    >
+                        <BookOpen size={24} style={{ color: 'var(--pastel-blue-text)' }} />
                     </div>
                     <div>
-                        <h2 className="font-pixel text-xl text-blue-900">學習書桌</h2>
-                        <p className="text-xs text-blue-600">隨時都可以練習，不需要星幣喔！</p>
+                        <h2 className="font-heading text-xl font-bold" style={{ color: 'var(--color-text)' }}>
+                            學習書桌
+                        </h2>
+                        <p className="font-body text-xs" style={{ color: 'var(--color-text-light)' }}>
+                            隨時都可以練習，不需要星幣喔！
+                        </p>
                     </div>
                 </div>
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="px-3 py-2 border-2 border-blue-900/10 bg-white hover:bg-blue-50 transition-colors rounded-lg text-blue-900"
+                    className="p-2 rounded-full transition-all cursor-pointer hover:opacity-80"
+                    style={{ backgroundColor: 'var(--bg-card)', border: '2px solid var(--border-soft)' }}
                 >
-                    {isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+                    {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
                 </button>
             </div>
 
+            {/* Game Cards Grid */}
             {!isCollapsed && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {learningGames.map((game) => (
-                        <button
-                            key={game.id}
-                            onClick={() => setSelectedGame(game)}
-                            className={`${game.color} border-2 border-blue-900/10 p-4 rounded-xl transition-all transform hover:scale-105 hover:shadow-lg active:scale-95 text-left group relative overflow-hidden`}
-                        >
-                            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <span className="text-4xl">📚</span>
-                            </div>
-
-                            <div className="text-4xl mb-2 filter drop-shadow-sm">{game.icon}</div>
-                            <div className="font-pixel text-sm text-white mb-1 shadow-black/10 drop-shadow-md">
-                                {game.name}
-                            </div>
-                            <div className="text-xs text-white/90 font-medium">
-                                {game.description}
-                            </div>
-                        </button>
-                    ))}
+                    {learningGames.map((game) => {
+                        const colors = getGameColors(game.id);
+                        return (
+                            <button
+                                key={game.id}
+                                onClick={() => setSelectedGame(game)}
+                                className="clay-game-card"
+                                style={{
+                                    backgroundColor: colors.bg,
+                                    borderColor: colors.border,
+                                    color: colors.text,
+                                }}
+                            >
+                                <div className="icon-circle" style={{ borderColor: colors.border }}>
+                                    {game.icon}
+                                </div>
+                                <h4 className="font-heading text-base font-bold text-center">
+                                    {game.name}
+                                </h4>
+                                <p className="font-body text-xs text-center opacity-80">
+                                    {game.description}
+                                </p>
+                            </button>
+                        );
+                    })}
                 </div>
             )}
 

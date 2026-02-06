@@ -160,6 +160,26 @@ export const GAMES: Game[] = [
     }
 ];
 
+// Pastel color mapping for fun games
+const FUN_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+    'parkour': { bg: 'var(--pastel-purple-bg)', border: 'var(--pastel-purple-border)', text: 'var(--pastel-purple-text)' },
+    'shooting': { bg: 'var(--pastel-orange-bg)', border: 'var(--pastel-orange-border)', text: 'var(--pastel-orange-text)' },
+    'tetris': { bg: 'var(--pastel-green-bg)', border: 'var(--pastel-green-border)', text: 'var(--pastel-green-text)' },
+    'snake': { bg: 'var(--pastel-cyan-bg)', border: 'var(--pastel-cyan-border)', text: 'var(--pastel-cyan-text)' },
+    'ns_shaft': { bg: 'var(--pastel-purple-bg)', border: 'var(--pastel-purple-border)', text: 'var(--pastel-purple-text)' },
+    'neon_breaker': { bg: 'var(--pastel-pink-bg)', border: 'var(--pastel-pink-border)', text: 'var(--pastel-pink-text)' },
+    'neon_slicer': { bg: 'var(--pastel-orange-bg)', border: 'var(--pastel-orange-border)', text: 'var(--pastel-orange-text)' },
+    'bubble_shooter': { bg: 'var(--pastel-pink-bg)', border: 'var(--pastel-pink-border)', text: 'var(--pastel-pink-text)' },
+};
+
+const getFunGameColors = (gameId: string) => {
+    return FUN_COLORS[gameId] || {
+        bg: 'var(--pastel-orange-bg)',
+        border: 'var(--pastel-orange-border)',
+        text: 'var(--pastel-orange-text)'
+    };
+};
+
 export const RewardTime: React.FC<RewardTimeProps> = ({
     isUnlocked,
     remainingQuests,
@@ -209,93 +229,136 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
     }
 
     if (!isUnlocked) {
-        // Locked state
+        // Locked state - Claymorphism style
         return (
-            <div className="rpg-dialog mt-6 animate-bounce-in">
-                <div className="text-center py-8">
-                    <Lock className="mx-auto mb-4 text-gray-400" size={48} />
-                    <h3 className="font-pixel text-lg mb-2 text-gray-600">🔒 獎勵時間（未解鎖）</h3>
-                    <p className="text-base text-gray-700 mb-4">
-                        還差 <span className="font-mono text-pokeball-red text-2xl font-bold">{remainingQuests}</span> 個任務就能玩遊戲囉！
+            <div className="clay-card mt-6 p-5 animate-bounce-in" style={{ borderRadius: '20px', backgroundColor: '#F5F5F5' }}>
+                <div className="text-center py-6">
+                    <div
+                        className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: 'var(--border-soft)', border: '3px solid var(--border-card)' }}
+                    >
+                        <Lock size={28} style={{ color: 'var(--color-text-muted)' }} />
+                    </div>
+                    <h3 className="font-heading text-lg mb-2" style={{ color: 'var(--color-text-light)' }}>
+                        🔒 獎勵時間（未解鎖）
+                    </h3>
+                    <p className="font-body text-base mb-4" style={{ color: 'var(--color-text)' }}>
+                        還差 <span className="font-heading text-2xl font-bold" style={{ color: 'var(--color-cta)' }}>{remainingQuests}</span> 個任務就能玩遊戲囉！
                     </p>
                     <div className="max-w-md mx-auto">
-                        <div className="w-full bg-gray-200 border-2 border-deep-black h-6 relative">
+                        <div className="clay-progress">
                             <div
-                                className="bg-gradient-to-r from-yellow-400 to-pokeball-red h-full transition-all duration-500"
+                                className="clay-progress-fill"
                                 style={{ width: `${progressPercentage}%` }}
                             />
-                            <span className="absolute inset-0 flex items-center justify-center font-mono text-sm font-bold text-white drop-shadow-md">
-                                {Math.round(progressPercentage)}%
-                            </span>
                         </div>
+                        <p className="font-body text-sm mt-2" style={{ color: 'var(--color-text-light)' }}>
+                            {Math.round(progressPercentage)}% 完成
+                        </p>
                     </div>
                 </div>
             </div>
         );
     }
 
-    // Unlocked state
+    // Unlocked state - Claymorphism style
     return (
         <>
-            <div className="rpg-dialog mt-6 bg-gradient-to-br from-yellow-50 to-orange-50 animate-bounce-in">
-                {/* Collapsible Header */}
+            <div className="clay-card mt-6 p-5 animate-bounce-in" style={{ borderRadius: '20px' }}>
+                {/* Section Header */}
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                        <div className="bg-white p-2 rounded-xl shadow-sm">
-                            <Gamepad2 className="text-yellow-600" size={24} />
+                        <div
+                            className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                            style={{ backgroundColor: 'var(--pastel-orange-bg)', border: '3px solid var(--pastel-orange-border)' }}
+                        >
+                            <Gamepad2 size={24} style={{ color: 'var(--pastel-orange-text)' }} />
                         </div>
                         <div>
-                            <h2 className="font-pixel text-xl text-yellow-800">獎勵時間</h2>
-                            <p className="text-xs text-yellow-600">已解鎖，盡情玩樂吧！</p>
+                            <h2 className="font-heading text-xl font-bold" style={{ color: 'var(--color-text)' }}>
+                                獎勵時間
+                            </h2>
+                            <p className="font-body text-xs" style={{ color: 'var(--color-text-light)' }}>
+                                已解鎖，盡情玩樂吧！
+                            </p>
                         </div>
                     </div>
                     <button
                         onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="px-3 py-2 border-2 border-yellow-800/10 bg-white hover:bg-yellow-50 transition-colors rounded-lg text-yellow-800"
+                        className="p-2 rounded-full transition-all cursor-pointer hover:opacity-80"
+                        style={{ backgroundColor: 'var(--bg-card)', border: '2px solid var(--border-soft)' }}
                     >
-                        {isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+                        {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
                     </button>
                 </div>
 
                 {!isCollapsed && (
                     <>
+                        {/* Celebration & Star Balance */}
                         <div className="text-center mb-6">
-                            <div className="text-6xl mb-2 animate-bounce">🎉</div>
-                            <h3 className="font-pixel text-xl mb-2 text-pokeball-red">獎勵時間解鎖！</h3>
-                            <p className="text-sm text-gray-700">選一個遊戲放鬆一下吧 🎮</p>
+                            <div className="text-5xl mb-2 animate-float">🎉</div>
+                            <h3 className="font-heading text-lg mb-2" style={{ color: 'var(--color-cta)' }}>
+                                獎勵時間解鎖！
+                            </h3>
+                            <p className="font-body text-sm mb-4" style={{ color: 'var(--color-text-light)' }}>
+                                選一個遊戲放鬆一下吧 🎮
+                            </p>
 
                             {/* Star Balance Display */}
-                            <div className="mt-4 inline-flex items-center gap-2 bg-yellow-100 border-2 border-yellow-400 rounded-full px-4 py-2">
-                                <Star className="text-yellow-500" fill="currentColor" size={20} />
-                                <span className="font-mono text-2xl font-bold text-yellow-700">{starBalance}</span>
-                                <span className="text-sm font-pixel font-bold text-yellow-700">可用星幣</span>
+                            <div className="inline-flex items-center gap-2 clay-star px-4 py-2">
+                                <Star fill="currentColor" size={20} />
+                                <span className="text-xl font-bold">{starBalance}</span>
+                                <span className="text-sm">可用星幣</span>
                             </div>
                         </div>
 
                         {/* Game Cards Grid */}
                         <div className="grid grid-cols-2 gap-4">
-                            {availableFunGames.map((game) => (
-                                <button
-                                    key={game.id}
-                                    onClick={() => setSelectedGame(game)}
-                                    className={`${game.color} border-2 border-deep-black p-4 transition-all transform hover:scale-105 hover:shadow-lg active:scale-95 relative`}
-                                >
-                                    <div className="text-4xl mb-2">{game.icon}</div>
-                                    <div className="font-pixel text-sm text-white mb-1">{game.name}</div>
-                                    <div className="text-xs text-white opacity-90">{game.description}</div>
-                                    {/* Cost badge */}
-                                    <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 rounded-full px-2 py-1 text-xs font-bold flex items-center gap-1 shadow-sm">
-                                        <Star size={12} fill="currentColor" />
-                                        <span className="font-mono">{GAME_COST}</span>
-                                    </div>
-                                </button>
-                            ))}
+                            {availableFunGames.map((game) => {
+                                const colors = getFunGameColors(game.id);
+                                return (
+                                    <button
+                                        key={game.id}
+                                        onClick={() => setSelectedGame(game)}
+                                        className="clay-game-card"
+                                        style={{
+                                            backgroundColor: colors.bg,
+                                            borderColor: colors.border,
+                                            color: colors.text,
+                                        }}
+                                    >
+                                        {/* Cost Badge */}
+                                        <div
+                                            className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full"
+                                            style={{
+                                                backgroundColor: 'var(--color-cta)',
+                                                color: 'white',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 700,
+                                            }}
+                                        >
+                                            <Star size={12} fill="currentColor" />
+                                            <span>{GAME_COST}</span>
+                                        </div>
+
+                                        <div className="icon-circle" style={{ borderColor: colors.border }}>
+                                            {game.icon}
+                                        </div>
+                                        <h4 className="font-heading text-base font-bold text-center">
+                                            {game.name}
+                                        </h4>
+                                        <p className="font-body text-xs text-center opacity-80">
+                                            {game.description}
+                                        </p>
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         <div className="mt-4 text-center">
-                            <div className="flex items-center justify-center gap-2 text-gray-600">
+                            <div className="flex items-center justify-center gap-2" style={{ color: 'var(--color-text-light)' }}>
                                 <Gamepad2 size={16} />
-                                <span className="text-xs">每次遊戲 {GAME_COST} 星幣 / 3分鐘</span>
+                                <span className="font-body text-xs">每次遊戲 {GAME_COST} 星幣 / 3分鐘</span>
                             </div>
                         </div>
                     </>
