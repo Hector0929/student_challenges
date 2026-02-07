@@ -1,9 +1,9 @@
 /**
  * Monster Tower V2 - Snakes and Ladders Style Board Game
- * Isometric 3D style with numbered tiles, snakes, and ladders
+ * CSS Isometric 3D style with spanning snakes and ladders
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Dices, Trophy, Sparkles, X, ShoppingCart } from 'lucide-react';
 import {
     useTowerProgress,
@@ -21,32 +21,70 @@ import type { TowerEvent } from '../types/database';
 // ============ CONSTANTS ============
 const BOARD_COLS = 10;
 const BOARD_ROWS = 10;
-const TILE_SIZE = 48;
+const TILE_SIZE = 52;
+const TILE_GAP = 4;
 const TOTAL_TILES = 100;
 
 // V2 Image Assets
 const V2_ASSETS = {
-    tile: '/images/tower-v2/tile.png',
-    ladder: '/images/tower-v2/ladder.png',
-    snake: '/images/tower-v2/snake.png',
     player: '/images/tower-v2/player.png',
 };
 
-// Zone theming
-const getZoneInfo = (floor: number) => {
-    if (floor <= 25) return { name: '🌲 森林入口', color: 'bg-green-500', textColor: 'text-green-100' };
-    if (floor <= 50) return { name: '💎 水晶洞穴', color: 'bg-blue-500', textColor: 'text-blue-100' };
-    if (floor <= 75) return { name: '🔥 熔岩地帶', color: 'bg-orange-500', textColor: 'text-orange-100' };
-    return { name: '☁️ 雲端天空', color: 'bg-purple-500', textColor: 'text-purple-100' };
-};
+// ============ HELPER FUNCTIONS ============
 
-// Generate board path (snakes and ladders style: alternating rows)
+// Get tile position in grid (snakes and ladders style: alternating rows)
 const getTilePosition = (tileNum: number): { row: number; col: number } => {
     const row = Math.floor((tileNum - 1) / BOARD_COLS);
     const colInRow = (tileNum - 1) % BOARD_COLS;
     // Even rows go left to right, odd rows go right to left
     const col = row % 2 === 0 ? colInRow : (BOARD_COLS - 1 - colInRow);
     return { row: BOARD_ROWS - 1 - row, col }; // Invert row so 1 is at bottom
+};
+
+// Get pixel coordinates for a tile center
+const getTileCenter = (tileNum: number): { x: number; y: number } => {
+    const { row, col } = getTilePosition(tileNum);
+    return {
+        x: col * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2,
+        y: row * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2,
+    };
+};
+
+// Generate SVG path for snake (curved line)
+const getSnakePath = (startTile: number, endTile: number): string => {
+    const start = getTileCenter(startTile);
+    const end = getTileCenter(endTile);
+    const midX = (start.x + end.x) / 2 + (Math.random() * 60 - 30);
+    const midY = (start.y + end.y) / 2;
+    return `M ${start.x} ${start.y} Q ${midX} ${midY} ${end.x} ${end.y}`;
+};
+
+// Generate SVG path for ladder (straight line with rungs)
+const getLadderPath = (startTile: number, endTile: number): { mainPath: string; rungs: string[] } => {
+    const start = getTileCenter(startTile);
+    const end = getTileCenter(endTile);
+    const mainPath = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+
+    // Generate rungs
+    const rungs: string[] = [];
+    const numRungs = Math.floor(Math.abs(endTile - startTile) / 10) + 2;
+    for (let i = 1; i < numRungs; i++) {
+        const t = i / numRungs;
+        const rx = start.x + (end.x - start.x) * t;
+        const ry = start.y + (end.y - start.y) * t;
+        const perpX = (end.y - start.y) / Math.hypot(end.x - start.x, end.y - start.y) * 12;
+        const perpY = -(end.x - start.x) / Math.hypot(end.x - start.x, end.y - start.y) * 12;
+        rungs.push(`M ${rx - perpX} ${ry - perpY} L ${rx + perpX} ${ry + perpY}`);
+    }
+    return { mainPath, rungs };
+};
+
+// Zone theming
+const getZoneInfo = (floor: number) => {
+    if (floor <= 25) return { name: '🌲 森林入口', color: 'bg-green-600', textColor: 'text-green-100' };
+    if (floor <= 50) return { name: '💎 水晶洞穴', color: 'bg-emerald-600', textColor: 'text-emerald-100' };
+    if (floor <= 75) return { name: '🔥 熔岩地帶', color: 'bg-teal-600', textColor: 'text-teal-100' };
+    return { name: '☁️ 雲端天空', color: 'bg-green-700', textColor: 'text-green-100' };
 };
 
 // ============ INTERFACES ============
@@ -133,6 +171,53 @@ const DicePurchaseModal: React.FC<DicePurchaseModalProps> = ({ userId, onClose }
     );
 };
 
+// ============ ISOMETRIC TILE COMPONENT ============
+interface IsometricTileProps {
+    tileNum: number;
+    row: number;
+    col: number;
+    isCurrentPosition: boolean;
+    event?: TowerEvent;
+}
+
+const IsometricTile: React.FC<IsometricTileProps> = ({
+    tileNum,
+    row,
+    col,
+    isCurrentPosition,
+    event,
+}) => {
+    return (
+        <div
+            className={`iso-tile ${isCurrentPosition ? 'iso-tile-current' : ''}`}
+            style={{
+                left: col * (TILE_SIZE + TILE_GAP),
+                top: row * (TILE_SIZE + TILE_GAP),
+                width: TILE_SIZE,
+                height: TILE_SIZE,
+            }}
+            data-testid={`tile-${tileNum}`}
+            data-event-type={event?.event_type}
+        >
+            {/* Top face */}
+            <div className="iso-tile-top">
+                <span>{tileNum}</span>
+            </div>
+
+            {/* Side faces for 3D depth */}
+            <div className="iso-tile-left" />
+            <div className="iso-tile-right" />
+
+            {/* Event indicator */}
+            {event && (
+                <div className={event.event_type === 'ladder' ? 'iso-event-ladder' : 'iso-event-snake'}>
+                    {event.event_type === 'ladder' ? '🪜' : '🐍'}
+                </div>
+            )}
+        </div>
+    );
+};
+
 // ============ MAIN COMPONENT ============
 export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, onClose }) => {
     const { data: progress } = useTowerProgress(userId);
@@ -154,8 +239,23 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
 
     const currentFloor = progress?.current_floor || 1;
     const diceCount = progress?.dice_count || 0;
-    const eventMap = new Map(events.map(e => [e.floor_number, e]));
+    const eventMap = useMemo(() => new Map(events.map(e => [e.floor_number, e])), [events]);
     const zoneInfo = getZoneInfo(currentFloor);
+
+    // Separate events by type for SVG rendering
+    const { snakeEvents, ladderEvents } = useMemo(() => {
+        const snakes: TowerEvent[] = [];
+        const ladders: TowerEvent[] = [];
+        events.forEach(e => {
+            if (e.event_type === 'trap' && e.target_floor) snakes.push(e);
+            if (e.event_type === 'ladder' && e.target_floor) ladders.push(e);
+        });
+        return { snakeEvents: snakes, ladderEvents: ladders };
+    }, [events]);
+
+    // Calculate board dimensions
+    const boardWidth = BOARD_COLS * (TILE_SIZE + TILE_GAP) - TILE_GAP;
+    const boardHeight = BOARD_ROWS * (TILE_SIZE + TILE_GAP) - TILE_GAP;
 
     // Dice roll animation
     useEffect(() => {
@@ -249,6 +349,12 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
         }
     }, [userId, resetTowerMutation]);
 
+    // Get player position
+    const playerPos = useMemo(() => {
+        const floor = animatingFloor || currentFloor;
+        return getTileCenter(floor);
+    }, [animatingFloor, currentFloor]);
+
     if (!isOpen) return null;
 
     return (
@@ -294,80 +400,90 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
                     )}
                 </div>
 
-                {/* Game Board */}
-                <div className="flex-1 overflow-auto p-4 bg-gradient-to-b from-green-800 to-green-900">
+                {/* Game Board - Isometric Container */}
+                <div className="flex-1 overflow-auto p-8 iso-forest-bg flex items-center justify-center">
                     <div
-                        className="relative mx-auto"
-                        style={{
-                            width: BOARD_COLS * TILE_SIZE + (BOARD_COLS - 1) * 4,
-                            height: BOARD_ROWS * TILE_SIZE + (BOARD_ROWS - 1) * 4,
-                        }}
-                        data-testid="tower-v2-board"
+                        className="iso-board-container"
+                        style={{ width: boardWidth + 100, height: boardHeight + 100 }}
                     >
-                        {/* Render tiles */}
-                        {Array.from({ length: TOTAL_TILES }, (_, i) => {
-                            const tileNum = i + 1;
-                            const { row, col } = getTilePosition(tileNum);
-                            const event = eventMap.get(tileNum);
-                            const isCurrentPosition = tileNum === (animatingFloor || currentFloor);
+                        <div
+                            className="iso-board"
+                            style={{ width: boardWidth, height: boardHeight }}
+                            data-testid="tower-v2-board"
+                        >
+                            {/* SVG Layer for Snakes and Ladders */}
+                            <svg
+                                className="absolute inset-0 pointer-events-none"
+                                width={boardWidth}
+                                height={boardHeight}
+                                style={{ zIndex: 5 }}
+                            >
+                                {/* Render Ladders */}
+                                {ladderEvents.map(event => {
+                                    if (!event.target_floor) return null;
+                                    const { mainPath, rungs } = getLadderPath(event.floor_number, event.target_floor);
+                                    return (
+                                        <g key={`ladder-${event.floor_number}`}>
+                                            <path d={mainPath} className="iso-ladder-path" />
+                                            {rungs.map((rung, i) => (
+                                                <path key={i} d={rung} className="iso-ladder-rung" />
+                                            ))}
+                                        </g>
+                                    );
+                                })}
 
-                            return (
-                                <div
-                                    key={tileNum}
-                                    className={`absolute flex items-center justify-center transition-all duration-200 ${isCurrentPosition ? 'ring-4 ring-yellow-400 z-10' : ''
-                                        }`}
-                                    style={{
-                                        left: col * (TILE_SIZE + 4),
-                                        top: row * (TILE_SIZE + 4),
-                                        width: TILE_SIZE,
-                                        height: TILE_SIZE,
-                                    }}
-                                    data-testid={`tile-${tileNum}`}
-                                    data-event-type={event?.event_type}
-                                >
-                                    {/* Tile background */}
-                                    <div
-                                        className={`absolute inset-0 rounded-lg shadow-lg ${tileNum <= 25 ? 'bg-green-500' :
-                                            tileNum <= 50 ? 'bg-blue-500' :
-                                                tileNum <= 75 ? 'bg-orange-500' :
-                                                    'bg-purple-500'
-                                            }`}
-                                    />
-
-                                    {/* Tile number */}
-                                    <span className="relative z-10 text-white font-bold text-sm drop-shadow">
-                                        {tileNum}
-                                    </span>
-
-                                    {/* Event indicator */}
-                                    {event && (
-                                        <div className="absolute -top-2 -right-2 z-20">
-                                            {event.event_type === 'ladder' && (
-                                                <img src={V2_ASSETS.ladder} alt="Ladder" className="w-6 h-6" />
-                                            )}
-                                            {event.event_type === 'trap' && (
-                                                <img src={V2_ASSETS.snake} alt="Snake" className="w-6 h-6" />
-                                            )}
-                                            {event.event_type === 'egg' && <span>🥚</span>}
-                                        </div>
-                                    )}
-
-                                    {/* Player token */}
-                                    {isCurrentPosition && (
-                                        <div
-                                            className="absolute inset-0 flex items-center justify-center z-30"
-                                            data-testid="player-token"
-                                        >
-                                            <img
-                                                src={V2_ASSETS.player}
-                                                alt="Player"
-                                                className="w-10 h-10 animate-bounce"
+                                {/* Render Snakes */}
+                                {snakeEvents.map(event => {
+                                    if (!event.target_floor) return null;
+                                    const path = getSnakePath(event.floor_number, event.target_floor);
+                                    return (
+                                        <g key={`snake-${event.floor_number}`}>
+                                            <path d={path} className="iso-snake-path" />
+                                            {/* Snake head */}
+                                            <circle
+                                                cx={getTileCenter(event.floor_number).x}
+                                                cy={getTileCenter(event.floor_number).y}
+                                                r={8}
+                                                className="iso-snake-head"
                                             />
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+                                        </g>
+                                    );
+                                })}
+                            </svg>
+
+                            {/* Render tiles */}
+                            {Array.from({ length: TOTAL_TILES }, (_, i) => {
+                                const tileNum = i + 1;
+                                const { row, col } = getTilePosition(tileNum);
+                                const event = eventMap.get(tileNum);
+                                const isCurrentPosition = tileNum === (animatingFloor || currentFloor);
+
+                                return (
+                                    <IsometricTile
+                                        key={tileNum}
+                                        tileNum={tileNum}
+                                        row={row}
+                                        col={col}
+                                        isCurrentPosition={isCurrentPosition}
+                                        event={event}
+                                    />
+                                );
+                            })}
+
+                            {/* Player Token */}
+                            <img
+                                src={V2_ASSETS.player}
+                                alt="Player"
+                                className="iso-player"
+                                style={{
+                                    left: playerPos.x - 20,
+                                    top: playerPos.y - 40,
+                                    width: 40,
+                                    height: 40,
+                                }}
+                                data-testid="player-token"
+                            />
+                        </div>
                     </div>
                 </div>
 
