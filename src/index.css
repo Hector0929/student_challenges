@@ -752,6 +752,8 @@ textarea {
     filter 0.3s ease;
   animation: voxel-tile-float 3s ease-in-out infinite;
   animation-delay: calc(var(--tile-index, 0) * 0.05s);
+  /* Hide PNG transparency */
+  background: transparent;
 }
 
 .voxel-tile:nth-child(odd) {
@@ -778,23 +780,27 @@ textarea {
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
-  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.25)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.3));
 }
 
 .voxel-tile-number {
   position: absolute;
-  top: 12%;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%) rotateX(-20deg);
+  transform: translate(-50%, -50%);
   color: white;
   font-weight: 900;
-  font-size: 15px;
+  font-size: 18px;
   font-family: 'Fredoka', sans-serif;
   text-shadow:
-    2px 2px 0 rgba(0, 0, 0, 0.6),
-    -1px -1px 0 rgba(0, 0, 0, 0.3);
+    2px 2px 0 #2E7D32,
+    -2px -2px 0 #2E7D32,
+    2px -2px 0 #2E7D32,
+    -2px 2px 0 #2E7D32,
+    0 3px 6px rgba(0, 0, 0, 0.5);
   pointer-events: none;
-  z-index: 2;
+  z-index: 5;
+  letter-spacing: -1px;
 }
 
 .voxel-tile:hover {

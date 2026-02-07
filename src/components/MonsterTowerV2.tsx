@@ -376,32 +376,60 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
                             const start = getTilePosition(event.floor_number);
                             const end = getTilePosition(event.target_floor);
 
+                            const isSnake = event.event_type === 'trap';
+                            const color = isSnake ? '#4CAF50' : '#8D6E63';
+                            const strokeWidth = 6;
+
+                            // Calculate SVG viewBox and line coordinates
+                            const minX = Math.min(start.x, end.x) - 20;
+                            const maxX = Math.max(start.x, end.x) + 20;
+                            const minY = Math.min(start.y, end.y) - 20;
+                            const maxY = Math.max(start.y, end.y) + 20;
+                            const width = maxX - minX;
+                            const height = maxY - minY;
+
                             return (
-                                <div
+                                <svg
                                     key={`connector-${idx}`}
-                                    className={event.event_type === 'trap' ? 'voxel-snake-container' : 'voxel-ladder-container'}
+                                    className="absolute pointer-events-none"
                                     style={{
-                                        left: Math.min(start.x, end.x),
-                                        top: Math.min(start.y, end.y),
-                                        width: Math.abs(start.x - end.x) + 32,
-                                        height: Math.abs(start.y - end.y) + 32,
-                                        zIndex: Math.min(start.z, end.z) - 1
+                                        left: minX,
+                                        top: minY,
+                                        width: width,
+                                        height: height,
+                                        zIndex: Math.min(start.z, end.z) - 1,
+                                        overflow: 'visible'
                                     }}
                                 >
-                                    {/* Vertical lines connecting tiles as abstract snakes/ladders */}
-                                    <div
-                                        className="absolute w-2 voxel-connector"
-                                        style={{
-                                            left: '50%',
-                                            height: '100%',
-                                            background: event.event_type === 'trap' ? '#81C784' : '#BCAAA4',
-                                            transform: `rotate(${(Math.atan2(end.y - start.y, end.x - start.x) * 180) / Math.PI}deg)`,
-                                            transformOrigin: 'top left',
-                                            opacity: 0.6,
-                                            borderRadius: '9999px'
-                                        }}
+                                    {/* Main connector line */}
+                                    <line
+                                        x1={start.x - minX}
+                                        y1={start.y - minY}
+                                        x2={end.x - minX}
+                                        y2={end.y - minY}
+                                        stroke={color}
+                                        strokeWidth={strokeWidth}
+                                        strokeLinecap="round"
+                                        strokeDasharray={isSnake ? "0" : "12 6"}
+                                        opacity={0.85}
                                     />
-                                </div>
+                                    {/* Outline for depth */}
+                                    <line
+                                        x1={start.x - minX}
+                                        y1={start.y - minY}
+                                        x2={end.x - minX}
+                                        y2={end.y - minY}
+                                        stroke={isSnake ? '#2E7D32' : '#5D4037'}
+                                        strokeWidth={strokeWidth + 3}
+                                        strokeLinecap="round"
+                                        strokeDasharray={isSnake ? "0" : "12 6"}
+                                        opacity={0.4}
+                                        style={{ filter: 'blur(2px)' }}
+                                    />
+                                    {/* Start/End markers */}
+                                    <circle cx={start.x - minX} cy={start.y - minY} r={8} fill={color} opacity={0.9} />
+                                    <circle cx={end.x - minX} cy={end.y - minY} r={8} fill={color} opacity={0.9} />
+                                </svg>
                             );
                         })}
                     </div>
