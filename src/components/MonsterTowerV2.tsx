@@ -1,10 +1,11 @@
 /**
- * Monster Tower V2 - Polished Playable Version
- * Switchback staircase layout with smooth hop animations
+ * Monster Tower V2 – "Mountain Trail" Redesign
+ * Clean, modern snakes-and-ladders with zone-based color gradients,
+ * CSS-only tiles, SVG connectors, and smooth hop animations.
  */
 
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Dices, Sparkles, X, ShoppingCart, ChevronUp } from 'lucide-react';
+import { X, ShoppingCart, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
 import {
     useTowerProgress,
     useTowerEvents,
@@ -20,49 +21,46 @@ import type { TowerEvent } from '../types/database';
 
 // ============ CONSTANTS ============
 const TOTAL_TILES = 100;
-const TILES_PER_ROW = 5;
-const TILE_SIZE = 72;
-const TILE_GAP = 8;
-const ROW_HEIGHT = 90;
+const COLS = 5;
+const CELL = 58;
+const GAP_X = 10;
+const GAP_Y = 14;
+const ROW_H = CELL + GAP_Y;
 
-// V2 Image Assets
-const V2_ASSETS = {
-    tile: '/images/tower-v2/tile.png',
-    snake: '/images/tower-v2/snake.png',
-    ladder: '/images/tower-v2/ladder.png',
-    player: '/images/tower-v2/player.png',
+// Zone definitions – visual theme changes as player climbs
+const ZONES = [
+    { name: '🌿 草原', from: 1, to: 20, bg: 'from-emerald-500 to-green-400', tile: '#34d399', tileRing: '#10b981', accent: '#34d399' },
+    { name: '🏔️ 山岳', from: 21, to: 40, bg: 'from-amber-500 to-yellow-400', tile: '#fbbf24', tileRing: '#f59e0b', accent: '#fbbf24' },
+    { name: '☁️ 雲端', from: 41, to: 60, bg: 'from-sky-500 to-cyan-400', tile: '#38bdf8', tileRing: '#0ea5e9', accent: '#38bdf8' },
+    { name: '🌙 星空', from: 61, to: 80, bg: 'from-indigo-500 to-purple-400', tile: '#818cf8', tileRing: '#6366f1', accent: '#818cf8' },
+    { name: '🏰 頂峰', from: 81, to: 100, bg: 'from-rose-500 to-orange-400', tile: '#fb7185', tileRing: '#f43f5e', accent: '#fb7185' },
+];
+
+const getZone = (floor: number) => ZONES.find(z => floor >= z.from && floor <= z.to) || ZONES[0];
+
+// ============ LAYOUT ============
+const getTilePosition = (n: number) => {
+    const row = Math.floor((n - 1) / COLS);
+    const col = (n - 1) % COLS;
+    const totalRows = Math.ceil(TOTAL_TILES / COLS);
+    const ltr = row % 2 === 0;
+    const x = (ltr ? col : COLS - 1 - col) * (CELL + GAP_X) + CELL / 2;
+    const y = (totalRows - 1 - row) * ROW_H + CELL / 2;
+    return { x, y, row, col: ltr ? col : COLS - 1 - col };
 };
 
-// ============ HELPER FUNCTIONS ============
+const BOARD_W = COLS * (CELL + GAP_X) - GAP_X;
+const BOARD_H = Math.ceil(TOTAL_TILES / COLS) * ROW_H + 60;
 
-/**
- * Switchback staircase layout
- * Rows alternate left-to-right and right-to-left
- * 1-5 goes left→right, 6-10 goes right→left, etc.
- */
-const getTilePosition = (tileNum: number) => {
-    const rowIndex = Math.floor((tileNum - 1) / TILES_PER_ROW);
-    const posInRow = (tileNum - 1) % TILES_PER_ROW;
-
-    // Alternate direction each row
-    const isLeftToRight = rowIndex % 2 === 0;
-    const col = isLeftToRight ? posInRow : (TILES_PER_ROW - 1 - posInRow);
-
-    // Calculate total rows for vertical positioning (bottom = row 0)
-    const totalRows = Math.ceil(TOTAL_TILES / TILES_PER_ROW);
-    const rowFromBottom = totalRows - 1 - rowIndex;
-
-    return {
-        x: col * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2,
-        y: rowFromBottom * ROW_HEIGHT + TILE_SIZE / 2,
-        row: rowIndex,
-        col,
-    };
+// Dice face pips layout
+const DICE_PIPS: Record<number, number[][]> = {
+    1: [[1, 1]],
+    2: [[0, 0], [2, 2]],
+    3: [[0, 0], [1, 1], [2, 2]],
+    4: [[0, 0], [0, 2], [2, 0], [2, 2]],
+    5: [[0, 0], [0, 2], [1, 1], [2, 0], [2, 2]],
+    6: [[0, 0], [0, 2], [1, 0], [1, 2], [2, 0], [2, 2]],
 };
-
-// Board dimensions
-const BOARD_WIDTH = TILES_PER_ROW * (TILE_SIZE + TILE_GAP) - TILE_GAP;
-const BOARD_HEIGHT = Math.ceil(TOTAL_TILES / TILES_PER_ROW) * ROW_HEIGHT + 100;
 
 // ============ INTERFACES ============
 interface MonsterTowerV2Props {
@@ -70,6 +68,31 @@ interface MonsterTowerV2Props {
     isOpen: boolean;
     onClose: () => void;
 }
+
+// ============ DICE FACE COMPONENT ============
+const DiceFace: React.FC<{ value: number; size?: number; className?: string }> = ({ value, size = 48, className = '' }) => {
+    const pips = DICE_PIPS[value] || DICE_PIPS[1];
+    const unit = size / 4;
+    return (
+        <div
+            className={`relative rounded-xl bg-white shadow-[0_3px_0_0_#d1d5db,0_4px_12px_rgba(0,0,0,0.1)] border border-gray-200 ${className}`}
+            style={{ width: size, height: size }}
+        >
+            {pips.map(([r, c], i) => (
+                <div
+                    key={i}
+                    className="absolute rounded-full bg-gray-700"
+                    style={{
+                        width: unit * 0.7,
+                        height: unit * 0.7,
+                        top: unit * 0.8 + r * unit,
+                        left: unit * 0.8 + c * unit,
+                    }}
+                />
+            ))}
+        </div>
+    );
+};
 
 // ============ DICE PURCHASE MODAL ============
 const DicePurchaseModal: React.FC<{ userId: string; onClose: () => void }> = ({ userId, onClose }) => {
@@ -89,32 +112,107 @@ const DicePurchaseModal: React.FC<{ userId: string; onClose: () => void }> = ({ 
 
     return (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[2000]" data-testid="purchase-modal">
-            <div className="clay-dialog p-6 w-80 animate-bounce-in">
+            <div className="bg-white rounded-3xl p-6 w-80 shadow-2xl tv2-pop-in">
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                    <ShoppingCart size={24} /> 購買骰子
+                    <ShoppingCart size={22} /> 購買骰子
                 </h3>
-                <div className="mb-4 text-sm space-y-1">
-                    <p>每顆骰子: <span className="font-bold">{pricePerDice} ⭐</span></p>
-                    <p>你的星幣: <span className="font-bold">{starBalance} ⭐</span></p>
+                <div className="mb-4 text-sm space-y-1 text-gray-600">
+                    <p>每顆骰子: <span className="font-bold text-gray-900">{pricePerDice} ⭐</span></p>
+                    <p>你的星幣: <span className="font-bold text-gray-900">{starBalance} ⭐</span></p>
                 </div>
                 <div className="flex items-center justify-center gap-6 mb-4">
-                    <button onClick={() => setAmount(Math.max(1, amount - 1))} className="clay-btn w-12 h-12 text-2xl">−</button>
-                    <span className="text-4xl font-black w-16 text-center">{amount}</span>
-                    <button onClick={() => setAmount(amount + 1)} className="clay-btn w-12 h-12 text-2xl">+</button>
+                    <button onClick={() => setAmount(Math.max(1, amount - 1))} className="w-12 h-12 rounded-2xl bg-gray-100 hover:bg-gray-200 text-2xl font-bold transition-colors active:scale-95">−</button>
+                    <span className="text-4xl font-black w-16 text-center tabular-nums">{amount}</span>
+                    <button onClick={() => setAmount(amount + 1)} className="w-12 h-12 rounded-2xl bg-gray-100 hover:bg-gray-200 text-2xl font-bold transition-colors active:scale-95">+</button>
                 </div>
-                <p className="text-center mb-4 text-lg">總價: <span className="font-black text-2xl text-orange-600">{totalCost} ⭐</span></p>
+                <p className="text-center mb-4 text-lg">
+                    總價: <span className="font-black text-2xl text-orange-600">{totalCost} ⭐</span>
+                </p>
                 <div className="flex gap-3">
-                    <button onClick={onClose} className="clay-btn flex-1 py-3">取消</button>
+                    <button onClick={onClose} className="flex-1 py-3 rounded-2xl bg-gray-100 hover:bg-gray-200 font-bold transition-colors">取消</button>
                     <button
                         onClick={handlePurchase}
                         disabled={!canAfford || purchaseDiceMutation.isPending}
-                        className="clay-btn clay-btn-primary flex-1 py-3 disabled:opacity-50"
+                        className="flex-1 py-3 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                        {purchaseDiceMutation.isPending ? '購買中...' : '購買'}
+                        {purchaseDiceMutation.isPending ? '購買中...' : '確認購買'}
                     </button>
                 </div>
             </div>
         </div>
+    );
+};
+
+// ============ SVG CONNECTORS (smooth curves for snakes & ladders) ============
+const EventConnectors: React.FC<{ events: TowerEvent[] }> = ({ events }) => (
+    <svg
+        className="absolute inset-0 pointer-events-none"
+        style={{ width: BOARD_W, height: BOARD_H }}
+        viewBox={`0 0 ${BOARD_W} ${BOARD_H}`}
+        preserveAspectRatio="none"
+    >
+        <defs>
+            <filter id="connector-glow">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+        </defs>
+        {events.map(ev => {
+            if (!ev.target_floor) return null;
+            const isLadder = ev.event_type === 'ladder';
+            const s = getTilePosition(ev.floor_number);
+            const e = getTilePosition(ev.target_floor);
+            const sx = s.x, sy = BOARD_H - s.y;
+            const ex = e.x, ey = BOARD_H - e.y;
+            const cpOff = Math.abs(ey - sy) * 0.35;
+            const cp1x = (sx + ex) / 2 + (isLadder ? -cpOff : cpOff);
+            const cp2x = (sx + ex) / 2 + (isLadder ? cpOff : -cpOff);
+            const color = isLadder ? '#f59e0b' : '#ef4444';
+
+            return (
+                <g key={`c-${ev.floor_number}`} filter="url(#connector-glow)">
+                    <path
+                        d={`M ${sx} ${sy} C ${cp1x} ${sy}, ${cp2x} ${ey}, ${ex} ${ey}`}
+                        fill="none"
+                        stroke={color}
+                        strokeWidth={3}
+                        strokeLinecap="round"
+                        strokeDasharray={isLadder ? 'none' : '6 4'}
+                        opacity={0.55}
+                    />
+                    {/* Arrowhead dot */}
+                    <circle cx={ex} cy={ey} r={4} fill={color} opacity={0.7} />
+                </g>
+            );
+        })}
+    </svg>
+);
+
+// ============ TRAIL DOTS (path between consecutive tiles) ============
+const TrailDots: React.FC = () => {
+    const dots: { x: number; y: number }[] = [];
+    for (let n = 1; n < TOTAL_TILES; n++) {
+        const a = getTilePosition(n);
+        const b = getTilePosition(n + 1);
+        // 2 dots between each pair
+        for (let t = 1; t <= 2; t++) {
+            const f = t / 3;
+            dots.push({
+                x: a.x + (b.x - a.x) * f,
+                y: BOARD_H - (a.y + (b.y - a.y) * f),
+            });
+        }
+    }
+    return (
+        <svg
+            className="absolute inset-0 pointer-events-none opacity-20"
+            style={{ width: BOARD_W, height: BOARD_H }}
+            viewBox={`0 0 ${BOARD_W} ${BOARD_H}`}
+        >
+            {dots.map((d, i) => (
+                <circle key={i} cx={d.x} cy={d.y} r={2} fill="#9ca3af" />
+            ))}
+        </svg>
     );
 };
 
@@ -127,9 +225,8 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
     const lotteryRewardMutation = useLotteryReward();
     const { data: starBalance = 0 } = useStarBalance(userId);
 
-    const boardContainerRef = useRef<HTMLDivElement>(null);
+    const boardRef = useRef<HTMLDivElement>(null);
 
-    // State
     const [isRolling, setIsRolling] = useState(false);
     const [rollResult, setRollResult] = useState<number | null>(null);
     const [showEvent, setShowEvent] = useState<TowerEvent | null>(null);
@@ -145,31 +242,25 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
     const diceCount = progress?.dice_count || 0;
     const eventMap = useMemo(() => new Map(events.map(e => [e.floor_number, e])), [events]);
 
-    // Scroll to keep player visible
     const scrollToFloor = useCallback((floor: number) => {
-        if (!boardContainerRef.current) return;
+        if (!boardRef.current) return;
         const pos = getTilePosition(floor);
-        const containerHeight = boardContainerRef.current.clientHeight;
-        const targetScroll = BOARD_HEIGHT - pos.y - containerHeight / 2;
-        boardContainerRef.current.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+        const h = boardRef.current.clientHeight;
+        const target = BOARD_H - pos.y - h / 2;
+        boardRef.current.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
     }, []);
 
-    // Initial scroll
     useEffect(() => {
-        if (isOpen) {
-            setTimeout(() => scrollToFloor(currentFloor), 100);
-        }
+        if (isOpen) setTimeout(() => scrollToFloor(currentFloor), 100);
     }, [isOpen, currentFloor, scrollToFloor]);
 
-    // Dice animation
     useEffect(() => {
         if (isRolling) {
-            const interval = setInterval(() => setDisplayDice(Math.floor(Math.random() * 6) + 1), 80);
-            return () => clearInterval(interval);
+            const id = setInterval(() => setDisplayDice(Math.floor(Math.random() * 6) + 1), 80);
+            return () => clearInterval(id);
         }
     }, [isRolling]);
 
-    // Handle dice roll with smooth hop animation
     const handleRoll = useCallback(async () => {
         if (diceCount <= 0 || isRolling) return;
 
@@ -177,7 +268,6 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
         setRollResult(null);
         setEventMessage(null);
 
-        // Roll animation
         await new Promise(r => setTimeout(r, 800));
 
         try {
@@ -187,7 +277,6 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
             setDisplayDice(result.roll);
             setIsRolling(false);
 
-            // Animate hop by hop
             const start = currentFloor;
             const intermediate = Math.min(start + result.roll, 100);
 
@@ -195,22 +284,19 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
                 setIsHopping(true);
                 setAnimatingFloor(f);
                 scrollToFloor(f);
-                await new Promise(r => setTimeout(r, 350)); // Hop duration
+                await new Promise(r => setTimeout(r, 300));
                 setIsHopping(false);
-                await new Promise(r => setTimeout(r, 50)); // Brief pause
+                await new Promise(r => setTimeout(r, 50));
             }
 
-            // Handle snake/ladder event
             const finalFloor = result.progress.current_floor;
             if (finalFloor !== intermediate && result.event) {
-                // Show event message
                 const isLadder = result.event.event_type === 'ladder';
                 setEventMessage(isLadder ? '🪜 梯子！往上爬！' : '🐍 蛇！溜下去！');
                 setShowEvent(result.event);
 
                 await new Promise(r => setTimeout(r, 600));
 
-                // Animate slide/climb (faster multi-hop)
                 const direction = finalFloor > intermediate ? 1 : -1;
                 const steps = Math.abs(finalFloor - intermediate);
 
@@ -218,7 +304,7 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
                     setIsHopping(true);
                     setAnimatingFloor(intermediate + (i + 1) * direction);
                     scrollToFloor(intermediate + (i + 1) * direction);
-                    await new Promise(r => setTimeout(r, 150)); // Fast slide
+                    await new Promise(r => setTimeout(r, 120));
                     setIsHopping(false);
                 }
 
@@ -229,7 +315,6 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
 
             setAnimatingFloor(null);
 
-            // Victory check
             if (result.reachedTop) {
                 setTimeout(() => setShowVictory(true), 400);
             }
@@ -239,7 +324,6 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
         }
     }, [diceCount, isRolling, currentFloor, userId, rollDiceMutation, scrollToFloor]);
 
-    // Lottery handler
     const handleLotteryComplete = useCallback(async (prize: Prize) => {
         try {
             await lotteryRewardMutation.mutateAsync({
@@ -250,7 +334,6 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
         setShowLotteryWheel(false);
     }, [userId, lotteryRewardMutation]);
 
-    // Reset handler
     const handleReset = useCallback(async () => {
         try {
             await resetTowerMutation.mutateAsync({ userId });
@@ -262,188 +345,224 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
 
     const displayFloor = animatingFloor ?? currentFloor;
     const playerPos = getTilePosition(displayFloor);
+    const zone = getZone(displayFloor);
+    const progressPct = ((displayFloor - 1) / (TOTAL_TILES - 1)) * 100;
 
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2">
-            <div className="clay-dialog w-full max-w-md h-[92vh] overflow-hidden flex flex-col voxel-sky-bg shadow-2xl relative rounded-3xl">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 backdrop-blur-sm">
+            <div className="tv2-shell w-full max-w-md h-[92vh] overflow-hidden flex flex-col relative rounded-3xl">
 
-                {/* Clouds */}
-                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <div className="voxel-cloud w-20 h-6 top-[8%]" style={{ animationDuration: '60s' }} />
-                    <div className="voxel-cloud w-28 h-8 top-[25%]" style={{ animationDuration: '45s', animationDelay: '-15s' }} />
-                    <div className="voxel-cloud w-16 h-5 top-[50%]" style={{ animationDuration: '70s', animationDelay: '-30s' }} />
-                    <div className="voxel-cloud w-24 h-7 top-[70%]" style={{ animationDuration: '55s', animationDelay: '-10s' }} />
-                </div>
-
-                {/* Header */}
-                <div className="relative z-20 p-3 flex justify-between items-center bg-white/80 backdrop-blur-md border-b-2 border-white/30">
-                    <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl shadow-lg flex items-center justify-center text-2xl">🏰</div>
-                        <div>
-                            <h2 className="font-black text-lg text-gray-800 leading-tight">怪獸塔 V2</h2>
-                            <p className="text-xs font-bold text-green-600" data-testid="zone-name">Floor {displayFloor} / {TOTAL_TILES}</p>
+                {/* ── Header ── */}
+                <div className="relative z-20 px-4 py-3 flex items-center justify-between tv2-header">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${zone.bg} flex items-center justify-center text-lg shadow-md tv2-icon-float`}>
+                            🏰
+                        </div>
+                        <div className="min-w-0">
+                            <h2 className="font-extrabold text-[15px] text-gray-800 leading-tight tracking-tight">怪獸塔 V2</h2>
+                            <p className="text-[11px] font-semibold text-gray-400 truncate" data-testid="zone-name">
+                                {zone.name} · Floor {displayFloor} / {TOTAL_TILES}
+                            </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/50 hover:bg-white/80 transition" data-testid="close-tower-v2">
-                        <X size={22} className="text-gray-600" />
+                    <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors active:scale-90" data-testid="close-tower-v2">
+                        <X size={20} className="text-gray-400" />
                     </button>
                 </div>
 
-                {/* Stats */}
-                <div className="relative z-20 px-4 py-2 flex justify-around items-center bg-white/60 border-b border-white/20">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xl">🎲</span>
-                        <span className="font-black text-lg" data-testid="dice-count">{diceCount}</span>
+                {/* ── Progress bar ── */}
+                <div className="relative z-20 h-[3px] bg-gray-100">
+                    <div
+                        className="h-full transition-all duration-700 ease-out rounded-r-full"
+                        style={{ width: `${progressPct}%`, background: zone.accent }}
+                    />
+                </div>
+
+                {/* ── Stats row ── */}
+                <div className="relative z-20 px-4 py-2 flex items-center gap-5 tv2-stats">
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-sm">🎲</span>
+                        <span className="font-extrabold text-sm tabular-nums text-gray-700" data-testid="dice-count">{diceCount}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xl">⭐</span>
-                        <span className="font-black text-lg">{starBalance}</span>
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-sm">⭐</span>
+                        <span className="font-extrabold text-sm tabular-nums text-gray-700">{starBalance}</span>
                     </div>
+                    <div className="flex-1" />
                     {rollResult && (
-                        <div className="flex items-center gap-2 animate-bounce" data-testid="dice-result">
-                            <span className="text-xs font-bold text-orange-500 uppercase">Roll</span>
-                            <span className="text-2xl font-black text-orange-600">{rollResult}</span>
+                        <div className="flex items-center gap-1.5 tv2-result-pop" data-testid="dice-result">
+                            <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider">Roll</span>
+                            <span className="text-xl font-black text-orange-500 tabular-nums">{rollResult}</span>
                         </div>
                     )}
                 </div>
 
-                {/* Game Board */}
-                <div ref={boardContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden relative" style={{ scrollBehavior: 'smooth' }}>
-                    <div className="relative mx-auto" style={{ width: BOARD_WIDTH, height: BOARD_HEIGHT }}>
+                {/* ── Game Board ── */}
+                <div ref={boardRef} className="flex-1 overflow-y-auto overflow-x-hidden relative tv2-board-scroll" data-testid="tower-v2-board" style={{ scrollBehavior: 'smooth' }}>
+
+                    {/* Zone gradient bands */}
+                    <div className="absolute inset-0 pointer-events-none">
+                        {ZONES.slice().reverse().map((z, i) => {
+                            const rowStart = Math.floor((z.from - 1) / COLS);
+                            const rowEnd = Math.floor((z.to - 1) / COLS);
+                            const totalRows = Math.ceil(TOTAL_TILES / COLS);
+                            const top = (totalRows - 1 - rowEnd) * ROW_H;
+                            const height = (rowEnd - rowStart + 1) * ROW_H;
+                            return (
+                                <div
+                                    key={i}
+                                    className="absolute w-full"
+                                    style={{
+                                        top,
+                                        height,
+                                        background: `linear-gradient(180deg, ${z.accent}12 0%, ${z.accent}05 100%)`,
+                                    }}
+                                />
+                            );
+                        })}
+                    </div>
+
+                    <div className="relative mx-auto" style={{ width: BOARD_W, height: BOARD_H, padding: '20px 0' }}>
+
+                        {/* Trail dots */}
+                        <TrailDots />
+
+                        {/* SVG connectors */}
+                        <EventConnectors events={events.filter(e => e.target_floor)} />
 
                         {/* Tiles */}
                         {Array.from({ length: TOTAL_TILES }, (_, i) => {
-                            const tileNum = i + 1;
-                            const pos = getTilePosition(tileNum);
-                            const event = eventMap.get(tileNum);
-                            const isCurrent = tileNum === displayFloor;
+                            const n = i + 1;
+                            const pos = getTilePosition(n);
+                            const event = eventMap.get(n);
+                            const isCurrent = n === displayFloor;
+                            const isPast = n < displayFloor;
+                            const tileZone = getZone(n);
 
                             return (
                                 <div
-                                    key={tileNum}
-                                    className={`voxel-tile ${isCurrent ? 'z-50' : ''}`}
+                                    key={n}
+                                    className="tv2-tile"
                                     style={{
-                                        left: pos.x - TILE_SIZE / 2,
-                                        bottom: pos.y - TILE_SIZE / 2,
-                                        width: TILE_SIZE,
-                                        height: TILE_SIZE,
-                                        '--tile-index': tileNum,
-                                    } as React.CSSProperties}
-                                    data-testid={`tile-${tileNum}`}
+                                        left: pos.x - CELL / 2,
+                                        bottom: pos.y - CELL / 2,
+                                        width: CELL,
+                                        height: CELL,
+                                    }}
+                                    data-testid={`tile-${n}`}
                                 >
-                                    <img src={V2_ASSETS.tile} className="voxel-tile-image" alt="" />
-                                    <div className="voxel-tile-number">{tileNum}</div>
+                                    <div
+                                        className={`tv2-tile-circle ${isCurrent ? 'tv2-tile-active' : ''}`}
+                                        style={{
+                                            background: isPast ? '#e5e7eb' : tileZone.tile,
+                                            boxShadow: isCurrent
+                                                ? `0 0 0 3px white, 0 0 0 6px ${tileZone.accent}, 0 4px 12px ${tileZone.accent}66`
+                                                : isPast
+                                                    ? '0 2px 4px rgba(0,0,0,0.06)'
+                                                    : `0 3px 0 ${tileZone.tileRing}, 0 4px 8px rgba(0,0,0,0.1)`,
+                                        }}
+                                    >
+                                        <span
+                                            className="tv2-tile-num"
+                                            style={{ color: isPast ? '#9ca3af' : 'white' }}
+                                        >
+                                            {n}
+                                        </span>
+                                    </div>
 
+                                    {/* Event badge */}
                                     {event && (
-                                        <div className={`voxel-indicator ${event.event_type === 'ladder' ? 'voxel-event-ladder' : 'voxel-event-snake'}`}>
-                                            {event.event_type === 'ladder' ? '🪜' : '🐍'}
+                                        <div className={`tv2-event-badge ${event.event_type === 'ladder' ? 'tv2-badge-ladder' : 'tv2-badge-snake'}`}>
+                                            {event.event_type === 'ladder'
+                                                ? <ArrowUp size={11} strokeWidth={3} />
+                                                : <ArrowDown size={11} strokeWidth={3} />
+                                            }
                                         </div>
-                                    )}
-
-                                    {isCurrent && (
-                                        <div className="absolute inset-0 rounded-lg ring-4 ring-yellow-400 ring-opacity-80 animate-pulse pointer-events-none" />
                                     )}
                                 </div>
                             );
                         })}
 
-                        {/* Player */}
+                        {/* Player token */}
                         <div
-                            className={`voxel-player ${isHopping ? 'voxel-player-jump' : ''}`}
+                            className={`tv2-player ${isHopping ? 'tv2-player-hop' : ''}`}
                             style={{
-                                left: playerPos.x - 24,
-                                bottom: playerPos.y - 16,
+                                left: playerPos.x - 18,
+                                bottom: playerPos.y + 6,
                                 transition: isHopping ? 'none' : 'left 0.3s ease, bottom 0.3s ease',
                             }}
                             data-testid="player-token"
                         >
-                            <img src={V2_ASSETS.player} alt="Player" className="w-full h-full" />
+                            <span className="tv2-player-emoji">🧸</span>
                         </div>
-
-                        {/* Snake/Ladder Connectors */}
-                        {events.map((event) => {
-                            if (!event.target_floor) return null;
-                            const start = getTilePosition(event.floor_number);
-                            const end = getTilePosition(event.target_floor);
-                            const isLadder = event.event_type === 'ladder';
-                            const angle = Math.atan2(end.y - start.y, end.x - start.x) * (180 / Math.PI) - 90;
-                            const length = Math.hypot(end.x - start.x, end.y - start.y);
-
-                            return (
-                                <div
-                                    key={`connector-${event.floor_number}`}
-                                    className="absolute pointer-events-none"
-                                    style={{
-                                        left: start.x - 16,
-                                        bottom: start.y - 16,
-                                        width: 32,
-                                        height: length,
-                                        transformOrigin: 'top center',
-                                        transform: `rotate(${angle}deg)`,
-                                        zIndex: 3,
-                                    }}
-                                >
-                                    <img
-                                        src={isLadder ? V2_ASSETS.ladder : V2_ASSETS.snake}
-                                        alt=""
-                                        className="w-full h-full object-contain opacity-70"
-                                        style={{ imageRendering: 'pixelated' }}
-                                    />
-                                </div>
-                            );
-                        })}
                     </div>
                 </div>
 
-                {/* Event Message Overlay */}
+                {/* ── Event overlay ── */}
                 {eventMessage && (
                     <div className="absolute inset-0 flex items-center justify-center z-[100] pointer-events-none">
-                        <div className="bg-white/95 px-8 py-6 rounded-3xl shadow-2xl text-center animate-bounce">
-                            <p className="text-2xl font-black text-gray-800">{eventMessage}</p>
+                        <div className="tv2-event-toast">
+                            <p className="text-lg font-extrabold text-gray-800">{eventMessage}</p>
                             {showEvent?.target_floor && (
-                                <p className="text-sm font-bold text-gray-500 mt-2">
-                                    <ChevronUp className="inline" size={16} /> 移動到第 {showEvent.target_floor} 層
+                                <p className="text-xs font-semibold text-gray-400 mt-1">
+                                    移動到第 {showEvent.target_floor} 層
                                 </p>
                             )}
                         </div>
                     </div>
                 )}
 
-                {/* Controls */}
-                <div className="relative z-20 p-4 bg-white/90 backdrop-blur-md border-t-2 border-white/30 flex gap-3 justify-center items-center">
-                    <button
-                        onClick={handleRoll}
-                        disabled={diceCount <= 0 || isRolling}
-                        className="clay-btn clay-btn-primary px-10 py-4 text-xl font-black flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                        data-testid="roll-dice-btn"
-                    >
-                        <Dices size={28} className={isRolling ? 'animate-spin' : ''} />
-                        {isRolling ? displayDice : '擲骰子'}
-                    </button>
+                {/* ── Controls ── */}
+                <div className="relative z-20 tv2-controls">
+                    <div className="flex items-center gap-3 justify-center">
+                        <button
+                            onClick={handleRoll}
+                            disabled={diceCount <= 0 || isRolling}
+                            className="tv2-roll-btn group"
+                            data-testid="roll-dice-btn"
+                        >
+                            <div className={`${isRolling ? 'tv2-dice-spin' : 'group-hover:scale-110 group-active:scale-95 transition-transform'}`}>
+                                <DiceFace value={displayDice} size={40} />
+                            </div>
+                            <span className="font-extrabold text-[15px] text-gray-700">
+                                {isRolling ? '擲出中…' : '擲骰子'}
+                            </span>
+                        </button>
 
-                    <button onClick={() => setShowPurchase(true)} className="clay-btn w-14 h-14 flex items-center justify-center bg-blue-100 hover:bg-blue-200" data-testid="purchase-dice-btn">
-                        <ShoppingCart size={24} className="text-blue-700" />
-                    </button>
-                    <button onClick={() => setShowLotteryWheel(true)} className="clay-btn w-14 h-14 flex items-center justify-center bg-purple-100 hover:bg-purple-200" data-testid="lottery-wheel-btn">
-                        <Sparkles size={24} className="text-purple-700" />
-                    </button>
+                        <button
+                            onClick={() => setShowPurchase(true)}
+                            className="tv2-side-btn"
+                            data-testid="purchase-dice-btn"
+                        >
+                            <ShoppingCart size={18} />
+                        </button>
+                        <button
+                            onClick={() => setShowLotteryWheel(true)}
+                            className="tv2-side-btn"
+                            data-testid="lottery-wheel-btn"
+                        >
+                            <span className="text-lg">🎰</span>
+                        </button>
+                    </div>
                 </div>
 
-                {/* Victory Modal */}
+                {/* ── Victory modal ── */}
                 {showVictory && (
-                    <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-[2000]">
-                        <div className="clay-dialog p-8 text-center max-w-xs animate-bounce-in">
-                            <div className="text-6xl mb-4">🏆</div>
-                            <h2 className="text-2xl font-black mb-2 text-gray-800">登頂成功！</h2>
-                            <p className="text-gray-600 mb-6">恭喜你攻克怪獸塔！</p>
-                            <button onClick={handleReset} className="clay-btn clay-btn-primary w-full py-4 text-lg font-black">
-                                再挑戰一次
+                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-[2000] backdrop-blur-sm">
+                        <div className="tv2-victory tv2-pop-in">
+                            <div className="text-6xl mb-3">🏆</div>
+                            <h2 className="text-2xl font-black text-gray-800 mb-1">登頂成功！</h2>
+                            <p className="text-gray-400 text-sm mb-5">恭喜你攻克怪獸塔！</p>
+                            <button
+                                onClick={handleReset}
+                                className="w-full py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 text-white font-extrabold text-base shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center gap-2 active:scale-95"
+                            >
+                                <RotateCcw size={18} /> 再挑戰一次
                             </button>
                         </div>
                     </div>
                 )}
 
-                {/* Sub-modals */}
                 {showPurchase && <DicePurchaseModal userId={userId} onClose={() => setShowPurchase(false)} />}
                 {showLotteryWheel && (
                     <LotteryWheel onComplete={(prize) => { handleLotteryComplete(prize); setShowLotteryWheel(false); }} />
@@ -453,11 +572,13 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
     );
 };
 
-// ============ PREVIEW COMPONENT ============
+// ============ PREVIEW CARD ============
 export const TowerV2Preview: React.FC<{ userId: string; onClick: () => void }> = ({ userId, onClick }) => {
     const { data: progress } = useTowerProgress(userId);
     const currentFloor = progress?.current_floor || 1;
     const diceCount = progress?.dice_count || 0;
+    const zone = getZone(currentFloor);
+    const pct = Math.round(((currentFloor - 1) / (TOTAL_TILES - 1)) * 100);
 
     return (
         <button
@@ -466,12 +587,15 @@ export const TowerV2Preview: React.FC<{ userId: string; onClick: () => void }> =
             data-testid="monster-tower-v2-open"
         >
             <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 shadow-lg flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">🏰</div>
-                <div>
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${zone.bg} shadow-lg flex items-center justify-center text-3xl group-hover:scale-110 transition-transform`}>🏰</div>
+                <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-black text-gray-800">怪獸塔 V2</h3>
                     <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded-lg">Floor {currentFloor}</span>
+                        <span className="text-xs font-bold px-2 py-0.5 bg-gray-100 text-gray-600 rounded-lg">{zone.name}</span>
                         <span className="text-xs font-bold px-2 py-0.5 bg-orange-100 text-orange-700 rounded-lg">🎲 {diceCount}</span>
+                    </div>
+                    <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: zone.accent }} />
                     </div>
                 </div>
             </div>

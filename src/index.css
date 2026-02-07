@@ -742,6 +742,312 @@ textarea {
   min-height: 1000px;
 }
 
+/* ================================================================
+   TOWER V2 – "Mountain Trail" Redesign
+   Clean, modern snakes-and-ladders styling
+   ================================================================ */
+
+/* Shell */
+.tv2-shell {
+  background: linear-gradient(180deg, #fefefe 0%, #f8f9fa 100%);
+  box-shadow:
+    0 25px 60px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+/* Header */
+.tv2-header {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Stats */
+.tv2-stats {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+/* Board scroll area */
+.tv2-board-scroll {
+  background: linear-gradient(180deg, #fafbfc 0%, #f3f4f6 100%);
+}
+
+.tv2-board-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+
+.tv2-board-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tv2-board-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+/* ── Tiles ── */
+.tv2-tile {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.tv2-tile-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  cursor: default;
+}
+
+.tv2-tile-circle:hover {
+  transform: scale(1.12);
+}
+
+.tv2-tile-active .tv2-tile-circle,
+.tv2-tile-circle.tv2-tile-active {
+  animation: tv2-tile-glow 2s ease-in-out infinite;
+}
+
+@keyframes tv2-tile-glow {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.tv2-tile-num {
+  font-weight: 800;
+  font-size: 14px;
+  font-family: 'Fredoka', system-ui, sans-serif;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  letter-spacing: -0.5px;
+  user-select: none;
+}
+
+/* ── Event badges ── */
+.tv2-event-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border: 2px solid white;
+  animation: tv2-badge-bob 2.5s ease-in-out infinite;
+}
+
+@keyframes tv2-badge-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.tv2-badge-ladder {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: white;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+}
+
+.tv2-badge-snake {
+  background: linear-gradient(135deg, #f87171, #ef4444);
+  color: white;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+}
+
+/* ── Player ── */
+.tv2-player {
+  position: absolute;
+  z-index: 1000;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  transition: left 0.3s ease, bottom 0.3s ease;
+}
+
+.tv2-player-emoji {
+  font-size: 32px;
+  display: block;
+  animation: tv2-idle 2.5s ease-in-out infinite;
+}
+
+@keyframes tv2-idle {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-2px) rotate(-2deg); }
+  75% { transform: translateY(-2px) rotate(2deg); }
+}
+
+.tv2-player-hop {
+  animation: tv2-hop 0.3s ease-out !important;
+}
+
+.tv2-player-hop .tv2-player-emoji {
+  animation: tv2-hop 0.3s ease-out !important;
+}
+
+@keyframes tv2-hop {
+  0% {
+    transform: translateY(0) scale(1.1, 0.9);
+  }
+  40% {
+    transform: translateY(-36px) scale(0.9, 1.1);
+  }
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+}
+
+/* ── Controls ── */
+.tv2-controls {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.tv2-roll-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 28px 10px 14px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.04),
+    0 4px 12px rgba(0, 0, 0, 0.06);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.tv2-roll-btn:hover:not(:disabled) {
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.04),
+    0 6px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.tv2-roll-btn:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.tv2-roll-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tv2-side-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border: 1.5px solid rgba(0, 0, 0, 0.05);
+  color: #6b7280;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.03);
+}
+
+.tv2-side-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
+  transform: translateY(-1px);
+}
+
+.tv2-side-btn:active {
+  transform: translateY(1px);
+}
+
+/* ── Dice spin ── */
+.tv2-dice-spin {
+  animation: tv2-spin 0.1s linear infinite;
+}
+
+@keyframes tv2-spin {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(90deg) scale(0.9); }
+  50% { transform: rotate(180deg) scale(1); }
+  75% { transform: rotate(270deg) scale(0.9); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* ── Result pop ── */
+.tv2-result-pop {
+  animation: tv2-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tv2-pop {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Event toast ── */
+.tv2-event-toast {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(20px);
+  padding: 20px 32px;
+  border-radius: 24px;
+  text-align: center;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  animation: tv2-toast-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tv2-toast-in {
+  0% { transform: scale(0.8) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* ── Victory ── */
+.tv2-victory {
+  background: white;
+  border-radius: 28px;
+  padding: 32px 28px;
+  text-align: center;
+  max-width: 300px;
+  box-shadow:
+    0 25px 60px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Pop-in animation ── */
+.tv2-pop-in {
+  animation: tv2-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tv2-pop-in {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Icon float ── */
+.tv2-icon-float {
+  animation: tv2-icon-float 3s ease-in-out infinite;
+}
+
+@keyframes tv2-icon-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+/* ================================================================
+   END TOWER V2 STYLES
+   ================================================================ */
+
+/* Legacy voxel styles kept for backwards compatibility */
+
 /* Tile Styling - Voxel grass block aesthetic */
 .voxel-tile {
   position: absolute;
