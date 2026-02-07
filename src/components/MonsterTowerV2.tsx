@@ -268,11 +268,18 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="clay-dialog w-full max-w-lg h-[90vh] overflow-hidden flex flex-col voxel-sky-bg shadow-2xl relative">
 
-                {/* Voxel Clouds Background Layer */}
-                <div className="absolute inset-0 pointer-events-none">
-                    <div className="voxel-cloud w-24 h-8 top-[10%] left-[-10%]" style={{ animationDuration: '40s' }} />
-                    <div className="voxel-cloud w-32 h-10 top-[40%] left-[-20%]" style={{ animationDuration: '60s', animationDelay: '-15s' }} />
-                    <div className="voxel-cloud w-20 h-6 top-[70%] left-[-15%]" style={{ animationDuration: '35s', animationDelay: '-5s' }} />
+                {/* Voxel Clouds Background Layer - Multiple layers for depth */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    {/* Far clouds - slower, smaller */}
+                    <div className="voxel-cloud w-16 h-5 absolute top-[5%]" style={{ animationDuration: '80s', opacity: 0.6 }} />
+                    <div className="voxel-cloud w-20 h-6 absolute top-[15%]" style={{ animationDuration: '70s', animationDelay: '-20s', opacity: 0.7 }} />
+                    {/* Mid clouds - medium speed */}
+                    <div className="voxel-cloud w-28 h-8 absolute top-[25%]" style={{ animationDuration: '50s', animationDelay: '-10s' }} />
+                    <div className="voxel-cloud w-24 h-7 absolute top-[45%]" style={{ animationDuration: '55s', animationDelay: '-25s' }} />
+                    <div className="voxel-cloud w-32 h-9 absolute top-[60%]" style={{ animationDuration: '45s', animationDelay: '-5s' }} />
+                    {/* Near clouds - faster, larger */}
+                    <div className="voxel-cloud w-36 h-10 absolute top-[35%]" style={{ animationDuration: '35s', animationDelay: '-15s', opacity: 0.95 }} />
+                    <div className="voxel-cloud w-40 h-12 absolute top-[75%]" style={{ animationDuration: '40s', animationDelay: '-30s' }} />
                 </div>
 
                 {/* Header */}
@@ -290,7 +297,7 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
                 </div>
 
                 {/* Stats Bar */}
-                <div className="relative z-10 p-3 flex justify-around items-center bg-white/50 border-b border-white/20">
+                <div className="relative z-10 p-3 flex justify-around items-center voxel-stats-bar">
                     <div className="flex flex-col items-center">
                         <span className="text-xl">🎲</span>
                         <span className="text-sm font-black text-blue-900" data-testid="dice-count">{diceCount}</span>
