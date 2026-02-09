@@ -326,7 +326,8 @@ export const useRollDice = () => {
                 } else if (event.event_type === 'trap' && event.target_floor) {
                     newFloor = event.target_floor;
                 } else if (event.event_type === 'egg' && event.monster_id) {
-                    monstersToAdd = [event.monster_id];
+                    // Store as unopened egg (prefix with 'egg:')
+                    monstersToAdd = [`egg:${event.monster_id}`];
                 }
             }
 
@@ -464,29 +465,29 @@ export const useLotteryReward = () => {
 
                 if (error) throw error;
             } else if (prizeType === 'monster' && monsterId) {
-                // Get current monsters and add new one
+                // Store as unopened egg so it goes to collection
+                const eggId = `egg:${monsterId}`;
                 const { data: currentProgress } = await supabase.rpc('get_tower_progress', {
                     p_user_id: userId
                 });
 
                 const currentMonsters = currentProgress?.monsters_collected || [];
-                if (!currentMonsters.includes(monsterId)) {
-                    const newMonsters = [...currentMonsters, monsterId];
+                // Allow duplicate eggs (each is a new egg)
+                const newMonsters = [...currentMonsters, eggId];
 
-                    const { error } = await supabase.rpc('update_tower_progress', {
-                        p_user_id: userId,
-                        p_current_floor: currentProgress?.current_floor || 1,
-                        p_dice_count: currentProgress?.dice_count || 0,
-                        p_monsters_collected: newMonsters,
-                        p_total_climbs: currentProgress?.total_climbs || 0,
-                        p_highest_floor: currentProgress?.highest_floor || 1,
-                        p_last_roll_result: null,
-                        p_last_event_type: null,
-                        p_last_event_floor: null,
-                    });
+                const { error } = await supabase.rpc('update_tower_progress', {
+                    p_user_id: userId,
+                    p_current_floor: currentProgress?.current_floor || 1,
+                    p_dice_count: currentProgress?.dice_count || 0,
+                    p_monsters_collected: newMonsters,
+                    p_total_climbs: currentProgress?.total_climbs || 0,
+                    p_highest_floor: currentProgress?.highest_floor || 1,
+                    p_last_roll_result: null,
+                    p_last_event_type: null,
+                    p_last_event_floor: null,
+                });
 
-                    if (error) throw error;
-                }
+                if (error) throw error;
             }
 
             return { success: true, prizeType, prizeValue, monsterId, prizeName };
@@ -558,6 +559,56 @@ export const usePurchaseDice = () => {
             queryClient.invalidateQueries({ queryKey: ['profile', userId] });
             // Also invalidate star balance usually in useStarBalance
             queryClient.invalidateQueries({ queryKey: ['starBalance', userId] });
+        },
+    });
+};
+
+// Hatch an egg — converts 'egg:monster_id' to 'monster_id' in monsters_collected
+export const useHatchEgg = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ userId, eggIndex }: { userId: string; eggIndex: number }) => {
+            const { data: currentProgress, error: fetchError } = await supabase.rpc('get_tower_progress', {
+                p_user_id: userId
+            });
+
+            if (fetchError) throw fetchError;
+
+            const currentMonsters: string[] = currentProgress?.monsters_collected || [];
+            // Find the egg at the given index and hatch it
+            let eggCount = 0;
+            const newMonsters = [...currentMonsters];
+            for (let i = 0; i < newMonsters.length; i++) {
+                if (newMonsters[i].startsWith('egg:')) {
+                    if (eggCount === eggIndex) {
+                        // Hatch: replace 'egg:monster_id' with 'monster_id'
+                        const monsterId = newMonsters[i].replace('egg:', '');
+                        newMonsters[i] = monsterId;
+                        break;
+                    }
+                    eggCount++;
+                }
+            }
+
+            const { error } = await supabase.rpc('update_tower_progress', {
+                p_user_id: userId,
+                p_current_floor: currentProgress?.current_floor || 1,
+                p_dice_count: currentProgress?.dice_count || 0,
+                p_monsters_collected: newMonsters,
+                p_total_climbs: currentProgress?.total_climbs || 0,
+                p_highest_floor: currentProgress?.highest_floor || 1,
+                p_last_roll_result: null,
+                p_last_event_type: null,
+                p_last_event_floor: null,
+            });
+
+            if (error) throw error;
+            return newMonsters;
+        },
+        onSuccess: (_, { userId }) => {
+            queryClient.invalidateQueries({ queryKey: ['tower-progress', userId] });
+            queryClient.refetchQueries({ queryKey: ['tower-progress', userId] });
         },
     });
 };

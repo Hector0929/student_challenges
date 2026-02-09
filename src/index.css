@@ -1089,6 +1089,19 @@ textarea {
   }
 }
 
+/* ── Egg shake animation ── */
+.tv2-egg-shake {
+  animation: tv2-egg-shake 0.4s ease-in-out 3;
+}
+
+@keyframes tv2-egg-shake {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-15deg) scale(1.1); }
+  40% { transform: rotate(12deg) scale(1.15); }
+  60% { transform: rotate(-10deg) scale(1.1); }
+  80% { transform: rotate(8deg) scale(1.05); }
+}
+
 /* ── Icon float ── */
 .tv2-icon-float {
   animation: tv2-icon-float 3s ease-in-out infinite;

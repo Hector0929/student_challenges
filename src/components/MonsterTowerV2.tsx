@@ -5,14 +5,16 @@
  */
 
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { X, ShoppingCart, RotateCcw } from 'lucide-react';
+import { X, ShoppingCart, RotateCcw, FolderOpen } from 'lucide-react';
 import {
     useTowerProgress,
     useRollDice,
     useResetTower,
     usePurchaseDice,
     useLotteryReward,
-    generateRandomEvents
+    useHatchEgg,
+    generateRandomEvents,
+    MONSTERS
 } from '../hooks/useTowerProgress';
 import { useStarBalance } from '../hooks/useQuests';
 import { LotteryWheel } from './LotteryWheel';
@@ -291,6 +293,7 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
     const rollDiceMutation = useRollDice();
     const resetTowerMutation = useResetTower();
     const lotteryRewardMutation = useLotteryReward();
+    const hatchEggMutation = useHatchEgg();
 
 
     const boardRef = useRef<HTMLDivElement>(null);
@@ -300,10 +303,18 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
     const [showVictory, setShowVictory] = useState(false);
     const [showLotteryWheel, setShowLotteryWheel] = useState(false);
     const [showPurchase, setShowPurchase] = useState(false);
+    const [showCollection, setShowCollection] = useState(false);
+    const [hatchingIndex, setHatchingIndex] = useState<number | null>(null);
+    const [hatchedMonster, setHatchedMonster] = useState<string | null>(null);
     const [displayDice, setDisplayDice] = useState(1);
     const [animatingFloor, setAnimatingFloor] = useState<number | null>(null);
     const [isHopping, setIsHopping] = useState(false);
     const [eventMessage, setEventMessage] = useState<string | null>(null);
+
+    // Derive eggs and monsters from monsters_collected
+    const allItems = progress?.monsters_collected || [];
+    const eggs = allItems.filter(m => m.startsWith('egg:')).map((m, i) => ({ eggIndex: i, monsterId: m.replace('egg:', '') }));
+    const monsters = allItems.filter(m => !m.startsWith('egg:'));
 
     const currentFloor = progress?.current_floor || 1;
     const diceCount = progress?.dice_count || 0;
@@ -377,6 +388,14 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
                 await new Promise(r => setTimeout(r, 300));
                 setEventMessage(null);
                 setShowEvent(null);
+            }
+
+            // Show egg collection toast
+            if (result.event?.event_type === 'egg' && result.event.monster_id) {
+                const monsterInfo = MONSTERS[result.event.monster_id as keyof typeof MONSTERS];
+                setEventMessage(`🥚 獲得怪獸蛋！${monsterInfo?.emoji || '🥚'}`);
+                await new Promise(r => setTimeout(r, 1500));
+                setEventMessage(null);
             }
 
             // Release animation lock — player now follows currentFloor from cache
@@ -530,6 +549,14 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
                             <span className="font-extrabold text-[15px] text-cyan-200">{isRolling ? '擲出中…' : '擲骰子'}</span>
                         </button>
                         <button onClick={() => setShowPurchase(true)} className="tv2-side-btn" data-testid="purchase-dice-btn"><ShoppingCart size={18} /></button>
+                        <button onClick={() => setShowCollection(true)} className="tv2-side-btn relative" data-testid="collection-btn">
+                            <FolderOpen size={18} />
+                            {eggs.length > 0 && (
+                                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
+                                    {eggs.length}
+                                </span>
+                            )}
+                        </button>
                     </div>
                 </div>
 
@@ -560,6 +587,116 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
 
                 {showPurchase && <DicePurchaseModal userId={userId} onClose={() => setShowPurchase(false)} />}
                 {showLotteryWheel && <LotteryWheel onComplete={handleLotteryComplete} />}
+
+                {/* ── Collection Folder ── */}
+                {showCollection && (
+                    <div className="absolute inset-0 bg-black/85 flex items-center justify-center z-[2000] backdrop-blur-sm">
+                        <div className="tv2-pop-in w-[90%] max-w-sm max-h-[80vh] flex flex-col bg-slate-800 rounded-3xl border border-slate-600 shadow-2xl overflow-hidden">
+                            {/* Header */}
+                            <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
+                                <h3 className="font-extrabold text-lg text-cyan-200 flex items-center gap-2">
+                                    <FolderOpen size={20} /> 我的收藏
+                                </h3>
+                                <button onClick={() => { setShowCollection(false); setHatchedMonster(null); setHatchingIndex(null); }} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-700 transition-colors">
+                                    <X size={18} className="text-slate-400" />
+                                </button>
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                                {/* Eggs Section */}
+                                <div>
+                                    <h4 className="text-sm font-bold text-amber-400 mb-2 flex items-center gap-1">🥚 未孵化的蛋 ({eggs.length})</h4>
+                                    {eggs.length === 0 ? (
+                                        <p className="text-slate-500 text-sm text-center py-4">還沒有蛋，繼續冒險吧！</p>
+                                    ) : (
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {eggs.map((egg, idx) => {
+                                                const isHatching = hatchingIndex === idx;
+                                                return (
+                                                    <button
+                                                        key={`egg-${idx}`}
+                                                        onClick={async () => {
+                                                            if (hatchEggMutation.isPending || isHatching) return;
+                                                            setHatchingIndex(idx);
+                                                            // Shake animation
+                                                            await new Promise(r => setTimeout(r, 1200));
+                                                            try {
+                                                                await hatchEggMutation.mutateAsync({ userId, eggIndex: idx });
+                                                                setHatchedMonster(egg.monsterId);
+                                                            } catch (e) { console.error('Hatch failed:', e); }
+                                                            setHatchingIndex(null);
+                                                        }}
+                                                        disabled={hatchEggMutation.isPending}
+                                                        className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-slate-700/60 hover:bg-slate-600/80 border border-slate-600 transition-all active:scale-95 disabled:opacity-50"
+                                                    >
+                                                        <span className={`text-3xl ${isHatching ? 'tv2-egg-shake' : ''}`} style={{ filter: 'drop-shadow(0 2px 6px rgba(251,191,36,0.4))' }}>🥚</span>
+                                                        <span className="text-[10px] text-slate-400 font-medium">點擊孵化</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Monsters Section */}
+                                <div>
+                                    <h4 className="text-sm font-bold text-emerald-400 mb-2 flex items-center gap-1">👾 我的怪獸 ({monsters.length})</h4>
+                                    {monsters.length === 0 ? (
+                                        <p className="text-slate-500 text-sm text-center py-4">孵化蛋來獲得怪獸！</p>
+                                    ) : (
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {monsters.map((mId, idx) => {
+                                                const info = MONSTERS[mId as keyof typeof MONSTERS];
+                                                return (
+                                                    <div key={`mon-${idx}`} className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-slate-700/40 border border-slate-600/50">
+                                                        {info?.image ? (
+                                                            <img src={info.image} alt={info.name} className="w-10 h-10 object-contain" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} />
+                                                        ) : (
+                                                            <span className="text-3xl">{info?.emoji || '❓'}</span>
+                                                        )}
+                                                        <span className="text-[10px] text-slate-300 font-bold text-center leading-tight">{info?.name || mId}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Hatched monster reveal overlay */}
+                        {hatchedMonster && (
+                            <div className="absolute inset-0 flex items-center justify-center z-[2100] bg-black/80 animate-popup-in" onClick={() => setHatchedMonster(null)}>
+                                <div className="text-center tv2-pop-in" onClick={e => e.stopPropagation()}>
+                                    <div className="text-6xl mb-3" style={{ animation: 'tv2-idle 1.2s ease-in-out infinite' }}>
+                                        {MONSTERS[hatchedMonster as keyof typeof MONSTERS]?.emoji || '✨'}
+                                    </div>
+                                    {MONSTERS[hatchedMonster as keyof typeof MONSTERS]?.image && (
+                                        <img
+                                            src={MONSTERS[hatchedMonster as keyof typeof MONSTERS].image}
+                                            alt="monster"
+                                            className="w-24 h-24 mx-auto mb-3 object-contain"
+                                            style={{ animation: 'tv2-idle 1.2s ease-in-out infinite', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.6))' }}
+                                        />
+                                    )}
+                                    <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-400 mb-1">
+                                        孵化成功！
+                                    </h3>
+                                    <p className="text-white font-bold text-lg mb-1">
+                                        {MONSTERS[hatchedMonster as keyof typeof MONSTERS]?.name || hatchedMonster}
+                                    </p>
+                                    <p className="text-slate-400 text-sm mb-4">
+                                        來自 {MONSTERS[hatchedMonster as keyof typeof MONSTERS]?.zone || '未知區域'}
+                                    </p>
+                                    <button onClick={() => setHatchedMonster(null)} className="px-6 py-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold shadow-lg active:scale-95 transition-all">
+                                        太棒了！
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
