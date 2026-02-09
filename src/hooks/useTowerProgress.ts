@@ -555,7 +555,7 @@ export const usePurchaseDice = () => {
             if (txError) throw txError;
 
             // 2. Award dice
-            const { data, error } = await supabase.rpc('award_dice', {
+            const { error } = await supabase.rpc('award_dice', {
                 p_user_id: userId,
                 p_dice_amount: diceAmount
             });
