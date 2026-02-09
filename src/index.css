@@ -743,35 +743,35 @@ textarea {
 }
 
 /* ================================================================
-   TOWER V2 – "Mountain Trail" Redesign
-   Clean, modern snakes-and-ladders styling
+   TOWER V2 – Isometric 3D Dark Theme
+   Floating platform blocks with neon glow
    ================================================================ */
 
-/* Shell */
+/* Shell — dark theme */
 .tv2-shell {
-  background: linear-gradient(180deg, #fefefe 0%, #f8f9fa 100%);
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
   box-shadow:
-    0 25px 60px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
+    0 25px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 /* Header */
 .tv2-header {
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(15, 23, 42, 0.96);
   backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* Stats */
 .tv2-stats {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(15, 23, 42, 0.92);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-/* Board scroll area */
+/* Board scroll area — solid dark to match tile image backgrounds */
 .tv2-board-scroll {
-  background: linear-gradient(180deg, #fafbfc 0%, #f3f4f6 100%);
+  background: #111318;
 }
 
 .tv2-board-scroll::-webkit-scrollbar {
@@ -783,11 +783,11 @@ textarea {
 }
 
 .tv2-board-scroll::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
 }
 
-/* ── Tiles ── */
+/* ── Tile container (positioned absolutely on the board) ── */
 .tv2-tile {
   position: absolute;
   display: flex;
@@ -796,98 +796,114 @@ textarea {
   z-index: 5;
 }
 
-.tv2-tile-circle {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
+/* ── Isometric cell wrapper ── */
+.tv2-iso-cell {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+/* Tile image: use screen blend mode to eliminate dark bg artifacts on dark board */
+.tv2-iso-block img {
+  mix-blend-mode: screen;
+}
+
+/* ── Number label — positioned BEHIND / above the block ── */
+.tv2-iso-num {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 900;
+  font-size: 13px;
+  font-family: 'Fredoka', 'Inter', system-ui, sans-serif;
+  letter-spacing: -0.5px;
+  user-select: none;
+  z-index: 1;
+  text-shadow: 0 0 8px currentColor;
+  pointer-events: none;
+}
+
+/* ── The 3D isometric block ── */
+.tv2-iso-block {
+  position: relative;
+  z-index: 2;
+  margin-top: 14px;
+  transition: filter 0.3s ease;
   cursor: default;
 }
 
-.tv2-tile-circle:hover {
-  transform: scale(1.12);
+/* No hover shift — tiles stay fixed */
+
+/* ── Active tile glow pulse (no movement, glow only) ── */
+.tv2-iso-active {
+  animation: tv2-iso-glow 2s ease-in-out infinite;
 }
 
-.tv2-tile-active .tv2-tile-circle,
-.tv2-tile-circle.tv2-tile-active {
-  animation: tv2-tile-glow 2s ease-in-out infinite;
+@keyframes tv2-iso-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px var(--iso-glow, #22d3ee));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px var(--iso-glow, #22d3ee)) drop-shadow(0 0 40px var(--iso-glow, #22d3ee));
+  }
 }
 
-@keyframes tv2-tile-glow {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-}
-
-.tv2-tile-num {
-  font-weight: 800;
-  font-size: 14px;
-  font-family: 'Fredoka', system-ui, sans-serif;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-  letter-spacing: -0.5px;
-  user-select: none;
-}
-
-/* ── Event badges ── */
-.tv2-event-badge {
+/* ── Event badge on isometric tile ── */
+.tv2-iso-event {
   position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 20px;
+  line-height: 1;
   z-index: 10;
-  border: 2px solid white;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7));
   animation: tv2-badge-bob 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.tv2-icon-ladder {
+  transform: translateX(-50%) rotate(-10deg);
+}
+
+.tv2-icon-snake {
+  transform: translateX(-50%) rotate(10deg);
 }
 
 @keyframes tv2-badge-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-3px); }
 }
 
-.tv2-badge-ladder {
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
-  color: white;
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
-}
-
-.tv2-badge-snake {
-  background: linear-gradient(135deg, #f87171, #ef4444);
-  color: white;
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
-}
-
-/* ── Player ── */
+/* ── Player — stands ON TOP of the isometric block ── */
 .tv2-player {
   position: absolute;
   z-index: 1000;
   pointer-events: none;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 6px rgba(34, 211, 238, 0.3));
   transition: left 0.3s ease, bottom 0.3s ease;
 }
 
+/* Idle gentle bounce on player (works for both img and emoji) */
+.tv2-player img,
 .tv2-player-emoji {
-  font-size: 32px;
   display: block;
-  animation: tv2-idle 2.5s ease-in-out infinite;
+  animation: tv2-idle 2s ease-in-out infinite;
 }
 
 @keyframes tv2-idle {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  25% { transform: translateY(-2px) rotate(-2deg); }
-  75% { transform: translateY(-2px) rotate(2deg); }
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
-.tv2-player-hop {
-  animation: tv2-hop 0.3s ease-out !important;
-}
-
+/* Hopping animation overrides idle */
+.tv2-player-hop img,
 .tv2-player-hop .tv2-player-emoji {
   animation: tv2-hop 0.3s ease-out !important;
 }
@@ -897,19 +913,19 @@ textarea {
     transform: translateY(0) scale(1.1, 0.9);
   }
   40% {
-    transform: translateY(-36px) scale(0.9, 1.1);
+    transform: translateY(-28px) scale(0.9, 1.1);
   }
   100% {
     transform: translateY(0) scale(1, 1);
   }
 }
 
-/* ── Controls ── */
+/* ── Controls — dark theme ── */
 .tv2-controls {
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(15, 23, 42, 0.96);
   backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .tv2-roll-btn {
@@ -918,20 +934,23 @@ textarea {
   gap: 12px;
   padding: 10px 28px 10px 14px;
   border-radius: 20px;
-  background: linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
-  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 1.5px solid rgba(34, 211, 238, 0.2);
   box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.04),
-    0 4px 12px rgba(0, 0, 0, 0.06);
+    0 2px 0 rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transition: all 0.15s ease;
   cursor: pointer;
 }
 
 .tv2-roll-btn:hover:not(:disabled) {
   box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.04),
-    0 6px 20px rgba(0, 0, 0, 0.1);
+    0 2px 0 rgba(0, 0, 0, 0.2),
+    0 6px 20px rgba(34, 211, 238, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   transform: translateY(-1px);
+  border-color: rgba(34, 211, 238, 0.4);
 }
 
 .tv2-roll-btn:active:not(:disabled) {
@@ -951,18 +970,19 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f3f4f6;
-  border: 1.5px solid rgba(0, 0, 0, 0.05);
-  color: #6b7280;
+  background: #1e293b;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
   transition: all 0.15s ease;
   cursor: pointer;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
 }
 
 .tv2-side-btn:hover {
-  background: #e5e7eb;
-  color: #374151;
+  background: #334155;
+  color: #e2e8f0;
   transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .tv2-side-btn:active {
@@ -975,11 +995,25 @@ textarea {
 }
 
 @keyframes tv2-spin {
-  0% { transform: rotate(0deg) scale(1); }
-  25% { transform: rotate(90deg) scale(0.9); }
-  50% { transform: rotate(180deg) scale(1); }
-  75% { transform: rotate(270deg) scale(0.9); }
-  100% { transform: rotate(360deg) scale(1); }
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+
+  25% {
+    transform: rotate(90deg) scale(0.9);
+  }
+
+  50% {
+    transform: rotate(180deg) scale(1);
+  }
+
+  75% {
+    transform: rotate(270deg) scale(0.9);
+  }
+
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
 }
 
 /* ── Result pop ── */
@@ -988,38 +1022,54 @@ textarea {
 }
 
 @keyframes tv2-pop {
-  0% { transform: scale(0); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
-/* ── Event toast ── */
+/* ── Event toast — dark ── */
 .tv2-event-toast {
-  background: rgba(255, 255, 255, 0.97);
+  background: rgba(15, 23, 42, 0.97);
   backdrop-filter: blur(20px);
   padding: 20px 32px;
   border-radius: 24px;
   text-align: center;
   box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.15),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(34, 211, 238, 0.15),
+    0 0 30px rgba(34, 211, 238, 0.1);
   animation: tv2-toast-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes tv2-toast-in {
-  0% { transform: scale(0.8) translateY(20px); opacity: 0; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
+  0% {
+    transform: scale(0.8) translateY(20px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
 }
 
-/* ── Victory ── */
+/* ── Victory — dark ── */
 .tv2-victory {
-  background: white;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
   border-radius: 28px;
   padding: 32px 28px;
   text-align: center;
   max-width: 300px;
   box-shadow:
-    0 25px 60px rgba(0, 0, 0, 0.2),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
+    0 25px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(34, 211, 238, 0.15),
+    0 0 40px rgba(34, 211, 238, 0.08);
 }
 
 /* ── Pop-in animation ── */
@@ -1028,8 +1078,15 @@ textarea {
 }
 
 @keyframes tv2-pop-in {
-  0% { transform: scale(0.7); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* ── Icon float ── */
@@ -1038,8 +1095,15 @@ textarea {
 }
 
 @keyframes tv2-icon-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-2px);
+  }
 }
 
 /* ================================================================
