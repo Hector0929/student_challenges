@@ -84,8 +84,8 @@ export function generateRandomEvents(seed: number): TowerEvent[] {
 
     // Pools for random egg drops
     const POOLS = {
-        forest: ['slime', 'wind_slime', 'mossy_golem', 'mushroom_kin'],
-        crystal: ['water_spirit', 'mystic_water', 'ice_cube_slime', 'penguin_knight'],
+        forest: ['slime', 'wind_slime', 'mossy_golem', 'mushroom_kin', 'nian_beast'],
+        crystal: ['water_spirit', 'mystic_water', 'ice_cube_slime', 'penguin_knight', 'valentine_diamond'],
         magma: ['flame_bird', 'phoenix_chick', 'magma_blob', 'demon_imp', 'cactus_boy', 'sand_castle_crab'],
         sky: ['thunder_cloud', 'storm_lord', 'cloud_puff', 'star_bit', 'ufo_rider', 'moon_bunny'],
     };
@@ -533,32 +533,42 @@ export const useResetTower = () => {
     });
 };
 
-// Purchase dice with stars
+// Purchase dice with stars (5 coins = 2 dice)
 export const usePurchaseDice = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async ({ userId, diceAmount }: { userId: string; diceAmount: number }) => {
-            const { data, error } = await supabase.rpc('purchase_dice', {
+            // New logic: 5 coins for 2 dice
+            const cost = Math.ceil(diceAmount / 2) * 5;
+
+            // 1. Deduct stars
+            const { error: txError } = await supabase
+                .from('star_transactions')
+                .insert({
+                    user_id: userId,
+                    amount: -cost,
+                    type: 'spend',
+                    description: `購買 ${diceAmount} 顆骰子`,
+                });
+
+            if (txError) throw txError;
+
+            // 2. Award dice
+            const { data, error } = await supabase.rpc('award_dice', {
                 p_user_id: userId,
                 p_dice_amount: diceAmount
             });
 
             if (error) throw error;
 
-            // Check application-level success
-            if (data && data.success === false) {
-                throw new Error(data.message || '購買失敗');
-            }
-
-            return data;
+            return { success: true };
         },
         onSuccess: (_data, { userId }) => {
             // Invalidate queries to update UI
             queryClient.invalidateQueries({ queryKey: ['tower-progress', userId] });
             queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-            // Also invalidate star balance usually in useStarBalance
-            queryClient.invalidateQueries({ queryKey: ['starBalance', userId] });
+            queryClient.invalidateQueries({ queryKey: ['star_balance', userId] });
         },
     });
 };
@@ -646,6 +656,22 @@ export const MONSTERS = {
         image: '/images/monsters/thunder.png',
         zone: '雲端天空',
         unlockFloor: 100,
+    },
+    nian_beast: {
+        id: 'nian_beast',
+        name: '可愛年獸',
+        emoji: '🧧',
+        image: '/images/monsters/new/nian_beast.png',
+        zone: '森林入口', // Special Event
+        unlockFloor: 88,
+    },
+    valentine_diamond: {
+        id: 'valentine_diamond',
+        name: '戀愛鑽石',
+        emoji: '💎',
+        image: '/images/monsters/new/valentine_diamond.png',
+        zone: '水晶洞窟', // Special Event
+        unlockFloor: 52, // 520
     },
     rainbow_dragon: {
         id: 'rainbow_dragon',
