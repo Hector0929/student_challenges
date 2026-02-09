@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ParentsMessageCard, ExchangeRateCard } from '../components/ChildDashboardWidgets';
 import { ExchangeRequestDialog } from '../components/ExchangeRequestDialog';
-import { MonsterTower, TowerPreview } from '../components/MonsterTower';
+import { MonsterTowerV2, TowerV2Preview } from '../components/MonsterTowerV2';
 
 import { Star, X, Save, ChevronDown, ChevronUp, RefreshCw, Trash2, Check } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
@@ -273,7 +273,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
 
             {/* Monster Tower Preview */}
             <div className="mb-6">
-                <TowerPreview userId={userId} onClick={() => setIsTowerOpen(true)} />
+                <TowerV2Preview userId={userId} onClick={() => setIsTowerOpen(true)} />
             </div>
 
             {/* Header Section */}
@@ -522,7 +522,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             />
 
             {/* Monster Tower Modal */}
-            <MonsterTower
+            <MonsterTowerV2
                 userId={userId}
                 isOpen={isTowerOpen}
                 onClose={() => setIsTowerOpen(false)}
