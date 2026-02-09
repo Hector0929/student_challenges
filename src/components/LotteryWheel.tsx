@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Coins, Dices } from 'lucide-react';
-import { RPGButton } from './RPGButton';
+
 import { MONSTERS } from '../hooks/useTowerProgress';
 
 import { LOTTERY_PRIZES, type Prize } from '../lib/gameConfig';
@@ -227,7 +227,7 @@ export const LotteryWheel: React.FC<LotteryWheelProps> = ({ onComplete }) => {
 
                 {/* Result Overlay */}
                 {showResult && selectedPrize && (
-                    <div className="absolute inset-0 flex items-center justify-center animate-popup-in" style={{ background: 'radial-gradient(ellipse, rgba(15,23,42,0.97) 60%, rgba(10,10,15,0.99))' , borderRadius: '1.5rem' }}>
+                    <div className="absolute inset-0 flex items-center justify-center animate-popup-in" style={{ background: 'radial-gradient(ellipse, rgba(15,23,42,0.97) 60%, rgba(10,10,15,0.99))', borderRadius: '1.5rem' }}>
                         <div className="text-center p-6 w-full">
                             <div className="text-6xl mb-3" style={{ animation: 'tv2-idle 1.2s ease-in-out infinite' }}>{selectedPrize.icon}</div>
                             <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-amber-400 mb-1">
