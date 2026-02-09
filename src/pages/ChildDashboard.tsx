@@ -491,12 +491,18 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             {/* Confirmation Dialog */}
             <RPGDialog
                 isOpen={confirmDialogOpen}
-                onClose={() => setConfirmDialogOpen(false)}
+                onClose={() => {
+                    setConfirmDialogOpen(false);
+                    setSelectedQuestId(null); // 清除选中的任务ID
+                }}
                 title="確定完成了嗎？"
                 footer={
                     <div className="flex gap-3 justify-end">
                         <RPGButton
-                            onClick={() => setConfirmDialogOpen(false)}
+                            onClick={() => {
+                                setConfirmDialogOpen(false);
+                                setSelectedQuestId(null); // 清除选中的任务ID
+                            }}
                             variant="secondary"
                         >
                             取消

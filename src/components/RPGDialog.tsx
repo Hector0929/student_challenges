@@ -27,7 +27,7 @@ export const RPGDialog: React.FC<RPGDialogProps> = ({
             />
 
             {/* Dialog */}
-            <div className="relative clay-dialog max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-bounce-in">
+            <div className="relative clay-dialog max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-bounce-in p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-deep-black">
                     <h2 className="text-lg font-pixel">{title}</h2>

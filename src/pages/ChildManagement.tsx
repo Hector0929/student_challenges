@@ -13,7 +13,6 @@ export const ChildManagement: React.FC = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
-        student_id: '',
         avatar_url: '👦'
     });
 
@@ -36,7 +35,7 @@ export const ChildManagement: React.FC = () => {
 
     // Create child mutation
     const createChildMutation = useMutation({
-        mutationFn: async (childData: { name: string; student_id: string; avatar_url: string }) => {
+        mutationFn: async (childData: { name: string; avatar_url: string }) => {
             if (!user?.family_id) throw new Error('無法取得家庭資訊');
 
             const { data, error } = await supabase
@@ -44,7 +43,6 @@ export const ChildManagement: React.FC = () => {
                 .insert({
                     role: 'child',
                     name: childData.name,
-                    student_id: childData.student_id,
                     avatar_url: childData.avatar_url,
                     family_id: user.family_id // Link to current family
                 })
@@ -57,7 +55,7 @@ export const ChildManagement: React.FC = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['children'] });
             setIsDialogOpen(false);
-            setFormData({ name: '', student_id: '', avatar_url: '👦' });
+            setFormData({ name: '', avatar_url: '👦' });
         },
     });
 
@@ -126,9 +124,6 @@ export const ChildManagement: React.FC = () => {
                                 <div className="text-5xl flex-shrink-0">{child.avatar_url || '👦'}</div>
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-pixel text-lg mb-1">{child.name}</h3>
-                                    {child.student_id && (
-                                        <p className="text-sm text-gray-600">學號: {child.student_id}</p>
-                                    )}
                                     <p className="text-xs text-gray-500 mt-2">
                                         建立於: {new Date(child.created_at).toLocaleDateString('zh-TW')}
                                     </p>
@@ -157,7 +152,7 @@ export const ChildManagement: React.FC = () => {
                 isOpen={isDialogOpen}
                 onClose={() => {
                     setIsDialogOpen(false);
-                    setFormData({ name: '', student_id: '', avatar_url: '👦' });
+                    setFormData({ name: '', avatar_url: '👦' });
                 }}
                 title="新增孩子帳號"
                 footer={
@@ -166,7 +161,7 @@ export const ChildManagement: React.FC = () => {
                             variant="secondary"
                             onClick={() => {
                                 setIsDialogOpen(false);
-                                setFormData({ name: '', student_id: '', avatar_url: '👦' });
+                                setFormData({ name: '', avatar_url: '👦' });
                             }}
                         >
                             <div className="flex items-center gap-2">
@@ -194,19 +189,6 @@ export const ChildManagement: React.FC = () => {
                             className="w-full px-3 py-2 border-2 border-deep-black text-sm"
                             required
                             placeholder="例：小明"
-                        />
-                    </div>
-
-                    {/* Student ID */}
-                    <div>
-                        <label className="block font-pixel text-xs mb-2">學號 *</label>
-                        <input
-                            type="text"
-                            value={formData.student_id}
-                            onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
-                            className="w-full px-3 py-2 border-2 border-deep-black text-sm"
-                            required
-                            placeholder="例：S12345"
                         />
                     </div>
 
