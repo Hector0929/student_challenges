@@ -18,24 +18,11 @@ export const QuestCard: React.FC<QuestCardProps> = ({
 }) => {
     const [isShaking, setIsShaking] = useState(false);
     const [isFlashing, setIsFlashing] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
 
-    // Track previous status to reset processing state
-    const [prevStatus, setPrevStatus] = useState(status);
-
-    // Reset isProcessing when status changes (pattern: Adjusting state during rendering)
-    if (status !== prevStatus) {
-        setPrevStatus(status);
-        if (status === 'completed' || status === 'verified') {
-            setIsProcessing(false);
-        }
-    }
-
-    const isDisabled = disabled || status === 'completed' || status === 'verified' || isProcessing;
+    const isDisabled = disabled || status === 'completed' || status === 'verified';
 
     const handleClick = () => {
         if (isDisabled) return;
-        setIsProcessing(true);
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 500);
         setTimeout(() => {
