@@ -147,7 +147,7 @@ export const GAMES: Game[] = [
         description: '極限腦力訓練',
         url: '/games/memory_matrix.html',
         color: 'bg-cyan-500 hover:bg-cyan-600',
-        category: 'learning'
+        category: 'fun'
     },
     {
         id: 'neon_slicer',
@@ -165,7 +165,7 @@ export const GAMES: Game[] = [
         description: '邏輯方塊合成',
         url: '/games/2048_cyber.html',
         color: 'bg-blue-500 hover:bg-blue-600',
-        category: 'learning'
+        category: 'fun'
     },
     {
         id: 'bubble_shooter',
