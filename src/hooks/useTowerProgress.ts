@@ -342,7 +342,7 @@ export const useRollDice = () => {
             }
 
             const currentMonsters = currentProgress?.monsters_collected || [];
-            const newMonsters = [...new Set([...currentMonsters, ...monstersToAdd])];
+            const newMonsters = [...currentMonsters, ...monstersToAdd];
             const newHighest = Math.max(currentProgress?.highest_floor || 1, newFloor);
             const newDiceCount = Math.max(0, (currentProgress?.dice_count || 1) - 1);
 
