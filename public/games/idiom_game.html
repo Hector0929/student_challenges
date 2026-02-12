@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成語大挑戰</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            height: 100%;
+            font-family: 'Noto Sans TC', sans-serif;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0.5rem;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            padding: 24px;
+            max-width: 460px;
+            width: 100%;
+            position: relative;
+            max-height: 98vh;
+            overflow-y: auto;
+        }
+
+        /* Mode buttons */
+        .mode-btn {
+            padding: 16px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+            cursor: pointer;
+            border: 3px solid transparent;
+        }
+        .mode-btn:active { transform: translateY(3px); box-shadow: none; }
+
+        /* Option buttons */
+        .option-btn {
+            padding: 14px 20px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 1.05rem;
+            transition: all 0.15s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.08);
+            cursor: pointer;
+            border: 3px solid #e2e8f0;
+            background: white;
+            color: #1e293b;
+            text-align: left;
+            line-height: 1.4;
+        }
+        .option-btn:hover { border-color: #818cf8; background: #f0f0ff; }
+        .option-btn:active { transform: translateY(3px); box-shadow: none; }
+        .option-btn.correct {
+            background: #dcfce7; border-color: #22c55e; color: #166534;
+            animation: correctPulse 0.5s;
+        }
+        .option-btn.wrong {
+            background: #fee2e2; border-color: #ef4444; color: #991b1b;
+            animation: shake 0.4s;
+        }
+        .option-btn.reveal {
+            background: #dbeafe; border-color: #3b82f6; color: #1e40af;
+        }
+        .option-btn.disabled { pointer-events: none; opacity: 0.6; }
+
+        /* Fill-in blank character buttons */
+        .char-btn {
+            width: 52px; height: 52px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.3rem;
+            transition: all 0.15s;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.1);
+            cursor: pointer;
+            border: 2px solid #c7d2fe;
+            background: #eef2ff;
+            color: #3730a3;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .char-btn:hover { background: #c7d2fe; }
+        .char-btn:active { transform: translateY(3px); box-shadow: none; }
+        .char-btn.selected { background: #818cf8; color: white; border-color: #6366f1; }
+
+        .blank-slot {
+            width: 52px; height: 52px;
+            border-radius: 12px;
+            border: 3px dashed #a5b4fc;
+            background: #f8fafc;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; font-weight: 700; color: #4338ca;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .blank-slot.filled { border-style: solid; background: #e0e7ff; }
+        .blank-slot.correct { background: #dcfce7; border-color: #22c55e; color: #166534; }
+        .blank-slot.wrong { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+
+        /* Combo badge */
+        .combo-badge {
+            position: absolute; top: -12px; right: -8px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #92400e; font-weight: 900; font-size: 1rem;
+            padding: 6px 14px; border-radius: 50px;
+            transform: scale(0); transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+            border: 3px solid white; z-index: 10;
+        }
+        .combo-badge.visible { transform: scale(1); }
+
+        /* Floating feedback */
+        .float-text {
+            position: fixed; left: 50%; top: 40%;
+            transform: translate(-50%, -50%);
+            font-size: 2.5rem; font-weight: 900;
+            pointer-events: none; z-index: 100;
+            animation: floatUp 0.9s forwards;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translate(-50%, 0) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -40px) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -120px) scale(1); }
+        }
+        @keyframes correctPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.95); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .bounce-in { animation: bounceIn 0.4s ease-out; }
+
+        /* Progress bar */
+        .progress-track {
+            height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #818cf8, #6366f1);
+            border-radius: 99px; transition: width 0.4s ease;
+        }
+
+        /* Stars display */
+        .star { display: inline-block; font-size: 2rem; transition: all 0.3s; }
+        .star.earned { animation: starPop 0.4s ease-out; }
+        @keyframes starPop {
+            0% { transform: scale(0); }
+            60% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container" id="main">
+        <div class="combo-badge" id="combo-badge">COMBO x0</div>
+
+        <!-- ===== START SCREEN ===== -->
+        <div id="start-screen">
+            <div class="text-center mb-6">
+                <div class="text-6xl mb-3">📜</div>
+                <h1 class="text-2xl font-black text-gray-800">成語大挑戰</h1>
+                <p class="text-gray-500 text-sm mt-1">學成語，變聰明！</p>
+            </div>
+
+            <div class="space-y-3 mb-6">
+                <button class="mode-btn w-full bg-indigo-100 text-indigo-800 hover:bg-indigo-200" onclick="startGame('meaning')">
+                    📖 看解釋猜成語
+                    <div class="text-xs font-normal mt-1 text-indigo-500">看成語的意思，選出正確的成語</div>
+                </button>
+                <button class="mode-btn w-full bg-amber-100 text-amber-800 hover:bg-amber-200" onclick="startGame('fill')">
+                    ✍️ 成語填空
+                    <div class="text-xs font-normal mt-1 text-amber-500">填入缺少的字，完成成語</div>
+                </button>
+                <button class="mode-btn w-full bg-emerald-100 text-emerald-800 hover:bg-emerald-200" onclick="startGame('story')">
+                    📚 看情境選成語
+                    <div class="text-xs font-normal mt-1 text-emerald-500">讀一段情境，選出最適合的成語</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== GAME SCREEN ===== -->
+        <div id="game-screen" class="hidden">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-3">
+                <div class="text-sm font-bold text-gray-500">
+                    <span id="mode-label">📖 解釋猜成語</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-sm font-bold text-indigo-600" id="score-display">⭐ 0</span>
+                    <span class="text-sm font-bold text-gray-400" id="progress-text">1/10</span>
+                </div>
+            </div>
+            <div class="progress-track mb-4">
+                <div class="progress-fill" id="progress-bar" style="width: 10%"></div>
+            </div>
+
+            <!-- Question area -->
+            <div id="question-area" class="mb-4"></div>
+
+            <!-- Options area -->
+            <div id="options-area" class="space-y-3"></div>
+        </div>
+
+        <!-- ===== RESULT SCREEN ===== -->
+        <div id="result-screen" class="hidden text-center">
+            <div class="text-6xl mb-4" id="result-emoji">🎉</div>
+            <h2 class="text-2xl font-black text-gray-800 mb-2">挑戰結束！</h2>
+
+            <div class="bg-indigo-50 rounded-2xl p-5 mb-4">
+                <div class="text-sm text-gray-500 mb-1">最終分數</div>
+                <div class="text-5xl font-black text-indigo-600 mb-2" id="final-score">0</div>
+                <div class="flex justify-center gap-4 text-sm text-gray-500">
+                    <span>答對 <strong class="text-green-600" id="correct-count">0</strong></span>
+                    <span>最高連擊 <strong class="text-orange-500" id="max-combo-text">0</strong></span>
+                </div>
+            </div>
+
+            <!-- Stars rating -->
+            <div class="mb-4" id="stars-area">
+                <span class="star">⭐</span>
+                <span class="star">⭐</span>
+                <span class="star">⭐</span>
+            </div>
+
+            <p class="text-lg font-bold text-purple-600 mb-5 italic" id="result-msg">"太棒了！"</p>
+
+            <!-- Mistakes review -->
+            <div id="mistakes-area" class="text-left mb-5 max-h-32 overflow-y-auto"></div>
+
+            <div class="flex gap-3">
+                <button onclick="backToMenu()" class="flex-1 py-3 rounded-xl font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+                    🏠 選單
+                </button>
+                <button onclick="retryGame()" class="flex-1 py-3 rounded-xl font-bold bg-indigo-500 text-white hover:bg-indigo-600 transition-colors">
+                    🔄 再玩一次
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ============================================================
+    // IDIOM DATABASE — 60+ common idioms for elementary students
+    // ============================================================
+    const IDIOM_DB = [
+        // --- 動物類 ---
+        { idiom: '守株待兔', meaning: '比喻不主動努力，只想靠運氣得到好處', story: '小明不讀書，卻希望考試能考一百分，真是' },
+        { idiom: '畫蛇添足', meaning: '比喻做多餘的事，反而把事情弄糟', story: '作文已經寫得很好了，他又加了一堆不相關的內容，結果反而變差，真是' },
+        { idiom: '對牛彈琴', meaning: '比喻對不懂道理的人講道理，白費口舌', story: '跟一歲的弟弟解釋數學公式，根本就像是' },
+        { idiom: '狐假虎威', meaning: '比喻藉著有權勢的人來欺壓別人', story: '他明明只是組長，卻仗著老師的名義到處命令同學，就像是' },
+        { idiom: '井底之蛙', meaning: '比喻見識狹小的人', story: '他從來沒出過自己的城市，就覺得全世界都一樣，真像' },
+        { idiom: '亡羊補牢', meaning: '比喻出了問題後想辦法補救，還不算太晚', story: '雖然期中考沒考好，但現在開始認真讀書還來得及，所謂' },
+        { idiom: '雞飛狗跳', meaning: '形容場面非常混亂、不得安寧', story: '弟弟在家裡追著貓跑，把花瓶也打破了，搞得家裡' },
+        { idiom: '鶴立雞群', meaning: '比喻一個人的才能或外表在眾人中特別突出', story: '他的身高在班上特別高，站在同學中間就像' },
+        { idiom: '魚目混珠', meaning: '比喻用假的東西冒充真的', story: '他拿了一顆玻璃珠說是真的珍珠要賣，根本就是' },
+        { idiom: '虎頭蛇尾', meaning: '比喻做事開始時很有氣勢，後來卻馬虎了事', story: '他一開始很認真打掃，後來越來越隨便，真是' },
+        // --- 自然類 ---
+        { idiom: '風和日麗', meaning: '形容天氣晴朗溫暖，微風和煦', story: '今天天氣真好，陽光暖暖的、微風吹著，真是個＿＿的好日子', replace: true },
+        { idiom: '水落石出', meaning: '比喻事情的真相終於弄清楚了', story: '經過老師調查，誰偷拿了同學的橡皮擦終於' },
+        { idiom: '雪中送炭', meaning: '比喻在別人最困難的時候給予幫助', story: '她在我最難過的時候陪伴我、鼓勵我，真是' },
+        { idiom: '火上加油', meaning: '比喻使情況更加嚴重、使人更加生氣', story: '他們已經在吵架了，你還在旁邊說風涼話，根本就是' },
+        { idiom: '一石二鳥', meaning: '比喻做一件事能同時達到兩個目的', story: '去公園跑步既能運動又能呼吸新鮮空氣，真是' },
+        // --- 學習類 ---
+        { idiom: '半途而廢', meaning: '比喻做事情做到一半就放棄不做了', story: '他學鋼琴才學了兩個月就不學了，又是' },
+        { idiom: '舉一反三', meaning: '比喻從一件事情就能推想出其他道理', story: '她很聰明，老師只教一題，她就能解開很多類似的題目，真的是' },
+        { idiom: '勤能補拙', meaning: '只要肯努力勤奮，就能彌補不足之處', story: '他雖然不是最聰明的，但每天努力練習，進步非常快，果然是' },
+        { idiom: '廢寢忘食', meaning: '形容非常專心努力，連睡覺吃飯都忘了', story: '他為了完成這幅畫，整天都沒吃飯沒睡覺，真是' },
+        { idiom: '溫故知新', meaning: '複習舊的知識，可以得到新的理解和體會', story: '老師說重新看一遍以前學過的課文，會有不同的感覺，所以要' },
+        { idiom: '不恥下問', meaning: '不以向學問或地位不如自己的人請教為恥', story: '他雖然是班長，但遇到不會的數學題還是會向同學請教，真是' },
+        { idiom: '三人行必有我師', meaning: '跟別人一起走，一定有可以學習的地方', story: '和不同的朋友相處都能學到不同的東西，所謂' },
+        { idiom: '學以致用', meaning: '把學到的知識運用在實際生活中', story: '他把自然課學到的植物知識用在自己的小花園裡，真正做到了' },
+        // --- 做人做事 ---
+        { idiom: '一諾千金', meaning: '比喻說到做到，非常守信用', story: '他答應借我書就真的帶來了，做人真是' },
+        { idiom: '以身作則', meaning: '用自己的行動做榜樣給別人看', story: '班長每天都第一個到教室打掃，真的是' },
+        { idiom: '刻舟求劍', meaning: '比喻拘泥不變，不懂得隨機應變', story: '時代不同了，做法也要跟著變，不能像' },
+        { idiom: '掩耳盜鈴', meaning: '比喻自己欺騙自己', story: '他明明作弊了還說沒有，以為老師不知道，根本就是' },
+        { idiom: '班門弄斧', meaning: '比喻在行家面前賣弄本領', story: '他竟然在書法老師面前炫耀自己的字寫得漂亮，根本就是' },
+        { idiom: '自相矛盾', meaning: '比喻自己的言行前後不一致', story: '他說他不喜歡吃甜食，結果每天都在吃巧克力，真是' },
+        { idiom: '捨本逐末', meaning: '比喻做事不抓主要的問題，反而去注意不重要的細節', story: '考試快到了，他不復習功課反而一直在整理書桌，根本就是' },
+        // --- 其他常用 ---
+        { idiom: '一舉兩得', meaning: '做一件事同時得到兩個好處', story: '騎腳踏車上學既省錢又可以運動，真是' },
+        { idiom: '三思而行', meaning: '做事情之前要想清楚再做', story: '做任何決定之前都要好好思考，不能衝動，要' },
+        { idiom: '胸有成竹', meaning: '比喻做事之前已經有了計畫和把握', story: '他上台報告時非常從容自信，看起來' },
+        { idiom: '異口同聲', meaning: '大家同時說出一樣的話', story: '老師問大家要不要去郊遊，全班＿＿地說「好！」', replace: true },
+        { idiom: '一鳴驚人', meaning: '比喻平時默默無聞的人突然做出驚人的成績', story: '他平常不太說話，但在演講比賽中拿了第一名，真是' },
+        { idiom: '一目了然', meaning: '一看就很清楚明白', story: '這張圖表做得很清楚，讓人' },
+        { idiom: '心花怒放', meaning: '形容心裡非常開心高興', story: '聽到要去遊樂園玩的消息，她高興得' },
+        { idiom: '大公無私', meaning: '做事公正，不偏私', story: '他當裁判非常公平，對誰都一樣，真是' },
+        { idiom: '垂頭喪氣', meaning: '形容失望沮喪的樣子', story: '考試沒考好，他一臉' },
+        { idiom: '喜出望外', meaning: '遇到出乎意料的好事而特別高興', story: '他沒想到抽獎居然中了大獎，真是' },
+        { idiom: '愛不釋手', meaning: '喜歡得捨不得放手', story: '這本漫畫太好看了，他看得' },
+        { idiom: '津津有味', meaning: '形容非常有興味地看或吃', story: '她一邊看故事書一邊笑，看得' },
+        { idiom: '迫不及待', meaning: '急切得等不了', story: '聖誕節的禮物就在眼前，他＿＿地想拆開', replace: true },
+        { idiom: '恍然大悟', meaning: '突然間完全明白了', story: '老師解釋完後，他終於' },
+        { idiom: '目瞪口呆', meaning: '形容非常驚訝、發愣的樣子', story: '魔術師把鴿子從帽子裡變出來，觀眾都' },
+        { idiom: '七嘴八舌', meaning: '形容很多人同時搶著說話', story: '一下課，同學們就＿＿地討論起遠足要帶什麼', replace: true },
+        { idiom: '手忙腳亂', meaning: '形容非常慌張忙亂的樣子', story: '快遲到了，他一邊穿鞋一邊找書包，搞得' },
+        { idiom: '一知半解', meaning: '了解得不完全、不徹底', story: '他上課沒專心聽，所以對這個觀念只是' },
+        { idiom: '自告奮勇', meaning: '主動站出來願意承擔任務', story: '需要志願者打掃操場時，他＿＿地舉手', replace: true },
+        { idiom: '四面八方', meaning: '指各個方向、到處', story: '煙火升空後，光芒照向' },
+        { idiom: '五顏六色', meaning: '形容色彩繽紛多樣', story: '花園裡開滿了＿＿的花朵，美極了', replace: true },
+        { idiom: '九牛一毛', meaning: '比喻非常少的一部分、微不足道', story: '這點零用錢對富翁來說只是' },
+        { idiom: '百發百中', meaning: '形容射擊或做事非常精準', story: '他投籃每投必進，簡直' },
+        { idiom: '千辛萬苦', meaning: '形容經歷了很多困難和辛苦', story: '他經過＿＿的努力，終於學會了游泳', replace: true },
+        { idiom: '萬眾一心', meaning: '大家團結在一起，齊心協力', story: '面對困難，全班同學＿＿，一起解決了問題', replace: true },
+        { idiom: '落花流水', meaning: '形容被打得大敗或殘敗的景象', story: '我們的拔河隊把對手打得' },
+        { idiom: '東張西望', meaning: '形容到處看來看去，心神不定', story: '上課時他一直＿＿，根本沒在聽講', replace: true },
+        { idiom: '眉開眼笑', meaning: '形容非常高興的表情', story: '爸爸收到生日禮物後，高興得' },
+        { idiom: '左右為難', meaning: '形容兩邊都為難，不知該怎麼選', story: '兩個好朋友同時約他出去玩，他' },
+    ];
+
+    // ============================================================
+    // GAME STATE
+    // ============================================================
+    let state = {
+        mode: '', // 'meaning' | 'fill' | 'story'
+        questions: [],
+        current: 0,
+        score: 0,
+        combo: 0,
+        maxCombo: 0,
+        correctCount: 0,
+        mistakes: [],
+        totalQuestions: 10,
+        answered: false,
+        // fill mode state
+        fillAnswer: [],
+        fillBlanks: [],
+    };
+
+    // DOM
+    const startScreen = document.getElementById('start-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const resultScreen = document.getElementById('result-screen');
+    const comboBadge = document.getElementById('combo-badge');
+
+    // ============================================================
+    // UTILITY
+    // ============================================================
+    function shuffle(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    function showFloat(text, color) {
+        const el = document.createElement('div');
+        el.className = 'float-text';
+        el.textContent = text;
+        el.style.color = color;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 1000);
+    }
+
+    function updateCombo() {
+        if (state.combo > 1) {
+            comboBadge.textContent = `COMBO x${state.combo}`;
+            comboBadge.classList.add('visible');
+        } else {
+            comboBadge.classList.remove('visible');
+        }
+    }
+
+    // ============================================================
+    // GAME LOGIC
+    // ============================================================
+    function startGame(mode) {
+        state.mode = mode;
+        state.current = 0;
+        state.score = 0;
+        state.combo = 0;
+        state.maxCombo = 0;
+        state.correctCount = 0;
+        state.mistakes = [];
+        state.answered = false;
+
+        // Pick random idioms
+        const pool = shuffle(IDIOM_DB);
+        state.questions = pool.slice(0, state.totalQuestions);
+
+        startScreen.classList.add('hidden');
+        resultScreen.classList.add('hidden');
+        gameScreen.classList.remove('hidden');
+
+        const labels = { meaning: '📖 看解釋猜成語', fill: '✍️ 成語填空', story: '📚 看情境選成語' };
+        document.getElementById('mode-label').textContent = labels[mode];
+
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        state.answered = false;
+        const q = state.questions[state.current];
+        const idx = state.current;
+        const total = state.totalQuestions;
+
+        document.getElementById('score-display').textContent = `⭐ ${state.score}`;
+        document.getElementById('progress-text').textContent = `${idx + 1}/${total}`;
+        document.getElementById('progress-bar').style.width = `${((idx + 1) / total) * 100}%`;
+
+        const questionArea = document.getElementById('question-area');
+        const optionsArea = document.getElementById('options-area');
+
+        if (state.mode === 'meaning') {
+            renderMeaningMode(q, questionArea, optionsArea);
+        } else if (state.mode === 'story') {
+            renderStoryMode(q, questionArea, optionsArea);
+        } else if (state.mode === 'fill') {
+            renderFillMode(q, questionArea, optionsArea);
+        }
+    }
+
+    // --- MODE: Meaning (see definition, pick idiom) ---
+    function renderMeaningMode(q, qArea, oArea) {
+        qArea.innerHTML = `
+            <div class="bg-indigo-50 rounded-2xl p-5 text-center bounce-in">
+                <div class="text-sm text-indigo-400 mb-2 font-bold">這句話是什麼成語？</div>
+                <div class="text-xl font-bold text-indigo-900 leading-relaxed">「${q.meaning}」</div>
+            </div>
+        `;
+
+        // Generate 4 options (1 correct + 3 wrong)
+        const wrongs = shuffle(IDIOM_DB.filter(x => x.idiom !== q.idiom)).slice(0, 3);
+        const options = shuffle([q, ...wrongs]);
+
+        oArea.innerHTML = options.map((opt, i) => `
+            <button class="option-btn w-full" onclick="handleMeaningAnswer(this, '${opt.idiom}', '${q.idiom}')">
+                ${opt.idiom}
+            </button>
+        `).join('');
+    }
+
+    function handleMeaningAnswer(btn, selected, correct) {
+        if (state.answered) return;
+        state.answered = true;
+
+        const allBtns = btn.parentElement.querySelectorAll('.option-btn');
+        allBtns.forEach(b => b.classList.add('disabled'));
+
+        if (selected === correct) {
+            btn.classList.add('correct');
+            onCorrect();
+        } else {
+            btn.classList.add('wrong');
+            allBtns.forEach(b => {
+                if (b.textContent.trim() === correct) b.classList.add('reveal');
+            });
+            onWrong(correct);
+        }
+
+        setTimeout(nextQuestion, 1200);
+    }
+
+    // --- MODE: Story (read scenario, pick idiom) ---
+    function renderStoryMode(q, qArea, oArea) {
+        qArea.innerHTML = `
+            <div class="bg-emerald-50 rounded-2xl p-5 text-center bounce-in">
+                <div class="text-sm text-emerald-400 mb-2 font-bold">哪個成語最適合？</div>
+                <div class="text-lg font-bold text-emerald-900 leading-relaxed">「${q.story}＿＿＿＿」</div>
+            </div>
+        `;
+
+        const wrongs = shuffle(IDIOM_DB.filter(x => x.idiom !== q.idiom)).slice(0, 3);
+        const options = shuffle([q, ...wrongs]);
+
+        oArea.innerHTML = options.map((opt) => `
+            <button class="option-btn w-full" onclick="handleMeaningAnswer(this, '${opt.idiom}', '${q.idiom}')">
+                ${opt.idiom}
+            </button>
+        `).join('');
+    }
+
+    // --- MODE: Fill (fill missing characters) ---
+    function renderFillMode(q, qArea, oArea) {
+        const chars = q.idiom.split('');
+        // Remove 2 random characters as blanks
+        const indices = [0, 1, 2, 3];
+        const blanksIdx = shuffle(indices).slice(0, 2).sort();
+        const blankedChars = chars.map((c, i) => blanksIdx.includes(i) ? null : c);
+        const missingChars = blanksIdx.map(i => chars[i]);
+
+        state.fillBlanks = blanksIdx;
+        state.fillAnswer = new Array(blanksIdx.length).fill(null);
+
+        // Extra wrong characters
+        const allChars = IDIOM_DB.map(x => x.idiom.split('')).flat();
+        const uniqueChars = [...new Set(allChars)].filter(c => !missingChars.includes(c));
+        const wrongChars = shuffle(uniqueChars).slice(0, 4);
+        const charPool = shuffle([...missingChars, ...wrongChars]);
+
+        // Question with blanks
+        qArea.innerHTML = `
+            <div class="bg-amber-50 rounded-2xl p-5 text-center bounce-in">
+                <div class="text-sm text-amber-500 mb-2 font-bold">填入正確的字完成成語</div>
+                <div class="text-sm text-gray-500 mb-3">「${q.meaning}」</div>
+                <div class="flex justify-center gap-3" id="blank-slots">
+                    ${blankedChars.map((c, i) => {
+                        if (c === null) {
+                            const blankIndex = blanksIdx.indexOf(i);
+                            return `<div class="blank-slot" data-blank="${blankIndex}" onclick="removeFillChar(${blankIndex})"></div>`;
+                        }
+                        return `<div class="blank-slot filled" style="background:#fef3c7;border-color:#fbbf24;color:#92400e;cursor:default">${c}</div>`;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+
+        // Character choices
+        oArea.innerHTML = `
+            <div class="flex flex-wrap justify-center gap-2" id="char-pool">
+                ${charPool.map((c, i) => `
+                    <button class="char-btn" data-char="${c}" data-idx="${i}" onclick="selectFillChar(this, '${c}')">${c}</button>
+                `).join('')}
+            </div>
+            <button class="w-full mt-4 py-3 rounded-xl font-bold bg-amber-500 text-white hover:bg-amber-600 transition-colors text-lg" id="fill-submit" onclick="submitFill('${q.idiom}')" style="display:none">
+                ✓ 確定
+            </button>
+        `;
+    }
+
+    function selectFillChar(btn, char) {
+        if (state.answered) return;
+
+        // Find first empty blank
+        const emptyIdx = state.fillAnswer.indexOf(null);
+        if (emptyIdx === -1) return;
+
+        state.fillAnswer[emptyIdx] = { char, btnEl: btn };
+        btn.classList.add('selected');
+        btn.style.pointerEvents = 'none';
+
+        // Show char in blank
+        const slot = document.querySelector(`[data-blank="${emptyIdx}"]`);
+        slot.textContent = char;
+        slot.classList.add('filled');
+
+        // Show submit when all filled
+        if (!state.fillAnswer.includes(null)) {
+            document.getElementById('fill-submit').style.display = 'block';
+        }
+    }
+
+    function removeFillChar(blankIndex) {
+        if (state.answered) return;
+        const entry = state.fillAnswer[blankIndex];
+        if (!entry) return;
+
+        entry.btnEl.classList.remove('selected');
+        entry.btnEl.style.pointerEvents = 'auto';
+
+        state.fillAnswer[blankIndex] = null;
+
+        const slot = document.querySelector(`[data-blank="${blankIndex}"]`);
+        slot.textContent = '';
+        slot.classList.remove('filled');
+
+        document.getElementById('fill-submit').style.display = 'none';
+    }
+
+    function submitFill(correctIdiom) {
+        if (state.answered) return;
+        state.answered = true;
+
+        const chars = correctIdiom.split('');
+        const blanks = state.fillBlanks;
+        let allCorrect = true;
+
+        blanks.forEach((charIdx, blankIdx) => {
+            const slot = document.querySelector(`[data-blank="${blankIdx}"]`);
+            const entry = state.fillAnswer[blankIdx];
+            if (entry && entry.char === chars[charIdx]) {
+                slot.classList.add('correct');
+            } else {
+                slot.classList.add('wrong');
+                allCorrect = false;
+                // Show correct char after a moment
+                setTimeout(() => {
+                    slot.textContent = chars[charIdx];
+                    slot.classList.remove('wrong');
+                    slot.classList.add('correct');
+                }, 600);
+            }
+        });
+
+        // Disable all char buttons
+        document.querySelectorAll('.char-btn').forEach(b => b.style.pointerEvents = 'none');
+        document.getElementById('fill-submit').style.display = 'none';
+
+        if (allCorrect) {
+            onCorrect();
+        } else {
+            onWrong(correctIdiom);
+        }
+
+        setTimeout(nextQuestion, 1500);
+    }
+
+    // ============================================================
+    // SCORING
+    // ============================================================
+    function onCorrect() {
+        state.combo++;
+        if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+        state.correctCount++;
+
+        const multiplier = 1 + Math.floor(state.combo / 3);
+        const points = 10 * multiplier;
+        state.score += points;
+
+        updateCombo();
+
+        let msg = '👍';
+        if (state.combo >= 3) msg = '🔥 厲害！';
+        if (state.combo >= 5) msg = '⚡ 超強！';
+        if (state.combo >= 8) msg = '🌟 天才！';
+        showFloat(`+${points} ${msg}`, '#16a34a');
+    }
+
+    function onWrong(correctAnswer) {
+        state.combo = 0;
+        updateCombo();
+
+        const q = state.questions[state.current];
+        state.mistakes.push({ idiom: correctAnswer, meaning: q.meaning });
+
+        showFloat('加油！', '#ef4444');
+    }
+
+    function nextQuestion() {
+        state.current++;
+        if (state.current >= state.totalQuestions) {
+            showResults();
+        } else {
+            renderQuestion();
+        }
+    }
+
+    // ============================================================
+    // RESULTS
+    // ============================================================
+    function showResults() {
+        gameScreen.classList.add('hidden');
+        resultScreen.classList.remove('hidden');
+        comboBadge.classList.remove('visible');
+
+        document.getElementById('final-score').textContent = state.score;
+        document.getElementById('correct-count').textContent = state.correctCount;
+        document.getElementById('max-combo-text').textContent = state.maxCombo;
+
+        // Stars
+        const ratio = state.correctCount / state.totalQuestions;
+        const starsEarned = ratio >= 0.9 ? 3 : ratio >= 0.6 ? 2 : ratio >= 0.3 ? 1 : 0;
+        const starsArea = document.getElementById('stars-area');
+        starsArea.innerHTML = [0, 1, 2].map(i =>
+            `<span class="star ${i < starsEarned ? 'earned' : ''}" style="opacity: ${i < starsEarned ? 1 : 0.2}; animation-delay: ${i * 0.2}s">${i < starsEarned ? '⭐' : '☆'}</span>`
+        ).join('');
+
+        // Emoji & message
+        const emojis = ['😢', '💪', '👏', '🎉'];
+        document.getElementById('result-emoji').textContent = emojis[starsEarned];
+        const msgs = [
+            '別灰心，多練習就會進步！',
+            '不錯喔，繼續加油！',
+            '做得很好，快要滿分了！',
+            '太厲害了，你是成語大師！'
+        ];
+        document.getElementById('result-msg').textContent = `"${msgs[starsEarned]}"`;
+
+        // Mistakes review
+        const mistakesArea = document.getElementById('mistakes-area');
+        if (state.mistakes.length === 0) {
+            mistakesArea.innerHTML = '<div class="text-center text-green-600 font-bold py-2">全部答對，完美！✨</div>';
+        } else {
+            mistakesArea.innerHTML = '<div class="text-sm font-bold text-gray-500 mb-2">📝 複習一下：</div>' +
+                state.mistakes.map(m =>
+                    `<div class="text-sm border-b border-gray-100 py-2">
+                        <span class="font-bold text-indigo-700">${m.idiom}</span>
+                        <span class="text-gray-500 ml-1">— ${m.meaning}</span>
+                    </div>`
+                ).join('');
+        }
+    }
+
+    function backToMenu() {
+        resultScreen.classList.add('hidden');
+        startScreen.classList.remove('hidden');
+    }
+
+    function retryGame() {
+        startGame(state.mode);
+    }
+    </script>
+</body>
+
+</html>

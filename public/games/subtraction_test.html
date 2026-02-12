@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>減法練習 - Combo Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #43e97b, #38f9d7);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: background 0.5s ease;
+        }
+
+        body.fever-mode {
+            background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+            background-size: 400%;
+            animation: rainbow 2s linear infinite;
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .game-container {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            padding: 25px;
+            max-width: 500px;
+            width: 95%;
+            text-align: center;
+            position: relative;
+        }
+
+        .button-style {
+            padding: 12px 25px;
+            border-radius: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
+            transform: translateY(0);
+            cursor: pointer;
+        }
+        .button-style:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .start-button { background: #10b981; color: white; }
+        .rechallenge-button { background: #f59e0b; color: white; }
+
+        .numpad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 300px;
+            margin: 20px auto 0;
+        }
+
+        .numpad-button {
+            padding: 15px;
+            font-size: 1.5rem;
+            border-radius: 10px;
+            background: #f0f0f0;
+            border: none;
+            box-shadow: 0 4px 0 #ccc;
+            transition: transform 0.1s;
+            cursor: pointer;
+        }
+        .numpad-button:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+        .numpad-clear {
+            background: #ffcccc;
+            color: #cc0000;
+            box-shadow: 0 4px 0 #ff9999;
+        }
+        .numpad-backspace {
+            background: #e0e0e0;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Combo Badge */
+        #combo-display {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            background: #ffeb3b;
+            color: #f44336;
+            font-size: 2rem;
+            font-weight: 800;
+            padding: 10px 20px;
+            border-radius: 50px;
+            transform: rotate(15deg) scale(0);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border: 4px solid #fff;
+            z-index: 10;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #combo-display.visible {
+            transform: rotate(15deg) scale(1);
+        }
+        #combo-display.pop {
+            animation: pop 0.3s;
+        }
+        @keyframes pop {
+            50% { transform: rotate(15deg) scale(1.4); }
+        }
+
+        .shake { animation: shake 0.5s; }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+
+        .feedback-float {
+            position: absolute;
+            left: 50%;
+            top: 40%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            font-weight: bold;
+            pointer-events: none;
+            animation: floatUp 0.8s forwards;
+            text-shadow: 2px 2px 0 #fff;
+            z-index: 20;
+            white-space: nowrap;
+        }
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translate(-50%, 0) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50px) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -100px) scale(1); }
+        }
+
+        .input-style {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .input-style:focus { border-color: #10b981; }
+
+        /* Difficulty buttons */
+        .diff-btn {
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 3px solid transparent;
+        }
+        .diff-btn.selected {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container" id="main-card">
+        <div id="combo-display">COMBO x0</div>
+
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-2">➖ 減法 Combo</h1>
+
+        <!-- Setup Screen -->
+        <div id="setup-screen">
+            <p class="text-gray-600 mb-4">挑戰連擊！Combo 越高，分數越高！</p>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 font-bold mb-2">難度選擇：</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button class="diff-btn bg-green-100 text-green-800 selected" data-diff="easy" onclick="selectDiff(this,'easy')">
+                        🌱 簡單
+                        <div class="text-xs font-normal mt-1">二位數</div>
+                    </button>
+                    <button class="diff-btn bg-yellow-100 text-yellow-800" data-diff="medium" onclick="selectDiff(this,'medium')">
+                        🔥 中等
+                        <div class="text-xs font-normal mt-1">三位數</div>
+                    </button>
+                    <button class="diff-btn bg-red-100 text-red-800" data-diff="hard" onclick="selectDiff(this,'hard')">
+                        💀 困難
+                        <div class="text-xs font-normal mt-1">四位數</div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-700 font-bold mb-2">倒數時間：</label>
+                <select id="time-setting" class="w-full max-w-xs mx-auto p-2 border-2 border-gray-200 rounded-lg text-lg">
+                    <option value="30">30 秒 (快速)</option>
+                    <option value="60" selected>60 秒 (標準)</option>
+                    <option value="90">90 秒 (馬拉松)</option>
+                </select>
+            </div>
+
+            <button id="start-button" class="button-style start-button w-full max-w-xs mx-auto text-xl">
+                開始挑戰
+            </button>
+        </div>
+
+        <!-- Game Interface -->
+        <div id="game-interface" class="hidden">
+            <div class="flex justify-between items-center mb-4 px-4">
+                <div class="text-xl font-bold text-gray-600">分數: <span id="score-val" class="text-emerald-600">0</span></div>
+                <div class="text-xl font-bold text-gray-600">時間: <span id="time-val" class="text-red-500">60</span></div>
+            </div>
+
+            <div id="question-display" class="text-4xl font-extrabold text-gray-800 mb-6 py-4">
+                50 − 23 = ?
+            </div>
+
+            <input type="number" id="answer-input" class="input-style w-full max-w-xs text-center text-3xl mb-4 py-2" placeholder="?" readonly>
+
+            <div id="numpad" class="numpad-grid">
+                <button class="numpad-button" data-val="1">1</button>
+                <button class="numpad-button" data-val="2">2</button>
+                <button class="numpad-button" data-val="3">3</button>
+                <button class="numpad-button" data-val="4">4</button>
+                <button class="numpad-button" data-val="5">5</button>
+                <button class="numpad-button" data-val="6">6</button>
+                <button class="numpad-button" data-val="7">7</button>
+                <button class="numpad-button" data-val="8">8</button>
+                <button class="numpad-button" data-val="9">9</button>
+                <button class="numpad-button numpad-clear" data-val="clear">C</button>
+                <button class="numpad-button" data-val="0">0</button>
+                <button class="numpad-button numpad-backspace" data-val="back">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+                        <line x1="18" y1="9" x2="12" y2="15"></line>
+                        <line x1="12" y1="9" x2="18" y2="15"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="hidden text-left">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-4">⏰ 時間到！</h2>
+            <div class="bg-emerald-50 p-4 rounded-xl mb-4 text-center">
+                <div class="text-gray-500">最終分數</div>
+                <div class="text-5xl font-extrabold text-emerald-600 mb-2" id="final-score">0</div>
+                <div class="text-sm text-gray-600">
+                    最高連擊 (Max Combo): <span id="max-combo-display" class="font-bold text-orange-500 text-lg">0</span>
+                </div>
+            </div>
+
+            <div class="space-y-2 mb-6 max-h-40 overflow-y-auto" id="mistake-log"></div>
+
+            <p id="fun-feedback" class="text-center font-bold text-lg text-purple-600 mb-6 italic">"做得好！"</p>
+
+            <button id="retry-button" class="button-style rechallenge-button w-full max-w-xs block mx-auto text-xl">
+                再玩一次
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let gameState = {
+            active: false,
+            score: 0,
+            timeLeft: 60,
+            combo: 0,
+            maxCombo: 0,
+            timerId: null,
+            q: { a: 0, b: 0, ans: 0 },
+            mistakes: [],
+            difficulty: 'easy'
+        };
+
+        // DOM
+        const body = document.body;
+        const mainCard = document.getElementById('main-card');
+        const setupScreen = document.getElementById('setup-screen');
+        const gameInterface = document.getElementById('game-interface');
+        const resultsScreen = document.getElementById('results-screen');
+        const startBtn = document.getElementById('start-button');
+        const retryBtn = document.getElementById('retry-button');
+        const timeSelect = document.getElementById('time-setting');
+        const scoreEl = document.getElementById('score-val');
+        const timeEl = document.getElementById('time-val');
+        const questionEl = document.getElementById('question-display');
+        const inputEl = document.getElementById('answer-input');
+        const comboEl = document.getElementById('combo-display');
+        const numpad = document.getElementById('numpad');
+
+        function selectDiff(btn, diff) {
+            document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            gameState.difficulty = diff;
+        }
+
+        function init() {
+            startBtn.onclick = startGame;
+            retryBtn.onclick = () => {
+                resultsScreen.classList.add('hidden');
+                setupScreen.classList.remove('hidden');
+                comboEl.classList.remove('visible');
+            };
+
+            numpad.onclick = (e) => {
+                if (!gameState.active) return;
+                const btn = e.target.closest('button');
+                if (!btn) return;
+                const val = btn.dataset.val;
+                if (val === 'clear') {
+                    inputEl.value = '';
+                } else if (val === 'back') {
+                    inputEl.value = inputEl.value.slice(0, -1);
+                } else {
+                    if (inputEl.value.length < 5) inputEl.value += val;
+                }
+                checkAutoSubmit();
+            };
+        }
+
+        function generateQuestion() {
+            let a, b;
+            const diff = gameState.difficulty;
+            if (diff === 'easy') {
+                // Two-digit: a 20~99, b 1~(a-1), answer always >= 0
+                a = Math.floor(Math.random() * 80) + 20;
+                b = Math.floor(Math.random() * (a - 1)) + 1;
+            } else if (diff === 'medium') {
+                // Three-digit: a 100~999, b 10~(a-1)
+                a = Math.floor(Math.random() * 900) + 100;
+                b = Math.floor(Math.random() * Math.min(a - 1, 99)) + 10;
+            } else {
+                // Hard: a 1000~9999, b 100~(a-1)
+                a = Math.floor(Math.random() * 9000) + 1000;
+                b = Math.floor(Math.random() * Math.min(a - 1, 999)) + 100;
+            }
+            return { a, b, ans: a - b };
+        }
+
+        function startGame() {
+            gameState.active = true;
+            gameState.score = 0;
+            gameState.combo = 0;
+            gameState.maxCombo = 0;
+            gameState.timeLeft = parseInt(timeSelect.value);
+            gameState.mistakes = [];
+
+            setupScreen.classList.add('hidden');
+            gameInterface.classList.remove('hidden');
+            body.classList.remove('fever-mode');
+            updateUI();
+            nextQuestion();
+
+            clearInterval(gameState.timerId);
+            gameState.timerId = setInterval(() => {
+                gameState.timeLeft--;
+                updateUI();
+                if (gameState.timeLeft <= 0) endGame();
+            }, 1000);
+        }
+
+        function updateUI() {
+            scoreEl.innerText = gameState.score;
+            timeEl.innerText = gameState.timeLeft;
+
+            if (gameState.combo > 1) {
+                comboEl.innerText = `COMBO x${gameState.combo}`;
+                comboEl.classList.add('visible');
+                comboEl.classList.remove('pop');
+                void comboEl.offsetWidth;
+                comboEl.classList.add('pop');
+            } else {
+                comboEl.classList.remove('visible');
+            }
+
+            if (gameState.combo >= 5) {
+                body.classList.add('fever-mode');
+            } else {
+                body.classList.remove('fever-mode');
+            }
+        }
+
+        function nextQuestion() {
+            gameState.q = generateQuestion();
+            questionEl.innerText = `${gameState.q.a} − ${gameState.q.b} = ?`;
+            inputEl.value = '';
+        }
+
+        function checkAutoSubmit() {
+            const val = parseInt(inputEl.value);
+            if (isNaN(val)) return;
+
+            const correct = gameState.q.ans;
+            const strVal = inputEl.value;
+            const strAns = correct.toString();
+
+            if (val === correct) {
+                processAnswer(true);
+            } else if (strVal.length >= strAns.length) {
+                processAnswer(false);
+            }
+        }
+
+        function processAnswer(isCorrect) {
+            if (!isCorrect) {
+                mainCard.classList.add('shake');
+                setTimeout(() => mainCard.classList.remove('shake'), 500);
+                gameState.combo = 0;
+                body.classList.remove('fever-mode');
+                updateUI();
+                showFloatingText('Oops!', 'red');
+                gameState.mistakes.push(`${gameState.q.a} − ${gameState.q.b} = ${gameState.q.ans} (你答 ${inputEl.value})`);
+                nextQuestion();
+            } else {
+                gameState.combo++;
+                if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
+                const multiplier = 1 + Math.floor(gameState.combo / 5);
+                const points = 1 * multiplier;
+                gameState.score += points;
+
+                let msg = 'Nice!';
+                if (gameState.combo > 5) msg = 'Great!';
+                if (gameState.combo > 10) msg = 'Super!';
+                if (gameState.combo > 15) msg = 'UNSTOPPABLE!';
+
+                showFloatingText(`+${points} ${msg}`, '#10b981');
+                updateUI();
+                nextQuestion();
+            }
+        }
+
+        function showFloatingText(text, color) {
+            const el = document.createElement('div');
+            el.className = 'feedback-float';
+            el.innerText = text;
+            el.style.color = color;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 1000);
+        }
+
+        function endGame() {
+            gameState.active = false;
+            clearInterval(gameState.timerId);
+            gameInterface.classList.add('hidden');
+            resultsScreen.classList.remove('hidden');
+            body.classList.remove('fever-mode');
+
+            document.getElementById('final-score').innerText = gameState.score;
+            document.getElementById('max-combo-display').innerText = gameState.maxCombo;
+
+            const log = document.getElementById('mistake-log');
+            log.innerHTML = '';
+            if (gameState.mistakes.length === 0) {
+                log.innerHTML = '<div class="text-green-500 font-bold text-center">全對！完美！✨</div>';
+            } else {
+                gameState.mistakes.forEach(m => {
+                    const d = document.createElement('div');
+                    d.className = 'text-red-500 text-sm border-b border-gray-100 py-1';
+                    d.innerText = m;
+                    log.appendChild(d);
+                });
+            }
+
+            const funEl = document.getElementById('fun-feedback');
+            if (gameState.score > 30) funEl.innerText = '"你是減法之神嗎？！😱"';
+            else if (gameState.score > 20) funEl.innerText = '"太強了！減法大師！🤩"';
+            else if (gameState.score > 10) funEl.innerText = '"不錯喔！繼續保持！👍"';
+            else funEl.innerText = '"加油！多練幾次會更強！💪"';
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

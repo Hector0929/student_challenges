@@ -96,6 +96,33 @@ export const GAMES: Game[] = [
         category: 'learning'
     },
     {
+        id: 'subtraction',
+        name: '減法練習',
+        icon: '➖',
+        description: '減法計算挑戰',
+        url: '/games/subtraction_test.html',
+        color: 'bg-emerald-400 hover:bg-emerald-500',
+        category: 'learning'
+    },
+    {
+        id: 'division',
+        name: '除法練習',
+        icon: '➗',
+        description: '除法與餘數',
+        url: '/games/division_test.html',
+        color: 'bg-amber-400 hover:bg-amber-500',
+        category: 'learning'
+    },
+    {
+        id: 'idiom',
+        name: '成語大挑戰',
+        icon: '📜',
+        description: '國語成語學習',
+        url: '/games/idiom_game.html',
+        color: 'bg-rose-400 hover:bg-rose-500',
+        category: 'learning'
+    },
+    {
         id: 'shooting',
         name: '射擊遊戲',
         icon: '🎯',
