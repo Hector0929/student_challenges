@@ -926,6 +926,15 @@ export const MONSTERS = {
         unlockFloor: 9999,
         isEvolved: true,
     },
+    evolved_ufo_rider: {
+        id: 'evolved_ufo_rider',
+        name: '銀河指揮官',
+        emoji: '👾',
+        image: '/images/monsters/evolved/evolved_ufo_rider.png',
+        zone: '進化限定',
+        unlockFloor: 9999,
+        isEvolved: true,
+    },
 };
 
 export type MonsterId = keyof typeof MONSTERS;
@@ -940,6 +949,7 @@ export const EVOLUTION_MAP: Partial<Record<MonsterId, MonsterId>> = {
     star_fairy: 'evolved_star_fairy',
     lucky_clover: 'evolved_lucky_clover',
     gold_mimic: 'evolved_gold_mimic',
+    ufo_rider: 'evolved_ufo_rider',
 };
 
 export const EVOLUTION_COST = 5; // Number of copies needed to evolve
