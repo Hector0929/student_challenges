@@ -21,13 +21,14 @@ export const ExchangeRequestDialog: React.FC<ExchangeRequestDialogProps> = ({
     const { data: balance = 0 } = useStarBalance(user?.id || '');
     const createExchangeMutation = useCreateExchangeRequest();
 
-    const [starAmount, setStarAmount] = useState(10);
+    const [starAmount, setStarAmount] = useState<number | string>(10);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
     const exchangeRate = settings?.star_to_twd_rate || 1;
-    const twdAmount = starAmount * exchangeRate;
-    const isValidAmount = starAmount > 0 && starAmount <= balance;
+    const numericStarAmount = Number(starAmount) || 0;
+    const twdAmount = numericStarAmount * exchangeRate;
+    const isValidAmount = numericStarAmount > 0 && numericStarAmount <= balance;
 
     // Reset state when dialog opens
     const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
@@ -44,19 +45,19 @@ export const ExchangeRequestDialog: React.FC<ExchangeRequestDialogProps> = ({
         e.preventDefault();
         setError('');
 
-        if (starAmount <= 0) {
+        if (numericStarAmount <= 0) {
             setError('請輸入有效的星幣數量');
             return;
         }
 
-        if (starAmount > balance) {
+        if (numericStarAmount > balance) {
             setError('星幣餘額不足');
             return;
         }
 
         try {
             await createExchangeMutation.mutateAsync({
-                starAmount,
+                starAmount: numericStarAmount,
                 twdAmount,
                 exchangeRate,
             });
@@ -123,9 +124,21 @@ export const ExchangeRequestDialog: React.FC<ExchangeRequestDialogProps> = ({
                         想兌換多少星幣？
                     </label>
                     <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={starAmount}
-                        onChange={(e) => setStarAmount(parseInt(e.target.value) || 0)}
+                        onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === '' || /^\d+$/.test(v)) {
+                                setStarAmount(v === '' ? '' : parseInt(v, 10));
+                            }
+                        }}
+                        onBlur={() => {
+                            if (starAmount === '' || Number(starAmount) <= 0) {
+                                setStarAmount(1);
+                            }
+                        }}
                         className="w-full px-4 py-3 border-4 border-indigo-100 rounded-2xl text-center text-2xl font-pixel outline-none focus:border-indigo-300 transition-colors shadow-inner"
                         min={1}
                         max={balance}

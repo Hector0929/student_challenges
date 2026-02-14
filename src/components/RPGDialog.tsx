@@ -19,13 +19,15 @@ export const RPGDialog: React.FC<RPGDialogProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black bg-opacity-50"
+                className="fixed inset-0 bg-black bg-opacity-50"
                 onClick={onClose}  // Will do nothing if onClose is undefined
             />
 
+            {/* Scroll container for centering */}
+            <div className="min-h-full flex items-center justify-center p-4">
             {/* Dialog */}
             <div className="relative clay-dialog max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-bounce-in p-6">
                 {/* Header */}
@@ -53,6 +55,7 @@ export const RPGDialog: React.FC<RPGDialogProps> = ({
                         {footer}
                     </div>
                 )}
+            </div>
             </div>
         </div>
     );

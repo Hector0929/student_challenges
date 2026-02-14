@@ -673,9 +673,7 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
                                                         <div key={`mon-${mId}`} className="relative">
                                                             <button
                                                                 onClick={() => {
-                                                                    // Find index in full monster list for lightbox
-                                                                    const flatIdx = groupedEntries.slice(0, idx).reduce((acc, [, c]) => acc + c, 0);
-                                                                    setLightboxIndex(flatIdx);
+                                                                    setLightboxIndex(idx);
                                                                 }}
                                                                 className={`flex flex-col items-center gap-1 p-3 rounded-2xl w-full transition-all active:scale-95 ${isEvolved
                                                                         ? 'bg-gradient-to-br from-amber-900/40 to-orange-900/40 border-2 border-amber-500/60 shadow-[0_0_12px_rgba(251,191,36,0.3)]'
@@ -741,7 +739,12 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
 
                         {/* ── Monster Lightbox ── */}
                         {lightboxIndex !== null && monsters.length > 0 && (() => {
-                            const mId = monsters[lightboxIndex];
+                            // Build grouped entries for lightbox navigation
+                            const lbGrouped = new Map<string, number>();
+                            monsters.forEach(mid => lbGrouped.set(mid, (lbGrouped.get(mid) || 0) + 1));
+                            const lbEntries = Array.from(lbGrouped.entries());
+                            const safeIdx = Math.min(lightboxIndex, lbEntries.length - 1);
+                            const [mId, mCount] = lbEntries[safeIdx];
                             const info = MONSTERS[mId as MonsterId];
                             const isEvolved = (info as any)?.isEvolved;
 
@@ -751,8 +754,8 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
                             const handleTouchEnd = (e: React.TouchEvent) => {
                                 const dx = e.changedTouches[0].clientX - touchStartX;
                                 if (Math.abs(dx) > 50) {
-                                    if (dx > 0) setLightboxIndex(prev => prev !== null ? (prev - 1 + monsters.length) % monsters.length : null);
-                                    else setLightboxIndex(prev => prev !== null ? (prev + 1) % monsters.length : null);
+                                    if (dx > 0) setLightboxIndex(prev => prev !== null ? (prev - 1 + lbEntries.length) % lbEntries.length : null);
+                                    else setLightboxIndex(prev => prev !== null ? (prev + 1) % lbEntries.length : null);
                                 }
                             };
 
@@ -774,13 +777,13 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
 
                                         {/* Nav arrows */}
                                         <button
-                                            onClick={() => setLightboxIndex(prev => prev !== null ? (prev - 1 + monsters.length) % monsters.length : null)}
+                                            onClick={() => setLightboxIndex(prev => prev !== null ? (prev - 1 + lbEntries.length) % lbEntries.length : null)}
                                             className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 w-10 h-10 flex items-center justify-center rounded-full bg-slate-700/80 hover:bg-slate-600 border border-slate-500 shadow-lg transition-colors active:scale-90"
                                         >
                                             <ChevronLeft size={22} className="text-slate-300" />
                                         </button>
                                         <button
-                                            onClick={() => setLightboxIndex(prev => prev !== null ? (prev + 1) % monsters.length : null)}
+                                            onClick={() => setLightboxIndex(prev => prev !== null ? (prev + 1) % lbEntries.length : null)}
                                             className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 w-10 h-10 flex items-center justify-center rounded-full bg-slate-700/80 hover:bg-slate-600 border border-slate-500 shadow-lg transition-colors active:scale-90"
                                         >
                                             <ChevronRight size={22} className="text-slate-300" />
@@ -813,7 +816,10 @@ export const MonsterTowerV2: React.FC<MonsterTowerV2Props> = ({ userId, isOpen, 
                                             {isEvolved && (
                                                 <span className="inline-block px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold">✨ 進化形態</span>
                                             )}
-                                            <p className="text-slate-500 text-xs mt-3">{lightboxIndex + 1} / {monsters.length}</p>
+                                            {mCount > 1 && (
+                                                <p className="text-cyan-400 text-xs mt-2 font-bold">擁有 ×{mCount}</p>
+                                            )}
+                                            <p className="text-slate-500 text-xs mt-1">{safeIdx + 1} / {lbEntries.length} 種</p>
                                         </div>
                                     </div>
                                 </div>

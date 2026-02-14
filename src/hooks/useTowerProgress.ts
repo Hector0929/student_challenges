@@ -71,16 +71,20 @@ function mulberry32(seed: number) {
 /** Generate random ladder/trap events for a game session.
  *  Rules:
  *  1. Fixed egg events at floors 25, 50, 75, 100
- *  2. 5 ladders + 5 traps, one of each per 20-floor zone (evenly distributed)
- *  3. Floor 1 and 100 NEVER get traps
- *  4. A trap source floor must be ≥ 7 floors away from any ladder target (no climb-then-fall)
- *  5. A ladder source floor must be ≥ 7 floors away from any trap target (no fall-then-climb)
- *  6. Targets never land on another event source floor
+ *  2. 5 ladders + 5 traps, evenly distributed across zones
+ *  3. Ladders: source floor 5–93, move UP 7–20 floors (small → large)
+ *  4. Snakes/traps: source floor 10–98, move DOWN 7–20 floors (large → small)
+ *  5. Floor 1 and 100 NEVER get events
+ *  6. A trap source must be ≥ 7 floors away from any ladder target (no climb-then-fall)
+ *  7. A ladder source must be ≥ 7 floors away from any trap target (no fall-then-climb)
+ *  8. Targets never land on another event source floor
  */
 export function generateRandomEvents(seed: number): TowerEvent[] {
     const rng = mulberry32(seed);
     const events: TowerEvent[] = [];
     const DICE_RANGE = 7; // max dice roll 6 + 1 buffer
+    const MOVE_MIN = 7;   // minimum movement distance for ladders/snakes
+    const MOVE_MAX = 20;  // maximum movement distance for ladders/snakes
 
     // Pools for random egg drops
     const POOLS = {
@@ -127,14 +131,22 @@ export function generateRandomEvents(seed: number): TowerEvent[] {
         });
     }
 
-    // 5 zones of 20 floors each: [2-20], [21-40], [41-60], [61-80], [81-99]
-    // We pick 1 ladder + 1 trap per zone for even distribution
-    const zones = [
-        { from: 2, to: 20 },
-        { from: 21, to: 40 },
-        { from: 41, to: 60 },
-        { from: 61, to: 80 },
-        { from: 81, to: 99 },
+    // Ladder zones: source floors 5–93, split into 5 zones
+    const ladderZones = [
+        { from: 5, to: 22 },
+        { from: 23, to: 40 },
+        { from: 41, to: 58 },
+        { from: 59, to: 76 },
+        { from: 77, to: 93 },
+    ];
+
+    // Trap/snake zones: source floors 10–98, split into 5 zones
+    const trapZones = [
+        { from: 10, to: 27 },
+        { from: 28, to: 45 },
+        { from: 46, to: 63 },
+        { from: 64, to: 81 },
+        { from: 82, to: 98 },
     ];
 
     const reserved = new Set([1, 100, ...eggFloors.map(e => e.floor)]);
@@ -144,24 +156,25 @@ export function generateRandomEvents(seed: number): TowerEvent[] {
     const allSourceFloors = new Set(reserved);
 
     const ladderDescs = [
-        '\u767c\u73fe\u5f69\u8679\u68af\u5b50\uff01',
-        '\u9047\u5230\u98db\u884c\u7cbe\u9748\uff0c\u5e36\u4f60\u5f80\u4e0a\u98db\uff01',
-        '\u8e29\u5230\u50b3\u9001\u9663\uff0c\u77ac\u79fb\u5f80\u4e0a\uff01',
-        '\u6293\u4f4f\u96f7\u96f2\u541b\u7684\u5c3e\u5df4\uff01',
-        '\u5f69\u8679\u9f8d\u51fa\u73fe\uff01\u8f09\u4f60\u5f80\u4e0a\uff01',
+        '發現彩虹梯子！',
+        '遇到飛行精靈，帶你往上飛！',
+        '踩到傳送陣，瞬移往上！',
+        '抓住雷雲君的尾巴！',
+        '彩虹龍出現！載你往上！',
     ];
     const trapDescs = [
-        '\u8e29\u7a7a\u4e86\uff01\u6ed1\u843d\u4e86\uff01',
-        '\u9047\u5230\u8abf\u76ae\u602a\u7378\uff0c\u88ab\u63a8\u4e0b\u53bb\uff01',
-        '\u6389\u9032\u6ce1\u6ce1\u88e1\uff0c\u98c4\u4e0b\u53bb\u4e86\uff01',
-        '\u88ab\u706b\u7130\u9ce5\u5687\u5230\uff0c\u8dcc\u4e0b\u53bb\u4e86\uff01',
-        '\u96f7\u96f2\u541b\u5728\u6253\u96f7\uff0c\u4f60\u907f\u958b\u4e86\uff01',
+        '踩空了！滑落了！',
+        '遇到調皮怪獸，被推下去！',
+        '掉進泡泡裡，飄下去了！',
+        '被火焰鳥嚇到，跌下去了！',
+        '雷雲君在打雷，你避開了！',
     ];
 
     // Phase 1: Pick ladder sources & targets per zone
+    // Ladders move UP: source (small number) → target (larger number), +7 to +20 floors
     const ladders: { floor: number; target: number }[] = [];
-    for (let z = 0; z < zones.length; z++) {
-        const zone = zones[z];
+    for (let z = 0; z < ladderZones.length; z++) {
+        const zone = ladderZones[z];
         // Available floors in this zone (not reserved)
         const pool = [];
         for (let f = zone.from; f <= zone.to; f++) {
@@ -175,9 +188,9 @@ export function generateRandomEvents(seed: number): TowerEvent[] {
         const floor = pool[0];
         allSourceFloors.add(floor);
 
-        // Target: safe floor 8-25 floors above, not on a source floor
-        const minT = Math.min(floor + 8, 99);
-        const maxT = Math.min(floor + 25, 99);
+        // Target: floor + 7 to floor + 20, clamped to 99, not on a source floor
+        const minT = Math.min(floor + MOVE_MIN, 99);
+        const maxT = Math.min(floor + MOVE_MAX, 99);
         const candidates: number[] = [];
         for (let f = minT; f <= maxT; f++) {
             if (!allSourceFloors.has(f)) candidates.push(f);
@@ -194,13 +207,14 @@ export function generateRandomEvents(seed: number): TowerEvent[] {
         }
     }
 
-    // Phase 2: Pick trap sources & targets per zone (avoiding danger zones)
+    // Phase 2: Pick trap/snake sources & targets per zone (avoiding danger zones)
+    // Snakes move DOWN: source (large number) → target (smaller number), −7 to −20 floors
     const traps: { floor: number; target: number }[] = [];
     // Also build trap-target danger zones for ladder sources (reverse check)
     const trapTargetDanger = new Set<number>();
 
-    for (let z = 0; z < zones.length; z++) {
-        const zone = zones[z];
+    for (let z = 0; z < trapZones.length; z++) {
+        const zone = trapZones[z];
         const pool = [];
         for (let f = zone.from; f <= zone.to; f++) {
             // Not reserved, not a ladder source, not within dice range of a ladder target
@@ -219,9 +233,9 @@ export function generateRandomEvents(seed: number): TowerEvent[] {
         const floor = pool[0];
         allSourceFloors.add(floor);
 
-        // Target: safe floor 8-25 floors below, not on a source floor
-        const minT = Math.max(floor - 25, 2);
-        const maxT = Math.max(floor - 8, 2);
+        // Target: floor − 7 to floor − 20, clamped to ≥ 2, not on a source floor
+        const minT = Math.max(floor - MOVE_MAX, 2);
+        const maxT = Math.max(floor - MOVE_MIN, 2);
         const candidates: number[] = [];
         for (let f = minT; f <= maxT; f++) {
             if (!allSourceFloors.has(f)) candidates.push(f);
@@ -242,7 +256,7 @@ export function generateRandomEvents(seed: number): TowerEvent[] {
     // a trap target, swap it to the farthest safe floor in the same zone.
     for (let z = 0; z < ladders.length; z++) {
         if (trapTargetDanger.has(ladders[z].floor)) {
-            const zone = zones[z];
+            const zone = ladderZones[z];
             let best = ladders[z].floor;
             let bestDist = 0;
             for (let f = zone.from; f <= zone.to; f++) {
@@ -273,7 +287,7 @@ export function generateRandomEvents(seed: number): TowerEvent[] {
             floor_number: ladders[i].floor,
             event_type: 'ladder',
             target_floor: ladders[i].target,
-            description: `${ladderDescs[i]} \u76f4\u63a5\u5230 ${ladders[i].target} \u5c64`,
+            description: `${ladderDescs[i]} 直接到 ${ladders[i].target} 層`,
             is_active: true,
         });
     }
@@ -283,7 +297,7 @@ export function generateRandomEvents(seed: number): TowerEvent[] {
             floor_number: traps[i].floor,
             event_type: 'trap',
             target_floor: traps[i].target,
-            description: `${trapDescs[i]} \u6ed1\u5230 ${traps[i].target} \u5c64`,
+            description: `${trapDescs[i]} 滑到 ${traps[i].target} 層`,
             is_active: true,
         });
     }

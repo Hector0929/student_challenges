@@ -89,7 +89,7 @@ export const ParentSettings: React.FC = () => {
     // Star Adjustment State
     const [adjustChild, setAdjustChild] = useState<Profile | null>(null);
     const [adjustType, setAdjustType] = useState<'add' | 'remove'>('add');
-    const [adjustAmount, setAdjustAmount] = useState<number>(10);
+    const [adjustAmount, setAdjustAmount] = useState<number | string>(10);
     const [adjustReason, setAdjustReason] = useState<string>('');
     const adjustStarsMutation = useAdjustStars();
 
@@ -99,7 +99,7 @@ export const ParentSettings: React.FC = () => {
     const [parentMessageEnabled, setParentMessageEnabled] = useState(false);
     const [parentMessage, setParentMessage] = useState(DEFAULT_FAMILY_SETTINGS.parent_message);
     const [exchangeRateEnabled, setExchangeRateEnabled] = useState(false);
-    const [starToTwdRate, setStarToTwdRate] = useState(DEFAULT_FAMILY_SETTINGS.star_to_twd_rate);
+    const [starToTwdRate, setStarToTwdRate] = useState<number | string>(DEFAULT_FAMILY_SETTINGS.star_to_twd_rate);
 
     // Game Permission States
     const [funGamesEnabled, setFunGamesEnabled] = useState(true);
@@ -200,7 +200,7 @@ export const ParentSettings: React.FC = () => {
                 parent_message_enabled: parentMessageEnabled,
                 parent_message: parentMessage,
                 exchange_rate_enabled: exchangeRateEnabled,
-                star_to_twd_rate: starToTwdRate,
+                star_to_twd_rate: Number(starToTwdRate) || DEFAULT_FAMILY_SETTINGS.star_to_twd_rate,
                 // Game permissions
                 fun_games_enabled: funGamesEnabled,
                 learning_area_enabled: learningAreaEnabled,
@@ -229,7 +229,7 @@ export const ParentSettings: React.FC = () => {
         if (!adjustChild || !user) return;
 
         try {
-            const finalAmount = adjustType === 'add' ? adjustAmount : -adjustAmount;
+            const finalAmount = adjustType === 'add' ? (Number(adjustAmount) || 0) : -(Number(adjustAmount) || 0);
             const description = adjustReason || (adjustType === 'add' ? '家長獎勵' : '家長扣除');
 
             await adjustStarsMutation.mutateAsync({
@@ -349,9 +349,22 @@ export const ParentSettings: React.FC = () => {
                                         <div className="flex items-center gap-2">
                                             <span className="text-xl">💰</span>
                                             <input
-                                                type="number"
+                                                type="text"
+                                                inputMode="decimal"
                                                 value={starToTwdRate}
-                                                onChange={(e) => setStarToTwdRate(parseFloat(e.target.value) || 0)}
+                                                onChange={(e) => {
+                                                    const v = e.target.value;
+                                                    if (v === '' || /^\d*\.?\d*$/.test(v)) {
+                                                        setStarToTwdRate(v === '' ? '' : v);
+                                                    }
+                                                }}
+                                                onBlur={() => {
+                                                    if (starToTwdRate === '' || Number(starToTwdRate) <= 0) {
+                                                        setStarToTwdRate(DEFAULT_FAMILY_SETTINGS.star_to_twd_rate);
+                                                    } else {
+                                                        setStarToTwdRate(parseFloat(String(starToTwdRate)));
+                                                    }
+                                                }}
                                                 className="w-20 px-2 py-2 border-2 border-deep-black text-sm font-pixel text-center"
                                                 min="0.01"
                                                 step="0.01"
@@ -569,9 +582,21 @@ export const ParentSettings: React.FC = () => {
                             數量
                         </label>
                         <input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             value={adjustAmount}
-                            onChange={(e) => setAdjustAmount(Math.max(1, parseInt(e.target.value) || 0))}
+                            onChange={(e) => {
+                                const v = e.target.value;
+                                if (v === '' || /^\d+$/.test(v)) {
+                                    setAdjustAmount(v === '' ? '' : parseInt(v, 10));
+                                }
+                            }}
+                            onBlur={() => {
+                                if (adjustAmount === '' || Number(adjustAmount) <= 0) {
+                                    setAdjustAmount(1);
+                                }
+                            }}
                             className="w-full px-3 py-2 border-2 border-deep-black text-center font-pixel text-xl"
                             min="1"
                         />
