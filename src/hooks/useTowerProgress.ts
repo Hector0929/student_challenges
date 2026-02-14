@@ -839,9 +839,153 @@ export const MONSTERS = {
         zone: '抽獎限定',
         unlockFloor: 999, // Lottery only
     },
+    // === EVOLVED FORMS (5→1 Merge) ===
+    evolved_slime: {
+        id: 'evolved_slime',
+        name: '翡翠巨獸',
+        emoji: '💚',
+        image: '/images/monsters/evolved/evolved_slime.png',
+        zone: '進化限定',
+        unlockFloor: 9999,
+        isEvolved: true,
+    },
+    evolved_water_spirit: {
+        id: 'evolved_water_spirit',
+        name: '深海龍王',
+        emoji: '🌊',
+        image: '/images/monsters/evolved/evolved_water_spirit.png',
+        zone: '進化限定',
+        unlockFloor: 9999,
+        isEvolved: true,
+    },
+    evolved_flame_bird: {
+        id: 'evolved_flame_bird',
+        name: '烈焰鳳凰',
+        emoji: '🔥',
+        image: '/images/monsters/evolved/evolved_flame_bird.png',
+        zone: '進化限定',
+        unlockFloor: 9999,
+        isEvolved: true,
+    },
+    evolved_thunder_cloud: {
+        id: 'evolved_thunder_cloud',
+        name: '雷神',
+        emoji: '⛈️',
+        image: '/images/monsters/evolved/evolved_thunder_cloud.png',
+        zone: '進化限定',
+        unlockFloor: 9999,
+        isEvolved: true,
+    },
+    evolved_rainbow_dragon: {
+        id: 'evolved_rainbow_dragon',
+        name: '虹光神龍',
+        emoji: '🐲',
+        image: '/images/monsters/evolved/evolved_rainbow_dragon.png',
+        zone: '進化限定',
+        unlockFloor: 9999,
+        isEvolved: true,
+    },
+    evolved_star_fairy: {
+        id: 'evolved_star_fairy',
+        name: '銀河女神',
+        emoji: '🌌',
+        image: '/images/monsters/evolved/evolved_star_fairy.png',
+        zone: '進化限定',
+        unlockFloor: 9999,
+        isEvolved: true,
+    },
+    evolved_lucky_clover: {
+        id: 'evolved_lucky_clover',
+        name: '幸運之王',
+        emoji: '👑',
+        image: '/images/monsters/evolved/evolved_lucky_clover.png',
+        zone: '進化限定',
+        unlockFloor: 9999,
+        isEvolved: true,
+    },
+    evolved_gold_mimic: {
+        id: 'evolved_gold_mimic',
+        name: '龍金寶藏',
+        emoji: '🏆',
+        image: '/images/monsters/evolved/evolved_gold_mimic.png',
+        zone: '進化限定',
+        unlockFloor: 9999,
+        isEvolved: true,
+    },
 };
 
 export type MonsterId = keyof typeof MONSTERS;
+
+// Evolution map: base monster → evolved form (requires 5 copies)
+export const EVOLUTION_MAP: Partial<Record<MonsterId, MonsterId>> = {
+    slime: 'evolved_slime',
+    water_spirit: 'evolved_water_spirit',
+    flame_bird: 'evolved_flame_bird',
+    thunder_cloud: 'evolved_thunder_cloud',
+    rainbow_dragon: 'evolved_rainbow_dragon',
+    star_fairy: 'evolved_star_fairy',
+    lucky_clover: 'evolved_lucky_clover',
+    gold_mimic: 'evolved_gold_mimic',
+};
+
+export const EVOLUTION_COST = 5; // Number of copies needed to evolve
+
+// Upgrade monster: consume 5 base copies → 1 evolved form
+export const useUpgradeMonster = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ userId, monsterId }: { userId: string; monsterId: MonsterId }) => {
+            const evolvedId = EVOLUTION_MAP[monsterId];
+            if (!evolvedId) throw new Error('此怪獸無法進化');
+
+            // Get current progress
+            const { data: currentProgress, error: fetchError } = await supabase.rpc('get_tower_progress', {
+                p_user_id: userId
+            });
+            if (fetchError) throw fetchError;
+
+            const currentMonsters: string[] = currentProgress?.monsters_collected || [];
+
+            // Count copies of the base monster
+            const count = currentMonsters.filter(m => m === monsterId).length;
+            if (count < EVOLUTION_COST) {
+                throw new Error(`需要 ${EVOLUTION_COST} 隻 ${MONSTERS[monsterId].name}，目前只有 ${count} 隻`);
+            }
+
+            // Remove 5 copies and add 1 evolved form
+            const newMonsters = [...currentMonsters];
+            let removed = 0;
+            for (let i = newMonsters.length - 1; i >= 0 && removed < EVOLUTION_COST; i--) {
+                if (newMonsters[i] === monsterId) {
+                    newMonsters.splice(i, 1);
+                    removed++;
+                }
+            }
+            newMonsters.push(evolvedId);
+
+            // Update via RPC
+            const { error } = await supabase.rpc('update_tower_progress', {
+                p_user_id: userId,
+                p_current_floor: currentProgress?.current_floor || 1,
+                p_dice_count: currentProgress?.dice_count || 0,
+                p_monsters_collected: newMonsters,
+                p_total_climbs: currentProgress?.total_climbs || 0,
+                p_highest_floor: currentProgress?.highest_floor || 1,
+                p_last_roll_result: null,
+                p_last_event_type: null,
+                p_last_event_floor: null,
+            });
+
+            if (error) throw error;
+            return { evolvedId, evolvedName: MONSTERS[evolvedId].name };
+        },
+        onSuccess: (_, { userId }) => {
+            queryClient.invalidateQueries({ queryKey: ['tower-progress', userId] });
+            queryClient.refetchQueries({ queryKey: ['tower-progress', userId] });
+        },
+    });
+};
 
 // Game assets paths
 export const GAME_ASSETS = {
