@@ -1,0 +1,78 @@
+{
+    "scan_time": "2026-02-15 16:30:00",
+    "elapsed_seconds": 3420,
+    "total_scanned": 987,
+    "total_matched": 5,
+    "conditions": {
+        "volume_threshold": 1000,
+        "volume_surge_ratio": 2.0,
+        "kd_period": 9
+    },
+    "results": [
+        {
+            "code": "2330",
+            "name": "台積電",
+            "date": "2026-02-14",
+            "close": 958.00,
+            "volume": 42850,
+            "volume_avg5": 15200,
+            "volume_ratio": 2.82,
+            "k": 38.65,
+            "d": 36.12,
+            "prev_k": 33.20,
+            "prev_d": 35.80
+        },
+        {
+            "code": "2317",
+            "name": "鴻海",
+            "date": "2026-02-14",
+            "close": 185.50,
+            "volume": 98200,
+            "volume_avg5": 25600,
+            "volume_ratio": 3.84,
+            "k": 42.30,
+            "d": 40.15,
+            "prev_k": 37.80,
+            "prev_d": 41.20
+        },
+        {
+            "code": "2454",
+            "name": "聯發科",
+            "date": "2026-02-14",
+            "close": 1280.00,
+            "volume": 12500,
+            "volume_avg5": 2100,
+            "volume_ratio": 5.95,
+            "k": 28.45,
+            "d": 25.80,
+            "prev_k": 22.10,
+            "prev_d": 24.50
+        },
+        {
+            "code": "3008",
+            "name": "大立光",
+            "date": "2026-02-14",
+            "close": 2450.00,
+            "volume": 1580,
+            "volume_avg5": 620,
+            "volume_ratio": 2.55,
+            "k": 35.20,
+            "d": 33.80,
+            "prev_k": 30.50,
+            "prev_d": 34.10
+        },
+        {
+            "code": "2382",
+            "name": "廣達",
+            "date": "2026-02-14",
+            "close": 312.50,
+            "volume": 35600,
+            "volume_avg5": 8900,
+            "volume_ratio": 4.00,
+            "k": 45.80,
+            "d": 42.30,
+            "prev_k": 39.20,
+            "prev_d": 43.50
+        }
+    ]
+}
