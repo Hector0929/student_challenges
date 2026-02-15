@@ -930,7 +930,7 @@ export const MONSTERS = {
         id: 'evolved_ufo_rider',
         name: '銀河指揮官',
         emoji: '👾',
-        image: '/images/monsters/evolved/evolved_ufo_rider.png',
+        image: '/images/monsters/evolved/evolved_ufo_rider_v2.png',
         zone: '進化限定',
         unlockFloor: 9999,
         isEvolved: true,

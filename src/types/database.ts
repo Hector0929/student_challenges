@@ -136,3 +136,14 @@ export interface TowerEvent {
     description?: string;
     is_active: boolean;
 }
+
+// Monster shop configuration (parent-managed)
+export interface MonsterShopItem {
+    id: string;
+    family_id: string;
+    monster_id: string;
+    price: number;
+    is_enabled: boolean;
+    created_at: string;
+    updated_at: string;
+}

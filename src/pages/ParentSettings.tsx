@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ClayDialog } from '../components/ClayDialog';
 import { GAMES, type Game } from '../lib/gameConfig';
 import { SentenceSettingsDialog } from '../components/SentenceSettingsDialog';
+import { ParentMonsterShopManager } from '../components/ParentMonsterShopManager';
 
 // Component for individual game toggle
 const GameToggleRow = ({
@@ -485,6 +486,25 @@ export const ParentSettings: React.FC = () => {
                                 )}
                             </div>
                         </div>
+                    </div>
+
+                    {/* Monster Shop Section */}
+                    <div className="border-b-2 border-dashed border-gray-300 pb-6">
+                        <h3 className="font-pixel text-lg mb-4 flex items-center gap-2">
+                            <div className="bg-purple-100 p-1 rounded text-purple-600">🛍️</div>
+                            怪獸商店管理
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                            開啟上架並設定價格後，孩子頁面才會看到該怪獸並可購買。
+                        </p>
+
+                        {user?.family_id ? (
+                            <ParentMonsterShopManager familyId={user.family_id} />
+                        ) : (
+                            <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-3 text-sm text-yellow-700">
+                                找不到家庭資訊（family_id），暫時無法設定商店。請重新登入家長帳號後再試。
+                            </div>
+                        )}
                     </div>
 
                     {/* PIN Section */}

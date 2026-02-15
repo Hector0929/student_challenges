@@ -10,6 +10,7 @@ import { RPGDialog } from '../components/RPGDialog';
 import { RPGButton } from '../components/RPGButton';
 import { RewardTime } from '../components/RewardTime';
 import { LearningArea } from '../components/LearningArea';
+import { ChildMonsterShop } from '../components/ChildMonsterShop';
 import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings } from '../hooks/useFamilySettings';
 
@@ -390,6 +391,9 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
 
             {/* Learning Area Section (Always Visible) */}
             <LearningArea userId={userId} />
+
+            {/* Monster Shop Section */}
+            <ChildMonsterShop userId={userId} starBalance={starBalance || 0} />
 
             {/* Reward Time Section */}
             <RewardTime
