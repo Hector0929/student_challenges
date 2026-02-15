@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDailyLogs, useStarBalance } from '../hooks/useQuests';
-import { RefreshCw, Play, PlusCircle, Wrench, Dices, Bug } from 'lucide-react';
+import { RefreshCw, Play, PlusCircle, Dices, Bug } from 'lucide-react';
 import { GAMES, type Game } from '../lib/gameConfig';
 import { GameModal } from '../components/GameModal';
 import { MonsterTower, TowerPreview } from '../components/MonsterTower';
