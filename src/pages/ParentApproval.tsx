@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, XCircle, Clock, ArrowRightLeft, Coins } from 'lucide-react';
-import { RPGButton } from '../components/RPGButton';
+import { CheckCircle, XCircle, Clock, ArrowRightLeft, Coins, ClipboardCheck } from 'lucide-react';
 import { useDailyLogs, useApproveQuest, useRejectQuest } from '../hooks/useQuests';
 import { usePendingExchangeRequests, useApproveExchangeRequest, useRejectExchangeRequest } from '../hooks/useExchangeRequests';
 import { formatDate } from '../lib/supabase';
@@ -79,7 +78,7 @@ export const ParentApproval: React.FC = () => {
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
                     <div className="text-6xl mb-4 animate-bounce">⚙️</div>
-                    <p className="font-pixel text-sm">載入中...</p>
+                    <p className="font-heading text-sm" style={{ color: 'var(--color-text-light)' }}>載入中...</p>
                 </div>
             </div>
         );
@@ -90,24 +89,34 @@ export const ParentApproval: React.FC = () => {
 
     return (
         <div className="max-w-6xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h2 className="font-pixel text-2xl mb-2">審核中心</h2>
-                    <p className="text-xs text-gray-600">
-                        {logs.length} 個任務 · {exchanges.length} 個兌換申請
-                    </p>
+            {/* Header Area */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-white rounded-2xl clay-card">
+                        <ClipboardCheck className="text-primary-dark" size={28} />
+                    </div>
+                    <div>
+                        <h2 className="font-heading text-3xl font-bold" style={{ color: 'var(--color-text)' }}>審核中心</h2>
+                        <p className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>
+                            任務與兌換申請審核
+                        </p>
+                    </div>
+                </div>
+                <div className="clay-star bg-amber-400 self-start md:self-auto">
+                    <span>📋</span>
+                    <span>{logs.length + exchanges.length} 待處理</span>
                 </div>
             </div>
 
+            <p className="font-body text-sm mb-4" style={{ color: 'var(--color-text-light)' }}>
+                        {logs.length} 個任務 · {exchanges.length} 個兌換申請
+            </p>
+
             {/* Tabs */}
-            <div className="flex bg-white border-2 border-deep-black p-1 w-fit mb-6">
+            <div className="clay-tab-switch w-fit p-1 mb-8">
                 <button
                     onClick={() => setActiveTab('quests')}
-                    className={`px-4 py-2 font-pixel text-sm transition-colors flex items-center gap-2 ${activeTab === 'quests'
-                        ? 'bg-pokeball-red text-white'
-                        : 'text-gray-600 hover:bg-gray-100'
-                        }`}
+                    className={activeTab === 'quests' ? 'active' : ''}
                 >
                     <CheckCircle size={14} />
                     任務審核
@@ -119,10 +128,7 @@ export const ParentApproval: React.FC = () => {
                 </button>
                 <button
                     onClick={() => setActiveTab('exchange')}
-                    className={`px-4 py-2 font-pixel text-sm transition-colors flex items-center gap-2 ${activeTab === 'exchange'
-                        ? 'bg-pokeball-red text-white'
-                        : 'text-gray-600 hover:bg-gray-100'
-                        }`}
+                    className={activeTab === 'exchange' ? 'active' : ''}
                 >
                     <ArrowRightLeft size={14} />
                     兌換審核
@@ -138,12 +144,12 @@ export const ParentApproval: React.FC = () => {
             {activeTab === 'quests' && (
                 <>
                     {logs.length > 0 ? (
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             {logs.map((log) => (
-                                <div key={log.id} className="rpg-dialog animate-bounce-in">
+                                <div key={log.id} className="clay-card p-5 animate-bounce-in relative overflow-hidden" style={{ borderRadius: '24px' }}>
                                     <div className="flex items-start gap-4">
                                         {/* Quest Icon */}
-                                        <div className="text-5xl flex-shrink-0">
+                                        <div className="clay-icon-circle bg-white text-4xl shrink-0" style={{ width: '64px', height: '64px', borderRadius: '18px' }}>
                                             {log.quest?.icon || '👾'}
                                         </div>
 
@@ -151,24 +157,24 @@ export const ParentApproval: React.FC = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start justify-between gap-4 mb-2">
                                                 <div>
-                                                    <h3 className="font-pixel text-sm mb-1 leading-relaxed">
+                                                    <h3 className="font-heading font-bold text-xl mb-1 leading-relaxed" style={{ color: 'var(--color-text)' }}>
                                                         {log.quest?.title || '未知任務'}
                                                     </h3>
-                                                    <p className="text-xs text-gray-600 mb-2">
+                                                    <p className="font-body text-sm text-gray-600 mb-2">
                                                         {log.quest?.description}
                                                     </p>
                                                 </div>
-                                                <div className="bg-yellow-400 border-2 border-deep-black px-3 py-2 text-center flex-shrink-0">
-                                                    <div className="text-xs font-pixel">⭐</div>
-                                                    <div className="text-xs font-pixel">{log.quest?.reward_points || 0}</div>
+                                                <div className="clay-star bg-amber-400 shrink-0">
+                                                    <span>⭐</span>
+                                                    <span>{log.quest?.reward_points || 0}</span>
                                                 </div>
                                             </div>
 
                                             {/* Player Info */}
-                                            <div className="flex items-center gap-4 text-xs mb-3">
+                                            <div className="flex flex-wrap items-center gap-4 text-xs mb-3">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-gray-500">玩家:</span>
-                                                    <span className="font-pixel">{log.profile?.name || '未知'}</span>
+                                                    <span className="font-heading font-bold">{log.profile?.name || '未知'}</span>
                                                     {log.profile?.student_id && (
                                                         <span className="text-gray-500">({log.profile.student_id})</span>
                                                     )}
@@ -182,34 +188,33 @@ export const ParentApproval: React.FC = () => {
                                             </div>
 
                                             {/* Status Badge */}
-                                            <div className="inline-flex items-center gap-2 bg-orange-100 border-2 border-deep-black px-3 py-1 mb-3">
+                                            <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border-2 bg-amber-50 border-amber-200 text-amber-700">
                                                 <Clock size={14} className="text-orange-600" />
-                                                <span className="font-pixel text-xs text-orange-600">等待審核</span>
+                                                <span className="font-heading text-xs">等待審核</span>
                                             </div>
 
                                             {/* Action Buttons */}
                                             <div className="flex gap-3">
-                                                <RPGButton
+                                                <button
                                                     onClick={() => handleApproveQuest(log.id)}
                                                     disabled={approveQuest.isPending}
-                                                    className="flex-1"
+                                                    className="flex-1 py-3 px-4 rounded-2xl bg-emerald-500 text-white border-b-4 border-emerald-700 font-heading font-bold hover:brightness-110 active:scale-95 transition-all disabled:opacity-60"
                                                 >
                                                     <div className="flex items-center justify-center gap-2">
                                                         <CheckCircle size={16} />
                                                         <span>✓ 通過</span>
                                                     </div>
-                                                </RPGButton>
-                                                <RPGButton
-                                                    variant="secondary"
+                                                </button>
+                                                <button
                                                     onClick={() => handleRejectQuest(log.id)}
                                                     disabled={rejectQuest.isPending}
-                                                    className="flex-1"
+                                                    className="flex-1 py-3 px-4 rounded-2xl bg-white text-gray-600 border-2 border-gray-300 font-heading font-bold hover:bg-gray-100 active:scale-95 transition-all disabled:opacity-60"
                                                 >
                                                     <div className="flex items-center justify-center gap-2">
                                                         <XCircle size={16} />
                                                         <span>✗ 拒絕</span>
                                                     </div>
-                                                </RPGButton>
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -217,10 +222,10 @@ export const ParentApproval: React.FC = () => {
                             ))}
                         </div>
                     ) : (
-                        <div className="rpg-dialog text-center py-12">
+                        <div className="clay-card text-center py-12" style={{ borderRadius: '24px' }}>
                             <div className="text-6xl mb-4">✅</div>
-                            <p className="font-pixel text-sm mb-2">沒有待審核的任務</p>
-                            <p className="text-xs text-gray-600">所有任務都已經審核完成了！</p>
+                            <p className="font-heading text-lg font-bold mb-2" style={{ color: 'var(--color-text)' }}>沒有待審核的任務</p>
+                            <p className="font-body text-sm text-gray-600">所有任務都已經審核完成了！</p>
                         </div>
                     )}
                 </>
@@ -230,12 +235,12 @@ export const ParentApproval: React.FC = () => {
             {activeTab === 'exchange' && (
                 <>
                     {exchanges.length > 0 ? (
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             {exchanges.map((request) => (
-                                <div key={request.id} className="rpg-dialog animate-bounce-in">
+                                <div key={request.id} className="clay-card p-5 animate-bounce-in" style={{ borderRadius: '24px' }}>
                                     <div className="flex items-start gap-4">
                                         {/* Icon */}
-                                        <div className="text-5xl flex-shrink-0">
+                                        <div className="clay-icon-circle bg-white text-4xl shrink-0" style={{ width: '64px', height: '64px', borderRadius: '18px' }}>
                                             {request.profiles?.avatar_url || '👦'}
                                         </div>
 
@@ -243,26 +248,26 @@ export const ParentApproval: React.FC = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start justify-between gap-4 mb-2">
                                                 <div>
-                                                    <h3 className="font-pixel text-sm mb-1">
+                                                    <h3 className="font-heading font-bold text-xl mb-1" style={{ color: 'var(--color-text)' }}>
                                                         {request.profiles?.name || '未知孩子'} 申請兌換
                                                     </h3>
-                                                    <p className="text-xs text-gray-600">
+                                                    <p className="font-body text-sm text-gray-600">
                                                         匯率: 1 星 = {request.exchange_rate} 元
                                                     </p>
                                                 </div>
                                             </div>
 
                                             {/* Exchange Preview */}
-                                            <div className="flex items-center gap-4 bg-yellow-50 border-2 border-yellow-400 p-3 mb-3">
+                                            <div className="flex items-center gap-4 bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-3 mb-3">
                                                 <div className="text-center flex-1">
                                                     <Coins size={20} className="mx-auto text-yellow-600 mb-1" />
-                                                    <div className="font-pixel text-lg">{request.star_amount}</div>
+                                                    <div className="font-heading font-bold text-lg">{request.star_amount}</div>
                                                     <div className="text-xs text-gray-500">星幣</div>
                                                 </div>
                                                 <ArrowRightLeft size={20} className="text-gray-400" />
                                                 <div className="text-center flex-1">
                                                     <span className="text-2xl">💰</span>
-                                                    <div className="font-pixel text-lg">{request.twd_amount}</div>
+                                                    <div className="font-heading font-bold text-lg">{request.twd_amount}</div>
                                                     <div className="text-xs text-gray-500">TWD</div>
                                                 </div>
                                             </div>
@@ -275,27 +280,26 @@ export const ParentApproval: React.FC = () => {
 
                                             {/* Action Buttons */}
                                             <div className="flex gap-3">
-                                                <RPGButton
+                                                <button
                                                     onClick={() => handleApproveExchange(request.id)}
                                                     disabled={approveExchange.isPending}
-                                                    className="flex-1"
+                                                    className="flex-1 py-3 px-4 rounded-2xl bg-emerald-500 text-white border-b-4 border-emerald-700 font-heading font-bold hover:brightness-110 active:scale-95 transition-all disabled:opacity-60"
                                                 >
                                                     <div className="flex items-center justify-center gap-2">
                                                         <CheckCircle size={16} />
                                                         <span>✓ 核准扣款</span>
                                                     </div>
-                                                </RPGButton>
-                                                <RPGButton
-                                                    variant="secondary"
+                                                </button>
+                                                <button
                                                     onClick={() => handleRejectExchange(request.id)}
                                                     disabled={rejectExchange.isPending}
-                                                    className="flex-1"
+                                                    className="flex-1 py-3 px-4 rounded-2xl bg-white text-gray-600 border-2 border-gray-300 font-heading font-bold hover:bg-gray-100 active:scale-95 transition-all disabled:opacity-60"
                                                 >
                                                     <div className="flex items-center justify-center gap-2">
                                                         <XCircle size={16} />
                                                         <span>✗ 拒絕</span>
                                                     </div>
-                                                </RPGButton>
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -303,10 +307,10 @@ export const ParentApproval: React.FC = () => {
                             ))}
                         </div>
                     ) : (
-                        <div className="rpg-dialog text-center py-12">
+                        <div className="clay-card text-center py-12" style={{ borderRadius: '24px' }}>
                             <div className="text-6xl mb-4">💱</div>
-                            <p className="font-pixel text-sm mb-2">沒有待審核的兌換申請</p>
-                            <p className="text-xs text-gray-600">當孩子提交兌換申請時會顯示在這裡</p>
+                            <p className="font-heading text-lg font-bold mb-2" style={{ color: 'var(--color-text)' }}>沒有待審核的兌換申請</p>
+                            <p className="font-body text-sm text-gray-600">當孩子提交兌換申請時會顯示在這裡</p>
                         </div>
                     )}
                 </>

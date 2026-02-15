@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, X, Save } from 'lucide-react';
-import { RPGButton } from '../components/RPGButton';
-import { RPGDialog } from '../components/RPGDialog';
+import { Plus, Trash2, X, Save, Users } from 'lucide-react';
+import { ClayDialog } from '../components/ClayDialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../types/database';
@@ -96,7 +95,7 @@ export const ChildManagement: React.FC = () => {
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
                     <div className="text-6xl mb-4 animate-bounce">⚙️</div>
-                    <p className="font-pixel text-sm">載入中...</p>
+                    <p className="font-heading text-sm" style={{ color: 'var(--color-text-light)' }}>載入中...</p>
                 </div>
             </div>
         );
@@ -104,33 +103,42 @@ export const ChildManagement: React.FC = () => {
 
     return (
         <div className="max-w-6xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="font-pixel text-2xl">管理孩子帳號</h2>
-                <RPGButton onClick={() => setIsDialogOpen(true)}>
-                    <div className="flex items-center gap-2">
-                        <Plus size={16} />
-                        <span>新增孩子</span>
+            {/* Header Area */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-white rounded-2xl clay-card">
+                        <Users className="text-primary-dark" size={28} />
                     </div>
-                </RPGButton>
+                    <div>
+                        <h2 className="font-heading text-3xl font-bold" style={{ color: 'var(--color-text)' }}>管理孩子帳號</h2>
+                        <p className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>新增、查看與移除孩子帳號</p>
+                    </div>
+                </div>
+
+                <button onClick={() => setIsDialogOpen(true)} className="clay-btn py-3 px-6 flex items-center justify-center gap-2 self-start md:self-auto">
+                    <Plus size={20} />
+                    <span>新增孩子</span>
+                </button>
             </div>
 
             {/* Children Grid */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {children && children.length > 0 ? (
                     children.map((child) => (
-                        <div key={child.id} className="rpg-dialog animate-bounce-in">
+                        <div key={child.id} className="clay-card p-5 animate-bounce-in" style={{ borderRadius: '24px' }}>
                             <div className="flex items-start gap-4">
-                                <div className="text-5xl flex-shrink-0">{child.avatar_url || '👦'}</div>
+                                <div className="clay-icon-circle bg-white text-4xl shrink-0" style={{ width: '64px', height: '64px', borderRadius: '18px' }}>
+                                    {child.avatar_url || '👦'}
+                                </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-pixel text-lg mb-1">{child.name}</h3>
-                                    <p className="text-xs text-gray-500 mt-2">
+                                    <h3 className="font-heading font-bold text-2xl mb-1" style={{ color: 'var(--color-text)' }}>{child.name}</h3>
+                                    <p className="font-body text-sm text-gray-500 mt-2">
                                         建立於: {new Date(child.created_at).toLocaleDateString('zh-TW')}
                                     </p>
                                 </div>
                                 <button
                                     onClick={() => handleDelete(child)}
-                                    className="p-2 hover:bg-red-100 border-2 border-deep-black transition-colors flex-shrink-0"
+                                    className="p-3 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors border-2 border-rose-200"
                                     title="刪除"
                                 >
                                     <Trash2 size={16} className="text-red-600" />
@@ -139,16 +147,16 @@ export const ChildManagement: React.FC = () => {
                         </div>
                     ))
                 ) : (
-                    <div className="rpg-dialog text-center py-12 md:col-span-2 lg:col-span-3">
+                    <div className="clay-card text-center py-12 md:col-span-2 lg:col-span-3" style={{ borderRadius: '24px' }}>
                         <div className="text-6xl mb-4">👶</div>
-                        <p className="font-pixel text-sm mb-2">尚未新增孩子</p>
-                        <p className="text-xs text-gray-600">點擊「新增孩子」開始建立帳號</p>
+                        <p className="font-heading text-lg font-bold mb-2" style={{ color: 'var(--color-text)' }}>尚未新增孩子</p>
+                        <p className="font-body text-sm text-gray-600">點擊「新增孩子」開始建立帳號</p>
                     </div>
                 )}
             </div>
 
             {/* Add Child Dialog */}
-            <RPGDialog
+            <ClayDialog
                 isOpen={isDialogOpen}
                 onClose={() => {
                     setIsDialogOpen(false);
@@ -157,36 +165,36 @@ export const ChildManagement: React.FC = () => {
                 title="新增孩子帳號"
                 footer={
                     <div className="flex gap-3 justify-end">
-                        <RPGButton
-                            variant="secondary"
+                        <button
                             onClick={() => {
                                 setIsDialogOpen(false);
                                 setFormData({ name: '', avatar_url: '👦' });
                             }}
+                            className="flex-1 py-3 px-4 rounded-2xl bg-gray-100 text-gray-600 border-2 border-gray-300 font-heading font-bold hover:bg-gray-200 transition-colors"
                         >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center gap-2">
                                 <X size={16} />
                                 <span>取消</span>
                             </div>
-                        </RPGButton>
-                        <RPGButton type="submit" form="add-child-form">
-                            <div className="flex items-center gap-2">
+                        </button>
+                        <button type="submit" form="add-child-form" className="flex-1 py-3 px-4 rounded-2xl bg-indigo-500 text-white border-b-4 border-indigo-700 font-heading font-bold hover:brightness-110 active:scale-95 transition-all">
+                            <div className="flex items-center justify-center gap-2">
                                 <Save size={16} />
                                 <span>儲存</span>
                             </div>
-                        </RPGButton>
+                        </button>
                     </div>
                 }
             >
                 <form id="add-child-form" onSubmit={handleSubmit} className="space-y-4">
                     {/* Name */}
                     <div>
-                        <label className="block font-pixel text-xs mb-2">孩子的名字 *</label>
+                        <label className="block font-heading font-bold text-sm mb-2" style={{ color: 'var(--color-text)' }}>孩子的名字 *</label>
                         <input
                             type="text"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="w-full px-3 py-2 border-2 border-deep-black text-sm"
+                            className="w-full px-3 py-3 border-2 border-indigo-100 rounded-2xl text-sm"
                             required
                             placeholder="例：小明"
                         />
@@ -194,14 +202,14 @@ export const ChildManagement: React.FC = () => {
 
                     {/* Avatar */}
                     <div>
-                        <label className="block font-pixel text-xs mb-2">選擇頭像</label>
+                        <label className="block font-heading font-bold text-sm mb-2" style={{ color: 'var(--color-text)' }}>選擇頭像</label>
                         <div className="grid grid-cols-7 gap-2">
                             {commonEmojis.map((emoji) => (
                                 <button
                                     key={emoji}
                                     type="button"
                                     onClick={() => setFormData({ ...formData, avatar_url: emoji })}
-                                    className={`text-2xl p-2 border-2 border-deep-black hover:bg-gray-100 transition-colors ${formData.avatar_url === emoji ? 'bg-yellow-200' : 'bg-white'
+                                    className={`text-2xl p-2 border-2 rounded-xl hover:bg-gray-100 transition-colors ${formData.avatar_url === emoji ? 'bg-yellow-200 border-yellow-400' : 'bg-white border-indigo-100'
                                         }`}
                                 >
                                     {emoji}
