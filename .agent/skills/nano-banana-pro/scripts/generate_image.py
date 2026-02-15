@@ -142,9 +142,7 @@ def main():
 
                 # Ensure RGB mode for PNG (convert RGBA to RGB with white background if needed)
                 if image.mode == 'RGBA':
-                    rgb_image = PILImage.new('RGB', image.size, (255, 255, 255))
-                    rgb_image.paste(image, mask=image.split()[3])
-                    rgb_image.save(str(output_path), 'PNG')
+                    image.save(str(output_path), 'PNG')
                 elif image.mode == 'RGB':
                     image.save(str(output_path), 'PNG')
                 else:
