@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDailyLogs, useStarBalance } from '../hooks/useQuests';
-import { RefreshCw, Play, PlusCircle, Wrench, Dices } from 'lucide-react';
+import { RefreshCw, Play, PlusCircle, Wrench, Dices, Bug } from 'lucide-react';
 import { GAMES, type Game } from '../lib/gameConfig';
 import { GameModal } from '../components/GameModal';
 import { MonsterTower, TowerPreview } from '../components/MonsterTower';
@@ -54,7 +54,7 @@ export const DebugPage: React.FC = () => {
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
                     <div className="text-4xl mb-2">⏳</div>
-                    <p className="font-pixel">載入中...</p>
+                    <p className="font-heading">載入中...</p>
                 </div>
             </div>
         );
@@ -80,67 +80,66 @@ export const DebugPage: React.FC = () => {
 
     return (
         <div className="max-w-6xl mx-auto p-6">
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h1 className="text-3xl font-pixel flex items-center gap-2">
-                        <Wrench className="text-gray-600" />
-                        Developer Dashboard
-                    </h1>
-                    <p className="text-gray-500 text-sm">快速驗證遊戲與查看系統狀態</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-white rounded-2xl clay-card">
+                        <Bug className="text-primary-dark" size={28} />
+                    </div>
+                    <div>
+                        <h1 className="font-heading text-3xl font-bold" style={{ color: 'var(--color-text)' }}>Developer Dashboard</h1>
+                        <p className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>快速驗證遊戲與查看系統狀態</p>
+                    </div>
                 </div>
 
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setActiveTab('games')}
-                        className={`px-4 py-2 font-pixel rounded-lg transition-colors ${activeTab === 'games' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 border border-gray-300'
-                            }`}
-                    >
-                        🎮 遊戲驗證
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('logs')}
-                        className={`px-4 py-2 font-pixel rounded-lg transition-colors ${activeTab === 'logs' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 border border-gray-300'
-                            }`}
-                    >
-                        📋 每日任務紀錄
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('tower')}
-                        className={`px-4 py-2 font-pixel rounded-lg transition-colors ${activeTab === 'tower' ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 border border-gray-300'
-                            }`}
-                    >
-                        🏰 怪獸塔 V1
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('towerV2')}
-                        className={`px-4 py-2 font-pixel rounded-lg transition-colors ${activeTab === 'towerV2' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 border border-gray-300'
-                            }`}
-                    >
-                        🏰 怪獸塔 V2
-                    </button>
-                    <button
-                        onClick={() => { refetch(); refetchBalance(); }}
-                        className="rpg-button flex items-center gap-2"
-                    >
-                        <RefreshCw size={16} />
-                        重新整理
-                    </button>
-                </div>
+                <button
+                    onClick={() => { refetch(); refetchBalance(); }}
+                    className="clay-btn py-3 px-5 flex items-center gap-2 self-start md:self-auto"
+                >
+                    <RefreshCw size={16} />
+                    重新整理
+                </button>
+            </div>
+
+            <div className="clay-tab-switch w-full md:w-fit p-1 mb-6 flex-wrap">
+                <button
+                    onClick={() => setActiveTab('games')}
+                    className={activeTab === 'games' ? 'active' : ''}
+                >
+                    🎮 遊戲驗證
+                </button>
+                <button
+                    onClick={() => setActiveTab('logs')}
+                    className={activeTab === 'logs' ? 'active' : ''}
+                >
+                    📋 每日任務紀錄
+                </button>
+                <button
+                    onClick={() => setActiveTab('tower')}
+                    className={activeTab === 'tower' ? 'active' : ''}
+                >
+                    🏰 怪獸塔 V1
+                </button>
+                <button
+                    onClick={() => setActiveTab('towerV2')}
+                    className={activeTab === 'towerV2' ? 'active' : ''}
+                >
+                    🏰 怪獸塔 V2
+                </button>
             </div>
 
             {/* QA Tools Section (Always Visible) */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex items-center justify-between">
+            <div className="clay-card p-4 mb-6 flex items-center justify-between" style={{ borderRadius: '20px' }}>
                 <div className="flex items-center gap-4">
-                    <div className="bg-yellow-100 px-4 py-2 rounded-lg border border-yellow-300">
+                    <div className="bg-yellow-100 px-4 py-2 rounded-xl border-2 border-yellow-200">
                         <span className="text-xs text-yellow-700 block">目前星幣</span>
-                        <span className="font-pixel text-2xl text-yellow-800">{starBalance} ⭐</span>
+                        <span className="font-heading font-bold text-2xl text-yellow-800">{starBalance} ⭐</span>
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={() => addStars(100)} className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded border border-green-300 hover:bg-green-200">
+                    <button onClick={() => addStars(100)} className="flex items-center gap-2 px-3 py-2 bg-emerald-100 text-emerald-700 rounded-xl border-2 border-emerald-200 hover:bg-emerald-200 font-heading font-bold">
                         <PlusCircle size={16} /> +100 星幣
                     </button>
-                    <button onClick={() => addStars(1000)} className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded border border-green-300 hover:bg-green-200">
+                    <button onClick={() => addStars(1000)} className="flex items-center gap-2 px-3 py-2 bg-emerald-100 text-emerald-700 rounded-xl border-2 border-emerald-200 hover:bg-emerald-200 font-heading font-bold">
                         <PlusCircle size={16} /> +1000 星幣
                     </button>
                 </div>
@@ -149,7 +148,7 @@ export const DebugPage: React.FC = () => {
             {activeTab === 'games' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {GAMES.map(game => (
-                        <div key={game.id} className={`${game.color} bg-opacity-10 p-4 rounded-xl border-2 border-gray-200 shadow-sm hover:shadow-md transition-shadow`}>
+                        <div key={game.id} className={`${game.color} bg-opacity-10 p-4 rounded-2xl border-2 border-gray-200 shadow-sm hover:shadow-md transition-shadow`}>
                             <div className="flex justify-between items-start mb-4">
                                 <div className="p-3 bg-white rounded-xl shadow-sm">
                                     <span className="text-3xl">{game.icon}</span>
@@ -159,12 +158,12 @@ export const DebugPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            <h3 className="font-pixel text-lg text-white mb-1 drop-shadow-md">{game.name}</h3>
+                            <h3 className="font-heading font-bold text-xl text-white mb-1 drop-shadow-md">{game.name}</h3>
                             <p className="text-white/80 text-sm mb-4 h-10">{game.description}</p>
 
                             <button
                                 onClick={() => setSelectedGame(game)}
-                                className="w-full py-2 bg-white text-gray-800 font-pixel rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 shadow-sm"
+                                className="w-full py-2 bg-white text-gray-800 font-heading font-bold rounded-xl hover:bg-gray-50 flex items-center justify-center gap-2 shadow-sm"
                             >
                                 <Play size={16} /> 立即試玩
                             </button>
@@ -175,7 +174,7 @@ export const DebugPage: React.FC = () => {
 
             {activeTab === 'logs' && (
                 <div className="space-y-3">
-                    <div className="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded">
+                    <div className="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded-xl border-2 border-gray-200">
                         <p>總記錄數: <strong>{allLogs?.length || 0}</strong></p>
                         <p>✅ Verified: {allLogs?.filter(l => l.status === 'verified').length || 0}</p>
                         <p>⏳ Completed: {allLogs?.filter(l => l.status === 'completed').length || 0}</p>

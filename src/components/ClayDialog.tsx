@@ -19,7 +19,7 @@ export const ClayDialog: React.FC<ClayDialogProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] overflow-y-auto">
+        <div className="fixed inset-0 z-[100] overflow-y-auto touch-pan-y">
             {/* Backdrop */}
             <div
                 className="fixed inset-0 bg-black/40 backdrop-blur-sm"
@@ -27,9 +27,9 @@ export const ClayDialog: React.FC<ClayDialogProps> = ({
             />
 
             {/* Scroll container for centering */}
-            <div className="min-h-full flex items-center justify-center p-4">
+            <div className="min-h-full flex items-start sm:items-center justify-center p-3 sm:p-4 pt-6 sm:pt-4 pb-6 sm:pb-4">
             {/* Dialog */}
-            <div className="relative clay-dialog max-w-2xl w-full max-h-[90vh] flex flex-col animate-bounce-in">
+            <div className="relative clay-dialog max-w-2xl w-full max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] flex flex-col animate-bounce-in my-2">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 pb-4">
                     <h2 className="text-2xl font-heading font-bold" style={{ color: 'var(--color-text)' }}>

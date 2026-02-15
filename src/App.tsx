@@ -11,7 +11,7 @@ import { ParentSettings } from './pages/ParentSettings';
 import { DebugPage } from './pages/DebugPage';
 import { HomeButton } from './components/HomeButton';
 import { useRealtimeSubscription } from './hooks/useRealtime';
-import { LogOut, ArrowLeft, Lock } from 'lucide-react';
+import { LogOut, ArrowLeft, Lock, LayoutDashboard, Briefcase, Users, Settings, Bug } from 'lucide-react';
 import type { Profile } from './types/database';
 import { FloatingEncouragement } from './components/FloatingEncouragement';
 import './index.css';
@@ -165,51 +165,41 @@ function AppContent() {
         <>
           {/* Parent View Toggle */}
           <div className="max-w-6xl mx-auto mb-6">
-            <div className="flex bg-white border-2 border-deep-black p-1 w-fit flex-wrap gap-1">
+            <div className="clay-tab-switch w-full sm:w-fit p-1 flex-wrap">
               <button
                 onClick={() => setView('dashboard')}
-                className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'dashboard'
-                  ? 'bg-pokeball-red text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                className={view === 'dashboard' ? 'active' : ''}
               >
+                <LayoutDashboard size={16} />
                 孩子進度
               </button>
               <button
                 onClick={() => setView('control')}
-                className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'control'
-                  ? 'bg-pokeball-red text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                className={view === 'control' ? 'active' : ''}
               >
+                <Briefcase size={16} />
                 任務管理
               </button>
               <button
                 onClick={() => setView('children')}
-                className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'children'
-                  ? 'bg-pokeball-red text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                className={view === 'children' ? 'active' : ''}
               >
+                <Users size={16} />
                 管理孩子
               </button>
               <button
                 onClick={() => setView('settings')}
-                className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'settings'
-                  ? 'bg-pokeball-red text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                className={view === 'settings' ? 'active' : ''}
               >
-                ⚙️ 設定
+                <Settings size={16} />
+                設定
               </button>
               <button
                 onClick={() => setView('debug')}
-                className={`px-4 py-2 font-pixel text-sm transition-colors ${view === 'debug'
-                  ? 'bg-pokeball-red text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                className={view === 'debug' ? 'active' : ''}
               >
-                🐛 Debug
+                <Bug size={16} />
+                Debug
               </button>
             </div>
           </div>

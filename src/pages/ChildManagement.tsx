@@ -218,7 +218,7 @@ export const ChildManagement: React.FC = () => {
                         </div>
                     </div>
                 </form>
-            </RPGDialog>
+            </ClayDialog>
         </div>
     );
 };

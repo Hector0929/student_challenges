@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Star, Clock, Play, StopCircle } from 'lucide-react';
+import { X, Star, Clock, Play, PauseCircle } from 'lucide-react';
 import { RPGDialog } from './RPGDialog';
 import { GAME_COST, GAME_DURATION_SECONDS } from '../lib/constants';
 
@@ -14,9 +14,11 @@ interface GameModalProps {
     onSpendStars: () => Promise<boolean>;
     onRefreshBalance: () => void;
     mode?: 'play' | 'practice'; // New prop
+    practiceRewardStars?: number;
+    onPracticeComplete?: (stars: number) => Promise<void> | void;
 }
 
-type GamePhase = 'confirm' | 'playing' | 'timeup' | 'insufficient';
+type GamePhase = 'confirm' | 'playing' | 'paused' | 'timeup' | 'insufficient';
 
 // Helper Components (Extracted to prevent re-mounting)
 const btnBase = "px-6 py-3 font-pixel text-sm rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-1";
@@ -28,12 +30,12 @@ const TopHUD = ({
     gameName,
     timeRemaining,
     progressPercent,
-    onEndGame
+    onPauseGame
 }: {
     gameName: string;
     timeRemaining: number;
     progressPercent: number;
-    onEndGame: () => void;
+    onPauseGame: () => void;
 }) => {
     const formatTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
@@ -66,12 +68,45 @@ const TopHUD = ({
             </div>
 
             <button
-                onClick={onEndGame}
-                className="group p-2 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 text-gray-400 hover:text-red-500"
+                onClick={onPauseGame}
+                className="group p-2 hover:bg-yellow-50 rounded-xl transition-colors flex items-center gap-2 text-gray-400 hover:text-yellow-600"
             >
-                <span className="font-pixel text-xs hidden sm:inline group-hover:opacity-100 opacity-0 transition-opacity">離開遊戲</span>
-                <StopCircle size={24} />
+                <span className="font-pixel text-xs hidden sm:inline group-hover:opacity-100 opacity-0 transition-opacity">暫停</span>
+                <PauseCircle size={24} />
             </button>
+        </div>
+    );
+};
+
+const PausedOverlay = ({
+    onResume,
+    onEndGame
+}: {
+    onResume: () => void;
+    onEndGame: () => void;
+}) => {
+    return (
+        <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+            <div className="text-center p-6 clay-card max-w-md w-full mx-4 animate-bounce-in bg-white">
+                <div className="text-6xl mb-3">⏸️</div>
+                <h3 className="font-pixel text-2xl mb-2" style={{ color: 'var(--color-text)' }}>已暫停</h3>
+                <p className="mb-6 font-pixel text-sm" style={{ color: 'var(--color-text-light)' }}>可以繼續練習，或結束本次遊戲</p>
+
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button onClick={onEndGame} className={`${btnBase} ${btnSecondary} w-full sm:w-auto`}>
+                        <div className="flex items-center justify-center gap-2">
+                            <X size={18} />
+                            <span>結束</span>
+                        </div>
+                    </button>
+                    <button onClick={onResume} className={`${btnBase} ${btnGreen} w-full sm:w-auto`}>
+                        <div className="flex items-center justify-center gap-2 px-2">
+                            <Play size={18} fill="currentColor" />
+                            <span>繼續</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };
@@ -145,7 +180,9 @@ export const GameModal: React.FC<GameModalProps> = ({
     starBalance,
     onSpendStars,
     onRefreshBalance,
-    mode = 'play'
+    mode = 'play',
+    practiceRewardStars = 0,
+    onPracticeComplete
 }) => {
     const [phase, setPhase] = useState<GamePhase>('confirm');
     const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION_SECONDS);
@@ -155,6 +192,39 @@ export const GameModal: React.FC<GameModalProps> = ({
     const hasInitialized = useRef(false);
     const endTimeRef = useRef<number>(0);
     const starBalanceRef = useRef(starBalance);
+    const practiceRewardHandledRef = useRef(false);
+    const [showRewardFx, setShowRewardFx] = useState(false);
+
+    const playPracticeRewardSound = () => {
+        try {
+            const AudioCtx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+            if (!AudioCtx) return;
+
+            const ctx = new AudioCtx();
+            const now = ctx.currentTime;
+            const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+
+            notes.forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.0001, now + i * 0.12);
+                gain.gain.exponentialRampToValueAtTime(0.08, now + i * 0.12 + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.12 + 0.18);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now + i * 0.12);
+                osc.stop(now + i * 0.12 + 0.2);
+            });
+
+            setTimeout(() => {
+                ctx.close().catch(() => undefined);
+            }, 800);
+        } catch (error) {
+            console.warn('Practice reward sound blocked:', error);
+        }
+    };
 
     // Keep ref in sync
     useEffect(() => {
@@ -169,6 +239,7 @@ export const GameModal: React.FC<GameModalProps> = ({
             if (!hasInitialized.current) {
                 hasInitialized.current = true;
                 setTimeRemaining(GAME_DURATION_SECONDS);
+                practiceRewardHandledRef.current = false;
 
                 if (mode === 'practice') {
                     setPhase('confirm'); // Go to confirm screen, but with different UI
@@ -208,7 +279,7 @@ export const GameModal: React.FC<GameModalProps> = ({
     useEffect(() => {
         console.log('[GameModal] Timer Effect running. Phase:', phase);
         if (phase === 'playing') {
-            endTimeRef.current = Date.now() + GAME_DURATION_SECONDS * 1000;
+            endTimeRef.current = Date.now() + Math.max(0, timeRemaining) * 1000;
             console.log('[GameModal] Timer started. Ends at:', new Date(endTimeRef.current).toLocaleTimeString());
 
             timerRef.current = setInterval(() => {
@@ -237,6 +308,22 @@ export const GameModal: React.FC<GameModalProps> = ({
             }
         };
     }, [phase]);
+
+    // Practice reward: every completed 3-minute learning round gives stars
+    useEffect(() => {
+        if (mode !== 'practice' || phase !== 'timeup' || !onPracticeComplete || practiceRewardStars <= 0 || practiceRewardHandledRef.current) {
+            return;
+        }
+
+        practiceRewardHandledRef.current = true;
+        setShowRewardFx(true);
+        playPracticeRewardSound();
+        const fxTimer = setTimeout(() => setShowRewardFx(false), 1400);
+        Promise.resolve(onPracticeComplete(practiceRewardStars)).catch((error) => {
+            console.error('Failed to grant practice reward:', error);
+        });
+        return () => clearTimeout(fxTimer);
+    }, [mode, phase, onPracticeComplete, practiceRewardStars]);
 
     const progressPercent = (timeRemaining / GAME_DURATION_SECONDS) * 100;
 
@@ -271,16 +358,30 @@ export const GameModal: React.FC<GameModalProps> = ({
         onClose();
     };
 
+    const handlePauseGame = () => {
+        setPhase('paused');
+    };
+
+    const handleResumeGame = () => {
+        setPhase('playing');
+    };
+
     const renderContent = () => {
-        if (phase === 'playing' || phase === 'timeup') {
+        if (phase === 'playing' || phase === 'paused' || phase === 'timeup') {
             return (
-                <div className="flex flex-col h-[80vh] bg-indigo-50 rounded-xl overflow-hidden relative">
+                <div className="flex flex-col h-[68dvh] sm:h-[80vh] bg-indigo-50 rounded-xl overflow-hidden relative">
                     <TopHUD
                         gameName={gameName}
                         timeRemaining={timeRemaining}
                         progressPercent={progressPercent}
-                        onEndGame={handleEndGame}
+                        onPauseGame={handlePauseGame}
                     />
+
+                    {phase === 'paused' && (
+                        <div className="z-20 bg-amber-100 border-b-2 border-amber-300 px-3 py-2 text-center">
+                            <span className="font-pixel text-xs text-amber-700">⏸ 畫面已凍結（暫停中）</span>
+                        </div>
+                    )}
 
                     {/* Game Area */}
                     <div className="flex-1 bg-gray-900 relative">
@@ -292,19 +393,74 @@ export const GameModal: React.FC<GameModalProps> = ({
                             allow="fullscreen"
                             style={{
                                 display: 'block',
-                                pointerEvents: phase === 'timeup' ? 'none' : 'auto'
+                                pointerEvents: phase === 'playing' ? 'auto' : 'none'
                             }}
                         />
                     </div>
 
                     {/* Overlays */}
-                    {phase === 'timeup' && (
-                        <TimeUpOverlay
-                            starBalance={starBalance}
+                    {phase === 'paused' && (
+                        <PausedOverlay
+                            onResume={handleResumeGame}
                             onEndGame={handleEndGame}
-                            onStartGame={handleStartGame}
-                            isProcessing={isProcessing}
                         />
+                    )}
+
+                    {phase === 'timeup' && (
+                        mode === 'practice' ? (
+                            <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-md flex items-center justify-center animate-fade-in">
+                                <div className="text-center p-8 clay-card max-w-lg w-full mx-4 animate-bounce-in bg-white">
+                                    {showRewardFx && (
+                                        <>
+                                            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                                                <div className="absolute left-[18%] top-[24%] text-3xl animate-bounce">⭐</div>
+                                                <div className="absolute left-[50%] top-[14%] text-2xl animate-ping">✨</div>
+                                                <div className="absolute right-[18%] top-[28%] text-3xl animate-bounce">🌟</div>
+                                                <div className="absolute left-[32%] bottom-[24%] text-2xl animate-ping">✨</div>
+                                                <div className="absolute right-[30%] bottom-[20%] text-2xl animate-bounce">⭐</div>
+                                            </div>
+                                            <div className="absolute left-1/2 -translate-x-1/2 top-4 px-4 py-2 rounded-full bg-green-100 border-2 border-green-300 animate-bounce">
+                                                <span className="font-pixel text-xs text-green-700">🎉 學習獎勵已發送</span>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    <div className="text-7xl mb-3">🎓</div>
+                                    <h3 className="font-pixel text-2xl mb-2" style={{ color: 'var(--color-text)' }}>學習完成！</h3>
+                                    <p className="mb-4 font-pixel text-sm" style={{ color: 'var(--color-text-light)' }}>你完成了 3 分鐘學習</p>
+
+                                    {practiceRewardStars > 0 && (
+                                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-100 border-2 border-yellow-300 mb-6">
+                                            <Star className="text-yellow-500" fill="currentColor" size={18} />
+                                            <span className="font-pixel text-sm">+{practiceRewardStars} 星幣</span>
+                                        </div>
+                                    )}
+
+                                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                        <button onClick={handleEndGame} className={`${btnBase} ${btnSecondary} w-full sm:w-auto`}>
+                                            結束學習
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                practiceRewardHandledRef.current = false;
+                                                setTimeRemaining(GAME_DURATION_SECONDS);
+                                                setPhase('playing');
+                                            }}
+                                            className={`${btnBase} ${btnGreen} w-full sm:w-auto`}
+                                        >
+                                            繼續學習
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <TimeUpOverlay
+                                starBalance={starBalance}
+                                onEndGame={handleEndGame}
+                                onStartGame={handleStartGame}
+                                isProcessing={isProcessing}
+                            />
+                        )
                     )}
 
                     {/* Low Time Warning */}
@@ -372,6 +528,7 @@ export const GameModal: React.FC<GameModalProps> = ({
                             {isPractice ? (
                                 <button
                                     onClick={() => {
+                                        practiceRewardHandledRef.current = false;
                                         setTimeRemaining(GAME_DURATION_SECONDS);
                                         setPhase('playing');
                                     }}
@@ -439,7 +596,7 @@ export const GameModal: React.FC<GameModalProps> = ({
     return (
         <RPGDialog
             isOpen={isOpen}
-            onClose={phase === 'playing' || phase === 'timeup' ? undefined : handleEndGame}
+            onClose={phase === 'playing' ? undefined : handleEndGame}
             title={phase === 'confirm' || phase === 'insufficient' ? (mode === 'practice' ? '📚 學習時間' : '🎮 遊戲付費') : `🎮 ${gameName}`}
         >
             {renderContent()}

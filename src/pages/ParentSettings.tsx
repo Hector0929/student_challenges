@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Lock, Home, Coins, Plus, Minus, X, MessageCircle, ArrowRightLeft, Gamepad2, BookOpen } from 'lucide-react';
-import { RPGButton } from '../components/RPGButton';
 import { ToggleSwitch } from '../components/ToggleSwitch';
 import { useUser } from '../contexts/UserContext';
 import { supabase } from '../lib/supabase';
@@ -8,7 +7,7 @@ import type { Profile } from '../types/database';
 import { useAdjustStars, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings, useUpdateFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
 import { useQuery } from '@tanstack/react-query';
-import { RPGDialog } from '../components/RPGDialog';
+import { ClayDialog } from '../components/ClayDialog';
 import { GAMES, type Game } from '../lib/gameConfig';
 import { SentenceSettingsDialog } from '../components/SentenceSettingsDialog';
 
@@ -26,10 +25,10 @@ const GameToggleRow = ({
     onToggle: (gameId: string, enabled: boolean) => void;
     onSettings?: () => void;
 }) => (
-    <div className={`flex items-center justify-between bg-white border-2 border-gray-200 p-2 rounded-lg ${isDisabled ? 'opacity-50' : ''}`}>
+    <div className={`flex items-center justify-between bg-white border-2 border-indigo-100 p-3 rounded-xl ${isDisabled ? 'opacity-50' : ''}`}>
         <div className="flex items-center gap-2">
             <span className="text-xl">{game.icon}</span>
-            <span className="font-pixel text-xs">{game.name}</span>
+            <span className="font-heading text-sm font-bold">{game.name}</span>
         </div>
         <div className="flex items-center gap-2">
             {/* Settings gear for sentence game */}
@@ -56,11 +55,11 @@ const ChildStarRow = ({ child, onAdjust }: { child: Profile; onAdjust: (child: P
     const { data: balance, isLoading } = useStarBalance(child.id);
 
     return (
-        <div className="flex items-center justify-between bg-white border-2 border-deep-black p-3 rounded-lg shadow-sm">
+        <div className="flex items-center justify-between bg-white border-2 border-indigo-100 p-3 rounded-2xl shadow-sm">
             <div className="flex items-center gap-3">
-                <div className="text-2xl">{child.avatar_url || '👦'}</div>
+                <div className="clay-icon-circle bg-white text-2xl" style={{ width: '52px', height: '52px', borderRadius: '14px' }}>{child.avatar_url || '👦'}</div>
                 <div>
-                    <div className="font-pixel text-sm">{child.name}</div>
+                    <div className="font-heading font-bold text-base" style={{ color: 'var(--color-text)' }}>{child.name}</div>
                     <div className="text-xs text-yellow-600 font-bold flex items-center gap-1">
                         <Coins size={12} />
                         {isLoading ? '...' : balance} 星幣
@@ -70,7 +69,7 @@ const ChildStarRow = ({ child, onAdjust }: { child: Profile; onAdjust: (child: P
             <button
                 type="button"
                 onClick={() => onAdjust(child)}
-                className="px-3 py-1 bg-yellow-400 hover:bg-yellow-500 text-deep-black border-2 border-deep-black font-pixel text-xs transition-colors"
+                className="px-4 py-2 bg-amber-400 hover:brightness-105 text-white border-b-4 border-amber-600 rounded-xl font-heading font-bold text-sm transition-all active:scale-95"
             >
                 調整
             </button>
@@ -247,13 +246,20 @@ export const ParentSettings: React.FC = () => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto">
-            <h2 className="font-pixel text-2xl mb-6 flex items-center gap-2">
-                <div className="bg-deep-black text-white p-2 rounded">⚙️</div>
-                家長設定
-            </h2>
+        <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-white rounded-2xl clay-card">
+                        <Lock className="text-primary-dark" size={28} />
+                    </div>
+                    <div>
+                        <h2 className="font-heading text-3xl font-bold" style={{ color: 'var(--color-text)' }}>家長設定</h2>
+                        <p className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>帳號、星幣、遊戲與學習偏好設定</p>
+                    </div>
+                </div>
+            </div>
 
-            <div className="rpg-dialog animate-bounce-in">
+            <div className="clay-card animate-bounce-in p-6" style={{ borderRadius: '24px' }}>
                 <form onSubmit={handleUpdateProfile} className="space-y-6">
                     {/* User Name Section */}
                     <div className="border-b-2 border-dashed border-gray-300 pb-6">
@@ -516,35 +522,33 @@ export const ParentSettings: React.FC = () => {
 
                     {/* Submit Button */}
                     <div className="flex justify-end pt-4">
-                        <RPGButton type="submit" disabled={loading}>
-                            <div className="flex items-center gap-2">
-                                <Save size={16} />
-                                <span>{loading ? '儲存中...' : '儲存設定'}</span>
-                            </div>
-                        </RPGButton>
+                        <button type="submit" disabled={loading} className="clay-btn py-3 px-6 flex items-center gap-2 disabled:opacity-60">
+                            <Save size={16} />
+                            <span>{loading ? '儲存中...' : '儲存設定'}</span>
+                        </button>
                     </div>
                 </form>
             </div>
 
             {/* Adjustment Dialog */}
-            <RPGDialog
+            <ClayDialog
                 isOpen={!!adjustChild}
                 onClose={() => setAdjustChild(null)}
                 title="調整星幣"
                 footer={
                     <div className="flex gap-3 justify-end">
-                        <RPGButton variant="secondary" onClick={() => setAdjustChild(null)}>
-                            <div className="flex items-center gap-2">
+                        <button onClick={() => setAdjustChild(null)} className="flex-1 py-3 px-4 rounded-2xl bg-gray-100 text-gray-600 border-2 border-gray-300 font-heading font-bold hover:bg-gray-200 transition-colors">
+                            <div className="flex items-center justify-center gap-2">
                                 <X size={16} />
                                 <span>取消</span>
                             </div>
-                        </RPGButton>
-                        <RPGButton onClick={handleAdjustSubmit} disabled={adjustStarsMutation.isPending}>
-                            <div className="flex items-center gap-2">
+                        </button>
+                        <button onClick={handleAdjustSubmit} disabled={adjustStarsMutation.isPending} className="flex-1 py-3 px-4 rounded-2xl bg-indigo-500 text-white border-b-4 border-indigo-700 font-heading font-bold hover:brightness-110 active:scale-95 transition-all disabled:opacity-60">
+                            <div className="flex items-center justify-center gap-2">
                                 <Save size={16} />
                                 <span>{adjustStarsMutation.isPending ? '處理中...' : '確認調整'}</span>
                             </div>
-                        </RPGButton>
+                        </button>
                     </div>
                 }
             >
@@ -615,7 +619,7 @@ export const ParentSettings: React.FC = () => {
                         />
                     </div>
                 </form>
-            </RPGDialog>
+            </ClayDialog>
 
             {/* Sentence Settings Dialog */}
             {user?.family_id && (

@@ -3,6 +3,8 @@ import { BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { GameModal } from './GameModal';
 import { GAMES, type Game } from '../lib/gameConfig';
 import { useFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
+import { supabase } from '../lib/supabase';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface LearningAreaProps {
     userId: string;
@@ -33,6 +35,7 @@ const getGameColors = (gameId: string) => {
 export const LearningArea: React.FC<LearningAreaProps> = ({ userId }) => {
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const queryClient = useQueryClient();
 
     // Fetch family settings for learning area permissions
     const { data: familySettings } = useFamilySettings();
@@ -48,6 +51,26 @@ export const LearningArea: React.FC<LearningAreaProps> = ({ userId }) => {
     if (!learningAreaEnabled) {
         return null;
     }
+
+    const handlePracticeComplete = async (stars: number) => {
+        if (!selectedGame || stars <= 0) return;
+
+        const { error } = await supabase.from('star_transactions').insert({
+            user_id: userId,
+            amount: stars,
+            type: 'earn',
+            description: `學習完成獎勵: ${selectedGame.name} (3分鐘)`,
+            game_id: selectedGame.id,
+        });
+
+        if (error) {
+            console.error('Failed to grant learning reward:', error);
+            return;
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['star_balance', userId] });
+        queryClient.invalidateQueries({ queryKey: ['star_transactions'] });
+    };
 
     return (
         <div className="clay-card mb-6 p-5 animate-bounce-in" style={{ borderRadius: '20px' }}>
@@ -122,6 +145,8 @@ export const LearningArea: React.FC<LearningAreaProps> = ({ userId }) => {
                     onSpendStars={async () => true} // Always succeed
                     onRefreshBalance={() => { }} // No-op
                     mode="practice"
+                    practiceRewardStars={10}
+                    onPracticeComplete={handlePracticeComplete}
                 />
             )}
         </div>
