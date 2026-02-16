@@ -941,14 +941,44 @@ export type MonsterId = keyof typeof MONSTERS;
 
 // Evolution map: base monster → evolved form (requires 5 copies)
 export const EVOLUTION_MAP: Partial<Record<MonsterId, MonsterId>> = {
+    // Core base monsters
     slime: 'evolved_slime',
     water_spirit: 'evolved_water_spirit',
     flame_bird: 'evolved_flame_bird',
     thunder_cloud: 'evolved_thunder_cloud',
     rainbow_dragon: 'evolved_rainbow_dragon',
+
+    // Forest variants
+    wind_slime: 'evolved_slime',
+    mossy_golem: 'evolved_slime',
+    mushroom_kin: 'evolved_slime',
+    nian_beast: 'evolved_slime',
+
+    // Crystal variants
+    mystic_water: 'evolved_water_spirit',
+    ice_cube_slime: 'evolved_water_spirit',
+    penguin_knight: 'evolved_water_spirit',
+    valentine_diamond: 'evolved_water_spirit',
+
+    // Magma variants
+    phoenix_chick: 'evolved_flame_bird',
+    magma_blob: 'evolved_flame_bird',
+    demon_imp: 'evolved_flame_bird',
+    cactus_boy: 'evolved_flame_bird',
+    sand_castle_crab: 'evolved_flame_bird',
+
+    // Sky / space variants
+    storm_lord: 'evolved_thunder_cloud',
+    cloud_puff: 'evolved_thunder_cloud',
+    star_bit: 'evolved_thunder_cloud',
+    moon_bunny: 'evolved_ufo_rider',
+
+    // Rare / special
     star_fairy: 'evolved_star_fairy',
     lucky_clover: 'evolved_lucky_clover',
     gold_mimic: 'evolved_gold_mimic',
+
+    // Space boss
     ufo_rider: 'evolved_ufo_rider',
 };
 
