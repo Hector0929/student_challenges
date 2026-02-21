@@ -11,8 +11,11 @@
         body {
             font-family: 'Orbitron', sans-serif;
             background-color: #050510;
-            overflow: hidden;
-            touch-action: none;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: manipulation;
+            min-height: 100vh;
+            min-height: 100dvh;
         }
 
         .neon-text {
@@ -80,10 +83,10 @@
     </style>
 </head>
 
-<body class="h-screen flex flex-col items-center justify-center">
+<body class="min-h-screen h-[100dvh] flex flex-col items-center justify-start py-3 sm:py-6">
 
     <!-- Header -->
-    <div class="w-full max-w-md flex justify-between items-end mb-8 px-4">
+    <div class="w-full max-w-md flex justify-between items-end mb-4 px-4">
         <div>
             <h1 class="text-4xl text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 font-bold"
                 style="text-shadow: 0 0 20px rgba(59,130,246,0.5)">2048</h1>
@@ -95,9 +98,21 @@
         </div>
     </div>
 
+    <div class="w-full max-w-md grid grid-cols-2 gap-2 px-4 mb-4">
+        <div class="bg-gray-900 border border-blue-500/40 rounded-lg px-3 py-2">
+            <div class="text-blue-300 text-[11px] tracking-widest">COMBO</div>
+            <div id="streak" class="text-white text-lg font-bold">0</div>
+        </div>
+        <div class="bg-gray-900 border border-blue-500/40 rounded-lg px-3 py-2">
+            <div class="text-blue-300 text-[11px] tracking-widest">MISSION</div>
+            <div id="mission" class="text-white text-xs leading-5">準備中...</div>
+        </div>
+    </div>
+    <div id="phase" class="text-blue-200 text-sm font-bold mb-2">開始 10 秒驚喜</div>
+
     <!-- Game Container -->
     <div
-        class="relative bg-gray-900/80 p-3 rounded-xl border border-blue-500 shadow-2xl shadow-blue-900/50 w-full max-w-md aspect-square mx-4">
+        class="relative bg-gray-900/80 p-3 rounded-xl border border-blue-500 shadow-2xl shadow-blue-900/50 w-full max-w-md aspect-square max-h-[calc(100dvh-10rem)] mx-4">
 
         <!-- Background Grid -->
         <div class="w-full h-full grid grid-cols-4 grid-rows-4 gap-3">
@@ -128,6 +143,9 @@
         <div id="game-over"
             class="absolute inset-0 bg-black/80 backdrop-blur-sm rounded-xl z-20 flex flex-col items-center justify-center hidden">
             <h2 class="text-4xl font-bold text-white mb-2">GAME OVER</h2>
+            <div id="summaryStreak" class="text-cyan-300 text-sm mb-1">最高連擊：0</div>
+            <div id="summaryMission" class="text-yellow-300 text-sm mb-1">任務：未完成</div>
+            <div id="summaryMessage" class="text-purple-200 text-sm mb-3">再來一局會更厲害！</div>
             <button onclick="startGame()"
                 class="mt-4 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-8 rounded-full shadow-lg shadow-blue-500/50 transition-all transform hover:scale-105">
                 TRY AGAIN
@@ -171,6 +189,12 @@
         const scoreDisplay = document.getElementById('score');
         const gameOverScreen = document.getElementById('game-over');
         const mobileControls = document.getElementById('mobile-controls');
+        const streakDisplay = document.getElementById('streak');
+        const missionDisplay = document.getElementById('mission');
+        const phaseDisplay = document.getElementById('phase');
+        const summaryStreak = document.getElementById('summaryStreak');
+        const summaryMission = document.getElementById('summaryMission');
+        const summaryMessage = document.getElementById('summaryMessage');
 
         // 檢測觸控裝置並顯示 D-Pad
         if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
@@ -181,6 +205,11 @@
         const SIZE = 4;
         let grid = []; // Now stores tile objects: { value, id, r, c, merged }
         let score = 0;
+        let mergeStreak = 0;
+        let maxMergeStreak = 0;
+        let highestTile = 2;
+        let mission = null;
+        let gameStartAt = 0;
         let tilesMap = new Map(); // Track DOM elements by ID
 
         const COLORS = {
@@ -207,10 +236,62 @@
             };
         }
 
+        function createMission() {
+            const missions = [
+                { id: 'tile', title: '合成出 128 方塊', target: 128, progress: 2, reward: 180 },
+                { id: 'merge', title: '完成 10 次合成', target: 10, progress: 0, reward: 120 }
+            ];
+            return { ...missions[Math.floor(Math.random() * missions.length)], done: false };
+        }
+
+        function updateMissionUI() {
+            if (!mission) return;
+            const progress = mission.id === 'tile'
+                ? Math.min(mission.progress, mission.target)
+                : Math.min(mission.progress, mission.target);
+            missionDisplay.innerText = `${mission.title} (${progress}/${mission.target})`;
+        }
+
+        function updatePhaseLabel() {
+            const elapsed = (performance.now() - gameStartAt) / 1000;
+            if (elapsed <= 10) {
+                phaseDisplay.innerText = '開始 10 秒驚喜';
+            } else if (elapsed <= 40) {
+                phaseDisplay.innerText = '30 秒任務暖身';
+            } else if (elapsed <= 160) {
+                phaseDisplay.innerText = '120 秒精彩時刻';
+            } else {
+                phaseDisplay.innerText = '結束獎勵';
+            }
+        }
+
+        function updateStreakUI() {
+            streakDisplay.innerText = `${mergeStreak}`;
+        }
+
+        function markMission(type, amount = 1) {
+            if (!mission || mission.done || mission.id !== type) return;
+            mission.progress += amount;
+            updateMissionUI();
+            if (mission.progress >= mission.target) {
+                mission.done = true;
+                score += mission.reward;
+                scoreDisplay.innerText = score;
+            }
+        }
+
         function startGame() {
             grid = Array(SIZE).fill().map(() => Array(SIZE).fill(null));
             score = 0;
+            mergeStreak = 0;
+            maxMergeStreak = 0;
+            highestTile = 2;
+            mission = createMission();
+            gameStartAt = performance.now();
             scoreDisplay.innerText = 0;
+            updateStreakUI();
+            updateMissionUI();
+            phaseDisplay.innerText = '開始 10 秒驚喜';
             gameOverScreen.classList.add('hidden');
             container.innerHTML = '';
             tilesMap.clear();
@@ -289,6 +370,7 @@
 
         function move(dir) {
             let moved = false;
+            let mergedThisTurn = 0;
             const vectors = {
                 0: { r: -1, c: 0 }, // Up
                 1: { r: 0, c: 1 },  // Right
@@ -335,8 +417,10 @@
                         if (neighbor && neighbor.value === tile.value && !neighbor.merged) {
                             // Merge!
                             neighbor.value *= 2;
+                            highestTile = Math.max(highestTile, neighbor.value);
                             neighbor.merged = true;
                             score += neighbor.value;
+                            mergedThisTurn += 1;
                             grid[r][c] = null;
                             moved = true;
                             return;
@@ -355,10 +439,36 @@
             });
 
             if (moved) {
+                updatePhaseLabel();
+                if (mergedThisTurn > 0) {
+                    mergeStreak += 1;
+                    maxMergeStreak = Math.max(maxMergeStreak, mergeStreak);
+                    markMission('merge', mergedThisTurn);
+                } else {
+                    mergeStreak = 0;
+                }
+                updateStreakUI();
+
+                if (mission?.id === 'tile' && !mission.done) {
+                    mission.progress = highestTile;
+                    updateMissionUI();
+                    if (mission.progress >= mission.target) {
+                        mission.done = true;
+                        score += mission.reward;
+                    }
+                }
+
                 spawnTile();
                 draw();
                 scoreDisplay.innerText = score;
                 if (isGameOver()) {
+                    summaryStreak.innerText = `最高連擊：${maxMergeStreak}`;
+                    summaryMission.innerText = mission?.done
+                        ? `任務完成：${mission.title}`
+                        : `任務進度：${mission?.title || '—'}`;
+                    summaryMessage.innerText = maxMergeStreak >= 4
+                        ? '你的節奏感超棒，像拼圖小高手！'
+                        : '已經很棒了，再來一局挑戰更高方塊！';
                     gameOverScreen.classList.remove('hidden');
                 }
             }

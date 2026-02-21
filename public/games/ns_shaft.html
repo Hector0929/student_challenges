@@ -11,8 +11,11 @@
         body {
             font-family: 'Orbitron', sans-serif;
             background-color: #0f0f15;
-            overflow: hidden;
-            touch-action: none;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: manipulation;
+            min-height: 100vh;
+            min-height: 100dvh;
         }
 
         .neon-text {
@@ -40,7 +43,7 @@
     </style>
 </head>
 
-<body class="h-screen flex flex-col items-center justify-center">
+<body class="min-h-screen h-[100dvh] flex flex-col items-center justify-start py-3 sm:py-5">
 
     <!-- UI Overlay -->
     <div id="ui-layer"
@@ -50,6 +53,11 @@
             <div class=" rounded-xl px-4 py-2 bg-black/50 border border-purple-500/50">
                 <div class="text-purple-400 text-xs">DEPTH</div>
                 <div id="score" class="text-2xl text-white font-bold">0 m</div>
+            </div>
+            <div class="rounded-xl px-3 py-2 bg-black/60 border border-fuchsia-400/40 text-center max-w-[180px]">
+                <div id="flow-display" class="text-cyan-300 text-xs font-bold">FLOW x0</div>
+                <div id="mission-display" class="text-fuchsia-300 text-[11px]">🎯 任務準備中</div>
+                <div id="phase-display" class="text-purple-200 text-[10px]">✨ 開場驚喜</div>
             </div>
             <!-- Health Bar -->
             <div class="w-32 h-6 bg-gray-900 border border-white/20 rounded-full overflow-hidden mt-2">
@@ -71,6 +79,8 @@
                 DESCEND OR DIE<br>
                 <span class="text-xs">Avoid Spikes (Top) • Don't Fall (Bottom)</span>
             </p>
+            <div id="summary-flow" class="text-cyan-300 text-sm mb-2">最高 FLOW：0</div>
+            <div id="summary-mission" class="text-fuchsia-300 text-sm mb-4">任務：未開始</div>
 
             <button onclick="startGame()"
                 class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-purple-500/50">
@@ -90,7 +100,7 @@
     </div>
 
     <!-- Game Canvas -->
-    <div class="relative w-full h-full max-w-lg bg-gray-900/90 overflow-hidden shadow-2xl border-x-2 border-gray-800">
+    <div class="relative w-full max-w-lg aspect-square max-h-[calc(100dvh-8rem)] bg-gray-900/90 overflow-hidden shadow-2xl border-x-2 border-gray-800">
         <canvas id="gameCanvas" class="w-full h-full block"></canvas>
     </div>
 
@@ -107,6 +117,9 @@
         const hpBar = document.getElementById('hp-bar');
         const menuScreen = document.getElementById('menu-screen');
         const spikeWarning = document.getElementById('spike-warning');
+        const flowDisplay = document.getElementById('flow-display');
+        const missionDisplay = document.getElementById('mission-display');
+        const phaseDisplay = document.getElementById('phase-display');
 
         // Config
         const CONFIG = {
@@ -131,7 +144,12 @@
             time: 0,
             lastTime: 0,
             keys: { left: false, right: false },
-            distanceTraveled: 0
+            distanceTraveled: 0,
+            flow: 0,
+            maxFlow: 0,
+            platformLands: 0,
+            mission: null,
+            gameStartAt: 0
         };
 
         const PLATFORM_TYPES = ['normal', 'normal', 'normal', 'normal', 'conveyor_left', 'conveyor_right', 'spring', 'fake', 'spike'];
@@ -144,6 +162,57 @@
         window.addEventListener('resize', resize);
         resize();
 
+        function createMission() {
+            const pool = [
+                { key: 'depth', label: '下潛 260m', target: 260, progress: 0, reward: 90 },
+                { key: 'land', label: '穩定落台 18 次', target: 18, progress: 0, reward: 110 },
+                { key: 'flow', label: 'FLOW 達到 6', target: 6, progress: 0, reward: 140 }
+            ];
+            return { ...pool[Math.floor(Math.random() * pool.length)], completed: false };
+        }
+
+        function updateFlowUI() {
+            flowDisplay.textContent = `FLOW x${state.flow}`;
+        }
+
+        function updateMissionUI() {
+            if (!state.mission) return;
+            const icon = state.mission.completed ? '✅' : '🎯';
+            missionDisplay.textContent = `${icon} ${state.mission.label} ${state.mission.progress}/${state.mission.target}`;
+        }
+
+        function updatePhaseLabel() {
+            if (!state.isPlaying) return;
+            const elapsed = (Date.now() - state.gameStartAt) / 1000;
+            let text = '✨ 開場驚喜';
+            if (elapsed >= 120) text = '🏁 結尾獎勵';
+            else if (elapsed >= 30) text = '🚀 精彩時刻';
+            else if (elapsed >= 10) text = '🎯 任務暖身';
+            phaseDisplay.textContent = text;
+        }
+
+        function markMission(type, value) {
+            if (!state.mission || state.mission.completed) return;
+            if (state.mission.key === type) {
+                state.mission.progress = Math.max(state.mission.progress, Math.floor(value));
+                if (state.mission.progress >= state.mission.target) {
+                    state.mission.completed = true;
+                    state.hp = Math.min(CONFIG.maxHP, state.hp + 2);
+                    updateHP();
+                }
+            }
+            updateMissionUI();
+        }
+
+        function applyDamage(amount) {
+            state.hp -= amount;
+            if (state.flow > 0) {
+                state.flow = 0;
+                updateFlowUI();
+            }
+            updateHP();
+        }
+
         function startGame() {
             menuScreen.classList.add('hidden');
 
@@ -152,6 +221,14 @@
             state.score = 0;
             state.scrollSpeed = CONFIG.scrollSpeedBase;
             state.distanceTraveled = 0;
+            state.flow = 0;
+            state.maxFlow = 0;
+            state.platformLands = 0;
+            state.mission = createMission();
+            state.gameStartAt = Date.now();
+            updateFlowUI();
+            updateMissionUI();
+            phaseDisplay.textContent = '✨ 開場驚喜';
 
             // Player Start
             state.player = {
@@ -215,8 +292,15 @@
         function gameOver() {
             state.isPlaying = false;
             menuScreen.classList.remove('hidden');
-            document.getElementById('menu-message').innerHTML = `DEPTH REACHED<br><span class="text-3xl text-white font-bold">${Math.floor(state.score)}m</span>`;
+            const missionText = state.mission && state.mission.completed
+                ? '✅ 任務完成'
+                : `🎯 任務 ${state.mission ? `${state.mission.progress}/${state.mission.target}` : '0/0'}`;
+            document.getElementById('menu-message').innerHTML = `DEPTH REACHED<br><span class="text-3xl text-white font-bold">${Math.floor(state.score)}m</span><br><span class="text-sm text-purple-200">${missionText}</span>`;
             document.querySelector('#menu-screen h1').innerText = "GAME OVER";
+            document.getElementById('summary-flow').textContent = `最高 FLOW：${state.maxFlow}`;
+            document.getElementById('summary-mission').textContent = state.mission
+                ? `任務：${state.mission.label}（${state.mission.completed ? '完成' : '未完成'}）`
+                : '任務：未開始';
         }
 
         function updateHP() {
@@ -251,6 +335,9 @@
 
         function update(dt) {
             const p = state.player;
+            const wasGrounded = p.grounded;
+
+            updatePhaseLabel();
 
             // 1. Movement
             if (state.keys.left) p.vx = -CONFIG.moveSpeed;
@@ -331,8 +418,7 @@
                         }
                         else if (plat.type === 'spike') {
                             if (state.time % 20 < 1) { // Damage tick
-                                state.hp -= 1; // Instant damage? classic is -5
-                                updateHP();
+                                applyDamage(1);
                             }
                             // Visual feedback?
                             p.vy = 0; // Stand on spikes but get hurt
@@ -348,13 +434,21 @@
                 }
             }
 
+            if (p.grounded && !wasGrounded && p.onPlatform && p.onPlatform.type !== 'spike') {
+                state.platformLands++;
+                state.flow++;
+                if (state.flow > state.maxFlow) state.maxFlow = state.flow;
+                updateFlowUI();
+                markMission('land', state.platformLands);
+                markMission('flow', state.maxFlow);
+            }
+
             // Ceiling Spikes (Top of screen)
             if (p.y < 20) {
                 // Warning
                 spikeWarning.classList.remove('hidden');
                 // Damage
-                state.hp -= 0.2 * dt; // Fast drain
-                updateHP();
+                applyDamage(0.2 * dt); // Fast drain
                 // Push down ?? No, just hurt
                 // p.y = 20; 
             } else {
@@ -372,6 +466,7 @@
                 state.distanceTraveled += state.scrollSpeed * dt;
                 state.score = Math.floor(state.distanceTraveled / 10);
                 scoreDisplay.innerText = state.score + ' m';
+                markMission('depth', state.score);
             }
         }
 

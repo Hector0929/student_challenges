@@ -13,10 +13,13 @@
             font-family: 'Fredoka', sans-serif;
             background: linear-gradient(135deg, #fa709a, #fee140);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             justify-content: center;
-            align-items: center;
-            overflow: hidden;
+            align-items: flex-start;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: manipulation;
             transition: background 0.5s ease;
         }
 
@@ -41,6 +44,8 @@
             width: 95%;
             text-align: center;
             position: relative;
+            max-height: calc(100dvh - 1rem);
+            overflow-y: auto;
         }
 
         .button-style {

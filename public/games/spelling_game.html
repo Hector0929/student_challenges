@@ -13,7 +13,8 @@
             font-family: 'DotGothic16', sans-serif;
             background-color: #1e1b4b;
             color: white;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             touch-action: manipulation;
         }
 
@@ -75,10 +76,10 @@
     </style>
 </head>
 
-<body class="h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex items-start justify-center p-3 sm:p-4">
 
     <!-- Category Selection Screen -->
-    <div id="category-screen" class="w-full max-w-lg">
+    <div id="category-screen" class="w-full max-w-lg my-2 sm:my-4">
         <div class="text-center mb-8">
             <h1 class="text-4xl font-bold text-indigo-400 mb-2 font-pixel">單字招喚術</h1>
             <p class="text-slate-400">選擇主題開始拼字挑戰</p>
@@ -89,7 +90,7 @@
     </div>
 
     <!-- Game Screen -->
-    <div id="game-screen" class="hidden w-full max-w-lg h-full flex flex-col justify-between py-6">
+    <div id="game-screen" class="hidden w-full max-w-lg min-h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] overflow-y-auto flex flex-col gap-4 py-3 sm:py-6">
         <!-- HUD -->
         <div class="flex justify-between items-center px-4 shrink-0">
             <div class="pixel-card px-4 py-2 flex items-center gap-2">

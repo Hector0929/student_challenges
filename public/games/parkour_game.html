@@ -10,9 +10,12 @@
     <style>
         body {
             font-family: 'Orbitron', sans-serif;
-            overflow: hidden;
-            touch-action: none;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: manipulation;
             background-color: #0f0b1e;
+            min-height: 100vh;
+            min-height: 100dvh;
         }
 
         .neon-text {
@@ -45,20 +48,35 @@
     </style>
 </head>
 
-<body class="h-screen flex flex-col items-center justify-center select-none" oncontextmenu="return false;">
+<body class="min-h-screen h-[100dvh] flex flex-col items-center justify-start py-2 sm:py-4 select-none" oncontextmenu="return false;">
 
     <!-- UI Overlay -->
     <div id="ui-layer" class="absolute inset-0 pointer-events-none flex flex-col justify-between p-6 z-10">
         <!-- Score -->
         <div class="flex justify-between items-start">
-            <div
-                class="bg-black/50 backdrop-blur rounded-xl px-6 py-2 border-2 border-purple-500 shadow-lg neon-border">
-                <span class="text-2xl text-purple-400">SCORE</span>
-                <span id="score" class="text-3xl text-white font-bold ml-4">0</span>
+            <div class="flex flex-col gap-2">
+                <div
+                    class="bg-black/50 backdrop-blur rounded-xl px-6 py-2 border-2 border-purple-500 shadow-lg neon-border">
+                    <span class="text-2xl text-purple-400">SCORE</span>
+                    <span id="score" class="text-3xl text-white font-bold ml-4">0</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="bg-black/50 backdrop-blur rounded-xl px-3 py-2 border border-purple-500/60">
+                        <div class="text-purple-300 text-xs">FLOW</div>
+                        <div id="flow" class="text-white text-lg font-bold">0</div>
+                    </div>
+                    <div class="bg-black/50 backdrop-blur rounded-xl px-3 py-2 border border-purple-500/60">
+                        <div class="text-purple-300 text-xs">MISSION</div>
+                        <div id="mission" class="text-white text-xs leading-5">準備中...</div>
+                    </div>
+                </div>
             </div>
+            <div class="flex flex-col items-end gap-2">
             <div id="hint-text" class="text-white/70 animate-pulse text-sm text-right bg-black/30 p-2 rounded">
                 [SPACE] Jump / Double Jump<br>
                 Collect STARS for bonus!
+            </div>
+            <div id="phase" class="text-purple-200 text-sm font-bold bg-black/30 px-3 py-1 rounded">開始 10 秒驚喜</div>
             </div>
         </div>
         <!-- Hearts UI -->
@@ -95,6 +113,8 @@
                 FINAL SCORE<br>
                 <span id="final-score" class="font-bold text-white text-4xl">0</span>
             </div>
+            <div id="final-flow" class="text-cyan-300 text-sm mb-1">最高 FLOW：0</div>
+            <div id="final-mission" class="text-yellow-300 text-sm mb-5">任務：未完成</div>
             <button onclick="resetGame()"
                 class="clay-btn text-white px-8 py-3 w-full text-lg rounded-xl border-red-500 hover:shadow-red-500/50">
                 RETRY
@@ -123,6 +143,11 @@
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const flowDisplay = document.getElementById('flow');
+        const missionDisplay = document.getElementById('mission');
+        const phaseDisplay = document.getElementById('phase');
+        const finalFlowDisplay = document.getElementById('final-flow');
+        const finalMissionDisplay = document.getElementById('final-mission');
 
         // --- Configuration ---
         const CONFIG = {
@@ -155,8 +180,57 @@
             lives: 3,
             invincible: false,
             invincibleTimer: 0,
-            lastTime: 0
+            lastTime: 0,
+            flow: 0,
+            maxFlow: 0,
+            starsCollected: 0,
+            lastStarAt: 0,
+            mission: null,
+            gameStartAt: 0
         };
+
+        function createMission() {
+            const missions = [
+                { id: 'distance', title: '跑出 1800 分', target: 1800, progress: 0, reward: 800 },
+                { id: 'stars', title: '收集 5 顆星星', target: 5, progress: 0, reward: 900 },
+                { id: 'flow', title: '達成 4 連續收星', target: 4, progress: 0, reward: 1000 }
+            ];
+            return { ...missions[Math.floor(Math.random() * missions.length)], done: false };
+        }
+
+        function updateFlowUI() {
+            flowDisplay.innerText = `${state.flow}`;
+        }
+
+        function updateMissionUI() {
+            if (!state.mission) return;
+            missionDisplay.innerText = `${state.mission.title} (${Math.min(state.mission.progress, state.mission.target)}/${state.mission.target})`;
+        }
+
+        function updatePhaseLabel() {
+            if (!state.isPlaying) return;
+            const elapsed = (performance.now() - state.gameStartAt) / 1000;
+            if (elapsed <= 10) {
+                phaseDisplay.innerText = '開始 10 秒驚喜';
+            } else if (elapsed <= 40) {
+                phaseDisplay.innerText = '30 秒任務暖身';
+            } else if (elapsed <= 160) {
+                phaseDisplay.innerText = '120 秒精彩時刻';
+            } else {
+                phaseDisplay.innerText = '結束獎勵';
+            }
+        }
+
+        function markMission(type, amount = 1) {
+            if (!state.mission || state.mission.done || state.mission.id !== type) return;
+            state.mission.progress += amount;
+            updateMissionUI();
+            if (state.mission.progress >= state.mission.target) {
+                state.mission.done = true;
+                state.score += state.mission.reward;
+                document.getElementById('score').innerText = Math.floor(state.score);
+            }
+        }
 
         // --- Classes ---
 
@@ -433,6 +507,17 @@
 
             state.score += 1 * dt;
             document.getElementById('score').innerText = Math.floor(state.score);
+            updatePhaseLabel();
+
+            if (state.mission?.id === 'distance' && !state.mission.done) {
+                state.mission.progress = Math.floor(state.score);
+                updateMissionUI();
+                if (state.mission.progress >= state.mission.target) {
+                    state.mission.done = true;
+                    state.score += state.mission.reward;
+                    document.getElementById('score').innerText = Math.floor(state.score);
+                }
+            }
 
             // Draw
             ctx.fillStyle = CONFIG.colors.bg;
@@ -721,6 +806,8 @@
                     if (obs.type === 'lava' || obs.type === 'spike' || obs.type === 'drone' || obs.type === 'tall' || obs.type === 'wheel') {
                         if (!state.invincible) {
                             state.lives--;
+                            state.flow = 0;
+                            updateFlowUI();
                             updateHeartsUI();
 
                             if (state.lives <= 0) {
@@ -781,6 +868,28 @@
 
                 if (dist < 40) { // Collection radius
                     state.score += 500;
+                    state.starsCollected += 1;
+                    markMission('stars');
+
+                    const now = performance.now();
+                    if (now - state.lastStarAt <= 4000) {
+                        state.flow += 1;
+                    } else {
+                        state.flow = 1;
+                    }
+                    state.lastStarAt = now;
+                    state.maxFlow = Math.max(state.maxFlow, state.flow);
+                    updateFlowUI();
+
+                    if (state.mission?.id === 'flow' && !state.mission.done) {
+                        state.mission.progress = Math.max(state.mission.progress, state.flow);
+                        updateMissionUI();
+                        if (state.mission.progress >= state.mission.target) {
+                            state.mission.done = true;
+                            state.score += state.mission.reward;
+                        }
+                    }
+
                     spawnParticles(star.x, star.y, 10, star.color);
                     playSound('coin');
                     stars.splice(i, 1);
@@ -924,7 +1033,16 @@
             state.score = 0;
             state.distance = 0;
             state.speed = CONFIG.initialSpeed;
+            state.flow = 0;
+            state.maxFlow = 0;
+            state.starsCollected = 0;
+            state.lastStarAt = 0;
+            state.mission = createMission();
+            state.gameStartAt = performance.now();
             document.getElementById('score').innerText = '0';
+            updateFlowUI();
+            updateMissionUI();
+            phaseDisplay.innerText = '開始 10 秒驚喜';
 
             // Reset Lives & UI
             state.lives = 3;
@@ -991,6 +1109,10 @@
             state.cameraShake = 20; // Big shake
             playSound('hit');
             document.getElementById('final-score').innerText = Math.floor(state.score);
+            finalFlowDisplay.innerText = `最高 FLOW：${state.maxFlow}`;
+            finalMissionDisplay.innerText = state.mission?.done
+                ? `任務完成：${state.mission.title}`
+                : `任務進度：${state.mission?.title || '—'}`;
             document.getElementById('game-over-screen').classList.remove('hidden');
             document.getElementById('ui-layer').classList.add('hidden');
         }

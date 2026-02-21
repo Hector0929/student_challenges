@@ -14,15 +14,17 @@
         html, body {
             height: 100%;
             font-family: 'Noto Sans TC', sans-serif;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
 
         body {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 0.5rem;
+            touch-action: manipulation;
         }
 
         .game-container {
@@ -33,7 +35,7 @@
             max-width: 460px;
             width: 100%;
             position: relative;
-            max-height: 98vh;
+            max-height: calc(100dvh - 1rem);
             overflow-y: auto;
         }
 
@@ -219,6 +221,8 @@
             <div class="progress-track mb-4">
                 <div class="progress-fill" id="progress-bar" style="width: 10%"></div>
             </div>
+            <div id="phase-text" class="text-xs font-bold text-indigo-500 mb-1">開始 10 秒驚喜</div>
+            <div id="mission-text" class="text-xs font-bold text-amber-600 mb-3">本局任務：準備中...</div>
 
             <!-- Question area -->
             <div id="question-area" class="mb-4"></div>
@@ -349,6 +353,9 @@
         mistakes: [],
         totalQuestions: 10,
         answered: false,
+        questionStartAt: 0,
+        gameStartAt: 0,
+        mission: null,
         // fill mode state
         fillAnswer: [],
         fillBlanks: [],
@@ -359,6 +366,45 @@
     const gameScreen = document.getElementById('game-screen');
     const resultScreen = document.getElementById('result-screen');
     const comboBadge = document.getElementById('combo-badge');
+    const phaseText = document.getElementById('phase-text');
+    const missionText = document.getElementById('mission-text');
+
+    function createMission() {
+        const missions = [
+            { id: 'correct', title: '答對 8 題', target: 8, progress: 0, reward: 30 },
+            { id: 'combo', title: '達成 4 連擊', target: 4, progress: 0, reward: 40 }
+        ];
+        return { ...missions[Math.floor(Math.random() * missions.length)], done: false };
+    }
+
+    function updateMissionUI() {
+        if (!state.mission) return;
+        missionText.textContent = `本局任務：${state.mission.title} (${Math.min(state.mission.progress, state.mission.target)}/${state.mission.target})`;
+    }
+
+    function updatePhaseUI() {
+        const elapsed = (performance.now() - state.gameStartAt) / 1000;
+        if (elapsed <= 10) {
+            phaseText.textContent = '開始 10 秒驚喜';
+        } else if (elapsed <= 40) {
+            phaseText.textContent = '30 秒任務暖身';
+        } else if (elapsed <= 160) {
+            phaseText.textContent = '120 秒精彩時刻';
+        } else {
+            phaseText.textContent = '結束獎勵';
+        }
+    }
+
+    function markMission(type, amount = 1) {
+        if (!state.mission || state.mission.done || state.mission.id !== type) return;
+        state.mission.progress += amount;
+        updateMissionUI();
+        if (state.mission.progress >= state.mission.target) {
+            state.mission.done = true;
+            state.score += state.mission.reward;
+            showFloat(`任務完成 +${state.mission.reward}`, '#f59e0b');
+        }
+    }
 
     // ============================================================
     // UTILITY
@@ -402,6 +448,8 @@
         state.correctCount = 0;
         state.mistakes = [];
         state.answered = false;
+        state.mission = createMission();
+        state.gameStartAt = performance.now();
 
         // Pick random idioms
         const pool = shuffle(IDIOM_DB);
@@ -413,12 +461,16 @@
 
         const labels = { meaning: '📖 看解釋猜成語', fill: '✍️ 成語填空', story: '📚 看情境選成語' };
         document.getElementById('mode-label').textContent = labels[mode];
+        updateMissionUI();
+        updatePhaseUI();
 
         renderQuestion();
     }
 
     function renderQuestion() {
         state.answered = false;
+        state.questionStartAt = performance.now();
+        updatePhaseUI();
         const q = state.questions[state.current];
         const idx = state.current;
         const total = state.totalQuestions;
@@ -632,9 +684,26 @@
         if (state.combo > state.maxCombo) state.maxCombo = state.combo;
         state.correctCount++;
 
+        markMission('correct');
+        if (state.mission?.id === 'combo' && !state.mission.done) {
+            state.mission.progress = Math.max(state.mission.progress, state.combo);
+            updateMissionUI();
+            if (state.mission.progress >= state.mission.target) {
+                state.mission.done = true;
+                state.score += state.mission.reward;
+                showFloat(`任務完成 +${state.mission.reward}`, '#f59e0b');
+            }
+        }
+
         const multiplier = 1 + Math.floor(state.combo / 3);
         const points = 10 * multiplier;
         state.score += points;
+
+        const answerSeconds = (performance.now() - state.questionStartAt) / 1000;
+        if (answerSeconds <= 4) {
+            state.score += 5;
+            showFloat('快速回答 +5', '#2563eb');
+        }
 
         updateCombo();
 
@@ -693,7 +762,8 @@
             '做得很好，快要滿分了！',
             '太厲害了，你是成語大師！'
         ];
-        document.getElementById('result-msg').textContent = `"${msgs[starsEarned]}"`;
+        const missionSuffix = state.mission?.done ? '（本局任務完成！）' : '（下次挑戰任務！）';
+        document.getElementById('result-msg').textContent = `"${msgs[starsEarned]} ${missionSuffix}"`;
 
         // Mistakes review
         const mistakesArea = document.getElementById('mistakes-area');

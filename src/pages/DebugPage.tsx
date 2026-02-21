@@ -242,6 +242,7 @@ export const DebugPage: React.FC = () => {
                 <GameModal
                     isOpen={!!selectedGame}
                     onClose={() => setSelectedGame(null)}
+                    onGoHome={() => setSelectedGame(null)}
                     gameUrl={selectedGame.url}
                     gameName={selectedGame.name}
                     gameId={selectedGame.id}

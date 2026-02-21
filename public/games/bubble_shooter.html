@@ -11,9 +11,12 @@
         body {
             font-family: 'Orbitron', sans-serif;
             background-color: #020617;
-            overflow: hidden;
-            touch-action: none;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: manipulation;
             user-select: none;
+            min-height: 100vh;
+            min-height: 100dvh;
         }
 
         .neon-text {
@@ -34,7 +37,7 @@
     </style>
 </head>
 
-<body class="h-screen flex flex-col items-center justify-center">
+<body class="min-h-screen h-[100dvh] flex flex-col items-center justify-start py-3 sm:py-5">
 
     <!-- Header UI -->
     <div id="ui-layer"
@@ -49,6 +52,8 @@
                     class="text-yellow-400 text-xs font-bold opacity-0 transition-opacity duration-300"
                     style="text-shadow:0 0 8px #eab308">
                 </div>
+                <div id="mission-display" class="text-cyan-300 text-[11px] font-bold text-center max-w-[150px] truncate"></div>
+                <div id="phase-display" class="text-fuchsia-300 text-[10px] font-bold"></div>
                 <div
                     class="bg-gradient-to-r from-purple-600/80 to-blue-600/80 rounded-lg px-3 py-1 border border-purple-400/50">
                     <div class="text-purple-200 text-[10px]">LEVEL</div>
@@ -80,6 +85,8 @@
             <div id="final-score" class="hidden mb-4">
                 <div class="text-yellow-400 text-sm">最終得分</div>
                 <div id="final-score-value" class="text-4xl text-white font-black">0</div>
+                <div id="summary-combo" class="text-cyan-300 text-sm mt-2">最高連擊：0x</div>
+                <div id="summary-mission" class="text-fuchsia-300 text-sm">任務：未開始</div>
             </div>
             <button onclick="startGame()"
                 class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-cyan-500/50 pointer-events-auto cursor-pointer">
@@ -89,7 +96,7 @@
     </div>
 
     <div
-        class="relative w-full h-full max-w-lg bg-slate-900 overflow-hidden shadow-2xl border-x-2 border-slate-700">
+        class="relative w-full max-w-lg aspect-square max-h-[calc(100dvh-8rem)] bg-slate-900 overflow-hidden shadow-2xl border-x-2 border-slate-700">
         <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
     </div>
 
@@ -99,6 +106,8 @@
         const scoreDisplay = document.getElementById('score');
         const levelDisplay = document.getElementById('level');
         const comboDisplay = document.getElementById('combo-display');
+        const missionDisplay = document.getElementById('mission-display');
+        const phaseDisplay = document.getElementById('phase-display');
         const menuScreen = document.getElementById('menu-screen');
         const previewCanvas = document.getElementById('preview-canvas');
         const previewCtx = previewCanvas.getContext('2d');
@@ -142,6 +151,8 @@
                 initialRows: 5,
                 totalPopped: 0,
                 levelTarget: 30,
+                mission: null,
+                gameStartAt: 0,
                 bgStars: Array.from({ length: 40 }, () => ({
                     x: Math.random(),
                     y: Math.random(),
@@ -157,6 +168,48 @@
         }
         window.addEventListener('resize', resize);
         resize();
+
+        function createMission() {
+            const pool = [
+                { key: 'popped', label: '消除 40 顆泡泡', target: 40, progress: 0, reward: 200 },
+                { key: 'combo', label: '達成 4 連擊', target: 4, progress: 0, reward: 260 },
+                { key: 'score', label: '得分突破 900 分', target: 900, progress: 0, reward: 220 }
+            ];
+            return { ...pool[Math.floor(Math.random() * pool.length)], completed: false };
+        }
+
+        function updateMissionUI() {
+            if (!state.mission) {
+                missionDisplay.textContent = '';
+                return;
+            }
+            const icon = state.mission.completed ? '✅' : '🎯';
+            missionDisplay.textContent = `${icon} ${state.mission.label} ${state.mission.progress}/${state.mission.target}`;
+        }
+
+        function updatePhaseLabel() {
+            if (!state.isPlaying) return;
+            const elapsed = (Date.now() - state.gameStartAt) / 1000;
+            let text = '✨ 開場驚喜';
+            if (elapsed >= 120) text = '🏁 結尾獎勵';
+            else if (elapsed >= 30) text = '🚀 精彩時刻';
+            else if (elapsed >= 10) text = '🎯 任務暖身';
+            phaseDisplay.textContent = text;
+        }
+
+        function markMission(type, value) {
+            if (!state.mission || state.mission.completed) return;
+            if (state.mission.key === type) {
+                state.mission.progress = Math.max(state.mission.progress, Math.floor(value));
+                if (state.mission.progress >= state.mission.target) {
+                    state.mission.completed = true;
+                    state.score += state.mission.reward;
+                    scoreDisplay.innerText = state.score;
+                    showFloatingScore(canvas.width / 2, canvas.height * 0.28, `任務完成 +${state.mission.reward}`, true);
+                }
+            }
+            updateMissionUI();
+        }
 
         // ── Hex Grid Helpers ──
         function getTileParams() {
@@ -264,6 +317,10 @@
             scoreDisplay.innerText = 0;
             levelDisplay.innerText = 1;
             comboDisplay.style.opacity = '0';
+            state.mission = createMission();
+            state.gameStartAt = Date.now();
+            phaseDisplay.textContent = '✨ 開場驚喜';
+            updateMissionUI();
 
             const active = getActiveColors();
             state.grid = [];
@@ -474,6 +531,9 @@
                 state.score += points;
                 state.totalPopped += totalPopped;
                 scoreDisplay.innerText = state.score;
+                markMission('popped', state.totalPopped);
+                markMission('combo', state.maxCombo);
+                markMission('score', state.score);
 
                 const pp = getPixelPos(c, r);
                 showFloatingScore(pp.x, pp.y, `+${points}`, state.combo >= 2);
@@ -625,8 +685,15 @@
         function gameOver() {
             state.isPlaying = false;
             document.getElementById('menu-title').textContent = 'GAME OVER';
-            document.getElementById('menu-message').textContent = `最高連擊 ${state.maxCombo}x ・ 等級 ${state.level}`;
+            const missionText = state.mission && state.mission.completed
+                ? '任務完成，太厲害了！'
+                : `任務進度 ${state.mission ? `${state.mission.progress}/${state.mission.target}` : '0/0'}`;
+            document.getElementById('menu-message').textContent = `最高連擊 ${state.maxCombo}x ・ 等級 ${state.level} ・ ${missionText}`;
             document.getElementById('final-score-value').textContent = state.score;
+            document.getElementById('summary-combo').textContent = `最高連擊：${state.maxCombo}x`;
+            document.getElementById('summary-mission').textContent = state.mission
+                ? `任務：${state.mission.label}（${state.mission.completed ? '完成' : '未完成'}）`
+                : '任務：未開始';
             document.getElementById('final-score').classList.remove('hidden');
             menuScreen.classList.remove('hidden');
         }
@@ -719,6 +786,7 @@
         function update() {
             updateParticles();
             updateScreenShake();
+            updatePhaseLabel();
             animFrame++;
 
             if (!state.activeBubble || !state.activeBubble.active) return;

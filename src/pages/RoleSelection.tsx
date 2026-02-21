@@ -133,27 +133,25 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                     </div>
 
                     {/* Children Grid */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
                         {children && children.length > 0 ? (
                             children.map((child) => (
                                 <button
                                     key={child.id}
                                     onClick={() => onChildSelected(child)}
-                                    className="clay-card hover:scale-105 transition-transform cursor-pointer p-5 flex items-center gap-4"
+                                    className="clay-card hover:scale-105 transition-transform cursor-pointer p-4 sm:p-5 flex items-center gap-3 sm:gap-4 min-w-0"
                                     style={{ borderRadius: '16px' }}
                                 >
                                     <div className="text-4xl flex-shrink-0">
                                         {child.avatar_url || '👦'}
                                     </div>
-                                    <div className="text-left">
-                                        <div className="font-heading font-bold text-lg" style={{ color: 'var(--color-text)' }}>
+                                    <div className="text-left min-w-0 flex-1">
+                                        <div
+                                            className="font-heading font-bold text-lg leading-tight break-words"
+                                            style={{ color: 'var(--color-text)' }}
+                                        >
                                             {child.name}
                                         </div>
-                                        {child.student_id && (
-                                            <div className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>
-                                                學號：{child.student_id}
-                                            </div>
-                                        )}
                                     </div>
                                 </button>
                             ))

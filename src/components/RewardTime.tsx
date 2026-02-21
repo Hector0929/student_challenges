@@ -10,6 +10,7 @@ interface RewardTimeProps {
     remainingQuests: number;
     totalQuests: number;
     userId: string;  // NEW: Required for star balance
+    onGoHome?: () => void;
 }
 
 import { GAMES, getFunGameColors, type Game } from '../lib/gameConfig';
@@ -18,7 +19,8 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
     isUnlocked,
     remainingQuests,
     totalQuests,
-    userId
+    userId,
+    onGoHome,
 }) => {
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -204,6 +206,7 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
                 <GameModal
                     isOpen={!!selectedGame}
                     onClose={() => setSelectedGame(null)}
+                    onGoHome={onGoHome}
                     gameUrl={selectedGame.url}
                     gameName={selectedGame.name}
                     gameId={selectedGame.id}

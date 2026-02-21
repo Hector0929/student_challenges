@@ -11,11 +11,12 @@
         body {
             font-family: 'Orbitron', sans-serif;
             background-color: #050510;
-            overflow: hidden;
-            touch-action: none;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: manipulation;
             perspective: 1000px;
-            max-height: 100vh;
-            max-height: 100dvh;
+            min-height: 100vh;
+            min-height: 100dvh;
         }
 
         .neon-text {
@@ -90,7 +91,7 @@
     </style>
 </head>
 
-<body class="h-screen flex flex-col items-center justify-center p-4 overflow-hidden">
+<body class="min-h-screen flex flex-col items-center justify-start p-3 sm:p-4 overflow-x-hidden overflow-y-auto">
 
     <!-- Header -->
     <div class="w-full max-w-lg flex justify-between items-center mb-6">
@@ -122,7 +123,7 @@
     </div>
 
     <!-- Grid Container -->
-    <div id="game-grid" class="grid gap-2 w-full max-w-sm mx-auto" style="max-height: 55vh;"></div>
+    <div id="game-grid" class="grid gap-2 w-full max-w-sm mx-auto" style="max-height: 58dvh;"></div>
 
     <!-- Start / Game Over Overlay -->
     <div id="overlay" class="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">

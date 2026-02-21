@@ -160,7 +160,7 @@ function AppContent() {
       </div>
 
       {user.role === 'child' ? (
-        <ChildDashboard userId={user.id} />
+        <ChildDashboard userId={user.id} onGoHome={exitProfile} />
       ) : (
         <>
           {/* Parent View Toggle */}

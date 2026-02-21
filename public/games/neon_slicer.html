@@ -11,8 +11,9 @@
         body {
             font-family: 'Orbitron', sans-serif;
             background-color: #0c0a09;
-            overflow: hidden;
-            touch-action: none;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: manipulation;
         }
 
         .neon-text {
@@ -25,7 +26,7 @@
     </style>
 </head>
 
-<body class="h-screen flex flex-col items-center justify-center">
+<body class="min-h-screen h-[100dvh] flex flex-col items-center justify-start py-2 sm:py-4">
 
     <!-- UI Overlay -->
     <div class="absolute top-4 left-4 z-10">
@@ -35,6 +36,12 @@
 
     <div class="absolute top-4 right-4 z-10 flex gap-2 text-2xl" id="lives">
         ❤️❤️❤️
+    </div>
+
+    <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10 text-center bg-black/45 rounded-lg px-3 py-2 border border-amber-500/30">
+        <div id="combo-display" class="text-cyan-300 text-xs font-bold">COMBO x0</div>
+        <div id="mission-display" class="text-amber-300 text-[11px]">🎯 任務準備中</div>
+        <div id="phase-display" class="text-rose-300 text-[10px]">✨ 開場驚喜</div>
     </div>
 
     <!-- Start / Game Over Screen -->
@@ -56,7 +63,9 @@
         </div>
     </div>
 
-    <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+    <div class="relative w-full max-w-lg h-[calc(100dvh-1rem)] sm:h-[calc(100dvh-2rem)] overflow-hidden">
+        <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+    </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -64,6 +73,9 @@
         const scoreDisplay = document.getElementById('score');
         const livesDisplay = document.getElementById('lives');
         const menuScreen = document.getElementById('menu-screen');
+        const comboDisplay = document.getElementById('combo-display');
+        const missionDisplay = document.getElementById('mission-display');
+        const phaseDisplay = document.getElementById('phase-display');
 
         let state = {
             isPlaying: false,
@@ -73,7 +85,14 @@
             particles: [],
             blade: [], // Array of points {x, y, life}
             lastTime: 0,
-            spawnTimer: 0
+            spawnTimer: 0,
+            combo: 0,
+            maxCombo: 0,
+            lastSliceAt: 0,
+            shapesSliced: 0,
+            bombsHit: 0,
+            mission: null,
+            gameStartAt: 0
         };
 
         const CONFIG = {
@@ -84,11 +103,53 @@
         };
 
         function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
         }
         window.addEventListener('resize', resize);
         resize();
+
+        function createMission() {
+            const pool = [
+                { key: 'slice', label: '切中 25 個圖形', target: 25, progress: 0, reward: 120 },
+                { key: 'combo', label: '達到 5 連斬', target: 5, progress: 0, reward: 150 },
+                { key: 'score', label: '得分突破 320', target: 320, progress: 0, reward: 140 }
+            ];
+            return { ...pool[Math.floor(Math.random() * pool.length)], completed: false };
+        }
+
+        function updateComboUI() {
+            comboDisplay.textContent = `COMBO x${state.combo}`;
+        }
+
+        function updateMissionUI() {
+            if (!state.mission) return;
+            const icon = state.mission.completed ? '✅' : '🎯';
+            missionDisplay.textContent = `${icon} ${state.mission.label} ${state.mission.progress}/${state.mission.target}`;
+        }
+
+        function updatePhaseLabel() {
+            if (!state.isPlaying) return;
+            const elapsed = (Date.now() - state.gameStartAt) / 1000;
+            let text = '✨ 開場驚喜';
+            if (elapsed >= 120) text = '🏁 結尾獎勵';
+            else if (elapsed >= 30) text = '🚀 精彩時刻';
+            else if (elapsed >= 10) text = '🎯 任務暖身';
+            phaseDisplay.textContent = text;
+        }
+
+        function markMission(type, value) {
+            if (!state.mission || state.mission.completed) return;
+            if (state.mission.key === type) {
+                state.mission.progress = Math.max(state.mission.progress, Math.floor(value));
+                if (state.mission.progress >= state.mission.target) {
+                    state.mission.completed = true;
+                    state.score += state.mission.reward;
+                    scoreDisplay.innerText = state.score;
+                }
+            }
+            updateMissionUI();
+        }
 
         function startGame() {
             menuScreen.classList.add('hidden');
@@ -100,10 +161,22 @@
                 particles: [],
                 blade: [],
                 lastTime: performance.now(),
-                spawnTimer: 0
+                spawnTimer: 0,
+                combo: 0,
+                maxCombo: 0,
+                lastSliceAt: 0,
+                shapesSliced: 0,
+                bombsHit: 0,
+                mission: createMission(),
+                gameStartAt: Date.now()
             };
             scoreDisplay.innerText = 0;
             updateLives();
+            updateComboUI();
+            updateMissionUI();
+            phaseDisplay.textContent = '✨ 開場驚喜';
+            document.querySelector('#menu-screen h1').innerText = 'NEON SLICER';
+            document.getElementById('menu-message').innerText = 'SLICE SHAPES • AVOID BOMBS';
             requestAnimationFrame(gameLoop);
         }
 
@@ -186,6 +259,9 @@
                     obj.active = false;
 
                     if (obj.type === 'bomb') {
+                        state.combo = 0;
+                        updateComboUI();
+                        state.bombsHit++;
                         state.lives--;
                         updateLives();
                         spawnParticles(obj.x, obj.y, '#ef4444', 30);
@@ -197,8 +273,21 @@
                             gameOver();
                         }
                     } else {
-                        state.score += 10;
+                        const now = Date.now();
+                        if (now - state.lastSliceAt <= 1400) state.combo++;
+                        else state.combo = 1;
+                        state.lastSliceAt = now;
+                        if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+
+                        const gain = 10 + Math.max(0, state.combo - 1) * 2;
+                        state.score += gain;
                         scoreDisplay.innerText = state.score;
+                        updateComboUI();
+
+                        state.shapesSliced++;
+                        markMission('slice', state.shapesSliced);
+                        markMission('combo', state.maxCombo);
+                        markMission('score', state.score);
                         spawnParticles(obj.x, obj.y, obj.color, 15);
                     }
                 }
@@ -228,10 +317,15 @@
             state.isPlaying = false;
             menuScreen.classList.remove('hidden');
             document.querySelector('#menu-screen h1').innerText = "GAME OVER";
-            document.getElementById('menu-message').innerText = `SCORE: ${state.score}`;
+            const missionText = state.mission
+                ? `${state.mission.label}（${state.mission.completed ? '完成' : '未完成'}）`
+                : '未開始';
+            document.getElementById('menu-message').innerText = `SCORE: ${state.score}｜最高連斬 ${state.maxCombo}｜任務 ${missionText}`;
         }
 
         function update() {
+            updatePhaseLabel();
+
             // Spawn
             state.spawnTimer++;
             // Difficulty ramps up
@@ -254,6 +348,8 @@
                     // Penalty for missing non-bomb?
                     // Fruit Ninja usually: -1 life for missed fruit.
                     if (obj.active && obj.type === 'shape') {
+                        state.combo = 0;
+                        updateComboUI();
                         state.lives--;
                         updateLives();
                         if (state.lives <= 0) gameOver();

@@ -13,7 +13,8 @@
             font-family: 'DotGothic16', sans-serif;
             background-color: #0f172a;
             color: white;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             touch-action: manipulation;
         }
 
@@ -84,10 +85,10 @@
     </style>
 </head>
 
-<body class="h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex items-start justify-center p-3 sm:p-4">
 
     <!-- Category Selection Screen -->
-    <div id="category-screen" class="w-full max-w-lg">
+    <div id="category-screen" class="w-full max-w-lg my-2 sm:my-4">
         <div class="text-center mb-8">
             <h1 class="text-4xl font-bold text-yellow-400 mb-2">發音選單字</h1>
             <p class="text-slate-400">請選擇一個主題開始遊戲</p>
@@ -99,7 +100,7 @@
     </div>
 
     <!-- Game Screen -->
-    <div id="game-screen" class="hidden w-full max-w-lg bg-slate-800 p-6 rounded-2xl pixel-border relative">
+    <div id="game-screen" class="hidden w-full max-w-lg bg-slate-800 p-4 sm:p-6 rounded-2xl pixel-border relative my-2 sm:my-4 max-h-[calc(100dvh-1rem)] overflow-y-auto">
         <!-- HUD -->
         <div class="flex justify-between items-center mb-8">
             <div class="flex items-center gap-2">

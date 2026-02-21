@@ -160,7 +160,7 @@ export const HomeButton: React.FC<HomeButtonProps> = ({
             onTouchEnd={handleTouchEnd}
             onMouseDown={handleMouseDown}
             className={`
-                fixed right-4 z-50
+                fixed right-4 z-40
                 w-14 h-14 
                 bg-pokeball-red hover:bg-red-700
                 border-4 border-deep-black

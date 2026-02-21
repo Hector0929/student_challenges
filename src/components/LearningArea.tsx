@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 interface LearningAreaProps {
     userId: string;
+    onGoHome?: () => void;
 }
 
 // Pastel color mapping for learning games
@@ -32,7 +33,7 @@ const getGameColors = (gameId: string) => {
     };
 };
 
-export const LearningArea: React.FC<LearningAreaProps> = ({ userId }) => {
+export const LearningArea: React.FC<LearningAreaProps> = ({ userId, onGoHome }) => {
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const queryClient = useQueryClient();
@@ -137,6 +138,7 @@ export const LearningArea: React.FC<LearningAreaProps> = ({ userId }) => {
                 <GameModal
                     isOpen={!!selectedGame}
                     onClose={() => setSelectedGame(null)}
+                    onGoHome={onGoHome}
                     gameUrl={selectedGame.url}
                     gameName={selectedGame.name}
                     gameId={selectedGame.id}

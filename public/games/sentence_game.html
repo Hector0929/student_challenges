@@ -11,6 +11,8 @@
     <style>
         body {
             font-family: 'DotGothic16', sans-serif;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
 
         .pixel-font {
@@ -35,7 +37,8 @@
             font-weight: bold;
             color: #2d3748;
             user-select: none;
-            touch-action: none;
+            touch-action: manipulation;
+            -webkit-user-drag: none;
         }
 
         .word-card:active {
@@ -61,9 +64,9 @@
     </style>
 </head>
 
-<body class="bg-blue-50 h-screen overflow-hidden flex flex-col items-center justify-center">
+<body class="bg-blue-50 min-h-screen flex flex-col items-center justify-start">
 
-    <div class="w-full max-w-2xl px-4 flex flex-col gap-6 h-full max-h-[800px] py-8">
+    <div class="w-full max-w-2xl px-4 flex flex-col gap-5 h-full min-h-[100dvh] py-4 sm:py-6">
 
         <!-- Header -->
         <div class="flex justify-between items-center">
@@ -189,13 +192,23 @@
             sourceSortable = new Sortable(sourceEl, {
                 group: 'shared',
                 animation: 150,
-                ghostClass: 'ghost'
+                ghostClass: 'ghost',
+                forceFallback: true,
+                fallbackTolerance: 3,
+                delayOnTouchOnly: true,
+                delay: 60,
+                touchStartThreshold: 5
             });
 
             targetSortable = new Sortable(targetEl, {
                 group: 'shared',
                 animation: 150,
-                ghostClass: 'ghost'
+                ghostClass: 'ghost',
+                forceFallback: true,
+                fallbackTolerance: 3,
+                delayOnTouchOnly: true,
+                delay: 60,
+                touchStartThreshold: 5
             });
 
             // Load custom sentences if available

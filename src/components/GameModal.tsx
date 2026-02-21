@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Star, Clock, Play, PauseCircle } from 'lucide-react';
+import { X, Star, Clock, Play, PauseCircle, ArrowLeft, Home, Square } from 'lucide-react';
 import { RPGDialog } from './RPGDialog';
 import { GAME_COST, GAME_DURATION_SECONDS } from '../lib/constants';
+import { useGameWindowController } from '../hooks/useGameWindowController';
 
 interface GameModalProps {
     isOpen: boolean;
@@ -16,6 +17,7 @@ interface GameModalProps {
     mode?: 'play' | 'practice'; // New prop
     practiceRewardStars?: number;
     onPracticeComplete?: (stars: number) => Promise<void> | void;
+    onGoHome?: () => void;
 }
 
 type GamePhase = 'confirm' | 'playing' | 'paused' | 'timeup' | 'insufficient';
@@ -30,12 +32,18 @@ const TopHUD = ({
     gameName,
     timeRemaining,
     progressPercent,
-    onPauseGame
+    onPauseGame,
+    onBack,
+    onEndGame,
+    onGoHome,
 }: {
     gameName: string;
     timeRemaining: number;
     progressPercent: number;
     onPauseGame: () => void;
+    onBack: () => void;
+    onEndGame: () => void;
+    onGoHome: () => void;
 }) => {
     const formatTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
@@ -44,18 +52,23 @@ const TopHUD = ({
     };
 
     return (
-        <div className="bg-white border-b-4 border-indigo-100 p-3 flex items-center justify-between shadow-sm z-10 shrink-0">
-            <div className="flex items-center gap-3">
-                <div className="bg-indigo-100 p-2 rounded-xl">
-                    <span className="text-2xl">🎮</span>
-                </div>
-                <span className="font-pixel text-indigo-900 hidden sm:inline">{gameName}</span>
+        <div className="bg-white border-b-4 border-indigo-100 p-2 sm:p-3 flex items-center justify-between shadow-sm z-10 shrink-0 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+                <button
+                    onClick={onBack}
+                    className="p-2 rounded-xl border-2 border-indigo-100 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                    aria-label="返回"
+                    title="返回"
+                >
+                    <ArrowLeft size={18} />
+                </button>
+                <span className="font-pixel text-indigo-900 text-xs sm:text-sm truncate max-w-[90px] sm:max-w-[180px]">{gameName}</span>
             </div>
 
-            <div className="flex items-center gap-3 bg-indigo-900 rounded-full py-2 px-4 shadow-lg transform scale-100 hover:scale-105 transition-transform">
-                <Clock size={20} className={`${timeRemaining <= 30 ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`} />
+            <div className="flex items-center gap-2 sm:gap-3 bg-indigo-900 rounded-full py-1.5 sm:py-2 px-2.5 sm:px-4 shadow-lg">
+                <Clock size={18} className={`${timeRemaining <= 30 ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`} />
                 <div className="flex flex-col items-start w-16">
-                    <span className={`font-pixel text-lg leading-none ${timeRemaining <= 30 ? 'text-red-400' : 'text-white'}`}>
+                    <span className={`font-pixel text-base sm:text-lg leading-none ${timeRemaining <= 30 ? 'text-red-400' : 'text-white'}`}>
                         {formatTime(timeRemaining)}
                     </span>
                 </div>
@@ -67,13 +80,32 @@ const TopHUD = ({
                 </div>
             </div>
 
-            <button
-                onClick={onPauseGame}
-                className="group p-2 hover:bg-yellow-50 rounded-xl transition-colors flex items-center gap-2 text-gray-400 hover:text-yellow-600"
-            >
-                <span className="font-pixel text-xs hidden sm:inline group-hover:opacity-100 opacity-0 transition-opacity">暫停</span>
-                <PauseCircle size={24} />
-            </button>
+            <div className="flex items-center gap-1 sm:gap-2">
+                <button
+                    onClick={onPauseGame}
+                    className="p-2 rounded-xl border-2 border-yellow-100 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors"
+                    aria-label="暫停"
+                    title="暫停"
+                >
+                    <PauseCircle size={18} />
+                </button>
+                <button
+                    onClick={onEndGame}
+                    className="p-2 rounded-xl border-2 border-rose-100 bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
+                    aria-label="停止"
+                    title="停止"
+                >
+                    <Square size={18} />
+                </button>
+                <button
+                    onClick={onGoHome}
+                    className="p-2 rounded-xl border-2 border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                    aria-label="回首頁"
+                    title="回首頁"
+                >
+                    <Home size={18} />
+                </button>
+            </div>
         </div>
     );
 };
@@ -173,6 +205,7 @@ const TimeUpOverlay = ({
 export const GameModal: React.FC<GameModalProps> = ({
     isOpen,
     onClose,
+    onGoHome,
     gameUrl,
     gameName,
 
@@ -194,6 +227,26 @@ export const GameModal: React.FC<GameModalProps> = ({
     const starBalanceRef = useRef(starBalance);
     const practiceRewardHandledRef = useRef(false);
     const [showRewardFx, setShowRewardFx] = useState(false);
+    const isImmersivePhase = phase === 'playing' || phase === 'paused' || phase === 'timeup';
+
+    const clearTimer = React.useCallback(() => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+    }, []);
+
+    const {
+        handleEndGame,
+        handleGoHome,
+        resetGuards,
+    } = useGameWindowController({
+        isOpen,
+        isImmersivePhase,
+        onClose,
+        onGoHome,
+        clearTimer,
+    });
 
     const playPracticeRewardSound = () => {
         try {
@@ -251,6 +304,7 @@ export const GameModal: React.FC<GameModalProps> = ({
             document.body.style.overflow = 'unset';
             hasInitialized.current = false;
             setPhase('confirm');
+            resetGuards();
             if (timerRef.current) {
                 console.log('[GameModal] Closing modal, clearing timer');
                 clearInterval(timerRef.current);
@@ -351,13 +405,6 @@ export const GameModal: React.FC<GameModalProps> = ({
         }
     };
 
-    const handleEndGame = () => {
-        if (timerRef.current) {
-            clearInterval(timerRef.current);
-        }
-        onClose();
-    };
-
     const handlePauseGame = () => {
         setPhase('paused');
     };
@@ -369,12 +416,15 @@ export const GameModal: React.FC<GameModalProps> = ({
     const renderContent = () => {
         if (phase === 'playing' || phase === 'paused' || phase === 'timeup') {
             return (
-                <div className="flex flex-col h-[68dvh] sm:h-[80vh] bg-indigo-50 rounded-xl overflow-hidden relative">
+                <div className={`flex flex-col ${isImmersivePhase ? 'h-full rounded-none sm:rounded-2xl' : 'h-[78dvh] sm:h-[82vh] rounded-xl'} bg-indigo-50 overflow-hidden relative`}>
                     <TopHUD
                         gameName={gameName}
                         timeRemaining={timeRemaining}
                         progressPercent={progressPercent}
                         onPauseGame={handlePauseGame}
+                        onBack={handleEndGame}
+                        onEndGame={handleEndGame}
+                        onGoHome={handleGoHome}
                     />
 
                     {phase === 'paused' && (
@@ -593,10 +643,20 @@ export const GameModal: React.FC<GameModalProps> = ({
         }
     };
 
+    if (isImmersivePhase) {
+        return (
+            <div className="fixed inset-0 z-[80] bg-black/45 backdrop-blur-[1px] p-0 sm:p-3">
+                <div className="w-full h-full sm:max-w-6xl sm:mx-auto sm:h-[calc(100dvh-1.5rem)]">
+                    {renderContent()}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <RPGDialog
             isOpen={isOpen}
-            onClose={phase === 'playing' ? undefined : handleEndGame}
+            onClose={handleEndGame}
             title={phase === 'confirm' || phase === 'insufficient' ? (mode === 'practice' ? '📚 學習時間' : '🎮 遊戲付費') : `🎮 ${gameName}`}
         >
             {renderContent()}

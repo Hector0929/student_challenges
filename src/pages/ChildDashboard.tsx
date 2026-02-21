@@ -20,10 +20,11 @@ import { useUser } from '../contexts/UserContext';
 
 interface ChildDashboardProps {
     userId: string;
+    onGoHome?: () => void;
 }
 
 
-export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
+export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome }) => {
     // Log current user ID for debugging cross-browser issues
     useEffect(() => {
         console.log('👤 ChildDashboard mounted with userId:', userId);
@@ -390,7 +391,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
             )}
 
             {/* Learning Area Section (Always Visible) */}
-            <LearningArea userId={userId} />
+            <LearningArea userId={userId} onGoHome={onGoHome} />
 
             {/* Monster Shop Section */}
             <ChildMonsterShop userId={userId} starBalance={starBalance || 0} />
@@ -401,6 +402,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId }) => {
                 remainingQuests={remainingQuests}
                 totalQuests={questTarget}
                 userId={userId}
+                onGoHome={onGoHome}
             />
 
             {/* Completion Message */}

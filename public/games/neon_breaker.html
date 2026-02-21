@@ -11,8 +11,11 @@
         body {
             font-family: 'Orbitron', sans-serif;
             background-color: #050510;
-            overflow: hidden;
-            touch-action: none;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: manipulation;
+            min-height: 100vh;
+            min-height: 100dvh;
         }
 
         .neon-text {
@@ -30,7 +33,7 @@
     </style>
 </head>
 
-<body class="h-screen flex flex-col items-center justify-center">
+<body class="min-h-screen h-[100dvh] flex flex-col items-center justify-start py-3 sm:py-5">
 
     <!-- UI Overlay -->
     <div id="ui-layer"
@@ -45,6 +48,17 @@
                 <div id="lives" class="text-2xl text-white font-bold">❤️❤️❤️</div>
             </div>
         </div>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+            <div class="bg-black/50 backdrop-blur rounded-xl px-4 py-2 border border-pink-500/50">
+                <div class="text-pink-300 text-xs">COMBO</div>
+                <div id="combo" class="text-white text-xl font-bold">0</div>
+            </div>
+            <div class="bg-black/50 backdrop-blur rounded-xl px-4 py-2 border border-pink-500/50">
+                <div class="text-pink-300 text-xs">MISSION</div>
+                <div id="mission" class="text-white text-xs leading-5">準備中...</div>
+            </div>
+        </div>
+        <div id="phase" class="text-center text-pink-200 text-sm font-bold">開始 10 秒驚喜</div>
     </div>
 
     <!-- Start / Game Over Screen -->
@@ -58,6 +72,8 @@
             <p id="menu-message" class="text-pink-200/70 mb-8 tracking-wider">
                 SMASH THE SYSTEM
             </p>
+            <div id="summaryCombo" class="text-cyan-300 text-sm mb-1 hidden">最高連擊：0</div>
+            <div id="summaryMission" class="text-yellow-300 text-sm mb-4 hidden">任務：未完成</div>
 
             <button onclick="startGame()"
                 class="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-pink-500/50">
@@ -67,7 +83,7 @@
     </div>
 
     <!-- Game Canvas -->
-    <div class="relative w-full h-full max-w-lg bg-gray-900/90 overflow-hidden shadow-2xl border-x-2 border-gray-800">
+    <div class="relative w-full max-w-lg aspect-square max-h-[calc(100dvh-8rem)] bg-gray-900/90 overflow-hidden shadow-2xl border-x-2 border-gray-800">
         <canvas id="gameCanvas" class="w-full h-full block"></canvas>
     </div>
 
@@ -77,6 +93,11 @@
         const scoreDisplay = document.getElementById('score');
         const livesDisplay = document.getElementById('lives');
         const menuScreen = document.getElementById('menu-screen');
+        const comboDisplay = document.getElementById('combo');
+        const missionDisplay = document.getElementById('mission');
+        const phaseDisplay = document.getElementById('phase');
+        const summaryCombo = document.getElementById('summaryCombo');
+        const summaryMission = document.getElementById('summaryMission');
 
         // Config
         const CONFIG = {
@@ -94,12 +115,59 @@
             isPlaying: false,
             score: 0,
             lives: 3,
+            combo: 0,
+            maxCombo: 0,
+            bricksBroken: 0,
+            mission: null,
+            gameStartAt: 0,
             paddle: { x: 0, y: 0 },
             ball: { x: 0, y: 0, dx: 0, dy: 0, active: false },
             bricks: [],
             particles: [],
             lastTime: 0
         };
+
+        function createMission() {
+            const missions = [
+                { id: 'break', title: '擊碎 24 塊磚', target: 24, progress: 0, reward: 300 },
+                { id: 'combo', title: '達成 6 連擊', target: 6, progress: 0, reward: 350 }
+            ];
+            return { ...missions[Math.floor(Math.random() * missions.length)], done: false };
+        }
+
+        function updateComboUI() {
+            comboDisplay.innerText = `${state.combo}`;
+        }
+
+        function updateMissionUI() {
+            if (!state.mission) return;
+            missionDisplay.innerText = `${state.mission.title} (${Math.min(state.mission.progress, state.mission.target)}/${state.mission.target})`;
+        }
+
+        function updatePhaseLabel() {
+            if (!state.isPlaying) return;
+            const elapsed = (performance.now() - state.gameStartAt) / 1000;
+            if (elapsed <= 10) {
+                phaseDisplay.innerText = '開始 10 秒驚喜';
+            } else if (elapsed <= 40) {
+                phaseDisplay.innerText = '30 秒任務暖身';
+            } else if (elapsed <= 160) {
+                phaseDisplay.innerText = '120 秒精彩時刻';
+            } else {
+                phaseDisplay.innerText = '結束獎勵';
+            }
+        }
+
+        function markMission(type, amount = 1) {
+            if (!state.mission || state.mission.done || state.mission.id !== type) return;
+            state.mission.progress += amount;
+            updateMissionUI();
+            if (state.mission.progress >= state.mission.target) {
+                state.mission.done = true;
+                state.score += state.mission.reward;
+                scoreDisplay.innerText = state.score;
+            }
+        }
 
         // Resize
         function resize() {
@@ -133,8 +201,18 @@
             menuScreen.classList.add('hidden');
             state.score = 0;
             state.lives = 3;
+            state.combo = 0;
+            state.maxCombo = 0;
+            state.bricksBroken = 0;
+            state.mission = createMission();
+            state.gameStartAt = performance.now();
             updateLives();
+            updateComboUI();
+            updateMissionUI();
+            phaseDisplay.innerText = '開始 10 秒驚喜';
             scoreDisplay.innerText = 0;
+            summaryCombo.classList.add('hidden');
+            summaryMission.classList.add('hidden');
 
             initBricks();
             resetBall();
@@ -171,6 +249,12 @@
             const msg = win ? "YOU WIN!" : "GAME OVER";
             document.querySelector('#menu-screen h1').innerText = msg;
             document.getElementById('menu-message').innerText = `SCORE: ${state.score}`;
+            summaryCombo.innerText = `最高連擊：${state.maxCombo}`;
+            summaryMission.innerText = state.mission?.done
+                ? `任務完成：${state.mission.title}`
+                : `任務進度：${state.mission?.title || '—'}`;
+            summaryCombo.classList.remove('hidden');
+            summaryMission.classList.remove('hidden');
         }
 
         // Input
@@ -239,6 +323,8 @@
             // Bottom (Death)
             if (state.ball.y - CONFIG.ballRadius > canvas.height) {
                 state.lives--;
+                state.combo = 0;
+                updateComboUI();
                 updateLives();
                 if (state.lives <= 0) {
                     gameOver(false);
@@ -280,6 +366,19 @@
                     b.active = false;
                     state.ball.dy = -state.ball.dy; // Bounce
                     state.score += 100;
+                    state.combo += 1;
+                    state.maxCombo = Math.max(state.maxCombo, state.combo);
+                    state.bricksBroken += 1;
+                    updateComboUI();
+                    markMission('break');
+                    if (state.mission?.id === 'combo' && !state.mission.done) {
+                        state.mission.progress = Math.max(state.mission.progress, state.combo);
+                        updateMissionUI();
+                        if (state.mission.progress >= state.mission.target) {
+                            state.mission.done = true;
+                            state.score += state.mission.reward;
+                        }
+                    }
                     scoreDisplay.innerText = state.score;
                     spawnParticles(b.x + b.w / 2, b.y + b.h / 2, b.color);
                     hit = true;
@@ -348,6 +447,7 @@
 
         function gameLoop(time) {
             if (!state.isPlaying) return;
+            updatePhaseLabel();
             update();
             draw();
             requestAnimationFrame(gameLoop);

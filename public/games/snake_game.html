@@ -11,8 +11,11 @@
         body {
             font-family: 'Orbitron', sans-serif;
             background-color: #050510;
-            overflow: hidden;
-            touch-action: none;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: manipulation;
+            min-height: 100vh;
+            min-height: 100dvh;
             /* Prevent zoom/scroll */
         }
 
@@ -59,13 +62,13 @@
     </style>
 </head>
 
-<body class="h-screen flex flex-col items-center justify-center">
+<body class="min-h-screen h-[100dvh] flex flex-col items-center justify-start py-3 sm:py-5">
 
     <!-- UI Overlay -->
     <div id="ui-layer"
         class="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-10 w-full max-w-lg mx-auto">
         <!-- Header -->
-        <div class="flex justify-between items-start">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 items-start">
             <div class="glass-panel rounded-xl px-4 py-2 border border-cyan-500/50">
                 <div class="text-cyan-400 text-xs">SCORE</div>
                 <div id="score" class="text-2xl text-white font-bold">0</div>
@@ -74,7 +77,16 @@
                 <div class="text-cyan-400 text-xs">HIGH</div>
                 <div id="high-score" class="text-2xl text-white font-bold">0</div>
             </div>
+            <div class="glass-panel rounded-xl px-4 py-2 border border-cyan-500/50">
+                <div class="text-cyan-400 text-xs">COMBO</div>
+                <div id="combo" class="text-2xl text-white font-bold">0</div>
+            </div>
+            <div class="glass-panel rounded-xl px-4 py-2 border border-cyan-500/50">
+                <div class="text-cyan-400 text-xs">MISSION</div>
+                <div id="mission" class="text-[11px] leading-4 text-white font-bold">準備中...</div>
+            </div>
         </div>
+        <div id="phase" class="text-center text-cyan-200 text-sm font-bold mt-2">開始 10 秒驚喜</div>
     </div>
 
     <!-- Start / Game Over Screen -->
@@ -97,7 +109,7 @@
 
     <!-- Game Canvas -->
     <div
-        class="relative w-full max-w-lg aspect-square neon-border rounded-lg bg-black/50 overflow-hidden shadow-2xl shadow-cyan-900/50">
+        class="relative w-full max-w-lg aspect-square max-h-[calc(100dvh-8rem)] neon-border rounded-lg bg-black/50 overflow-hidden shadow-2xl shadow-cyan-900/50">
         <canvas id="gameCanvas" class="w-full h-full block"></canvas>
     </div>
 
@@ -120,6 +132,9 @@
         const ctx = canvas.getContext('2d');
         const scoreDisplay = document.getElementById('score');
         const highScoreDisplay = document.getElementById('high-score');
+        const comboDisplay = document.getElementById('combo');
+        const missionDisplay = document.getElementById('mission');
+        const phaseDisplay = document.getElementById('phase');
         const menuScreen = document.getElementById('menu-screen');
         const mobileControls = document.getElementById('mobile-controls');
 
@@ -138,8 +153,55 @@
             nextVel: { x: 0, y: 0 }, // Buffered input prevent self-collision
             speed: GAME_SPEED_START,
             lastTime: 0,
-            accumulatedTime: 0
+            accumulatedTime: 0,
+            combo: 0,
+            maxCombo: 0,
+            foodsEaten: 0,
+            mission: null,
+            gameStartAt: 0
         };
+
+        function createMission() {
+            const missions = [
+                { id: 'foods', title: '吃到 8 顆果實', target: 8, progress: 0, reward: 40 },
+                { id: 'edge', title: '邊邊吃果實 4 次', target: 4, progress: 0, reward: 60 }
+            ];
+            return { ...missions[Math.floor(Math.random() * missions.length)], done: false };
+        }
+
+        function updateComboUI() {
+            comboDisplay.innerText = state.combo;
+        }
+
+        function updateMissionUI() {
+            if (!state.mission) return;
+            missionDisplay.innerText = `${state.mission.title} (${Math.min(state.mission.progress, state.mission.target)}/${state.mission.target})`;
+        }
+
+        function updatePhaseLabel() {
+            if (!state.isPlaying) return;
+            const elapsed = (performance.now() - state.gameStartAt) / 1000;
+            if (elapsed <= 10) {
+                phaseDisplay.innerText = '開始 10 秒驚喜';
+            } else if (elapsed <= 40) {
+                phaseDisplay.innerText = '30 秒任務暖身';
+            } else if (elapsed <= 160) {
+                phaseDisplay.innerText = '120 秒精彩時刻';
+            } else {
+                phaseDisplay.innerText = '結束獎勵';
+            }
+        }
+
+        function markMission(type, amount = 1) {
+            if (!state.mission || state.mission.done || state.mission.id !== type) return;
+            state.mission.progress += amount;
+            updateMissionUI();
+            if (state.mission.progress >= state.mission.target) {
+                state.mission.done = true;
+                state.score += state.mission.reward;
+                scoreDisplay.innerText = state.score;
+            }
+        }
 
         // Initialize High Score
         highScoreDisplay.innerText = state.highScore;
@@ -169,7 +231,15 @@
             menuScreen.classList.add('hidden');
             state.score = 0;
             state.speed = GAME_SPEED_START;
+            state.combo = 0;
+            state.maxCombo = 0;
+            state.foodsEaten = 0;
+            state.mission = createMission();
+            state.gameStartAt = performance.now();
             scoreDisplay.innerText = 0;
+            updateComboUI();
+            updateMissionUI();
+            phaseDisplay.innerText = '開始 10 秒驚喜';
 
             // Reset Snake
             state.snake = [
@@ -198,7 +268,8 @@
                 highScoreDisplay.innerText = state.highScore;
             }
 
-            document.getElementById('menu-message').innerText = `GAME OVER - SCORE: ${state.score}`;
+            const missionText = state.mission?.done ? '任務完成 ✅' : '任務下次再挑戰 💪';
+            document.getElementById('menu-message').innerText = `分數 ${state.score}｜最高連擊 ${state.maxCombo}｜${missionText}`;
             document.querySelector('#menu-screen h1').innerText = "CRASHED";
         }
 
@@ -286,8 +357,23 @@
 
             // Eat Food
             if (head.x === state.food.x && head.y === state.food.y) {
-                state.score += 10;
+                state.combo += 1;
+                state.maxCombo = Math.max(state.maxCombo, state.combo);
+                state.foodsEaten += 1;
+
+                const nearWall = head.x <= 1 || head.y <= 1 || head.x >= TILE_COUNT - 2 || head.y >= TILE_COUNT - 2;
+                const comboBonus = Math.min(20, state.combo * 2);
+                const edgeBonus = nearWall ? 12 : 0;
+
+                state.score += 10 + comboBonus + edgeBonus;
                 scoreDisplay.innerText = state.score;
+                updateComboUI();
+
+                markMission('foods');
+                if (nearWall) {
+                    markMission('edge');
+                }
+
                 spawnFood();
 
                 // Speed up slightly
@@ -354,6 +440,8 @@
 
         function gameLoop(time) {
             if (!state.isPlaying) return;
+
+            updatePhaseLabel();
 
             const dt = time - state.lastTime;
             state.lastTime = time;

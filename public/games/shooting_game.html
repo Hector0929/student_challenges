@@ -12,8 +12,9 @@
             font-family: 'Orbitron', sans-serif;
             background-color: #0f0b1e;
             color: white;
-            overflow: hidden;
-            touch-action: none;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: manipulation;
         }
 
         .neon-text {
@@ -84,11 +85,11 @@
     </style>
 </head>
 
-<body class="bg-[#0f0b1e] text-white overflow-hidden touch-action-none h-screen w-screen flex flex-col">
+<body class="bg-[#0f0b1e] text-white overflow-x-hidden overflow-y-auto min-h-screen h-[100dvh] w-screen flex flex-col">
 
     <!-- Top Stats Bar -->
     <div class="flex-none p-2 z-20">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
+        <div class="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-2 items-center">
             <div class="neon-box rounded-xl px-4 py-2 flex gap-4 bg-[#0f0b1e]/80 backdrop-blur">
                 <span class="text-purple-400 font-bold text-sm md:text-base">SCORE</span>
                 <span id="scoreDisplay" class="text-lg md:text-xl text-white">0</span>
@@ -96,6 +97,14 @@
             <div class="neon-box rounded-xl px-4 py-2 flex gap-1 md:gap-2 bg-[#0f0b1e]/80 backdrop-blur">
                 <span class="text-red-500 font-bold text-sm md:text-base">LIVES</span>
                 <span id="livesDisplay" class="text-sm md:text-xl text-white tracking-widest">❤️❤️❤️❤️❤️❤️</span>
+            </div>
+            <div class="neon-box rounded-xl px-4 py-2 bg-[#0f0b1e]/80 backdrop-blur">
+                <div class="text-cyan-300 font-bold text-xs md:text-sm">連擊</div>
+                <div id="streakDisplay" class="text-white text-base md:text-lg">0</div>
+            </div>
+            <div class="neon-box rounded-xl px-4 py-2 bg-[#0f0b1e]/80 backdrop-blur">
+                <div class="text-yellow-300 font-bold text-xs md:text-sm">本局任務</div>
+                <div id="missionDisplay" class="text-white text-xs md:text-sm leading-5">準備中...</div>
             </div>
         </div>
     </div>
@@ -111,6 +120,7 @@
                 class="neon-text drop-shadow-xl inline-block bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-5xl font-bold text-transparent md:text-6xl">
                 READY?
             </div>
+            <div id="phaseDisplay" class="mt-2 text-cyan-200 text-sm font-bold">開始 10 秒驚喜</div>
             <!-- Timer Bar -->
             <div class="mx-auto mt-2 h-2 w-64 overflow-hidden rounded-full bg-gray-800/50 backdrop-blur-sm">
                 <div id="questionTimerBar"
@@ -152,6 +162,9 @@
             <h2 class="neon-text mb-2 text-3xl font-bold text-purple-400">MISSION COMPLETE!</h2>
             <p class="mb-2 text-gray-300">FINAL SCORE</p>
             <p id="finalScore" class="mb-8 text-5xl font-bold text-white text-shadow-lg">0</p>
+            <div class="mb-2 text-sm text-cyan-300" id="summaryStreak">最高連擊：0</div>
+            <div class="mb-2 text-sm text-yellow-300" id="summaryMission">任務：未完成</div>
+            <div class="mb-6 text-sm text-purple-200" id="summaryMessage">太棒了！</div>
             <button id="restartGameButton"
                 class="clay-btn w-full rounded-xl px-8 py-3 text-xl font-bold text-white transition-transform hover:scale-105 active:scale-95">
                 PLAY AGAIN
@@ -192,7 +205,12 @@
             specialReady: false,
             lastSpecialScore: 0,
             shake: 0,
-            slowMo: false
+            slowMo: false,
+            streak: 0,
+            maxStreak: 0,
+            correctAnswers: 0,
+            mission: null,
+            gameStartAt: 0
         };
 
         // Entities
@@ -236,6 +254,56 @@
         const celebrationScreen = document.getElementById('celebrationScreen');
         const finalScoreDisplay = document.getElementById('finalScore');
         const restartGameButton = document.getElementById('restartGameButton');
+        const streakDisplay = document.getElementById('streakDisplay');
+        const missionDisplay = document.getElementById('missionDisplay');
+        const phaseDisplay = document.getElementById('phaseDisplay');
+        const summaryStreak = document.getElementById('summaryStreak');
+        const summaryMission = document.getElementById('summaryMission');
+        const summaryMessage = document.getElementById('summaryMessage');
+
+        function createMission() {
+            const missions = [
+                { id: 'correct', title: '答對 8 題', target: 8, progress: 0, reward: 120 },
+                { id: 'streak', title: '連續答對 5 題', target: 5, progress: 0, reward: 150 },
+                { id: 'defeat', title: '擊退 15 個敵人', target: 15, progress: 0, reward: 130 }
+            ];
+            return { ...missions[Math.floor(Math.random() * missions.length)], done: false };
+        }
+
+        function updateMissionUI() {
+            if (!state.mission) return;
+            missionDisplay.innerText = `${state.mission.title} (${Math.min(state.mission.progress, state.mission.target)}/${state.mission.target})`;
+        }
+
+        function updateStreakUI() {
+            streakDisplay.innerText = `${state.streak}`;
+        }
+
+        function updatePhaseLabel() {
+            if (!state.isPlaying) return;
+            const elapsed = (performance.now() - state.gameStartAt) / 1000;
+            if (elapsed <= 10) {
+                phaseDisplay.innerText = '開始 10 秒驚喜';
+            } else if (elapsed <= 40) {
+                phaseDisplay.innerText = '30 秒任務暖身';
+            } else if (elapsed <= 160) {
+                phaseDisplay.innerText = '120 秒精彩時刻';
+            } else {
+                phaseDisplay.innerText = '結束獎勵';
+            }
+        }
+
+        function markMissionProgress(type, amount = 1) {
+            if (!state.mission || state.mission.done || state.mission.id !== type) return;
+            state.mission.progress += amount;
+            updateMissionUI();
+            if (state.mission.progress >= state.mission.target) {
+                state.mission.done = true;
+                addScore(state.mission.reward);
+                feedbackDisplay.innerText = `任務完成！+${state.mission.reward}`;
+                feedbackDisplay.className = 'h-6 text-sm font-bold mb-1 text-yellow-300';
+            }
+        }
 
 
         // --- Classes ---
@@ -528,6 +596,7 @@
             }
 
             if (state.isPlaying) {
+                updatePhaseLabel();
                 // Spawning - check count
                 enemySpawnTimer++;
 
@@ -675,6 +744,7 @@
                         enemies.splice(j, 1);
                         bullets.splice(i, 1);
 
+                        markMissionProgress('defeat');
                         addScore(10);
                         break;
                     }
@@ -734,9 +804,26 @@
 
             if (val === currentQuestion.ans) {
                 // Correct!
-                feedbackDisplay.innerText = "EXCELLENT!";
+                state.correctAnswers++;
+                state.streak++;
+                state.maxStreak = Math.max(state.maxStreak, state.streak);
+                updateStreakUI();
+                markMissionProgress('correct');
+                if (state.mission?.id === 'streak' && !state.mission.done) {
+                    state.mission.progress = Math.max(state.mission.progress, state.streak);
+                    updateMissionUI();
+                    if (state.mission.progress >= state.mission.target) {
+                        state.mission.done = true;
+                        addScore(state.mission.reward);
+                        feedbackDisplay.innerText = `任務完成！+${state.mission.reward}`;
+                        feedbackDisplay.className = 'h-6 text-sm font-bold mb-1 text-yellow-300';
+                    }
+                }
+
+                feedbackDisplay.innerText = state.streak >= 5 ? "太棒了！連擊中！" : "答對了！";
                 feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-green-400";
-                addScore(50);
+                const streakBonus = Math.min(30, state.streak * 3);
+                addScore(40 + streakBonus);
 
                 // Fire Bullets!
                 const burst = 5;
@@ -745,7 +832,9 @@
                 generateQuestion();
             } else {
                 // Wrong
-                feedbackDisplay.innerText = "TRY AGAIN!";
+                state.streak = 0;
+                updateStreakUI();
+                feedbackDisplay.innerText = "再試一次，你可以的！";
                 feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-red-500 animate-pulse";
             }
         }
@@ -803,9 +892,17 @@
             state.lives = 12;
             state.specialReady = false;
             state.lastSpecialScore = 0;
+            state.streak = 0;
+            state.maxStreak = 0;
+            state.correctAnswers = 0;
+            state.mission = createMission();
+            state.gameStartAt = performance.now();
 
             scoreDisplay.innerText = 0;
             updateLivesDisplay();
+            updateStreakUI();
+            updateMissionUI();
+            phaseDisplay.innerText = '開始 10 秒驚喜';
 
             enemies = [];
             enemies = [];
@@ -826,6 +923,13 @@
             celebrationScreen.classList.remove('hidden');
             document.querySelector('#celebrationScreen h2').innerText = "GAME OVER";
             finalScoreDisplay.innerText = state.score;
+            summaryStreak.innerText = `最高連擊：${state.maxStreak}`;
+            summaryMission.innerText = state.mission?.done
+                ? `任務完成：${state.mission.title}`
+                : `任務進度：${state.mission?.title || '—'}`;
+            summaryMessage.innerText = state.maxStreak >= 6
+                ? '節奏超棒！你今天像小小指揮家！'
+                : '你越玩越熟練了，再來一局會更厲害！';
         }
 
         function addScore(n) {
@@ -856,7 +960,9 @@
                 if (state.questionTime <= 0) {
                     clearInterval(questionTimerId);
                     // Time out on question = Refresh
-                    feedbackDisplay.innerText = "TOO SLOW!";
+                    state.streak = 0;
+                    updateStreakUI();
+                    feedbackDisplay.innerText = "時間到，下一題加油！";
                     feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-red-500";
                     generateQuestion();
                 }
