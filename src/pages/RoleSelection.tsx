@@ -147,8 +147,9 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                                     </div>
                                     <div className="text-left min-w-0 flex-1">
                                         <div
-                                            className="font-heading font-bold text-lg leading-tight break-words"
+                                            className="font-heading font-bold text-base sm:text-lg leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
                                             style={{ color: 'var(--color-text)' }}
+                                            title={child.name}
                                         >
                                             {child.name}
                                         </div>

@@ -339,16 +339,50 @@
                 if (!gameState.active) return;
                 const btn = e.target.closest('button');
                 if (!btn) return;
-                const val = btn.dataset.val;
-                if (val === 'clear') {
-                    inputEl.value = '';
-                } else if (val === 'back') {
-                    inputEl.value = inputEl.value.slice(0, -1);
-                } else {
-                    if (inputEl.value.length < 5) inputEl.value += val;
-                }
-                checkAutoSubmit();
+                handleInputValue(btn.dataset.val);
             };
+
+            document.addEventListener('keydown', handleKeyboardInput);
+        }
+
+        function handleInputValue(val) {
+            if (!gameState.active) return;
+            if (val === 'clear') {
+                inputEl.value = '';
+            } else if (val === 'back') {
+                inputEl.value = inputEl.value.slice(0, -1);
+            } else if (/^\d$/.test(val)) {
+                if (inputEl.value.length < 5) inputEl.value += val;
+            }
+            checkAutoSubmit();
+        }
+
+        function handleKeyboardInput(e) {
+            if (!gameState.active) return;
+            const key = e.key;
+
+            if (/^\d$/.test(key)) {
+                e.preventDefault();
+                handleInputValue(key);
+                return;
+            }
+
+            if (key === 'Backspace') {
+                e.preventDefault();
+                handleInputValue('back');
+                return;
+            }
+
+            if (key === 'Delete' || key === 'Escape') {
+                e.preventDefault();
+                handleInputValue('clear');
+                return;
+            }
+
+            if (key === 'Enter') {
+                e.preventDefault();
+                checkAutoSubmit();
+            }
         }
 
         function generateQuestion() {

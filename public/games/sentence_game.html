@@ -6,17 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sentence Builder</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
         body {
-            font-family: 'DotGothic16', sans-serif;
+            font-family: 'Microsoft JhengHei', '微軟正黑體', 'PingFang TC', 'Noto Sans TC', sans-serif;
             overflow-x: hidden;
             overflow-y: auto;
         }
 
         .pixel-font {
-            font-family: 'DotGothic16', sans-serif;
+            font-family: 'Microsoft JhengHei', '微軟正黑體', 'PingFang TC', 'Noto Sans TC', sans-serif;
         }
 
         .card-slot {
@@ -39,6 +38,26 @@
             user-select: none;
             touch-action: manipulation;
             -webkit-user-drag: none;
+        }
+
+        .word-card.source-card {
+            cursor: pointer;
+        }
+
+        .word-card.construct-card {
+            cursor: grab;
+        }
+
+        .word-card.construct-card:active {
+            cursor: grabbing;
+        }
+
+        .flying-card {
+            position: fixed;
+            z-index: 120;
+            pointer-events: none;
+            transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1), opacity 280ms ease;
+            box-shadow: 8px 8px 18px rgba(0, 0, 0, 0.18);
         }
 
         .word-card:active {
@@ -181,6 +200,54 @@
         // Sortable instances
         let sourceSortable, targetSortable;
 
+        function refreshCardStates() {
+            const sourceEl = document.getElementById('source-area');
+            const targetEl = document.getElementById('construct-area');
+
+            Array.from(sourceEl.children).forEach((el) => {
+                el.classList.add('source-card');
+                el.classList.remove('construct-card');
+            });
+
+            Array.from(targetEl.children).forEach((el) => {
+                el.classList.add('construct-card');
+                el.classList.remove('source-card');
+            });
+        }
+
+        function animateCardToConstruct(card) {
+            const sourceRect = card.getBoundingClientRect();
+            const targetEl = document.getElementById('construct-area');
+
+            // Put the real card into target first (hidden) so we can get final position.
+            card.style.visibility = 'hidden';
+            targetEl.appendChild(card);
+            refreshCardStates();
+
+            const targetRect = card.getBoundingClientRect();
+
+            const flying = card.cloneNode(true);
+            flying.classList.add('flying-card');
+            flying.style.left = `${sourceRect.left}px`;
+            flying.style.top = `${sourceRect.top}px`;
+            flying.style.width = `${sourceRect.width}px`;
+            flying.style.height = `${sourceRect.height}px`;
+            flying.style.margin = '0';
+            document.body.appendChild(flying);
+
+            requestAnimationFrame(() => {
+                const dx = targetRect.left - sourceRect.left;
+                const dy = targetRect.top - sourceRect.top;
+                flying.style.transform = `translate(${dx}px, ${dy}px)`;
+                flying.style.opacity = '0.95';
+            });
+
+            flying.addEventListener('transitionend', () => {
+                flying.remove();
+                card.style.visibility = 'visible';
+            }, { once: true });
+        }
+
         async function init() {
             // Preload voices first
             await ensureVoices();
@@ -191,24 +258,37 @@
 
             sourceSortable = new Sortable(sourceEl, {
                 group: 'shared',
-                animation: 150,
+                animation: 220,
                 ghostClass: 'ghost',
                 forceFallback: true,
                 fallbackTolerance: 3,
                 delayOnTouchOnly: true,
                 delay: 60,
-                touchStartThreshold: 5
+                touchStartThreshold: 5,
+                onAdd: refreshCardStates,
+                onRemove: refreshCardStates,
+                onEnd: refreshCardStates
             });
 
             targetSortable = new Sortable(targetEl, {
                 group: 'shared',
-                animation: 150,
+                animation: 220,
                 ghostClass: 'ghost',
                 forceFallback: true,
                 fallbackTolerance: 3,
                 delayOnTouchOnly: true,
                 delay: 60,
-                touchStartThreshold: 5
+                touchStartThreshold: 5,
+                onAdd: refreshCardStates,
+                onRemove: refreshCardStates,
+                onEnd: refreshCardStates
+            });
+
+            // Tap a card in source area to smoothly move it up.
+            sourceEl.addEventListener('click', (event) => {
+                const card = event.target.closest('.word-card');
+                if (!card || !sourceEl.contains(card)) return;
+                animateCardToConstruct(card);
             });
 
             // Load custom sentences if available
@@ -238,11 +318,13 @@
 
             shuffled.forEach(word => {
                 const card = document.createElement('div');
-                card.className = 'word-card';
+                card.className = 'word-card source-card';
                 card.textContent = word;
                 card.dataset.word = word;
                 sourceEl.appendChild(card);
             });
+
+            refreshCardStates();
 
             playTargetSentence();
         }

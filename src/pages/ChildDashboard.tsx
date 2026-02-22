@@ -3,14 +3,14 @@ import { ParentsMessageCard, ExchangeRateCard } from '../components/ChildDashboa
 import { ExchangeRequestDialog } from '../components/ExchangeRequestDialog';
 import { MonsterTowerV2, TowerV2Preview } from '../components/MonsterTowerV2';
 
-import { Star, X, Save, ChevronDown, ChevronUp, RefreshCw, Trash2, Check } from 'lucide-react';
+import { Star, X, Save, ChevronDown, ChevronUp, RefreshCw, Trash2, Check, Store } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { RPGDialog } from '../components/RPGDialog';
 import { RPGButton } from '../components/RPGButton';
 import { RewardTime } from '../components/RewardTime';
 import { LearningArea } from '../components/LearningArea';
-import { ChildMonsterShop } from '../components/ChildMonsterShop';
+import { ShopModal } from '../components/ShopModal';
 import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings } from '../hooks/useFamilySettings';
 
@@ -59,6 +59,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     });
     const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false);
     const [isTowerOpen, setIsTowerOpen] = useState(false);
+    const [isShopOpen, setIsShopOpen] = useState(false);
 
     const questTarget = Math.max(0, progress.total_quests > 0 ? Math.min(progress.total_quests, DAILY_QUEST_TARGET) : DAILY_QUEST_TARGET);
     const isUnlocked = progress.completed_quests >= questTarget && progress.total_quests > 0;
@@ -268,9 +269,19 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     return (
         <div className="max-w-4xl mx-auto">
             {/* Widgets Section */}
-            <div className="grid gap-4 mb-6 md:grid-cols-[2fr_1fr]">
+            <div className="grid gap-4 mb-6 md:grid-cols-[2fr_1fr_160px] items-stretch">
                 <ParentsMessageCard />
                 <ExchangeRateCard />
+                <button
+                    type="button"
+                    onClick={() => setIsShopOpen(true)}
+                    className="bg-white border-4 border-deep-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[1px] transition-all flex flex-col items-center justify-center gap-2 min-h-[96px]"
+                >
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-purple-100 border-2 border-purple-300">
+                        <Store size={24} className="text-purple-700" />
+                    </div>
+                    <span className="font-pixel text-sm text-deep-black">商店街</span>
+                </button>
             </div>
 
             {/* Monster Tower Preview */}
@@ -392,9 +403,6 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
 
             {/* Learning Area Section (Always Visible) */}
             <LearningArea userId={userId} onGoHome={onGoHome} />
-
-            {/* Monster Shop Section */}
-            <ChildMonsterShop userId={userId} starBalance={starBalance || 0} />
 
             {/* Reward Time Section */}
             <RewardTime
@@ -538,6 +546,15 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                 userId={userId}
                 isOpen={isTowerOpen}
                 onClose={() => setIsTowerOpen(false)}
+            />
+
+            {/* Monster Shop Modal */}
+            <ShopModal
+                isOpen={isShopOpen}
+                onClose={() => setIsShopOpen(false)}
+                onGoHome={onGoHome}
+                userId={userId}
+                starBalance={starBalance || 0}
             />
         </div >
     );

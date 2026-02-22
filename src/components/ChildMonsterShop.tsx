@@ -6,9 +6,10 @@ import { useUser } from '../contexts/UserContext';
 interface ChildMonsterShopProps {
     userId: string;
     starBalance: number;
+    inModal?: boolean;
 }
 
-export const ChildMonsterShop: React.FC<ChildMonsterShopProps> = ({ userId, starBalance }) => {
+export const ChildMonsterShop: React.FC<ChildMonsterShopProps> = ({ userId, starBalance, inModal = false }) => {
     const { user } = useUser();
     const familyId = user?.family_id;
     const { data: items = [], isLoading } = useChildMonsterShop(user?.family_id);
@@ -38,7 +39,7 @@ export const ChildMonsterShop: React.FC<ChildMonsterShopProps> = ({ userId, star
     };
 
     return (
-        <div className="clay-card mt-6 p-5 animate-bounce-in" style={{ borderRadius: '20px' }}>
+        <div className={`clay-card ${inModal ? 'mt-0 p-4 sm:p-5' : 'mt-6 p-5 animate-bounce-in'}`} style={{ borderRadius: '20px' }}>
             <div className="flex items-center gap-3 mb-4">
                 <div
                     className="w-12 h-12 rounded-2xl flex items-center justify-center"

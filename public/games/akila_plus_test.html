@@ -181,6 +181,35 @@
             answerText.textContent = userAnswer;
         }
 
+        function handleKeyboardInput(e) {
+            if (gameView.classList.contains('hidden')) return;
+
+            const key = e.key;
+            if (/^\d$/.test(key)) {
+                e.preventDefault();
+                handleNumberInput(key);
+                return;
+            }
+
+            if (key === 'Backspace') {
+                e.preventDefault();
+                handleBackspace();
+                return;
+            }
+
+            if (key === 'Delete' || key === 'Escape') {
+                e.preventDefault();
+                userAnswer = '';
+                answerText.textContent = '';
+                return;
+            }
+
+            if (key === 'Enter') {
+                e.preventDefault();
+                handleSubmit();
+            }
+        }
+
         /**
          * 功能：處理答案提交
          */
@@ -256,6 +285,7 @@
         }
         
         // --- 初始化 ---
+        document.addEventListener('keydown', handleKeyboardInput);
         restartBtn.addEventListener('click', startQuiz);
         createNumpad();
         startQuiz();
