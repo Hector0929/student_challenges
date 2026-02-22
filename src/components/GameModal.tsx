@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Star, Clock, Play, PauseCircle, ArrowLeft, Home, Square } from 'lucide-react';
 import { RPGDialog } from './RPGDialog';
 import { GAME_COST, GAME_DURATION_SECONDS } from '../lib/constants';
@@ -289,6 +290,7 @@ export const GameModal: React.FC<GameModalProps> = ({
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
+            document.body.dataset.gameModalOpen = 'true';
             if (!hasInitialized.current) {
                 hasInitialized.current = true;
                 setTimeRemaining(GAME_DURATION_SECONDS);
@@ -302,6 +304,7 @@ export const GameModal: React.FC<GameModalProps> = ({
             }
         } else {
             document.body.style.overflow = 'unset';
+            delete document.body.dataset.gameModalOpen;
             hasInitialized.current = false;
             setPhase('confirm');
             resetGuards();
@@ -313,6 +316,7 @@ export const GameModal: React.FC<GameModalProps> = ({
         }
         return () => {
             document.body.style.overflow = 'unset';
+            delete document.body.dataset.gameModalOpen;
             if (timerRef.current) {
                 console.log('[GameModal] Unmounting, clearing timer');
                 clearInterval(timerRef.current);
@@ -643,17 +647,17 @@ export const GameModal: React.FC<GameModalProps> = ({
         }
     };
 
-    if (isImmersivePhase) {
-        return (
-            <div className="fixed inset-0 z-[80] bg-black/45 backdrop-blur-[1px] p-0 sm:p-3">
-                <div className="w-full h-full sm:max-w-6xl sm:mx-auto sm:h-[calc(100dvh-1.5rem)]">
-                    {renderContent()}
-                </div>
-            </div>
-        );
+    if (!isOpen) {
+        return null;
     }
 
-    return (
+    const modalTree = isImmersivePhase ? (
+        <div className="fixed inset-0 z-[120] bg-black/45 backdrop-blur-[1px] p-0 sm:p-3">
+            <div className="w-full h-full sm:max-w-6xl sm:mx-auto sm:h-[calc(100dvh-1.5rem)]">
+                {renderContent()}
+            </div>
+        </div>
+    ) : (
         <RPGDialog
             isOpen={isOpen}
             onClose={handleEndGame}
@@ -662,4 +666,6 @@ export const GameModal: React.FC<GameModalProps> = ({
             {renderContent()}
         </RPGDialog>
     );
+
+    return typeof document !== 'undefined' ? createPortal(modalTree, document.body) : modalTree;
 };

@@ -29,6 +29,8 @@ export const HomeButton: React.FC<HomeButtonProps> = ({
     onClick,
     show = true
 }) => {
+    const [isGameModalOpen, setIsGameModalOpen] = useState(false);
+
     // Position as percentage from top (0-100)
     const [position, setPosition] = useState<number>(() => {
         if (typeof window === 'undefined') return DEFAULT_POSITION;
@@ -41,6 +43,23 @@ export const HomeButton: React.FC<HomeButtonProps> = ({
     const [dragStartPosition, setDragStartPosition] = useState(0);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const hasMoved = useRef(false);
+
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+
+        const syncModalState = () => {
+            setIsGameModalOpen(document.body.dataset.gameModalOpen === 'true');
+        };
+
+        syncModalState();
+        const observer = new MutationObserver(syncModalState);
+        observer.observe(document.body, {
+            attributes: true,
+            attributeFilter: ['data-game-modal-open'],
+        });
+
+        return () => observer.disconnect();
+    }, []);
 
     // Save position to localStorage when it changes
     useEffect(() => {
@@ -147,7 +166,7 @@ export const HomeButton: React.FC<HomeButtonProps> = ({
         onClick();
     }, [onClick]);
 
-    if (!show) {
+    if (!show || isGameModalOpen) {
         return null;
     }
 

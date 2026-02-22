@@ -36,8 +36,8 @@ describe('HomeButton', () => {
         render(<HomeButton onClick={() => { }} show={true} />);
 
         const button = screen.getByRole('button', { name: /回到首頁/i });
-        expect(button).toHaveAttribute('title', '回到首頁');
-        expect(button).toHaveAttribute('aria-label', '回到首頁');
+        expect(button).toHaveAttribute('title', '回到首頁 (拖曳可移動位置)');
+        expect(button).toHaveAttribute('aria-label', '回到首頁 (可拖曳移動)');
     });
 
     it('should have fixed positioning classes', () => {
@@ -46,6 +46,16 @@ describe('HomeButton', () => {
         const button = screen.getByRole('button', { name: /回到首頁/i });
         expect(button.className).toContain('fixed');
         expect(button.className).toContain('right-4');
-        expect(button.className).toContain('bottom-4');
+        expect(button.className).toContain('z-40');
+    });
+
+    it('should hide when game modal is open', () => {
+        document.body.dataset.gameModalOpen = 'true';
+        render(<HomeButton onClick={() => { }} show={true} />);
+
+        const button = screen.queryByRole('button', { name: /回到首頁/i });
+        expect(button).not.toBeInTheDocument();
+
+        delete document.body.dataset.gameModalOpen;
     });
 });
