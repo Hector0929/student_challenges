@@ -399,11 +399,14 @@ export const GameModal: React.FC<GameModalProps> = ({
                 setPhase('playing');
                 onRefreshBalance();
             } else {
+                // False should only represent true insufficient balance from caller.
                 setPhase('insufficient');
             }
         } catch (error) {
             console.error('Failed to spend stars:', error);
-            alert('扣除星幣失敗，請重試');
+            const message = error instanceof Error ? error.message : '扣除星幣失敗，請重試';
+            alert(message);
+            setPhase('confirm');
         } finally {
             setIsProcessing(false);
         }

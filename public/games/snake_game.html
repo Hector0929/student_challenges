@@ -62,31 +62,31 @@
     </style>
 </head>
 
-<body class="min-h-screen h-[100dvh] flex flex-col items-center justify-start py-3 sm:py-5">
+<body class="min-h-screen h-[100dvh] flex flex-col items-center justify-start py-3 sm:py-5 px-2">
 
     <!-- UI Overlay -->
     <div id="ui-layer"
-        class="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-10 w-full max-w-lg mx-auto">
+        class="pointer-events-none w-full max-w-lg mx-auto mb-1 sm:mb-2 z-10">
         <!-- Header -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 items-start">
-            <div class="glass-panel rounded-xl px-4 py-2 border border-cyan-500/50">
-                <div class="text-cyan-400 text-xs">SCORE</div>
-                <div id="score" class="text-2xl text-white font-bold">0</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 items-start">
+            <div class="glass-panel rounded-xl px-3 py-1.5 border border-cyan-500/50">
+                <div class="text-cyan-400 text-[10px] sm:text-xs">SCORE</div>
+                <div id="score" class="text-xl sm:text-2xl text-white font-bold">0</div>
             </div>
-            <div class="glass-panel rounded-xl px-4 py-2 border border-cyan-500/50">
-                <div class="text-cyan-400 text-xs">HIGH</div>
-                <div id="high-score" class="text-2xl text-white font-bold">0</div>
+            <div class="glass-panel rounded-xl px-3 py-1.5 border border-cyan-500/50">
+                <div class="text-cyan-400 text-[10px] sm:text-xs">HIGH</div>
+                <div id="high-score" class="text-xl sm:text-2xl text-white font-bold">0</div>
             </div>
-            <div class="glass-panel rounded-xl px-4 py-2 border border-cyan-500/50">
-                <div class="text-cyan-400 text-xs">COMBO</div>
-                <div id="combo" class="text-2xl text-white font-bold">0</div>
+            <div class="glass-panel rounded-xl px-3 py-1.5 border border-cyan-500/50">
+                <div class="text-cyan-400 text-[10px] sm:text-xs">COMBO</div>
+                <div id="combo" class="text-xl sm:text-2xl text-white font-bold">0</div>
             </div>
-            <div class="glass-panel rounded-xl px-4 py-2 border border-cyan-500/50">
-                <div class="text-cyan-400 text-xs">MISSION</div>
-                <div id="mission" class="text-[11px] leading-4 text-white font-bold">準備中...</div>
+            <div class="glass-panel rounded-xl px-3 py-1.5 border border-cyan-500/50">
+                <div class="text-cyan-400 text-[10px] sm:text-xs">MISSION</div>
+                <div id="mission" class="text-[10px] sm:text-[11px] leading-4 text-white font-bold">準備中...</div>
             </div>
         </div>
-        <div id="phase" class="text-center text-cyan-200 text-sm font-bold mt-2">開始 10 秒驚喜</div>
+        <div id="phase" class="text-center text-cyan-200 text-xs sm:text-sm font-bold mt-1">開始 10 秒驚喜</div>
     </div>
 
     <!-- Start / Game Over Screen -->
@@ -109,7 +109,7 @@
 
     <!-- Game Canvas -->
     <div
-        class="relative w-full max-w-lg aspect-square max-h-[calc(100dvh-8rem)] neon-border rounded-lg bg-black/50 overflow-hidden shadow-2xl shadow-cyan-900/50">
+        class="relative w-full max-w-lg aspect-square max-h-[calc(100dvh-10.25rem)] sm:max-h-[calc(100dvh-9rem)] neon-border rounded-lg bg-black/50 overflow-hidden shadow-2xl shadow-cyan-900/50">
         <canvas id="gameCanvas" class="w-full h-full block"></canvas>
     </div>
 

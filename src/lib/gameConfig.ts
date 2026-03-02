@@ -46,7 +46,7 @@ export const GAMES: Game[] = [
         name: '方塊衝刺',
         icon: '🔲',
         description: '節奏跑酷挑戰',
-        url: '/games/parkour_game.html',
+        url: '/games/parkour_game_v2.html',
         color: 'bg-violet-500 hover:bg-violet-600',
         category: 'fun'
     },
@@ -202,6 +202,24 @@ export const GAMES: Game[] = [
         url: '/games/bubble_shooter.html',
         color: 'bg-red-500 hover:bg-red-600',
         category: 'fun'
+    },
+    {
+        id: 'monster_bomber',
+        name: '怪獸塔爆爆冒險',
+        icon: '💣',
+        description: '手機滑動炸彈闖關',
+        url: '/games/monster_bomber.html',
+        color: 'bg-sky-500 hover:bg-sky-600',
+        category: 'fun'
+    },
+    {
+        id: 'galaxy_defender',
+        name: '三角戰機：銀河守衛',
+        icon: '🚀',
+        description: '銀河系守衛戰',
+        url: '/games/galaxy_defender.html',
+        color: 'bg-blue-600 hover:bg-blue-700',
+        category: 'fun'
     }
 ];
 
@@ -215,6 +233,8 @@ export const FUN_COLORS: Record<string, { bg: string; border: string; text: stri
     'neon_breaker': { bg: 'var(--pastel-pink-bg)', border: 'var(--pastel-pink-border)', text: 'var(--pastel-pink-text)' },
     'neon_slicer': { bg: 'var(--pastel-orange-bg)', border: 'var(--pastel-orange-border)', text: 'var(--pastel-orange-text)' },
     'bubble_shooter': { bg: 'var(--pastel-pink-bg)', border: 'var(--pastel-pink-border)', text: 'var(--pastel-pink-text)' },
+    'monster_bomber': { bg: 'var(--pastel-cyan-bg)', border: 'var(--pastel-cyan-border)', text: 'var(--pastel-cyan-text)' },
+    'galaxy_defender': { bg: 'var(--pastel-blue-bg)', border: 'var(--pastel-blue-border)', text: 'var(--pastel-blue-text)' },
 };
 
 export const getFunGameColors = (gameId: string) => {

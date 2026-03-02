@@ -55,7 +55,13 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
             return true;
         } catch (error) {
             console.error('Failed to spend stars:', error);
-            return false;
+            const message = error instanceof Error ? error.message : String(error);
+            // Only map true balance issues to "insufficient" flow.
+            // Other failures (RLS/network/duplicate click/etc.) should be surfaced as errors.
+            if (message.includes('星幣不足')) {
+                return false;
+            }
+            throw error;
         }
     };
 
