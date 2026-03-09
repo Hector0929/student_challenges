@@ -27,100 +27,26 @@ export const LOTTERY_PRIZES: Prize[] = [
 ];
 
 // ============================================
-// Reward Games Configuration
+// Fun Games Configuration
 // ============================================
 
-export interface Game {
+export interface FunGame {
     id: string;
     name: string;
     icon: string;
     description: string;
     url: string;
     color: string;
-    category: 'learning' | 'fun';
 }
 
-export const GAMES: Game[] = [
+export const FUN_GAMES: FunGame[] = [
     {
         id: 'parkour',
         name: '方塊衝刺',
         icon: '🔲',
         description: '節奏跑酷挑戰',
         url: '/games/parkour_game_v2.html',
-        color: 'bg-violet-500 hover:bg-violet-600',
-        category: 'fun'
-    },
-    {
-        id: 'spelling',
-        name: '單字召喚術',
-        icon: '🅰️',
-        description: '拼字主題挑戰',
-        url: '/games/spelling_game.html',
-        color: 'bg-teal-400 hover:bg-teal-500',
-        category: 'learning'
-    },
-    {
-        id: 'pronunciation',
-        name: '發音選單字',
-        icon: '👂',
-        description: '聽力主題挑戰',
-        url: '/games/pronunciation_game.html',
-        color: 'bg-indigo-400 hover:bg-indigo-500',
-        category: 'learning'
-    },
-    {
-        id: 'sentence',
-        name: '句子重組',
-        icon: '📝',
-        description: '英文文法挑戰',
-        url: '/games/sentence_game.html',
-        color: 'bg-pink-400 hover:bg-pink-600',
-        category: 'learning'
-    },
-    {
-        id: 'akila',
-        name: '加法練習',
-        icon: '➕',
-        description: '數學計算挑戰',
-        url: '/games/akila_plus_test.html',
-        color: 'bg-blue-400 hover:bg-blue-500',
-        category: 'learning'
-    },
-    {
-        id: 'multiplication',
-        name: '乘法練習',
-        icon: '✖️',
-        description: '九九乘法表',
-        url: '/games/multiplication_test.html',
-        color: 'bg-purple-400 hover:bg-purple-500',
-        category: 'learning'
-    },
-    {
-        id: 'subtraction',
-        name: '減法練習',
-        icon: '➖',
-        description: '減法計算挑戰',
-        url: '/games/subtraction_test.html',
-        color: 'bg-emerald-400 hover:bg-emerald-500',
-        category: 'learning'
-    },
-    {
-        id: 'division',
-        name: '除法練習',
-        icon: '➗',
-        description: '除法與餘數',
-        url: '/games/division_test.html',
-        color: 'bg-amber-400 hover:bg-amber-500',
-        category: 'learning'
-    },
-    {
-        id: 'idiom',
-        name: '成語大挑戰',
-        icon: '📜',
-        description: '國語成語學習',
-        url: '/games/idiom_game.html',
-        color: 'bg-rose-400 hover:bg-rose-500',
-        category: 'learning'
+        color: 'bg-violet-500 hover:bg-violet-600'
     },
     {
         id: 'shooting',
@@ -128,8 +54,7 @@ export const GAMES: Game[] = [
         icon: '🎯',
         description: '反應力訓練',
         url: '/games/shooting_game.html',
-        color: 'bg-orange-400 hover:bg-orange-500',
-        category: 'fun'
+        color: 'bg-orange-400 hover:bg-orange-500'
     },
     {
         id: 'tetris',
@@ -137,8 +62,7 @@ export const GAMES: Game[] = [
         icon: '🧱',
         description: '經典益智遊戲',
         url: '/games/Tetris.html',
-        color: 'bg-green-400 hover:bg-green-500',
-        category: 'fun'
+        color: 'bg-green-400 hover:bg-green-500'
     },
     {
         id: 'snake',
@@ -146,8 +70,7 @@ export const GAMES: Game[] = [
         icon: '🐍',
         description: '經典霓虹挑戰',
         url: '/games/snake_game.html',
-        color: 'bg-cyan-400 hover:bg-cyan-500',
-        category: 'fun'
+        color: 'bg-cyan-400 hover:bg-cyan-500'
     },
     {
         id: 'ns_shaft',
@@ -155,8 +78,7 @@ export const GAMES: Game[] = [
         icon: '🧗',
         description: '是男人就下100層',
         url: '/games/ns_shaft.html',
-        color: 'bg-purple-400 hover:bg-purple-500',
-        category: 'fun'
+        color: 'bg-purple-400 hover:bg-purple-500'
     },
     {
         id: 'neon_breaker',
@@ -164,8 +86,7 @@ export const GAMES: Game[] = [
         icon: '🧱',
         description: '經典撞擊挑戰',
         url: '/games/neon_breaker.html',
-        color: 'bg-pink-500 hover:bg-pink-600',
-        category: 'fun'
+        color: 'bg-pink-500 hover:bg-pink-600'
     },
     {
         id: 'memory_matrix',
@@ -173,8 +94,7 @@ export const GAMES: Game[] = [
         icon: '🧠',
         description: '極限腦力訓練',
         url: '/games/memory_matrix.html',
-        color: 'bg-cyan-500 hover:bg-cyan-600',
-        category: 'fun'
+        color: 'bg-cyan-500 hover:bg-cyan-600'
     },
     {
         id: 'neon_slicer',
@@ -182,8 +102,7 @@ export const GAMES: Game[] = [
         icon: '⚔️',
         description: '反應力極限',
         url: '/games/neon_slicer.html',
-        color: 'bg-amber-500 hover:bg-amber-600',
-        category: 'fun'
+        color: 'bg-amber-500 hover:bg-amber-600'
     },
     {
         id: '2048_cyber',
@@ -191,8 +110,7 @@ export const GAMES: Game[] = [
         icon: '🔢',
         description: '邏輯方塊合成',
         url: '/games/2048_cyber.html',
-        color: 'bg-blue-500 hover:bg-blue-600',
-        category: 'fun'
+        color: 'bg-blue-500 hover:bg-blue-600'
     },
     {
         id: 'bubble_shooter',
@@ -200,8 +118,7 @@ export const GAMES: Game[] = [
         icon: '🔴',
         description: '射擊消除挑戰',
         url: '/games/bubble_shooter.html',
-        color: 'bg-red-500 hover:bg-red-600',
-        category: 'fun'
+        color: 'bg-red-500 hover:bg-red-600'
     },
     {
         id: 'monster_bomber',
@@ -209,8 +126,7 @@ export const GAMES: Game[] = [
         icon: '💣',
         description: '手機滑動炸彈闖關',
         url: '/games/monster_bomber.html',
-        color: 'bg-sky-500 hover:bg-sky-600',
-        category: 'fun'
+        color: 'bg-sky-500 hover:bg-sky-600'
     },
     {
         id: 'galaxy_defender',
@@ -218,8 +134,7 @@ export const GAMES: Game[] = [
         icon: '🚀',
         description: '銀河系守衛戰',
         url: '/games/galaxy_defender.html',
-        color: 'bg-blue-600 hover:bg-blue-700',
-        category: 'fun'
+        color: 'bg-blue-600 hover:bg-blue-700'
     }
 ];
 

@@ -4,6 +4,7 @@ import { GameModal } from './GameModal';
 import { useStarBalance, useSpendStars } from '../hooks/useQuests';
 import { GAME_COST } from '../lib/constants';
 import { useFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
+import { FUN_GAMES, getFunGameColors, type FunGame } from '../lib/gameConfig';
 
 interface RewardTimeProps {
     isUnlocked: boolean;
@@ -13,8 +14,6 @@ interface RewardTimeProps {
     onGoHome?: () => void;
 }
 
-import { GAMES, getFunGameColors, type Game } from '../lib/gameConfig';
-
 export const RewardTime: React.FC<RewardTimeProps> = ({
     isUnlocked,
     remainingQuests,
@@ -22,7 +21,7 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
     userId,
     onGoHome,
 }) => {
-    const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+    const [selectedGame, setSelectedGame] = useState<FunGame | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     // Fetch star balance
@@ -35,9 +34,7 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
     const disabledGames = familySettings?.disabled_games ?? DEFAULT_FAMILY_SETTINGS.disabled_games;
 
     // Filter games based on settings
-    const availableFunGames = GAMES.filter(
-        g => g.category === 'fun' && !disabledGames.includes(g.id)
-    );
+    const availableFunGames = FUN_GAMES.filter((game) => !disabledGames.includes(game.id));
 
     const progressPercentage = totalQuests > 0 ? ((totalQuests - remainingQuests) / totalQuests) * 100 : 0;
 

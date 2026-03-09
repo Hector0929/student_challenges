@@ -8,19 +8,26 @@ import { useAdjustStars, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings, useUpdateFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
 import { useQuery } from '@tanstack/react-query';
 import { ClayDialog } from '../components/ClayDialog';
-import { GAMES, type Game } from '../lib/gameConfig';
+import { FUN_GAMES, type FunGame } from '../lib/gameConfig';
 import { SentenceSettingsDialog } from '../components/SentenceSettingsDialog';
 import { ParentMonsterShopManager } from '../components/ParentMonsterShopManager';
+import type { LearningItem } from '../features/learning/types/learning';
+import { LEARNING_ITEMS } from '../features/learning/config/learningItems';
+import { getManageableLearningItems } from '../features/learning/utils/learningFilters';
 
 // Component for individual game toggle
+type ToggleableItem = Pick<FunGame, 'id' | 'name' | 'icon'> | Pick<LearningItem, 'id' | 'name' | 'icon'>;
+
 const GameToggleRow = ({
     game,
+    toggleKey,
     isEnabled,
     isDisabled,
     onToggle,
     onSettings
 }: {
-    game: Game;
+    game: ToggleableItem;
+    toggleKey?: string;
     isEnabled: boolean;
     isDisabled: boolean;
     onToggle: (gameId: string, enabled: boolean) => void;
@@ -45,7 +52,7 @@ const GameToggleRow = ({
             )}
             <ToggleSwitch
                 enabled={isEnabled}
-                onChange={(enabled) => onToggle(game.id, enabled)}
+                onChange={(enabled) => onToggle(toggleKey ?? game.id, enabled)}
                 disabled={isDisabled}
             />
         </div>
@@ -106,6 +113,7 @@ export const ParentSettings: React.FC = () => {
     const [learningAreaEnabled, setLearningAreaEnabled] = useState(true);
     const [disabledGames, setDisabledGames] = useState<string[]>([]);
     const [showSentenceSettings, setShowSentenceSettings] = useState(false);
+    const manageableLearningItems = getManageableLearningItems(LEARNING_ITEMS);
 
     // Fetch children
     const { data: children } = useQuery({
@@ -433,7 +441,7 @@ export const ParentSettings: React.FC = () => {
                                 />
                                 {funGamesEnabled && (
                                     <div className="mt-4 grid grid-cols-2 gap-2">
-                                        {GAMES.filter(g => g.category === 'fun').map(game => (
+                                        {FUN_GAMES.map(game => (
                                             <GameToggleRow
                                                 key={game.id}
                                                 game={game}
@@ -466,22 +474,27 @@ export const ParentSettings: React.FC = () => {
                                 />
                                 {learningAreaEnabled && (
                                     <div className="mt-4 grid grid-cols-2 gap-2">
-                                        {GAMES.filter(g => g.category === 'learning').map(game => (
-                                            <GameToggleRow
-                                                key={game.id}
-                                                game={game}
-                                                isEnabled={!disabledGames.includes(game.id)}
-                                                isDisabled={!learningAreaEnabled}
-                                                onToggle={(gameId, enabled) => {
-                                                    if (enabled) {
-                                                        setDisabledGames(prev => prev.filter(id => id !== gameId));
-                                                    } else {
-                                                        setDisabledGames(prev => [...prev, gameId]);
-                                                    }
-                                                }}
-                                                onSettings={game.id === 'sentence' ? () => setShowSentenceSettings(true) : undefined}
-                                            />
-                                        ))}
+                                        {manageableLearningItems.map(item => {
+                                            const disabledKey = item.legacyDisabledKey ?? item.id;
+
+                                            return (
+                                                <GameToggleRow
+                                                    key={item.id}
+                                                    game={item}
+                                                    toggleKey={disabledKey}
+                                                    isEnabled={!disabledGames.includes(disabledKey)}
+                                                    isDisabled={!learningAreaEnabled}
+                                                    onToggle={(gameId, enabled) => {
+                                                        if (enabled) {
+                                                            setDisabledGames(prev => prev.filter(id => id !== gameId));
+                                                        } else {
+                                                            setDisabledGames(prev => [...prev, gameId]);
+                                                        }
+                                                    }}
+                                                    onSettings={item.id === 'sentence' ? () => setShowSentenceSettings(true) : undefined}
+                                                />
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>

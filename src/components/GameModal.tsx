@@ -19,6 +19,7 @@ interface GameModalProps {
     practiceRewardStars?: number;
     onPracticeComplete?: (stars: number) => Promise<void> | void;
     onGoHome?: () => void;
+    embeddedContent?: React.ReactNode;
 }
 
 type GamePhase = 'confirm' | 'playing' | 'paused' | 'timeup' | 'insufficient';
@@ -216,7 +217,8 @@ export const GameModal: React.FC<GameModalProps> = ({
     onRefreshBalance,
     mode = 'play',
     practiceRewardStars = 0,
-    onPracticeComplete
+    onPracticeComplete,
+    embeddedContent,
 }) => {
     const [phase, setPhase] = useState<GamePhase>('confirm');
     const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION_SECONDS);
@@ -442,17 +444,26 @@ export const GameModal: React.FC<GameModalProps> = ({
 
                     {/* Game Area */}
                     <div className="flex-1 bg-gray-900 relative">
-                        <iframe
-                            ref={iframeRef}
-                            src={gameUrl}
-                            className="w-full h-full border-none"
-                            title={gameName}
-                            allow="fullscreen"
-                            style={{
-                                display: 'block',
-                                pointerEvents: phase === 'playing' ? 'auto' : 'none'
-                            }}
-                        />
+                        {embeddedContent ? (
+                            <div
+                                className="w-full h-full"
+                                style={{ pointerEvents: phase === 'playing' ? 'auto' : 'none' }}
+                            >
+                                {embeddedContent}
+                            </div>
+                        ) : (
+                            <iframe
+                                ref={iframeRef}
+                                src={gameUrl}
+                                className="w-full h-full border-none"
+                                title={gameName}
+                                allow="fullscreen"
+                                style={{
+                                    display: 'block',
+                                    pointerEvents: phase === 'playing' ? 'auto' : 'none'
+                                }}
+                            />
+                        )}
                     </div>
 
                     {/* Overlays */}

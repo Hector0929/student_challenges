@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDailyLogs, useStarBalance } from '../hooks/useQuests';
 import { RefreshCw, Play, PlusCircle, Dices, Bug } from 'lucide-react';
-import { GAMES, type Game } from '../lib/gameConfig';
+import { FUN_GAMES, type FunGame } from '../lib/gameConfig';
 import { GameModal } from '../components/GameModal';
 import { MonsterTower, TowerPreview } from '../components/MonsterTower';
 import { MonsterTowerV2, TowerV2Preview } from '../components/MonsterTowerV2';
@@ -21,7 +21,7 @@ export const DebugPage: React.FC = () => {
     const { data: starBalance = 0, refetch: refetchBalance } = useStarBalance(user?.id || '');
 
     // QA State
-    const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+    const [selectedGame, setSelectedGame] = useState<FunGame | null>(null);
     const [activeTab, setActiveTab] = useState<'games' | 'logs' | 'tower' | 'towerV2'>('games');
     const [isTowerOpen, setIsTowerOpen] = useState(false);
     const [isTowerV2Open, setIsTowerV2Open] = useState(false);
@@ -147,7 +147,7 @@ export const DebugPage: React.FC = () => {
 
             {activeTab === 'games' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {GAMES.map(game => (
+                    {FUN_GAMES.map(game => (
                         <div key={game.id} className={`${game.color} bg-opacity-10 p-4 rounded-2xl border-2 border-gray-200 shadow-sm hover:shadow-md transition-shadow`}>
                             <div className="flex justify-between items-start mb-4">
                                 <div className="p-3 bg-white rounded-xl shadow-sm">
