@@ -18,6 +18,7 @@ interface GameModalProps {
     mode?: 'play' | 'practice'; // New prop
     practiceRewardStars?: number;
     onPracticeComplete?: (stars: number) => Promise<void> | void;
+    onEarnStars?: (amount: number, description?: string, gameId?: string) => Promise<void> | void;
     onGoHome?: () => void;
     embeddedContent?: React.ReactNode;
 }
@@ -210,6 +211,7 @@ export const GameModal: React.FC<GameModalProps> = ({
     onGoHome,
     gameUrl,
     gameName,
+    gameId,
 
     // gameId and userId are unused in this component but passed in props
     starBalance,
@@ -218,6 +220,7 @@ export const GameModal: React.FC<GameModalProps> = ({
     mode = 'play',
     practiceRewardStars = 0,
     onPracticeComplete,
+    onEarnStars,
     embeddedContent,
 }) => {
     const [phase, setPhase] = useState<GamePhase>('confirm');
@@ -231,6 +234,7 @@ export const GameModal: React.FC<GameModalProps> = ({
     const practiceRewardHandledRef = useRef(false);
     const [showRewardFx, setShowRewardFx] = useState(false);
     const isImmersivePhase = phase === 'playing' || phase === 'paused' || phase === 'timeup';
+    const handledSettlementIdsRef = useRef<Set<string>>(new Set());
 
     const clearTimer = React.useCallback(() => {
         if (timerRef.current) {
@@ -334,6 +338,45 @@ export const GameModal: React.FC<GameModalProps> = ({
             }, 100);
         }
     }, [phase]);
+
+    // 2.5 Receive in-game settlement rewards from iframe games
+    useEffect(() => {
+        if (!isOpen || mode !== 'play' || !onEarnStars) return;
+
+        const onMessage = async (event: MessageEvent) => {
+            if (event.source !== iframeRef.current?.contentWindow) return;
+            if (event.origin !== window.location.origin) return;
+
+            const data = event.data as {
+                type?: string;
+                txId?: string;
+                amount?: number;
+                gameId?: string;
+                description?: string;
+            };
+
+            if (!data || data.type !== 'QUESTMON_EARN_STARS') return;
+
+            const txId = data.txId ?? `${data.gameId ?? gameId}-${data.amount ?? 0}`;
+            if (handledSettlementIdsRef.current.has(txId)) return;
+            handledSettlementIdsRef.current.add(txId);
+
+            const amount = Number(data.amount ?? 0);
+            if (!Number.isFinite(amount) || amount <= 0) return;
+
+            try {
+                await onEarnStars(amount, data.description, data.gameId ?? gameId);
+                onRefreshBalance();
+            } catch (error) {
+                console.error('[GameModal] Failed to process settlement stars:', error);
+            }
+        };
+
+        window.addEventListener('message', onMessage);
+        return () => {
+            window.removeEventListener('message', onMessage);
+        };
+    }, [isOpen, mode, onEarnStars, gameId, onRefreshBalance]);
 
     // 3. Timer Logic (Wall-clock)
     useEffect(() => {

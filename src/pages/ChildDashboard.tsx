@@ -13,6 +13,7 @@ import { LearningArea } from '../components/LearningArea';
 import { ShopModal } from '../components/ShopModal';
 import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings } from '../hooks/useFamilySettings';
+import { World3D } from '../components/World3D';
 
 import { COMMON_EMOJIS, DAILY_QUEST_TARGET } from '../lib/constants';
 
@@ -287,6 +288,11 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
             {/* Monster Tower Preview */}
             <div className="mb-6">
                 <TowerV2Preview userId={userId} onClick={() => setIsTowerOpen(true)} />
+            </div>
+
+            {/* 3D World Preview */}
+            <div className="mb-6">
+                <World3D />
             </div>
 
             {/* Header Section */}

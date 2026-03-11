@@ -6,9 +6,9 @@
   <title>怪獸塔爆爆冒險</title>
   <style>
     :root {
-      --bg: #0b1220;
-      --panel: #121d32;
-      --panel-border: #2b3c62;
+      --bg: #070b16;
+      --panel: #0f1a30;
+      --panel-border: #31466f;
       --accent: #38bdf8;
       --accent-2: #a78bfa;
       --good: #34d399;
@@ -23,7 +23,7 @@
     body {
       margin: 0;
       font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
-      background: radial-gradient(circle at top, #111c33 0%, var(--bg) 60%);
+      background: radial-gradient(circle at top, #16294a 0%, #0b1326 45%, var(--bg) 100%);
       color: var(--text);
       touch-action: manipulation;
       -webkit-user-select: none;
@@ -58,13 +58,14 @@
     }
 
     .hud-item {
-      background: rgba(18, 29, 50, 0.9);
+      background: linear-gradient(180deg, rgba(23, 37, 67, 0.94), rgba(13, 24, 45, 0.94));
       border: 1px solid var(--panel-border);
       border-radius: 12px;
       padding: 8px;
       text-align: center;
       font-size: 0.9rem;
       line-height: 1.25;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 16px rgba(2, 8, 23, 0.25);
     }
 
     .hud-item b {
@@ -78,12 +79,13 @@
       position: relative;
       border-radius: 14px;
       overflow: hidden;
-      border: 2px solid var(--panel-border);
+      border: 2px solid #3f5a8f;
       background: #0f172a;
       min-height: 320px;
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 18px 34px rgba(1, 6, 18, 0.5), inset 0 0 0 1px rgba(255,255,255,0.06);
     }
 
     canvas {
@@ -94,7 +96,7 @@
       image-rendering: crisp-edges;
       outline: none;
       touch-action: none;
-      background: #0e1b2f;
+      background: radial-gradient(circle at center, #1a2c4a 0%, #101b30 100%);
     }
 
     .overlay {
@@ -148,10 +150,11 @@
       gap: 10px;
       grid-template-columns: 1fr auto;
       align-items: center;
-      background: rgba(18, 29, 50, 0.9);
+      background: linear-gradient(180deg, rgba(23, 37, 67, 0.92), rgba(13, 24, 45, 0.92));
       border: 1px solid var(--panel-border);
       border-radius: 12px;
       padding: 10px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
     }
 
     .hint {
@@ -159,6 +162,8 @@
       color: var(--text-dim);
       line-height: 1.45;
     }
+
+    .hint b { color: #fde68a; }
 
     .bomb-btn {
       border: none;
@@ -172,6 +177,12 @@
       box-shadow: 0 10px 18px rgba(0, 0, 0, 0.35);
       cursor: pointer;
       touch-action: manipulation;
+      transition: transform 0.14s ease, filter 0.14s ease;
+    }
+
+    .bomb-btn:active {
+      transform: translateY(1px) scale(0.98);
+      filter: brightness(1.08);
     }
 
     @media (max-width: 760px) {
@@ -201,7 +212,8 @@
 
     <section class="controls">
       <div class="hint">
-        手機 / 網頁：<b>點擊地圖目的地</b> 自動移動，<b>連點兩下</b> 放炸彈。<br>
+        手機 / 網頁：<b>點擊可達目的地</b> 會用最短路徑自動移動，<b>連點兩下</b> 放炸彈。<br>
+        若目標路徑被牆/磚/炸彈阻擋，角色會停留原地。<br>
         鍵盤：<b>方向鍵</b> 微調移動，<b>空白鍵</b> 放炸彈。
       </div>
       <button class="bomb-btn" id="bombButton" aria-label="放置炸彈">💣</button>
@@ -282,6 +294,7 @@
     let explosions = [];
     let items = [];
     let exit = null;
+    let destinationMarker = null;
 
     const input = { up: false, down: false, left: false, right: false, bomb: false };
 
@@ -297,6 +310,73 @@
       if (map[gy][gx] === WALL || map[gy][gx] === BRICK) return false;
       if (bombs.some((b) => b.gx === gx && b.gy === gy)) return false;
       return true;
+    }
+
+    function findShortestPath(startX, startY, targetX, targetY) {
+      if (startX === targetX && startY === targetY) return [];
+      if (!isWalkableTile(targetX, targetY)) return null;
+
+      const dirs = [
+        { dx: 1, dy: 0 },
+        { dx: -1, dy: 0 },
+        { dx: 0, dy: 1 },
+        { dx: 0, dy: -1 },
+      ];
+
+      const total = MAP_COLS * MAP_ROWS;
+      const visited = new Array(total).fill(false);
+      const prevX = new Array(total).fill(-1);
+      const prevY = new Array(total).fill(-1);
+      const queue = [];
+      let head = 0;
+
+      const toIndex = (x, y) => y * MAP_COLS + x;
+      const startIndex = toIndex(startX, startY);
+      const targetIndex = toIndex(targetX, targetY);
+
+      visited[startIndex] = true;
+      queue.push({ x: startX, y: startY });
+
+      while (head < queue.length) {
+        const current = queue[head++];
+
+        if (current.x === targetX && current.y === targetY) break;
+
+        for (const d of dirs) {
+          const nx = current.x + d.dx;
+          const ny = current.y + d.dy;
+          if (nx < 0 || ny < 0 || nx >= MAP_COLS || ny >= MAP_ROWS) continue;
+
+          const ni = toIndex(nx, ny);
+          if (visited[ni]) continue;
+
+          const isStart = nx === startX && ny === startY;
+          if (!isStart && !isWalkableTile(nx, ny)) continue;
+
+          visited[ni] = true;
+          prevX[ni] = current.x;
+          prevY[ni] = current.y;
+          queue.push({ x: nx, y: ny });
+        }
+      }
+
+      if (!visited[targetIndex]) return null;
+
+      const steps = [];
+      let cx = targetX;
+      let cy = targetY;
+      while (!(cx === startX && cy === startY)) {
+        const i = toIndex(cx, cy);
+        const px = prevX[i];
+        const py = prevY[i];
+        if (px === -1 || py === -1) return null;
+        steps.push({ dx: cx - px, dy: cy - py });
+        cx = px;
+        cy = py;
+      }
+
+      steps.reverse();
+      return steps;
     }
 
     class Entity {
@@ -371,12 +451,20 @@
           else if (input.right) dx = 1;
           if (dx || dy) {
             this.pathQueue = [];
+            destinationMarker = null;
             this.tryMove(dx, dy);
           } else if (this.pathQueue.length > 0) {
             const next = this.pathQueue.shift();
             if (!next || !this.tryMove(next.dx, next.dy)) {
               this.pathQueue = [];
+              destinationMarker = null;
             }
+          }
+        }
+
+        if (!this.moving && this.pathQueue.length === 0 && destinationMarker?.reachable) {
+          if (this.gridX === destinationMarker.x && this.gridY === destinationMarker.y) {
+            destinationMarker = null;
           }
         }
 
@@ -410,46 +498,17 @@
         return true;
       }
 
-      buildDirectPath(fromX, fromY, toX, toY, order) {
-        const steps = [];
-        let cx = fromX;
-        let cy = fromY;
-
-        for (const axis of order) {
-          if (axis === 'x') {
-            const dir = toX > cx ? 1 : -1;
-            while (cx !== toX) {
-              cx += dir;
-              if (!isWalkableTile(cx, cy)) return null;
-              steps.push({ dx: dir, dy: 0 });
-            }
-          } else {
-            const dir = toY > cy ? 1 : -1;
-            while (cy !== toY) {
-              cy += dir;
-              if (!isWalkableTile(cx, cy)) return null;
-              steps.push({ dx: 0, dy: dir });
-            }
-          }
-        }
-
-        return steps;
-      }
-
       setDestination(gridX, gridY) {
-        if (!this.alive) return;
+        if (!this.alive) return false;
         const startX = this.gridX;
         const startY = this.gridY;
-        if (startX === gridX && startY === gridY) return;
-        if (!isWalkableTile(gridX, gridY)) return;
+        if (startX === gridX && startY === gridY) return false;
 
-        // 只走直角路徑：若路徑有磚塊/炸彈阻擋就不移動。
-        const pathXThenY = this.buildDirectPath(startX, startY, gridX, gridY, ['x', 'y']);
-        const pathYThenX = this.buildDirectPath(startX, startY, gridX, gridY, ['y', 'x']);
-        const chosenPath = pathXThenY || pathYThenX;
-        if (!chosenPath || chosenPath.length === 0) return;
+        const path = findShortestPath(startX, startY, gridX, gridY);
+        if (!path || path.length === 0) return false;
 
-        this.pathQueue = chosenPath;
+        this.pathQueue = path;
+        return true;
       }
 
       placeBomb() {
@@ -869,6 +928,24 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawMap();
 
+      if (destinationMarker) {
+        const mx = destinationMarker.x * TILE_SIZE + TILE_SIZE / 2;
+        const my = destinationMarker.y * TILE_SIZE + TILE_SIZE / 2;
+        const pulse = 8 + Math.sin(performance.now() / 120) * 2.2;
+        const color = destinationMarker.reachable ? 'rgba(34,197,94,0.9)' : 'rgba(239,68,68,0.92)';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(mx, my, pulse + 8, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(mx - 5, my);
+        ctx.lineTo(mx + 5, my);
+        ctx.moveTo(mx, my - 5);
+        ctx.lineTo(mx, my + 5);
+        ctx.stroke();
+      }
+
       if (exit?.revealed) {
         ctx.fillStyle = 'rgba(192, 132, 252, 0.85)';
         ctx.fillRect(exit.x * TILE_SIZE, exit.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -953,7 +1030,6 @@
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      const now = performance.now();
 
       touchStart = { x, y };
       canvas.setPointerCapture(e.pointerId);
@@ -985,7 +1061,13 @@
         if (!triggeredBomb && player?.alive) {
           const gx = Math.floor(x / TILE_SIZE);
           const gy = Math.floor(y / TILE_SIZE);
-          player.setDestination(gx, gy);
+          const moved = player.setDestination(gx, gy);
+          destinationMarker = {
+            x: gx,
+            y: gy,
+            reachable: moved,
+            ttl: moved ? -1 : 26,
+          };
         }
 
         lastTapAt = now;
@@ -1003,6 +1085,14 @@
       input.bomb = true;
       canvas.focus();
     });
+
+    setInterval(() => {
+      if (!destinationMarker) return;
+      if (destinationMarker.ttl > 0) {
+        destinationMarker.ttl -= 1;
+        if (destinationMarker.ttl <= 0) destinationMarker = null;
+      }
+    }, 16);
 
     refreshHud();
     openOverlay();

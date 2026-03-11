@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Gamepad2, Lock, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { GameModal } from './GameModal';
-import { useStarBalance, useSpendStars } from '../hooks/useQuests';
+import { useEarnStars, useStarBalance, useSpendStars } from '../hooks/useQuests';
 import { GAME_COST } from '../lib/constants';
 import { useFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
 import { FUN_GAMES, getFunGameColors, type FunGame } from '../lib/gameConfig';
@@ -27,6 +27,7 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
     // Fetch star balance
     const { data: starBalance = 0, refetch: refetchBalance } = useStarBalance(userId);
     const spendStarsMutation = useSpendStars();
+    const earnStarsMutation = useEarnStars();
 
     // Fetch family settings for game permissions
     const { data: familySettings } = useFamilySettings();
@@ -60,6 +61,15 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
             }
             throw error;
         }
+    };
+
+    const handleEarnStars = async (amount: number, description?: string, gameId?: string): Promise<void> => {
+        await earnStarsMutation.mutateAsync({
+            userId,
+            amount,
+            gameId: gameId ?? selectedGame?.id ?? 'game_settlement',
+            description: description ?? `遊戲結算獎勵: ${selectedGame?.name ?? '未知遊戲'}`,
+        });
     };
 
     // If fun games are disabled by parent, don't show reward section at all
@@ -217,6 +227,7 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
                     starBalance={starBalance}
                     onSpendStars={handleSpendStars}
                     onRefreshBalance={() => refetchBalance()}
+                    onEarnStars={handleEarnStars}
                 />
             )}
         </>

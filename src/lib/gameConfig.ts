@@ -135,6 +135,14 @@ export const FUN_GAMES: FunGame[] = [
         description: '銀河系守衛戰',
         url: '/games/galaxy_defender.html',
         color: 'bg-blue-600 hover:bg-blue-700'
+    },
+    {
+        id: 'monster_survivor',
+        name: '怪獸生存戰',
+        icon: '🧛',
+        description: 'Vampire Survivors 風格生存挑戰',
+        url: '/games/monster_survivor.html',
+        color: 'bg-violet-600 hover:bg-violet-700'
     }
 ];
 
@@ -150,6 +158,7 @@ export const FUN_COLORS: Record<string, { bg: string; border: string; text: stri
     'bubble_shooter': { bg: 'var(--pastel-pink-bg)', border: 'var(--pastel-pink-border)', text: 'var(--pastel-pink-text)' },
     'monster_bomber': { bg: 'var(--pastel-cyan-bg)', border: 'var(--pastel-cyan-border)', text: 'var(--pastel-cyan-text)' },
     'galaxy_defender': { bg: 'var(--pastel-blue-bg)', border: 'var(--pastel-blue-border)', text: 'var(--pastel-blue-text)' },
+    'monster_survivor': { bg: 'var(--pastel-purple-bg)', border: 'var(--pastel-purple-border)', text: 'var(--pastel-purple-text)' },
 };
 
 export const getFunGameColors = (gameId: string) => {

@@ -632,6 +632,48 @@ export const useSpendStars = () => {
     });
 };
 
+// Earn stars from in-game settlement (child gameplay reward)
+export const useEarnStars = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            userId,
+            amount,
+            gameId,
+            description,
+        }: {
+            userId: string;
+            amount: number;
+            gameId: string;
+            description: string;
+        }) => {
+            if (amount <= 0) {
+                throw new Error('結算星幣必須大於 0');
+            }
+
+            const { data, error } = await supabase
+                .from('star_transactions')
+                .insert({
+                    user_id: userId,
+                    amount,
+                    type: 'earn',
+                    description,
+                    game_id: gameId,
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['star_balance', variables.userId] });
+            queryClient.invalidateQueries({ queryKey: ['star_transactions'] });
+        },
+    });
+};
+
 // Manually adjust stars (Parent only)
 export const useAdjustStars = () => {
     const queryClient = useQueryClient();
