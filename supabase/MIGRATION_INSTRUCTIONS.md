@@ -90,3 +90,43 @@ VALUES ('00000000-0000-0000-0000-000000000000', 100, 'adjustment', 'migration te
 -- 3) 檢查餘額函式（請換成真實 child id）
 SELECT get_child_star_balance('00000000-0000-0000-0000-000000000000'::uuid);
 ```
+
+---
+
+## 世界系統 RLS 修正（補給站/銀行/兌換必跑）
+
+若你在孩子頁購買建材補給、兌換資源或操作世界銀行時看到 `403 Forbidden`，
+而錯誤訊息包含 `new row violates row-level security policy for table "world_states"`、
+`world_inventory`、`world_characters`、`world_bank_accounts` 等，請再執行：
+
+- [supabase/fix_world_rls_for_family_parents.sql](fix_world_rls_for_family_parents.sql)
+
+此腳本會：
+1. 保留本人可管理自己的世界資料
+2. 允許同家庭 `parent` 帳號代孩子管理世界/金融資料
+3. 修正 `world_states`、`world_buildings`、`world_inventory`、`world_characters`、`world_adventures`
+4. 修正 `world_bank_accounts`、`world_time_deposits`、`world_exchange_logs`
+
+### 前置條件
+
+若你執行時看到 `relation "world_bank_accounts" does not exist`、
+`relation "world_states" does not exist` 這類錯誤，代表世界系統資料表尚未建立。
+
+請先依序執行：
+
+- [supabase/add_world_system.sql](add_world_system.sql)
+- [supabase/add_world_finance.sql](add_world_finance.sql)
+
+再執行：
+
+- [supabase/fix_world_rls_for_family_parents.sql](fix_world_rls_for_family_parents.sql)
+
+目前 `fix_world_rls_for_family_parents.sql` 已改成會自動跳過不存在的資料表，
+但若你希望補給站、世界銀行、定存與兌換完整可用，仍需要先建立上述 world tables。
+
+### 驗證方式
+
+1. 重新整理孩子頁並打開世界商店街
+2. 購買一次 `木材補給` / `石材補給` / `晶礦補給`
+3. 確認 Console 不再出現上述 world tables 的 `403`
+4. 確認資源數量與星幣餘額都有更新

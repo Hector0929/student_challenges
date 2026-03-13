@@ -49,8 +49,12 @@ vi.mock('../lib/supabase', () => ({
     supabase: {},
 }));
 
+vi.mock('./World3D', () => ({
+    World3D: () => <div>World3D Mock</div>,
+}));
+
 describe('ChildWorldShopStreet', () => {
-    it('renders world resources, exchange logs, and bank panel', () => {
+    it('renders expansion cards, world resources, exchange logs, and bank panel', () => {
         const queryClient = new QueryClient();
 
         useUserMock.mockReturnValue({ user: { family_id: 'family-1' } });
@@ -73,7 +77,7 @@ describe('ChildWorldShopStreet', () => {
                 lastAdventureResult: null,
             },
         });
-        useSaveWorldPersistenceMock.mockReturnValue({ mutateAsync: vi.fn() });
+        useSaveWorldPersistenceMock.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
         useWorldBankingMock.mockReturnValue({
             bankNowMs: new Date('2026-03-13T00:00:00.000Z').getTime(),
             demandDepositAccount: { balance: 44, lastInterestAt: '2026-03-12T00:00:00.000Z' },
@@ -107,6 +111,16 @@ describe('ChildWorldShopStreet', () => {
         expect(screen.getByText('🌲 木材：20')).toBeInTheDocument();
         expect(screen.getByText('🪨 石材：10')).toBeInTheDocument();
         expect(screen.getByText('💎 晶礦：5')).toBeInTheDocument();
+        expect(screen.getByText('🏝️ 懸空島擴建')).toBeInTheDocument();
+        expect(screen.getByText('World3D Mock')).toBeInTheDocument();
+        expect(screen.getAllByText((_, element) => element?.textContent === '🌲 森林外島' || element?.textContent?.trim() === '🌲 森林外島').length).toBeGreaterThan(0);
+        expect(screen.getAllByText((_, element) => element?.textContent === '⛰️ 礦山外島' || element?.textContent?.trim() === '⛰️ 礦山外島').length).toBeGreaterThan(0);
+        expect(screen.getAllByText((_, element) => element?.textContent === '🏪 商業外島' || element?.textContent?.trim() === '🏪 商業外島').length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('button', { name: '查看小島' }).length).toBeGreaterThan(0);
+        expect(screen.getByRole('button', { name: '升級交易所（76⭐）' })).toBeInTheDocument();
+        expect(screen.getByText('🏗️ 建築升級站')).toBeInTheDocument();
+        expect(screen.getByText('🌲 伐木場 Lv.2')).toBeInTheDocument();
+        expect(screen.getByText('⛏️ 採礦場 Lv.2')).toBeInTheDocument();
         expect(screen.getByText('🪵 建材補給站')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: '購買 木材補給' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: '購買 石材補給' })).toBeInTheDocument();
