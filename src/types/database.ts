@@ -137,6 +137,60 @@ export interface TowerEvent {
     is_active: boolean;
 }
 
+export interface WorldStateRow {
+    user_id: string;
+    island_level: number;
+    time_of_day_pref: 'day' | 'dusk';
+    last_collected_at: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface WorldBuildingRow {
+    id?: string;
+    user_id: string;
+    building_key: 'forest' | 'mine' | 'academy' | 'market' | 'storage' | 'adventure';
+    level: number;
+    worker_count?: number;
+    assigned_plot_key?: string | null;
+    updated_at?: string;
+}
+
+export interface WorldInventoryRow {
+    user_id: string;
+    wood: number;
+    stone: number;
+    crystal: number;
+    monster_shards: number;
+    updated_at?: string;
+}
+
+export interface WorldCharacterRow {
+    user_id: string;
+    level: number;
+    power: number;
+    hp_bonus?: number;
+    atk_bonus?: number;
+    move_bonus?: number;
+    skill_points?: number;
+    job_class?: string | null;
+    updated_at?: string;
+}
+
+export interface WorldAdventureRow {
+    id?: string;
+    user_id: string;
+    mission_type: 'short' | 'standard' | 'long';
+    duration_minutes: number;
+    status: 'idle' | 'running' | 'completed' | 'claimed';
+    started_at: string;
+    ends_at: string;
+    adventure_level: number;
+    hero_level: number;
+    result_payload?: Record<string, unknown> | null;
+    updated_at?: string;
+}
+
 // Monster shop configuration (parent-managed)
 export interface MonsterShopItem {
     id: string;
@@ -146,4 +200,61 @@ export interface MonsterShopItem {
     is_enabled: boolean;
     created_at: string;
     updated_at: string;
+}
+
+export interface FamilyExchangeRates {
+    id: string;
+    family_id: string;
+    wood_rate: number;
+    stone_rate: number;
+    crystal_rate: number;
+    updated_at: string;
+    updated_by?: string;
+}
+
+export interface FamilyBankSettings {
+    id: string;
+    family_id: string;
+    demand_daily_rate: number;
+    time_deposit_daily_rate: number;
+    min_time_deposit_days: number;
+    early_withdraw_penalty_rate: number;
+    updated_at: string;
+    updated_by?: string;
+}
+
+export interface WorldBankAccountRow {
+    user_id: string;
+    balance: number;
+    last_interest_at: string;
+    simulated_now_at: string;
+    updated_at?: string;
+}
+
+export interface WorldTimeDepositRow {
+    id?: string;
+    user_id: string;
+    principal: number;
+    daily_rate: number;
+    start_at: string;
+    matures_at: string;
+    term_days: number;
+    status: 'active' | 'matured' | 'claimed' | 'cancelled';
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface WorldExchangeLogRow {
+    id?: string;
+    user_id: string;
+    sold_wood: number;
+    sold_stone: number;
+    sold_crystal: number;
+    market_level: number;
+    market_multiplier: number;
+    base_wood_rate: number;
+    base_stone_rate: number;
+    base_crystal_rate: number;
+    stars_earned: number;
+    created_at?: string;
 }

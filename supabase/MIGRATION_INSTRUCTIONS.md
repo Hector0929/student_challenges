@@ -59,3 +59,34 @@ SELECT id, title, is_active, status FROM quests LIMIT 10;
   - `active`: 活跃任务（孩子可以看到并完成）
   - `pending`: 待审核任务（孩子提出的新任务请求）
   - `archived`: 已归档任务（不再显示）
+
+---
+
+## 星幣系統遷移（必跑）
+
+若你遇到 `star_transactions` 寫入 400、`type` 不合法、或星幣餘額計算不一致，請再執行：
+
+- [supabase/migrate_star_transactions_v2.sql](migrate_star_transactions_v2.sql)
+
+此腳本會：
+1. 統一 `star_transactions` 欄位與 constraint
+2. 支援 `earn/spend/adjustment/correction`
+3. 重建 `get_child_star_balance()` 為「任務已驗證 + 交易淨和」
+4. 補齊 RLS policy 與 realtime 發佈
+
+### 驗證 SQL
+
+```sql
+-- 1) 檢查 type 約束
+SELECT conname, pg_get_constraintdef(oid)
+FROM pg_constraint
+WHERE conrelid = 'star_transactions'::regclass
+  AND conname = 'star_transactions_type_check';
+
+-- 2) 測試加星幣（請換成真實 child id）
+INSERT INTO star_transactions (user_id, amount, type, description, game_id)
+VALUES ('00000000-0000-0000-0000-000000000000', 100, 'adjustment', 'migration test', 'qa_tool');
+
+-- 3) 檢查餘額函式（請換成真實 child id）
+SELECT get_child_star_balance('00000000-0000-0000-0000-000000000000'::uuid);
+```

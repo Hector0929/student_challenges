@@ -11,6 +11,7 @@ import { RPGButton } from '../components/RPGButton';
 import { RewardTime } from '../components/RewardTime';
 import { LearningArea } from '../components/LearningArea';
 import { ShopModal } from '../components/ShopModal';
+import { ChildWorldSummaryCard } from '../components/ChildWorldSummaryCard';
 import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings } from '../hooks/useFamilySettings';
 import { World3D } from '../components/World3D';
@@ -61,6 +62,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false);
     const [isTowerOpen, setIsTowerOpen] = useState(false);
     const [isShopOpen, setIsShopOpen] = useState(false);
+    const [shopInitialTab, setShopInitialTab] = useState<'monster' | 'world'>('monster');
 
     const questTarget = Math.max(0, progress.total_quests > 0 ? Math.min(progress.total_quests, DAILY_QUEST_TARGET) : DAILY_QUEST_TARGET);
     const isUnlocked = progress.completed_quests >= questTarget && progress.total_quests > 0;
@@ -275,7 +277,10 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                 <ExchangeRateCard />
                 <button
                     type="button"
-                    onClick={() => setIsShopOpen(true)}
+                    onClick={() => {
+                        setShopInitialTab('monster');
+                        setIsShopOpen(true);
+                    }}
                     className="bg-white border-4 border-deep-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[1px] transition-all flex flex-col items-center justify-center gap-2 min-h-[96px]"
                 >
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-purple-100 border-2 border-purple-300">
@@ -294,6 +299,14 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
             <div className="mb-6">
                 <World3D />
             </div>
+
+            <ChildWorldSummaryCard
+                userId={userId}
+                onOpenShopStreet={() => {
+                    setShopInitialTab('world');
+                    setIsShopOpen(true);
+                }}
+            />
 
             {/* Header Section */}
             <div className="clay-card mb-6 p-5 animate-bounce-in" style={{ borderRadius: '20px' }}>
@@ -561,6 +574,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                 onGoHome={onGoHome}
                 userId={userId}
                 starBalance={starBalance || 0}
+                initialTab={shopInitialTab}
             />
         </div >
     );

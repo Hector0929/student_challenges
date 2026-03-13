@@ -6,6 +6,14 @@ import { supabase } from '../lib/supabase';
 import type { Profile } from '../types/database';
 import { useAdjustStars, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings, useUpdateFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
+import {
+    useFamilyBankSettings,
+    useFamilyExchangeRates,
+    useUpdateFamilyBankSettings,
+    useUpdateFamilyExchangeRates,
+    DEFAULT_FAMILY_BANK_SETTINGS,
+    DEFAULT_FAMILY_EXCHANGE_RATES,
+} from '../hooks/useFamilyShopSettings';
 import { useQuery } from '@tanstack/react-query';
 import { ClayDialog } from '../components/ClayDialog';
 import { FUN_GAMES, type FunGame } from '../lib/gameConfig';
@@ -103,10 +111,21 @@ export const ParentSettings: React.FC = () => {
     // Family Settings
     const { data: familySettings } = useFamilySettings();
     const updateFamilySettingsMutation = useUpdateFamilySettings();
+    const { data: familyExchangeRates } = useFamilyExchangeRates();
+    const updateFamilyExchangeRatesMutation = useUpdateFamilyExchangeRates();
+    const { data: familyBankSettings } = useFamilyBankSettings();
+    const updateFamilyBankSettingsMutation = useUpdateFamilyBankSettings();
     const [parentMessageEnabled, setParentMessageEnabled] = useState(false);
     const [parentMessage, setParentMessage] = useState(DEFAULT_FAMILY_SETTINGS.parent_message);
     const [exchangeRateEnabled, setExchangeRateEnabled] = useState(false);
     const [starToTwdRate, setStarToTwdRate] = useState<number | string>(DEFAULT_FAMILY_SETTINGS.star_to_twd_rate);
+    const [woodRate, setWoodRate] = useState<number | string>(DEFAULT_FAMILY_EXCHANGE_RATES.wood_rate);
+    const [stoneRate, setStoneRate] = useState<number | string>(DEFAULT_FAMILY_EXCHANGE_RATES.stone_rate);
+    const [crystalRate, setCrystalRate] = useState<number | string>(DEFAULT_FAMILY_EXCHANGE_RATES.crystal_rate);
+    const [demandDailyRate, setDemandDailyRate] = useState<number | string>(DEFAULT_FAMILY_BANK_SETTINGS.demand_daily_rate);
+    const [timeDepositDailyRate, setTimeDepositDailyRate] = useState<number | string>(DEFAULT_FAMILY_BANK_SETTINGS.time_deposit_daily_rate);
+    const [minTimeDepositDays, setMinTimeDepositDays] = useState<number | string>(DEFAULT_FAMILY_BANK_SETTINGS.min_time_deposit_days);
+    const [earlyWithdrawPenaltyRate, setEarlyWithdrawPenaltyRate] = useState<number | string>(DEFAULT_FAMILY_BANK_SETTINGS.early_withdraw_penalty_rate);
 
     // Game Permission States
     const [funGamesEnabled, setFunGamesEnabled] = useState(true);
@@ -164,6 +183,57 @@ export const ParentSettings: React.FC = () => {
         }
     }, [familySettings]);
 
+    useEffect(() => {
+        if (familyExchangeRates) {
+            setWoodRate(familyExchangeRates.wood_rate);
+            setStoneRate(familyExchangeRates.stone_rate);
+            setCrystalRate(familyExchangeRates.crystal_rate);
+        }
+    }, [familyExchangeRates]);
+
+    useEffect(() => {
+        if (familyBankSettings) {
+            setDemandDailyRate(familyBankSettings.demand_daily_rate);
+            setTimeDepositDailyRate(familyBankSettings.time_deposit_daily_rate);
+            setMinTimeDepositDays(familyBankSettings.min_time_deposit_days);
+            setEarlyWithdrawPenaltyRate(familyBankSettings.early_withdraw_penalty_rate);
+        }
+    }, [familyBankSettings]);
+
+    const handleDecimalInput = (
+        value: string,
+        setter: React.Dispatch<React.SetStateAction<number | string>>,
+    ) => {
+        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+            setter(value === '' ? '' : value);
+        }
+    };
+
+    const normalizeDecimalInput = (
+        value: number | string,
+        fallback: number,
+        options?: { min?: number; max?: number },
+    ) => {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) return fallback;
+
+        let nextValue = parsed;
+        if (options?.min !== undefined) {
+            nextValue = Math.max(options.min, nextValue);
+        }
+        if (options?.max !== undefined) {
+            nextValue = Math.min(options.max, nextValue);
+        }
+
+        return nextValue;
+    };
+
+    const normalizeIntegerInput = (value: number | string, fallback: number, minimum = 1) => {
+        const parsed = Math.floor(Number(value));
+        if (!Number.isFinite(parsed)) return fallback;
+        return Math.max(minimum, parsed);
+    };
+
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -204,16 +274,32 @@ export const ParentSettings: React.FC = () => {
             }
 
             // Update Family Settings
-            await updateFamilySettingsMutation.mutateAsync({
-                parent_message_enabled: parentMessageEnabled,
-                parent_message: parentMessage,
-                exchange_rate_enabled: exchangeRateEnabled,
-                star_to_twd_rate: Number(starToTwdRate) || DEFAULT_FAMILY_SETTINGS.star_to_twd_rate,
-                // Game permissions
-                fun_games_enabled: funGamesEnabled,
-                learning_area_enabled: learningAreaEnabled,
-                disabled_games: disabledGames,
-            });
+            await Promise.all([
+                updateFamilySettingsMutation.mutateAsync({
+                    parent_message_enabled: parentMessageEnabled,
+                    parent_message: parentMessage,
+                    exchange_rate_enabled: exchangeRateEnabled,
+                    star_to_twd_rate: normalizeDecimalInput(starToTwdRate, DEFAULT_FAMILY_SETTINGS.star_to_twd_rate, { min: 0.01 }),
+                    fun_games_enabled: funGamesEnabled,
+                    learning_area_enabled: learningAreaEnabled,
+                    disabled_games: disabledGames,
+                }),
+                updateFamilyExchangeRatesMutation.mutateAsync({
+                    wood_rate: normalizeDecimalInput(woodRate, DEFAULT_FAMILY_EXCHANGE_RATES.wood_rate, { min: 0 }),
+                    stone_rate: normalizeDecimalInput(stoneRate, DEFAULT_FAMILY_EXCHANGE_RATES.stone_rate, { min: 0 }),
+                    crystal_rate: normalizeDecimalInput(crystalRate, DEFAULT_FAMILY_EXCHANGE_RATES.crystal_rate, { min: 0 }),
+                }),
+                updateFamilyBankSettingsMutation.mutateAsync({
+                    demand_daily_rate: normalizeDecimalInput(demandDailyRate, DEFAULT_FAMILY_BANK_SETTINGS.demand_daily_rate, { min: 0 }),
+                    time_deposit_daily_rate: normalizeDecimalInput(timeDepositDailyRate, DEFAULT_FAMILY_BANK_SETTINGS.time_deposit_daily_rate, { min: 0 }),
+                    min_time_deposit_days: normalizeIntegerInput(minTimeDepositDays, DEFAULT_FAMILY_BANK_SETTINGS.min_time_deposit_days),
+                    early_withdraw_penalty_rate: normalizeDecimalInput(
+                        earlyWithdrawPenaltyRate,
+                        DEFAULT_FAMILY_BANK_SETTINGS.early_withdraw_penalty_rate,
+                        { min: 0, max: 1 }
+                    ),
+                }),
+            ]);
 
             setMessage({ text: '設定已更新！', type: 'success' });
         } catch (error) {
@@ -411,6 +497,127 @@ export const ParentSettings: React.FC = () => {
                                     onAdjust={handleOpenAdjust}
                                 />
                             ))}
+                        </div>
+                    </div>
+
+                    <div className="border-b-2 border-dashed border-gray-300 pb-6">
+                        <h3 className="font-pixel text-lg mb-4 flex items-center gap-2">
+                            <div className="bg-emerald-100 p-1 rounded text-emerald-600">🏬</div>
+                            商店街設定
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                            設定孩子在世界系統中看到的資源售價與銀行規則，會套用到兌換店與銀行。
+                        </p>
+
+                        <div className="space-y-6">
+                            <div className="bg-emerald-50 border-2 border-emerald-200 p-4 rounded-lg">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="text-lg">🏪</span>
+                                    <span className="font-pixel text-sm text-emerald-800">兌換店價格</span>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div className="bg-white border border-emerald-100 rounded-xl p-3">
+                                        <label className="block text-sm text-gray-600 mb-2">🌲 木頭單價</label>
+                                        <input
+                                            aria-label="木頭單價"
+                                            type="text"
+                                            inputMode="decimal"
+                                            value={woodRate}
+                                            onChange={(e) => handleDecimalInput(e.target.value, setWoodRate)}
+                                            onBlur={() => setWoodRate(normalizeDecimalInput(woodRate, DEFAULT_FAMILY_EXCHANGE_RATES.wood_rate, { min: 0 }))}
+                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm font-pixel"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">每 1 單位木頭可換得的基準星幣</p>
+                                    </div>
+                                    <div className="bg-white border border-emerald-100 rounded-xl p-3">
+                                        <label className="block text-sm text-gray-600 mb-2">🪨 石頭單價</label>
+                                        <input
+                                            aria-label="石頭單價"
+                                            type="text"
+                                            inputMode="decimal"
+                                            value={stoneRate}
+                                            onChange={(e) => handleDecimalInput(e.target.value, setStoneRate)}
+                                            onBlur={() => setStoneRate(normalizeDecimalInput(stoneRate, DEFAULT_FAMILY_EXCHANGE_RATES.stone_rate, { min: 0 }))}
+                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm font-pixel"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">市場倍率會在孩子端額外乘上去</p>
+                                    </div>
+                                    <div className="bg-white border border-emerald-100 rounded-xl p-3">
+                                        <label className="block text-sm text-gray-600 mb-2">💎 水晶單價</label>
+                                        <input
+                                            aria-label="水晶單價"
+                                            type="text"
+                                            inputMode="decimal"
+                                            value={crystalRate}
+                                            onChange={(e) => handleDecimalInput(e.target.value, setCrystalRate)}
+                                            onBlur={() => setCrystalRate(normalizeDecimalInput(crystalRate, DEFAULT_FAMILY_EXCHANGE_RATES.crystal_rate, { min: 0 }))}
+                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm font-pixel"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">適合拿來調整稀有資源的獎勵感</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-sky-50 border-2 border-sky-200 p-4 rounded-lg">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="text-lg">🏦</span>
+                                    <span className="font-pixel text-sm text-sky-800">銀行利率與規則</span>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div className="bg-white border border-sky-100 rounded-xl p-3">
+                                        <label className="block text-sm text-gray-600 mb-2">活存日利率</label>
+                                        <input
+                                            aria-label="活存日利率"
+                                            type="text"
+                                            inputMode="decimal"
+                                            value={demandDailyRate}
+                                            onChange={(e) => handleDecimalInput(e.target.value, setDemandDailyRate)}
+                                            onBlur={() => setDemandDailyRate(normalizeDecimalInput(demandDailyRate, DEFAULT_FAMILY_BANK_SETTINGS.demand_daily_rate, { min: 0 }))}
+                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm font-pixel"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">目前約 {(normalizeDecimalInput(demandDailyRate, DEFAULT_FAMILY_BANK_SETTINGS.demand_daily_rate, { min: 0 }) * 100).toFixed(2)}%</p>
+                                    </div>
+                                    <div className="bg-white border border-sky-100 rounded-xl p-3">
+                                        <label className="block text-sm text-gray-600 mb-2">定存日利率</label>
+                                        <input
+                                            aria-label="定存日利率"
+                                            type="text"
+                                            inputMode="decimal"
+                                            value={timeDepositDailyRate}
+                                            onChange={(e) => handleDecimalInput(e.target.value, setTimeDepositDailyRate)}
+                                            onBlur={() => setTimeDepositDailyRate(normalizeDecimalInput(timeDepositDailyRate, DEFAULT_FAMILY_BANK_SETTINGS.time_deposit_daily_rate, { min: 0 }))}
+                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm font-pixel"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">目前約 {(normalizeDecimalInput(timeDepositDailyRate, DEFAULT_FAMILY_BANK_SETTINGS.time_deposit_daily_rate, { min: 0 }) * 100).toFixed(2)}%</p>
+                                    </div>
+                                    <div className="bg-white border border-sky-100 rounded-xl p-3">
+                                        <label className="block text-sm text-gray-600 mb-2">最短定存天數</label>
+                                        <input
+                                            aria-label="最短定存天數"
+                                            type="text"
+                                            inputMode="numeric"
+                                            value={minTimeDepositDays}
+                                            onChange={(e) => setMinTimeDepositDays(e.target.value.replace(/[^0-9]/g, ''))}
+                                            onBlur={() => setMinTimeDepositDays(normalizeIntegerInput(minTimeDepositDays, DEFAULT_FAMILY_BANK_SETTINGS.min_time_deposit_days))}
+                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm font-pixel"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">孩子建立定存時至少要鎖定這麼多天</p>
+                                    </div>
+                                    <div className="bg-white border border-sky-100 rounded-xl p-3">
+                                        <label className="block text-sm text-gray-600 mb-2">提前解約違約金比例</label>
+                                        <input
+                                            aria-label="提前解約違約金比例"
+                                            type="text"
+                                            inputMode="decimal"
+                                            value={earlyWithdrawPenaltyRate}
+                                            onChange={(e) => handleDecimalInput(e.target.value, setEarlyWithdrawPenaltyRate)}
+                                            onBlur={() => setEarlyWithdrawPenaltyRate(normalizeDecimalInput(earlyWithdrawPenaltyRate, DEFAULT_FAMILY_BANK_SETTINGS.early_withdraw_penalty_rate, { min: 0, max: 1 }))}
+                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm font-pixel"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">目前約 {(normalizeDecimalInput(earlyWithdrawPenaltyRate, DEFAULT_FAMILY_BANK_SETTINGS.early_withdraw_penalty_rate, { min: 0, max: 1 }) * 100).toFixed(2)}%</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

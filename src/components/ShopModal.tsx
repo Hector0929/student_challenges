@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, Home, Store, Star } from 'lucide-react';
 import { ChildMonsterShop } from './ChildMonsterShop';
+import { ChildWorldShopStreet } from './ChildWorldShopStreet';
 import { useGameWindowController } from '../hooks/useGameWindowController';
 
 interface ShopModalProps {
@@ -10,6 +11,7 @@ interface ShopModalProps {
     onGoHome?: () => void;
     userId: string;
     starBalance: number;
+    initialTab?: 'monster' | 'world';
 }
 
 export const ShopModal: React.FC<ShopModalProps> = ({
@@ -18,13 +20,21 @@ export const ShopModal: React.FC<ShopModalProps> = ({
     onGoHome,
     userId,
     starBalance,
+    initialTab = 'monster',
 }) => {
+    const [activeTab, setActiveTab] = React.useState<'monster' | 'world'>(initialTab);
     const { handleEndGame, handleGoHome } = useGameWindowController({
         isOpen,
         isImmersivePhase: isOpen,
         onClose,
         onGoHome,
     });
+
+    useEffect(() => {
+        if (isOpen) {
+            setActiveTab(initialTab);
+        }
+    }, [initialTab, isOpen]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -44,6 +54,10 @@ export const ShopModal: React.FC<ShopModalProps> = ({
 
     if (!isOpen) return null;
 
+    const isWorldTab = activeTab === 'world';
+    const title = isWorldTab ? '世界商店街' : '怪獸商店街';
+    const subtitle = isWorldTab ? '資源兌換、世界銀行、定存收益都在這裡。' : '用星幣帶怪獸夥伴回家，打造你的隊伍。';
+
     const modalTree = (
         <div className="fixed inset-0 z-[120] bg-black/45 backdrop-blur-[1px] p-0 sm:p-3">
             <div className="w-full h-full sm:max-w-5xl sm:mx-auto sm:h-[calc(100dvh-1.5rem)] bg-indigo-50 flex flex-col overflow-hidden">
@@ -59,7 +73,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                         </button>
                         <span className="font-pixel text-indigo-900 text-xs sm:text-sm truncate max-w-[140px] sm:max-w-[240px] flex items-center gap-2">
                             <Store size={16} />
-                            怪獸商店街
+                            {title}
                         </span>
                     </div>
 
@@ -81,7 +95,32 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-3 sm:p-4">
-                    <ChildMonsterShop userId={userId} starBalance={starBalance} inModal />
+                    <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${isWorldTab ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-indigo-200 bg-indigo-50 text-indigo-900'}`}>
+                        {subtitle}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('monster')}
+                            className={`px-4 py-2 rounded-xl border-2 font-heading font-bold text-sm ${activeTab === 'monster' ? 'bg-indigo-500 text-white border-indigo-700' : 'bg-white text-indigo-700 border-indigo-200'}`}
+                        >
+                            👾 怪獸商店
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('world')}
+                            className={`px-4 py-2 rounded-xl border-2 font-heading font-bold text-sm ${activeTab === 'world' ? 'bg-emerald-500 text-white border-emerald-700' : 'bg-white text-emerald-700 border-emerald-200'}`}
+                        >
+                            🏬 世界商店街
+                        </button>
+                    </div>
+
+                    {activeTab === 'monster' ? (
+                        <ChildMonsterShop userId={userId} starBalance={starBalance} inModal />
+                    ) : (
+                        <ChildWorldShopStreet userId={userId} starBalance={starBalance} />
+                    )}
                 </div>
             </div>
         </div>

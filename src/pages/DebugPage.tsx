@@ -1,13 +1,29 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDailyLogs, useStarBalance } from '../hooks/useQuests';
 import { RefreshCw, Play, PlusCircle, Dices, Bug } from 'lucide-react';
 import { FUN_GAMES, type FunGame } from '../lib/gameConfig';
+import { WorldLabPanel } from '../components/WorldLabPanel';
 import { GameModal } from '../components/GameModal';
 import { MonsterTower, TowerPreview } from '../components/MonsterTower';
 import { MonsterTowerV2, TowerV2Preview } from '../components/MonsterTowerV2';
+import { useWorldAdventure } from '../hooks/useWorldAdventure';
+import { useSaveWorldPersistence, useWorldPersistence } from '../hooks/useWorldPersistence';
+import { useWorldBanking } from '../hooks/useWorldBanking';
+import { useWorldExchange } from '../hooks/useWorldExchange';
+import { useWorldState, type WorldBuildingKey } from '../hooks/useWorldState';
 import { useTowerProgress, useAddDice } from '../hooks/useTowerProgress';
 import { useUser } from '../contexts/UserContext';
+import {
+    DEFAULT_FAMILY_BANK_SETTINGS,
+    DEFAULT_FAMILY_EXCHANGE_RATES,
+    useFamilyBankSettings,
+    useFamilyExchangeRates,
+} from '../hooks/useFamilyShopSettings';
 import { supabase } from '../lib/supabase';
+import {
+    type BankRateSettings,
+} from '../lib/world/bank';
+import type { ExchangePriceTable } from '../lib/world/exchangeShop';
 import type { DailyLog } from '../types/database';
 
 interface DailyLogWithRelations extends DailyLog {
@@ -15,37 +31,293 @@ interface DailyLogWithRelations extends DailyLog {
     profiles?: { name: string; student_id?: string };
 }
 
+const WORLD_PLAN_CHECKLIST = [
+    { id: 'P1-1', title: '建立懸空島資料表（島等級 / 建築等級 / 最後結算時間）', phase: 'Phase A' },
+    { id: 'P1-2', title: '接入離線產出結算（登入時補發資源）', phase: 'Phase A' },
+    { id: 'P1-3', title: '角色成長欄位（等級 / 戰力 / 技能點）', phase: 'Phase A' },
+    { id: 'P2-1', title: '商店街新增世界道具分類（建材包 / 加速券）', phase: 'Phase B' },
+    { id: 'P2-2', title: '怪獸收藏被動加成串接角色與島嶼', phase: 'Phase B' },
+    { id: 'P2-3', title: '每日輪替商品與稀有刷新機制', phase: 'Phase B' },
+    { id: 'P3-1', title: '世界事件（豐收 / 暴風 / 怪潮）', phase: 'Phase C' },
+    { id: 'P3-2', title: '經濟平衡（上限 / 遞減 / 通膨控制）', phase: 'Phase C' },
+    { id: 'P3-3', title: '家庭內展示與排行榜（可選）', phase: 'Phase C' },
+];
+
 export const DebugPage: React.FC = () => {
     const { user } = useUser();
+    const { data: familyExchangeRates } = useFamilyExchangeRates(user?.family_id);
+    const { data: familyBankSettings } = useFamilyBankSettings(user?.family_id);
     const { data: allLogs, isLoading, refetch } = useDailyLogs('all', null);
     const { data: starBalance = 0, refetch: refetchBalance } = useStarBalance(user?.id || '');
 
     // QA State
     const [selectedGame, setSelectedGame] = useState<FunGame | null>(null);
-    const [activeTab, setActiveTab] = useState<'games' | 'logs' | 'tower' | 'towerV2'>('games');
+    const [activeTab, setActiveTab] = useState<'games' | 'logs' | 'tower' | 'towerV2' | 'worldLab'>('games');
     const [isTowerOpen, setIsTowerOpen] = useState(false);
     const [isTowerV2Open, setIsTowerV2Open] = useState(false);
+    const hasHydratedWorldRef = useRef(false);
 
     // Tower data
     const { data: towerProgress, refetch: refetchTower } = useTowerProgress(user?.id || '');
     const addDiceMutation = useAddDice();
+    const { data: persistedWorldSnapshot, isLoading: isWorldPersistenceLoading, error: worldPersistenceError } = useWorldPersistence(user?.id);
+    const saveWorldPersistence = useSaveWorldPersistence(user?.id);
+    const familyExchangePriceTable: ExchangePriceTable = React.useMemo(() => ({
+        wood: familyExchangeRates?.wood_rate ?? DEFAULT_FAMILY_EXCHANGE_RATES.wood_rate,
+        stone: familyExchangeRates?.stone_rate ?? DEFAULT_FAMILY_EXCHANGE_RATES.stone_rate,
+        crystal: familyExchangeRates?.crystal_rate ?? DEFAULT_FAMILY_EXCHANGE_RATES.crystal_rate,
+    }), [familyExchangeRates]);
+
+    const bankSettings: BankRateSettings = React.useMemo(() => ({
+        demandDailyRate: familyBankSettings?.demand_daily_rate ?? DEFAULT_FAMILY_BANK_SETTINGS.demand_daily_rate,
+        timeDepositDailyRate: familyBankSettings?.time_deposit_daily_rate ?? DEFAULT_FAMILY_BANK_SETTINGS.time_deposit_daily_rate,
+        minTimeDepositDays: familyBankSettings?.min_time_deposit_days ?? DEFAULT_FAMILY_BANK_SETTINGS.min_time_deposit_days,
+        earlyWithdrawPenaltyRate: familyBankSettings?.early_withdraw_penalty_rate ?? DEFAULT_FAMILY_BANK_SETTINGS.early_withdraw_penalty_rate,
+    }), [familyBankSettings]);
+
+    const adjustStars = async (amount: number, description: string): Promise<boolean> => {
+        if (!user) return false;
+        try {
+            // Compatibility strategy:
+            // 1) Newer schema supports: adjustment/correction
+            // 2) Older schema only supports: earn/spend
+            const candidates: Array<{ type: string; description: string }> = [
+                { type: 'adjustment', description },
+                { type: amount >= 0 ? 'earn' : 'spend', description: `[fallback] ${description}` },
+            ];
+
+            let inserted = false;
+            let lastError: unknown = null;
+
+            for (const c of candidates) {
+                const { error } = await supabase.from('star_transactions').insert({
+                    user_id: user.id,
+                    amount: amount,
+                    type: c.type,
+                    description: c.description,
+                    game_id: 'qa_tool'
+                });
+
+                if (!error) {
+                    inserted = true;
+                    break;
+                }
+                lastError = error;
+            }
+
+            if (!inserted) {
+                throw lastError || new Error('unknown star transaction insert error');
+            }
+
+            refetchBalance();
+            return true;
+        } catch (e) {
+            console.error(e);
+            alert('星幣調整失敗');
+            return false;
+        }
+    };
 
     // Add Stars Mutation (Quick Hack for QA)
     const addStars = async (amount: number) => {
-        if (!user) return;
-        try {
-            await supabase.from('star_transactions').insert({
-                user_id: user.id,
-                amount: amount,
-                type: 'admin_adjust',
-                description: '開發者測試調整',
-                game_id: 'qa_tool'
-            });
-            refetchBalance();
+        const ok = await adjustStars(amount, '開發者測試調整');
+        if (ok) {
             alert(`已增加 ${amount} 星幣！`);
-        } catch (e) {
-            console.error(e);
-            alert('新增失敗');
+        }
+    };
+
+    const {
+        worldLab,
+        setWorldLab,
+        selectedPlotKey,
+        setSelectedPlotKey,
+        worldRates,
+        unlockedPlotSet,
+        plotPreviews,
+        selectedPlot,
+        isSelectedPlotUnlocked,
+        applyProduction,
+        syncWorldProduction,
+        setTimeOfDay,
+        upgradeBuilding,
+        exchangePriceTable,
+        getExchangePreview,
+        exchangeSelectedResourcesToStars,
+        applyAdventureRewards,
+    } = useWorldState({
+        active: activeTab === 'worldLab',
+        starBalance,
+        onAdjustStars: adjustStars,
+        exchangePriceTable: familyExchangePriceTable,
+    });
+
+    const {
+        selectedMissionType,
+        setSelectedMissionType,
+        activeAdventure,
+        activeAdventureStatus,
+        activeAdventureRemainingMs,
+        lastAdventureResult,
+        startAdventure,
+        fastForwardAdventure,
+        claimAdventure,
+        hydrateAdventure,
+        formatDuration,
+    } = useWorldAdventure({
+        active: activeTab === 'worldLab',
+        islandLevel: worldLab.islandLevel,
+        heroLevel: worldLab.heroLevel,
+        onClaimRewards: applyAdventureRewards,
+    });
+
+    const {
+        bankNowMs,
+        demandDepositAccount,
+        timeDeposits,
+        settleDemandInterest,
+        depositDemand,
+        withdrawDemand,
+        createTimeDeposit,
+        claimTimeDeposit,
+        cancelTimeDeposit,
+        advanceDays,
+    } = useWorldBanking({
+        userId: user?.id,
+        starBalance,
+        onAdjustStars: adjustStars,
+        bankSettings,
+    });
+
+    const {
+        exchangeLogs,
+        exchangeResources,
+    } = useWorldExchange({
+        userId: user?.id,
+        marketLevel: worldLab.buildings.market,
+        getExchangePreview,
+        exchangeSelectedResourcesToStars,
+    });
+
+    useEffect(() => {
+        hasHydratedWorldRef.current = false;
+    }, [user?.id]);
+
+    useEffect(() => {
+        if (!user) return;
+        if (hasHydratedWorldRef.current) return;
+        if (typeof persistedWorldSnapshot === 'undefined') return;
+
+        if (persistedWorldSnapshot) {
+            setWorldLab(persistedWorldSnapshot.worldLab);
+            hydrateAdventure(persistedWorldSnapshot.activeAdventure, persistedWorldSnapshot.lastAdventureResult);
+        }
+
+        hasHydratedWorldRef.current = true;
+    }, [hydrateAdventure, persistedWorldSnapshot, setWorldLab, user]);
+
+    useEffect(() => {
+        if (!user || !hasHydratedWorldRef.current) return;
+
+        const saveTimer = window.setTimeout(() => {
+            saveWorldPersistence.mutate({
+                worldLab,
+                activeAdventure,
+                lastAdventureResult,
+            });
+        }, 800);
+
+        return () => window.clearTimeout(saveTimer);
+    }, [activeAdventure, lastAdventureResult, saveWorldPersistence, user, worldLab]);
+
+    const handleUpgradeBuilding = async (key: WorldBuildingKey) => {
+        const result = await upgradeBuilding(key);
+        if (!result.ok && result.error) {
+            alert(result.error);
+        }
+    };
+
+    const handleExchangeResourcesToStars = async (selectedResources: { wood: number; stone: number; crystal: number }) => {
+        const result = await exchangeResources(selectedResources);
+        if (!result.ok && result.error) {
+            alert(result.error);
+            return;
+        }
+
+        if (result.ok && typeof result.starsEarned === 'number') {
+            alert(`兌換成功：+${result.starsEarned} ⭐`);
+        }
+    };
+
+    const handleStartAdventure = () => {
+        if (!isSelectedPlotUnlocked || selectedPlot.key !== 'adventure-5') return;
+        const result = startAdventure();
+        if (!result.ok && result.error) {
+            alert(result.error);
+        }
+    };
+
+    const handleFastForwardAdventure = () => {
+        fastForwardAdventure();
+    };
+
+    const handleClaimAdventure = () => {
+        const result = claimAdventure();
+        if (!result.ok && result.error) {
+            alert(result.error);
+        }
+    };
+
+    const handleDepositDemand = async (amount: number) => {
+        const result = await depositDemand(amount);
+        if (!result.ok && result.error) {
+            alert(result.error);
+        }
+    };
+
+    const handleWithdrawDemand = async (amount: number) => {
+        const result = await withdrawDemand(amount);
+        if (!result.ok && result.error) {
+            alert(result.error);
+        }
+    };
+
+    const handleCreateTimeDeposit = async (amount: number) => {
+        const result = await createTimeDeposit(amount);
+        if (!result.ok && result.error) {
+            alert(result.error);
+        }
+    };
+
+    const handleClaimTimeDeposit = async (index: number) => {
+        const result = await claimTimeDeposit(index);
+        if (!result.ok && result.error) {
+            alert(result.error);
+        }
+    };
+
+    const handleCancelTimeDeposit = async (index: number) => {
+        const result = await cancelTimeDeposit(index);
+        if (!result.ok && result.error) {
+            alert(result.error);
+        }
+    };
+
+    const handleAdvanceBankDays = async (days: number) => {
+        const result = await advanceDays(days);
+        if (!result.ok && result.error) {
+            alert(result.error);
+        }
+    };
+
+    const handleSettleDemandInterest = async () => {
+        const result = await settleDemandInterest();
+        if (!result.ok && result.error) {
+            alert(result.error);
+            return;
+        }
+
+        if (typeof result.interestEarned === 'number' && result.interestEarned > 0) {
+            alert(`活存結息成功：+${result.interestEarned} ⭐`);
         }
     };
 
@@ -124,6 +396,12 @@ export const DebugPage: React.FC = () => {
                     className={activeTab === 'towerV2' ? 'active' : ''}
                 >
                     🏰 怪獸塔 V2
+                </button>
+                <button
+                    onClick={() => setActiveTab('worldLab')}
+                    className={activeTab === 'worldLab' ? 'active' : ''}
+                >
+                    🏝️ 懸空島實驗室
                 </button>
             </div>
 
@@ -235,6 +513,56 @@ export const DebugPage: React.FC = () => {
                         </div>
                     )}
                 </div>
+            )}
+
+            {activeTab === 'worldLab' && (
+                <WorldLabPanel
+                    worldLab={worldLab}
+                    worldRates={worldRates}
+                    plotPreviews={plotPreviews}
+                    selectedPlotKey={selectedPlotKey}
+                    selectedPlot={selectedPlot}
+                    isPlotUnlocked={(plotType) => unlockedPlotSet.has(plotType as 'forest' | 'mine' | 'market' | 'academy' | 'storage' | 'adventure')}
+                    isSelectedPlotUnlocked={isSelectedPlotUnlocked}
+                    onSelectPlot={setSelectedPlotKey}
+                    onSetTimeOfDay={setTimeOfDay}
+                    selectedMissionType={selectedMissionType}
+                    onSelectMissionType={setSelectedMissionType}
+                    activeAdventure={activeAdventure}
+                    activeAdventureStatus={activeAdventureStatus}
+                    activeAdventureRemainingMs={activeAdventureRemainingMs}
+                    lastAdventureResult={lastAdventureResult}
+                    formatDuration={formatDuration}
+                    onStartAdventure={handleStartAdventure}
+                    onFastForwardAdventure={handleFastForwardAdventure}
+                    onClaimAdventure={handleClaimAdventure}
+                    onApplyProduction={applyProduction}
+                    onSyncProduction={syncWorldProduction}
+                    exchangePriceTable={exchangePriceTable}
+                    onPreviewExchange={getExchangePreview}
+                    onExchangeResourcesToStars={handleExchangeResourcesToStars}
+                    starBalance={starBalance}
+                    bankNowIso={new Date(bankNowMs).toISOString()}
+                    bankSettings={bankSettings}
+                    demandDepositAccount={demandDepositAccount}
+                    timeDeposits={timeDeposits}
+                    onDepositDemand={handleDepositDemand}
+                    onWithdrawDemand={handleWithdrawDemand}
+                    onSettleDemandInterest={handleSettleDemandInterest}
+                    onCreateTimeDeposit={handleCreateTimeDeposit}
+                    onClaimTimeDeposit={handleClaimTimeDeposit}
+                    onCancelTimeDeposit={handleCancelTimeDeposit}
+                    onAdvanceBankDays={handleAdvanceBankDays}
+                    onUpgradeBuilding={handleUpgradeBuilding}
+                    exchangeLogs={exchangeLogs}
+                    worldPlanChecklist={WORLD_PLAN_CHECKLIST}
+                    persistenceStatus={{
+                        isLoading: isWorldPersistenceLoading,
+                        isSaving: saveWorldPersistence.isPending,
+                        error: (worldPersistenceError instanceof Error ? worldPersistenceError.message : null)
+                            ?? (saveWorldPersistence.error instanceof Error ? saveWorldPersistence.error.message : null),
+                    }}
+                />
             )}
 
             {/* Game Modal - Reused with mock spend function checking */}
