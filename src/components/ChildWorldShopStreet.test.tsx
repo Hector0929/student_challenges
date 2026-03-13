@@ -107,6 +107,10 @@ describe('ChildWorldShopStreet', () => {
         expect(screen.getByText('🌲 木材：20')).toBeInTheDocument();
         expect(screen.getByText('🪨 石材：10')).toBeInTheDocument();
         expect(screen.getByText('💎 晶礦：5')).toBeInTheDocument();
+        expect(screen.getByText('🪵 建材補給站')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '購買 木材補給' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '購買 石材補給' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '購買 晶礦補給' })).toBeInTheDocument();
         expect(screen.getByText('🧾 最近兌換紀錄')).toBeInTheDocument();
         expect(screen.getByText('+3 ⭐')).toBeInTheDocument();
         expect(screen.getByText('🏦 世界銀行')).toBeInTheDocument();

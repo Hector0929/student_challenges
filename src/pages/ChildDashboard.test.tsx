@@ -12,7 +12,6 @@ const useCreateQuestMock = vi.fn();
 const useStarBalanceMock = vi.fn();
 const useFamilySettingsMock = vi.fn();
 const useUserMock = vi.fn();
-const useWorldPersistenceMock = vi.fn();
 
 vi.mock('../components/ChildDashboardWidgets', () => ({
     ParentsMessageCard: () => <div>Parents Message Widget</div>,
@@ -90,10 +89,6 @@ vi.mock('../contexts/UserContext', () => ({
     useUser: () => useUserMock(),
 }));
 
-vi.mock('../hooks/useWorldPersistence', () => ({
-    useWorldPersistence: (...args: unknown[]) => useWorldPersistenceMock(...args),
-}));
-
 describe('ChildDashboard', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -114,29 +109,9 @@ describe('ChildDashboard', () => {
             user: { name: '小玩家', family_id: 'family-1' },
             session: { user: { id: 'parent-1' } },
         });
-        useWorldPersistenceMock.mockReturnValue({
-            isLoading: false,
-            data: {
-                worldLab: {
-                    islandLevel: 4,
-                    heroLevel: 2,
-                    heroPower: 150,
-                    monsterShards: 0,
-                    timeOfDay: 'day',
-                    buildings: { forest: 2, mine: 2, academy: 1, market: 1 },
-                    resources: { wood: 33, stone: 12, crystal: 7 },
-                    lastTickAt: Date.now(),
-                },
-                demandDepositAccount: {
-                    balance: 88,
-                    lastInterestAt: '2026-03-13T00:00:00.000Z',
-                },
-                timeDeposits: [{ principal: 50 }],
-            },
-        });
     });
 
-    it('opens monster shop from the widget button and world shop from the summary card', () => {
+    it('opens the top shop street button and lets the child switch to world shop', () => {
         render(
             <TestWrapper>
                 <ChildDashboard userId="child-1" />
@@ -148,11 +123,7 @@ describe('ChildDashboard', () => {
         expect(screen.getByText('Monster Shop Content')).toBeInTheDocument();
         expect(screen.queryByText('World Shop Street Content')).not.toBeInTheDocument();
 
-        fireEvent.click(screen.getByRole('button', { name: /返回/i }));
-        expect(screen.queryByText('Monster Shop Content')).not.toBeInTheDocument();
-
-        fireEvent.click(screen.getByRole('button', { name: /前往商店街/i }));
-        expect(screen.getByText('世界商店街')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /世界商店街/i }));
         expect(screen.getByText('World Shop Street Content')).toBeInTheDocument();
         expect(screen.queryByText('Monster Shop Content')).not.toBeInTheDocument();
     });

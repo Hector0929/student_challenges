@@ -11,7 +11,6 @@ import { RPGButton } from '../components/RPGButton';
 import { RewardTime } from '../components/RewardTime';
 import { LearningArea } from '../components/LearningArea';
 import { ShopModal } from '../components/ShopModal';
-import { ChildWorldSummaryCard } from '../components/ChildWorldSummaryCard';
 import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings } from '../hooks/useFamilySettings';
 import { World3D } from '../components/World3D';
@@ -299,14 +298,6 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
             <div className="mb-6">
                 <World3D />
             </div>
-
-            <ChildWorldSummaryCard
-                userId={userId}
-                onOpenShopStreet={() => {
-                    setShopInitialTab('world');
-                    setIsShopOpen(true);
-                }}
-            />
 
             {/* Header Section */}
             <div className="clay-card mb-6 p-5 animate-bounce-in" style={{ borderRadius: '20px' }}>

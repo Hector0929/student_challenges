@@ -11,6 +11,30 @@ import { INITIAL_WORLD_LAB_STATE, type WorldLabState } from '../hooks/useWorldSt
 import { ChildWorldBankPanel } from './ChildWorldBankPanel';
 import { WorldExchangePanel } from './WorldExchangePanel';
 
+const RESOURCE_SUPPLY_CATALOG = [
+    {
+        resourceKey: 'wood',
+        title: '木材補給',
+        emoji: '🪵',
+        quantity: 40,
+        accentClassName: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+    },
+    {
+        resourceKey: 'stone',
+        title: '石材補給',
+        emoji: '🪨',
+        quantity: 24,
+        accentClassName: 'border-slate-200 bg-slate-50 text-slate-900',
+    },
+    {
+        resourceKey: 'crystal',
+        title: '晶礦補給',
+        emoji: '💎',
+        quantity: 10,
+        accentClassName: 'border-indigo-200 bg-indigo-50 text-indigo-900',
+    },
+] as const;
+
 interface ChildWorldShopStreetProps {
     userId: string;
     starBalance: number;
@@ -57,6 +81,19 @@ export const ChildWorldShopStreet: React.FC<ChildWorldShopStreetProps> = ({ user
 
     const demandRateLabel = `${(bankSettings.demandDailyRate * 100).toFixed(2)}%`;
     const timeDepositRateLabel = `${(bankSettings.timeDepositDailyRate * 100).toFixed(2)}%`;
+
+    const resourceSupplyCatalog = useMemo(() => {
+        return RESOURCE_SUPPLY_CATALOG.map((item) => {
+            const unitPrice = exchangePriceTable[item.resourceKey];
+            const price = Math.max(1, Math.ceil(unitPrice * item.quantity * 10));
+
+            return {
+                ...item,
+                unitPrice,
+                price,
+            };
+        });
+    }, [exchangePriceTable]);
 
     const adjustStars = async (amount: number, description: string): Promise<boolean> => {
         try {
@@ -164,6 +201,41 @@ export const ChildWorldShopStreet: React.FC<ChildWorldShopStreetProps> = ({ user
         window.setTimeout(() => setMessage(''), 2200);
     };
 
+    const buyResourceSupply = async (resourceKey: 'wood' | 'stone' | 'crystal', quantity: number, price: number, title: string) => {
+        if (price <= 0) {
+            setFlashMessage('❌ 補給價格異常');
+            return;
+        }
+
+        if (starBalance < price) {
+            setFlashMessage(`❌ 星幣不足，需要 ${price} ⭐`);
+            return;
+        }
+
+        const ok = await adjustStars(-price, `世界商店街購買${title}`);
+        if (!ok) {
+            setFlashMessage('❌ 購買補給失敗');
+            return;
+        }
+
+        const nextWorldLab: WorldLabState = {
+            ...worldLab,
+            resources: {
+                ...worldLab.resources,
+                [resourceKey]: worldLab.resources[resourceKey] + quantity,
+            },
+        };
+
+        setWorldLab(nextWorldLab);
+        await saveWorldPersistence.mutateAsync({
+            worldLab: nextWorldLab,
+            activeAdventure: persistedWorldSnapshot?.activeAdventure ?? null,
+            lastAdventureResult: persistedWorldSnapshot?.lastAdventureResult ?? null,
+        });
+
+        setFlashMessage(`🛒 已購買${title}，+${quantity} ${resourceKey === 'wood' ? '木材' : resourceKey === 'stone' ? '石材' : '晶礦'}`);
+    };
+
     if (isWorldLoading || isBankLoading) {
         return <div className="text-sm text-gray-500 py-6">商店街載入中...</div>;
     }
@@ -209,6 +281,36 @@ export const ChildWorldShopStreet: React.FC<ChildWorldShopStreetProps> = ({ user
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">🪨 石材：{Math.floor(worldLab.resources.stone)}</div>
                     <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">💎 晶礦：{Math.floor(worldLab.resources.crystal)}</div>
                     <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">🏪 商店倍率：x{(1 + worldLab.buildings.market * 0.08).toFixed(2)}</div>
+                </div>
+            </div>
+
+            <div className="rounded-2xl border-2 border-orange-200 bg-orange-50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                    <div>
+                        <h4 className="font-pixel text-base">🪵 建材補給站</h4>
+                        <p className="text-xs text-orange-700 mt-1">孩子可以直接買木材、石材、晶礦，不用先去別的地方找入口。</p>
+                    </div>
+                    <div className="rounded-lg border border-orange-200 bg-white px-3 py-2 text-xs text-orange-800">
+                        目前可用 {starBalance} ⭐
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {resourceSupplyCatalog.map((item) => (
+                        <div key={item.resourceKey} className={`rounded-xl border p-3 ${item.accentClassName}`}>
+                            <div className="font-heading font-bold">{item.emoji} {item.title}</div>
+                            <div className="mt-1 text-sm">一次補給 {item.quantity} 單位</div>
+                            <div className="mt-1 text-xs opacity-80">基準單價 {item.unitPrice.toFixed(3)} ⭐，補給價 {item.price} ⭐</div>
+                            <button
+                                type="button"
+                                onClick={() => buyResourceSupply(item.resourceKey, item.quantity, item.price, item.title)}
+                                disabled={starBalance < item.price}
+                                className="mt-3 w-full rounded-lg border border-orange-300 bg-white px-3 py-2 text-sm font-heading text-orange-800 hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                購買 {item.title}
+                            </button>
+                        </div>
+                    ))}
                 </div>
             </div>
 

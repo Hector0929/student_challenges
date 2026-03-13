@@ -56,7 +56,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
 
     const isWorldTab = activeTab === 'world';
     const title = isWorldTab ? '世界商店街' : '怪獸商店街';
-    const subtitle = isWorldTab ? '資源兌換、世界銀行、定存收益都在這裡。' : '用星幣帶怪獸夥伴回家，打造你的隊伍。';
+    const subtitle = isWorldTab ? '建材補給、資源兌換、世界銀行與定存收益都在這裡。' : '用星幣帶怪獸夥伴回家，打造你的隊伍。';
 
     const modalTree = (
         <div className="fixed inset-0 z-[120] bg-black/45 backdrop-blur-[1px] p-0 sm:p-3">
