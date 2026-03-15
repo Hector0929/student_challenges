@@ -207,6 +207,11 @@
       display: none;
     }
 
+    .joystick.right {
+      left: auto;
+      right: 14px;
+    }
+
     .joystick .stick {
       position: absolute;
       width: 42px;
@@ -238,13 +243,14 @@
 
     <section class="stage">
       <canvas id="gameCanvas" width="960" height="540"></canvas>
-      <div class="joystick" id="joystick"><div class="stick" id="stick"></div></div>
+      <div class="joystick" id="leftJoystick"><div class="stick" id="leftStick"></div></div>
+      <div class="joystick right" id="rightJoystick"><div class="stick" id="rightStick"></div></div>
       <div class="overlay" id="overlay"><div class="dialog" id="dialog"></div></div>
     </section>
 
     <section class="controls">
       <div class="hint">
-        手機：左下虛擬搖桿移動。<b>攻擊自動發射</b>。<br>
+        手機：左下 / 右下虛擬搖桿或<b>畫面拖曳</b>移動。<b>攻擊自動發射</b>。<br>
         電腦：<b>WASD / 方向鍵</b>移動。<br>
         每升級可選 1 個能力，目標是活更久、打更多怪。
       </div>
@@ -264,8 +270,10 @@
     const hpEl = document.getElementById('hp');
     const killsEl = document.getElementById('kills');
 
-    const joystickEl = document.getElementById('joystick');
-    const stickEl = document.getElementById('stick');
+    const leftJoystickEl = document.getElementById('leftJoystick');
+    const leftStickEl = document.getElementById('leftStick');
+    const rightJoystickEl = document.getElementById('rightJoystick');
+    const rightStickEl = document.getElementById('rightStick');
 
     const WORLD_W = 2400;
     const WORLD_H = 2400;
@@ -283,7 +291,9 @@
 
     const keys = { up: false, down: false, left: false, right: false };
 
-    let joystick = { active: false, id: null, baseX: 61, baseY: 61, x: 0, y: 0 };
+    let leftJoystick = { active: false, id: null, x: 0, y: 0 };
+    let rightJoystick = { active: false, id: null, x: 0, y: 0 };
+    let dragMove = { active: false, id: null, startX: 0, startY: 0, x: 0, y: 0 };
 
     const player = {
       x: WORLD_W / 2,
@@ -660,8 +670,11 @@
       gems.length = 0;
       fx.length = 0;
 
-      joystick = { active: false, id: null, baseX: 61, baseY: 61, x: 0, y: 0 };
-      stickEl.style.transform = 'translate(0px, 0px)';
+      leftJoystick = { active: false, id: null, x: 0, y: 0 };
+      rightJoystick = { active: false, id: null, x: 0, y: 0 };
+      dragMove = { active: false, id: null, startX: 0, startY: 0, x: 0, y: 0 };
+      leftStickEl.style.transform = 'translate(0px, 0px)';
+      rightStickEl.style.transform = 'translate(0px, 0px)';
 
       startGame();
     }
@@ -689,8 +702,12 @@
       if (keys.up) y -= 1;
       if (keys.down) y += 1;
 
-      x += joystick.x;
-      y += joystick.y;
+      x += leftJoystick.x;
+      y += leftJoystick.y;
+      x += rightJoystick.x;
+      y += rightJoystick.y;
+      x += dragMove.x;
+      y += dragMove.y;
 
       const m = Math.hypot(x, y);
       if (m > 1) { x /= m; y /= m; }
@@ -1067,28 +1084,49 @@
       requestAnimationFrame(loop);
     }
 
-    function updateJoystickVisual() {
-      stickEl.style.transform = `translate(${joystick.x * 22}px, ${joystick.y * 22}px)`;
+    function updateJoystickVisual(joystickState, stickElement) {
+      stickElement.style.transform = `translate(${joystickState.x * 22}px, ${joystickState.y * 22}px)`;
     }
 
-    function setJoyFromPointer(clientX, clientY) {
-      const rect = canvas.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
+    function setJoyFromPointer(joystickEl, joystickState, stickElement, clientX, clientY) {
       const joyRect = joystickEl.getBoundingClientRect();
-      const cx = joyRect.left + joyRect.width / 2 - rect.left;
-      const cy = joyRect.top + joyRect.height / 2 - rect.top;
+      const x = clientX;
+      const y = clientY;
+      const cx = joyRect.left + joyRect.width / 2;
+      const cy = joyRect.top + joyRect.height / 2;
       const dx = x - cx;
       const dy = y - cy;
       const d = Math.hypot(dx, dy) || 1;
       const max = 30;
-      joystick.x = clamp(dx / max, -1, 1);
-      joystick.y = clamp(dy / max, -1, 1);
+      joystickState.x = clamp(dx / max, -1, 1);
+      joystickState.y = clamp(dy / max, -1, 1);
       if (d > max) {
-        joystick.x = dx / d;
-        joystick.y = dy / d;
+        joystickState.x = dx / d;
+        joystickState.y = dy / d;
       }
-      updateJoystickVisual();
+      updateJoystickVisual(joystickState, stickElement);
+    }
+
+    function setDragMoveFromPointer(clientX, clientY) {
+      const dx = clientX - dragMove.startX;
+      const dy = clientY - dragMove.startY;
+      const d = Math.hypot(dx, dy) || 1;
+      const max = 56;
+      dragMove.x = clamp(dx / max, -1, 1);
+      dragMove.y = clamp(dy / max, -1, 1);
+      if (d > max) {
+        dragMove.x = dx / d;
+        dragMove.y = dy / d;
+      }
+    }
+
+    function isMobileViewport() {
+      return window.matchMedia('(max-width: 760px)').matches;
+    }
+
+    function isPointerInsideJoystick(joystickEl, clientX, clientY) {
+      const joyRect = joystickEl.getBoundingClientRect();
+      return clientX >= joyRect.left - 20 && clientX <= joyRect.right + 20 && clientY >= joyRect.top - 20 && clientY <= joyRect.bottom + 20;
     }
 
     window.addEventListener('keydown', (e) => {
@@ -1106,33 +1144,71 @@
     });
 
     canvas.addEventListener('pointerdown', (e) => {
-      if (window.matchMedia('(max-width: 760px)').matches) {
-        const joyRect = joystickEl.getBoundingClientRect();
-        if (e.clientX >= joyRect.left - 20 && e.clientX <= joyRect.right + 20 && e.clientY >= joyRect.top - 20 && e.clientY <= joyRect.bottom + 20) {
-          joystick.active = true;
-          joystick.id = e.pointerId;
-          setJoyFromPointer(e.clientX, e.clientY);
+      if (isMobileViewport()) {
+        if (isPointerInsideJoystick(leftJoystickEl, e.clientX, e.clientY) && !leftJoystick.active) {
+          leftJoystick.active = true;
+          leftJoystick.id = e.pointerId;
+          setJoyFromPointer(leftJoystickEl, leftJoystick, leftStickEl, e.clientX, e.clientY);
+          canvas.setPointerCapture(e.pointerId);
+        } else if (isPointerInsideJoystick(rightJoystickEl, e.clientX, e.clientY) && !rightJoystick.active) {
+          rightJoystick.active = true;
+          rightJoystick.id = e.pointerId;
+          setJoyFromPointer(rightJoystickEl, rightJoystick, rightStickEl, e.clientX, e.clientY);
+          canvas.setPointerCapture(e.pointerId);
+        } else {
+          dragMove.active = true;
+          dragMove.id = e.pointerId;
+          dragMove.startX = e.clientX;
+          dragMove.startY = e.clientY;
+          dragMove.x = 0;
+          dragMove.y = 0;
+          setDragMoveFromPointer(e.clientX, e.clientY);
           canvas.setPointerCapture(e.pointerId);
         }
       }
     });
 
     canvas.addEventListener('pointermove', (e) => {
-      if (!joystick.active || e.pointerId !== joystick.id) return;
-      setJoyFromPointer(e.clientX, e.clientY);
+      if (leftJoystick.active && e.pointerId === leftJoystick.id) {
+        setJoyFromPointer(leftJoystickEl, leftJoystick, leftStickEl, e.clientX, e.clientY);
+      }
+      if (rightJoystick.active && e.pointerId === rightJoystick.id) {
+        setJoyFromPointer(rightJoystickEl, rightJoystick, rightStickEl, e.clientX, e.clientY);
+      }
+      if (dragMove.active && e.pointerId === dragMove.id) {
+        setDragMoveFromPointer(e.clientX, e.clientY);
+      }
     });
 
-    function resetJoystick(pointerId) {
-      if (pointerId !== joystick.id) return;
-      joystick.active = false;
-      joystick.id = null;
-      joystick.x = 0;
-      joystick.y = 0;
-      updateJoystickVisual();
+    function resetJoystick(joystickState, stickElement, pointerId) {
+      if (pointerId !== joystickState.id) return;
+      joystickState.active = false;
+      joystickState.id = null;
+      joystickState.x = 0;
+      joystickState.y = 0;
+      updateJoystickVisual(joystickState, stickElement);
     }
 
-    canvas.addEventListener('pointerup', (e) => resetJoystick(e.pointerId));
-    canvas.addEventListener('pointercancel', (e) => resetJoystick(e.pointerId));
+    function resetDragMove(pointerId) {
+      if (pointerId !== dragMove.id) return;
+      dragMove.active = false;
+      dragMove.id = null;
+      dragMove.startX = 0;
+      dragMove.startY = 0;
+      dragMove.x = 0;
+      dragMove.y = 0;
+    }
+
+    canvas.addEventListener('pointerup', (e) => {
+      resetJoystick(leftJoystick, leftStickEl, e.pointerId);
+      resetJoystick(rightJoystick, rightStickEl, e.pointerId);
+      resetDragMove(e.pointerId);
+    });
+    canvas.addEventListener('pointercancel', (e) => {
+      resetJoystick(leftJoystick, leftStickEl, e.pointerId);
+      resetJoystick(rightJoystick, rightStickEl, e.pointerId);
+      resetDragMove(e.pointerId);
+    });
 
     (async function boot() {
       await loadSprites();
