@@ -77,16 +77,20 @@ async function persistWorldBankingSnapshot(userId: string, snapshot: WorldBankin
         simulated_now_at: new Date(snapshot.bankNowMs).toISOString(),
     };
 
-    const timeDepositRows: WorldTimeDepositRow[] = snapshot.timeDeposits.map((deposit) => ({
-        id: deposit.id,
-        user_id: userId,
-        principal: deposit.principal,
-        daily_rate: deposit.dailyRate,
-        start_at: deposit.startAt,
-        matures_at: deposit.maturesAt,
-        term_days: deposit.termDays,
-        status: deposit.status,
-    }));
+    const timeDepositRows: WorldTimeDepositRow[] = snapshot.timeDeposits.map((deposit) => {
+        const row: WorldTimeDepositRow = {
+            user_id: userId,
+            principal: deposit.principal,
+            daily_rate: deposit.dailyRate,
+            start_at: deposit.startAt,
+            matures_at: deposit.maturesAt,
+            term_days: deposit.termDays,
+            status: deposit.status,
+        };
+        // Only include id if it actually exists – omitting lets the DB auto-generate one
+        if (deposit.id) row.id = deposit.id;
+        return row;
+    });
 
     const bankUpsertResult = await supabase.from('world_bank_accounts').upsert(bankAccountRow, { onConflict: 'user_id' });
     if (bankUpsertResult.error) throw bankUpsertResult.error;
@@ -110,6 +114,7 @@ export const useWorldBanking = ({ userId, starBalance, onAdjustStars, bankSettin
     const bankQuery = useQuery({
         queryKey: ['world-banking', userId],
         enabled: !!userId,
+        staleTime: 30_000, // 30s – avoid refetching stale data immediately on remount
         queryFn: async () => {
             if (!userId) return createDefaultSnapshot();
 
@@ -156,18 +161,25 @@ export const useWorldBanking = ({ userId, starBalance, onAdjustStars, bankSettin
             await persistWorldBankingSnapshot(userId, snapshot);
             return snapshot;
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['world-banking', userId] });
+        onSuccess: (savedSnapshot) => {
+            // Write the saved snapshot directly into the query cache so that
+            // any subsequent mount sees the latest data immediately (no stale window).
+            queryClient.setQueryData(['world-banking', userId], savedSnapshot);
             queryClient.invalidateQueries({ queryKey: ['world-persistence', userId] });
         },
     });
 
     const commitSnapshot = useCallback(async (snapshot: WorldBankingSnapshot) => {
+        // Optimistic local state update
         setBankNowMs(snapshot.bankNowMs);
         setDemandDepositAccount(snapshot.demandDepositAccount);
         setTimeDeposits(snapshot.timeDeposits);
+
+        // Also update the query cache immediately so re-mounts see fresh data
+        queryClient.setQueryData(['world-banking', userId], snapshot);
+
         await persistMutation.mutateAsync(snapshot);
-    }, [persistMutation]);
+    }, [persistMutation, queryClient, userId]);
 
     const settleDemandInterest = useCallback(async (): Promise<WorldBankingActionResult> => {
         const nextBankNowMs = getCurrentNowMs();
@@ -255,17 +267,21 @@ export const useWorldBanking = ({ userId, starBalance, onAdjustStars, bankSettin
         if (!ok) return { ok: false, error: '建立定存失敗' };
 
         const nextBankNowMs = getCurrentNowMs();
+        const newDeposit = createTimeDeposit({
+            principal: amount,
+            startAt: new Date(nextBankNowMs).toISOString(),
+            termDays: bankSettings.minTimeDepositDays,
+            dailyRate: bankSettings.timeDepositDailyRate,
+        });
+        // Assign a client-side UUID so the optimistic cache entry is stable
+        newDeposit.id = crypto.randomUUID();
+
         await commitSnapshot({
             bankNowMs: nextBankNowMs,
             demandDepositAccount,
             timeDeposits: [
                 ...timeDeposits,
-                createTimeDeposit({
-                    principal: amount,
-                    startAt: new Date(nextBankNowMs).toISOString(),
-                    termDays: bankSettings.minTimeDepositDays,
-                    dailyRate: bankSettings.timeDepositDailyRate,
-                }),
+                newDeposit,
             ],
         });
 
