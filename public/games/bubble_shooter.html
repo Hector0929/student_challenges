@@ -11,12 +11,12 @@
         body {
             font-family: 'Orbitron', sans-serif;
             background-color: #020617;
-            overflow-x: hidden;
-            overflow-y: auto;
+            overflow: hidden;
             touch-action: manipulation;
             user-select: none;
-            min-height: 100vh;
-            min-height: 100dvh;
+            -webkit-user-select: none;
+            height: 100dvh;
+            margin: 0;
             padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
         }
 
@@ -31,37 +31,36 @@
         .game-shell {
             position: relative;
             width: min(100%, 34rem);
+            height: 100%;
             margin: 0 auto;
         }
 
         .game-stage {
             position: relative;
             width: 100%;
-            aspect-ratio: 1 / 1;
-            max-height: calc(100dvh - 8rem);
-            background: #0f172a;
+            height: 100%;
+            background: #020617;
             overflow: hidden;
-            border-radius: 24px;
-            border: 2px solid rgba(71, 85, 105, .9);
-            box-shadow: 0 24px 48px rgba(2, 6, 23, .45), inset 0 0 0 1px rgba(255,255,255,.05);
+            border-radius: 20px;
+            border: 2px solid rgba(71, 85, 105, .6);
         }
 
         .ui-layer {
             position: absolute;
-            inset: 0;
+            top: 0;
+            left: 0;
+            right: 0;
             pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 12px;
+            padding: 10px;
             z-index: 10;
         }
 
         .hud-card {
-            border: 1px solid rgba(96, 165, 250, .35);
-            background: rgba(15, 23, 42, .72);
-            backdrop-filter: blur(8px);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+            border: 1px solid rgba(96, 165, 250, .25);
+            background: rgba(10, 17, 34, .5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 2px 8px rgba(0,0,0,.25);
         }
 
         .menu-card {
@@ -79,7 +78,7 @@
 
         @media (max-width: 640px) {
             body {
-                padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+                padding: 0;
             }
 
             .game-shell {
@@ -87,45 +86,42 @@
             }
 
             .game-stage {
-                height: min(76dvh, 820px);
-                aspect-ratio: auto;
-                max-height: none;
-                border-radius: 20px;
+                border: none;
+                border-radius: 0;
             }
 
             .ui-layer {
-                padding: 10px;
+                padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) 0 max(6px, env(safe-area-inset-left));
             }
         }
     </style>
 </head>
 
-<body class="min-h-screen h-[100dvh] flex flex-col items-center justify-start py-2 sm:py-4">
+<body class="flex items-center justify-center">
 
     <div id="game-shell" class="game-shell">
     <!-- Header UI -->
     <div id="ui-layer" class="ui-layer">
-        <div class="flex justify-between items-start gap-2 sm:gap-3">
-            <div class="hud-card rounded-xl px-2.5 py-2 sm:px-3 sm:py-2">
-                <div class="text-blue-400 text-[10px]">SCORE</div>
-                <div id="score" class="text-lg sm:text-xl text-white font-bold">0</div>
+        <div class="flex justify-between items-start gap-1.5">
+            <div class="hud-card rounded-lg px-2 py-1.5">
+                <div class="text-blue-400 text-[9px] leading-none">SCORE</div>
+                <div id="score" class="text-base text-white font-bold leading-tight">0</div>
             </div>
-            <div class="flex flex-1 flex-col items-center gap-1 px-1">
+            <div class="flex flex-1 flex-col items-center gap-0.5 px-1 min-w-0">
                 <div id="combo-display"
-                    class="text-yellow-400 text-xs font-bold opacity-0 transition-opacity duration-300"
+                    class="text-yellow-400 text-[11px] font-bold opacity-0 transition-opacity duration-300"
                     style="text-shadow:0 0 8px #eab308">
                 </div>
-                <div id="mission-display" class="text-cyan-300 text-[10px] sm:text-[11px] font-bold text-center max-w-[150px] sm:max-w-[170px] truncate"></div>
-                <div id="phase-display" class="text-fuchsia-300 text-[10px] font-bold"></div>
-                <div
-                    class="hud-card bg-gradient-to-r from-purple-600/70 to-blue-600/70 rounded-lg px-3 py-1.5 border border-purple-400/50 min-w-[78px] sm:min-w-[88px]">
-                    <div class="text-purple-200 text-[10px]">LEVEL</div>
-                    <div id="level" class="text-lg text-white font-bold text-center">1</div>
+                <div id="mission-display" class="text-cyan-300 text-[9px] sm:text-[10px] font-bold text-center max-w-[160px] truncate"></div>
+                <div id="phase-display" class="text-fuchsia-300 text-[9px] font-bold"></div>
+                <div class="hud-card bg-gradient-to-r from-purple-600/50 to-blue-600/50 rounded-md px-2.5 py-1 border border-purple-400/40">
+                    <div class="text-purple-200 text-[9px] leading-none">LV</div>
+                    <div id="level" class="text-base text-white font-bold text-center leading-tight">1</div>
                 </div>
             </div>
-            <div class="hud-card rounded-xl px-2.5 py-2 sm:px-3 sm:py-2 flex flex-col items-center min-w-[64px] sm:min-w-[76px]">
-                <div class="text-blue-400 text-[10px] mb-1">NEXT</div>
-                <canvas id="preview-canvas" width="36" height="36"></canvas>
+            <div class="hud-card rounded-lg px-2 py-1.5 flex flex-col items-center">
+                <div class="text-blue-400 text-[9px] leading-none mb-0.5">NEXT</div>
+                <canvas id="preview-canvas" width="32" height="32"></canvas>
             </div>
         </div>
     </div>
@@ -139,15 +135,17 @@
         <div class="menu-card bg-slate-900 rounded-2xl p-6 sm:p-8 text-center max-w-md mx-4">
             <div class="text-6xl mb-4 animate-bounce">🫧</div>
             <h1 id="menu-title"
-                class="text-3xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 font-bold mb-2 neon-text">
+                class="text-2xl sm:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 font-bold mb-1 neon-text">
                 霓虹泡泡龍
             </h1>
-            <p id="menu-message" class="text-cyan-200/70 mb-4 tracking-wider text-sm">
+            <p id="menu-message" class="text-cyan-200/60 mb-3 tracking-wider text-xs sm:text-sm">
                 消除所有泡泡，別讓泡泡線壓到底部！
             </p>
-            <div class="mb-5 space-y-2 text-left text-xs sm:text-sm text-cyan-100/80 bg-slate-800/70 rounded-xl border border-cyan-500/20 p-3">
-                <div><span class="text-cyan-300 font-bold">手機：</span>拖曳瞄準，放開或點一下即可發射。</div>
-                <div><span class="text-cyan-300 font-bold">目標：</span>湊出 3 顆以上同色泡泡並完成任務拿高分。</div>
+            <div class="mb-4 space-y-1.5 text-left text-xs text-cyan-100/80 bg-slate-800/60 rounded-xl border border-cyan-500/20 p-3">
+                <div>📱 <span class="text-cyan-300 font-bold">操作：</span>拖曳瞄準方向，放開或點一下即可<b class="text-white">發射泡泡</b>。</div>
+                <div>🎯 <span class="text-cyan-300 font-bold">目標：</span>湊出 <b class="text-white">3 顆以上同色</b>泡泡即可消除，完成任務拿高分。</div>
+                <div>💥 <span class="text-cyan-300 font-bold">特殊：</span>炸彈泡泡可炸碎周圍，彩虹泡泡可匹配任意顏色。</div>
+                <div>⚠️ <span class="text-cyan-300 font-bold">注意：</span>多次未消除，頂部會新增一排泡泡，<b class="text-red-300">壓到紅線即結束</b>。</div>
             </div>
             <div id="final-score" class="hidden mb-4">
                 <div class="text-yellow-400 text-sm">最終得分</div>
@@ -156,8 +154,8 @@
                 <div id="summary-mission" class="text-fuchsia-300 text-sm">任務：未開始</div>
             </div>
             <button onclick="startGame()"
-                class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-cyan-500/50 pointer-events-auto cursor-pointer">
-                開始遊戲
+                class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-cyan-500/50 pointer-events-auto cursor-pointer text-sm sm:text-base">
+                ⚡ 開始遊戲
             </button>
         </div>
     </div>
@@ -230,10 +228,17 @@
         }
 
         function resize() {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
+            const parent = canvas.parentElement;
+            const w = parent.clientWidth;
+            const h = parent.clientHeight;
+            if (w < 10 || h < 10) return;
+            if (canvas.width !== w || canvas.height !== h) {
+                canvas.width = w;
+                canvas.height = h;
+            }
         }
         window.addEventListener('resize', resize);
+        screen.orientation?.addEventListener('change', () => setTimeout(resize, 150));
         resize();
 
         function createMission() {
@@ -416,7 +421,7 @@
 
         function loadBubble() {
             const { r: rad } = getTileParams();
-            const launcherOffset = Math.max(rad * 2.5, canvas.height * 0.12);
+            const launcherOffset = Math.max(rad * 4, canvas.height * 0.16);
             state.activeBubble = {
                 x: canvas.width / 2,
                 y: canvas.height - launcherOffset,
@@ -430,23 +435,24 @@
 
         function drawPreview() {
             const b = state.nextBubble;
-            previewCtx.clearRect(0, 0, 36, 36);
+            const s = 32, c = 16, r = 12;
+            previewCtx.clearRect(0, 0, s, s);
 
             if (b.type === SPECIAL_BOMB) {
                 previewCtx.fillStyle = '#1e293b';
                 previewCtx.beginPath();
-                previewCtx.arc(18, 18, 14, 0, Math.PI * 2);
+                previewCtx.arc(c, c, r, 0, Math.PI * 2);
                 previewCtx.fill();
                 previewCtx.strokeStyle = '#f59e0b';
                 previewCtx.lineWidth = 2;
                 previewCtx.stroke();
                 previewCtx.fillStyle = '#f59e0b';
-                previewCtx.font = '14px sans-serif';
+                previewCtx.font = '12px sans-serif';
                 previewCtx.textAlign = 'center';
                 previewCtx.textBaseline = 'middle';
-                previewCtx.fillText('💥', 18, 18);
+                previewCtx.fillText('💥', c, c);
             } else if (b.type === SPECIAL_RAINBOW) {
-                const grad = previewCtx.createLinearGradient(0, 0, 36, 36);
+                const grad = previewCtx.createLinearGradient(0, 0, s, s);
                 grad.addColorStop(0, '#ef4444');
                 grad.addColorStop(0.25, '#eab308');
                 grad.addColorStop(0.5, '#22c55e');
@@ -454,25 +460,25 @@
                 grad.addColorStop(1, '#a855f7');
                 previewCtx.fillStyle = grad;
                 previewCtx.beginPath();
-                previewCtx.arc(18, 18, 14, 0, Math.PI * 2);
+                previewCtx.arc(c, c, r, 0, Math.PI * 2);
                 previewCtx.fill();
                 previewCtx.fillStyle = 'rgba(255,255,255,0.9)';
-                previewCtx.font = 'bold 14px sans-serif';
+                previewCtx.font = 'bold 12px sans-serif';
                 previewCtx.textAlign = 'center';
                 previewCtx.textBaseline = 'middle';
-                previewCtx.fillText('✦', 18, 19);
+                previewCtx.fillText('✦', c, c + 1);
             } else {
                 const color = getBubbleColor(b);
                 previewCtx.fillStyle = color.fill;
-                previewCtx.shadowBlur = 8;
+                previewCtx.shadowBlur = 6;
                 previewCtx.shadowColor = color.glow;
                 previewCtx.beginPath();
-                previewCtx.arc(18, 18, 14, 0, Math.PI * 2);
+                previewCtx.arc(c, c, r, 0, Math.PI * 2);
                 previewCtx.fill();
                 previewCtx.fillStyle = 'rgba(255,255,255,0.3)';
                 previewCtx.shadowBlur = 0;
                 previewCtx.beginPath();
-                previewCtx.arc(13, 13, 4, 0, Math.PI * 2);
+                previewCtx.arc(c - 4, c - 4, 3, 0, Math.PI * 2);
                 previewCtx.fill();
             }
         }
@@ -997,6 +1003,17 @@
 
             // Particles
             drawParticles();
+
+            // Launcher base indicator
+            if (state.activeBubble && !state.activeBubble.active) {
+                const lx = state.activeBubble.x;
+                const ly = state.activeBubble.y;
+                ctx.strokeStyle = 'rgba(96,165,250,.18)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(lx, ly, rad * 1.6, 0, Math.PI * 2);
+                ctx.stroke();
+            }
 
             // Active bubble
             const b = state.activeBubble;
