@@ -256,59 +256,60 @@
 
     @media (max-width: 760px) {
       body {
-        padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+        padding: 0;
       }
 
       .shell {
-        gap: 8px;
         width: 100%;
+        height: 100dvh;
+        gap: 0;
+        grid-template-rows: 1fr;
+        position: relative;
+        overflow: hidden;
       }
 
-      .title {
-        margin: 0;
-        text-align: left;
-        font-size: clamp(1rem, 5.3vw, 1.32rem);
-        line-height: 1.2;
-      }
+      .title { display: none; }
 
       .hud {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 6px;
+        position: absolute;
+        top: max(8px, env(safe-area-inset-top));
+        left: max(8px, env(safe-area-inset-left));
+        right: max(8px, env(safe-area-inset-right));
+        z-index: 6;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+        pointer-events: none;
       }
 
       .item {
-        padding: 6px 4px;
-        border-radius: 10px;
-        font-size: .77rem;
+        padding: 4px 2px;
+        border-radius: 8px;
+        font-size: .58rem;
+        line-height: 1.15;
+        background: rgba(10, 17, 34, .55);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-color: rgba(44, 68, 117, .3);
+        box-shadow: 0 2px 8px rgba(0,0,0,.2);
       }
 
       .item b {
-        margin-top: 2px;
-        font-size: .98rem;
+        font-size: .8rem;
+        margin-top: 1px;
       }
 
       .stage {
         min-height: 0;
-        border-radius: 16px;
+        aspect-ratio: auto;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
       }
 
-      .controls {
-        grid-template-columns: 1fr;
-        gap: 8px;
-        padding: 7px 10px;
-        border-radius: 14px;
-      }
+      .controls { display: none; }
 
-      .hint {
-        font-size: .76rem;
-        line-height: 1.3;
-      }
-
-      .touch-tag {
-        justify-self: end;
-        align-self: center;
-        padding: 5px 9px;
-        font-size: .72rem;
+      .overlay {
+        z-index: 20;
       }
     }
 
@@ -328,14 +329,15 @@
         display: block;
         width: 84px;
         height: 84px;
-        bottom: 12px;
-        left: 12px;
+        bottom: max(14px, env(safe-area-inset-bottom));
+        left: max(14px, env(safe-area-inset-left));
         background: rgba(10, 18, 34, .36);
         backdrop-filter: blur(4px);
       }
 
       .joystick.right {
-        right: 12px;
+        left: auto;
+        right: max(14px, env(safe-area-inset-right));
       }
 
       .joystick .stick {
@@ -675,15 +677,15 @@
       overlay.style.display = 'flex';
       const touchControls = isTouchControlsEnabled();
       dialog.innerHTML = `
-        <h2>怪獸生存戰（初版）</h2>
-        <p>Vampire Survivors 風格：自動攻擊 + 成長 build。</p>
-        <p>Boss 會依序登場，擊敗後經過一段間隔才會再出下一隻。</p>
+        <h2>🎮 怪獸生存戰</h2>
+        <p style="color:var(--accent);font-size:.9rem;margin:4px 0 10px;">Vampire Survivors 風格 — 自動攻擊 × 成長 Build</p>
         <ul class="guide-list">
-          <li><b>${touchControls ? '手機操作' : '電腦操作'}</b>：${touchControls ? '左下或右下搖桿移動；也可直接在畫面拖曳移動。' : '使用 WASD 或方向鍵移動角色。'}</li>
-          <li><b>戰鬥方式</b>：角色會自動攻擊最近敵人，不需要額外按攻擊鍵。</li>
-          <li><b>成長節奏</b>：吸收寶石後升級，每次可選 1 個能力，盡量活久一點。</li>
+          <li><b>📱 ${touchControls ? '移動方式' : '移動方式'}</b>：${touchControls ? '畫面 <b>左下 / 右下搖桿</b> 控制方向，或直接在畫面上 <b>拖曳滑動</b> 移動。' : '使用 <b>WASD</b> 或 <b>方向鍵</b> 移動角色。'}</li>
+          <li><b>⚔️ 戰鬥方式</b>：角色 <b>自動攻擊</b> 最近的敵人，不需要額外按鍵。</li>
+          <li><b>💎 成長升級</b>：擊倒怪物掉落寶石，靠近自動吸收，升級後可選擇 <b>1 項能力強化</b>。</li>
+          <li><b>🐉 Boss 挑戰</b>：Boss 依序登場，擊敗後間隔一段時間再出下一隻，盡量活久爭取高分！</li>
         </ul>
-        <button class="btn" id="startBtn">開始生存</button>
+        <button class="btn" id="startBtn">⚡ 開始生存</button>
       `;
       document.getElementById('startBtn')?.addEventListener('click', startGame);
     }
@@ -800,6 +802,7 @@
     }
 
     function startGame() {
+      resizeCanvas();
       state = GAME_STATES.PLAYING;
       overlay.style.display = 'none';
       startAt = performance.now();
@@ -1198,6 +1201,18 @@
       ctx.strokeRect(16, 12, canvas.width - 32, 10);
     }
 
+    function resizeCanvas() {
+      const stage = canvas.parentElement;
+      const rect = stage.getBoundingClientRect();
+      if (rect.width < 10 || rect.height < 10) return;
+      const w = Math.round(rect.width);
+      const h = Math.round(rect.height);
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+    }
+
     function loop(now) {
       const dt = clamp((now - lastFrame) / 1000, 0, 0.033);
       lastFrame = now;
@@ -1343,6 +1358,9 @@
 
     (async function boot() {
       await loadSprites();
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+      screen.orientation?.addEventListener('change', () => setTimeout(resizeCanvas, 150));
       updateHud(0);
       openStart();
       requestAnimationFrame(loop);
