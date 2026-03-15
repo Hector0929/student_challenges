@@ -83,7 +83,7 @@ function getRatesForState(state: WorldLabState) {
     });
 }
 
-function settleWorldState(state: WorldLabState, now: number): WorldLabState {
+export function settleWorldState(state: WorldLabState, now: number): WorldLabState {
     const hours = Math.max(0, (now - state.lastTickAt) / 3600000);
     if (hours < 0.003) {
         return state;

@@ -102,7 +102,7 @@ async function persistWorldBankingSnapshot(userId: string, snapshot: WorldBankin
 
 export const useWorldBanking = ({ userId, starBalance, onAdjustStars, bankSettings, timeMode = 'simulated' }: UseWorldBankingOptions) => {
     const queryClient = useQueryClient();
-    const hasHydratedRef = useRef(false);
+    const lastHydratedAtRef = useRef(0);
     const [bankNowMs, setBankNowMs] = useState(Date.now());
     const [demandDepositAccount, setDemandDepositAccount] = useState<DemandDepositAccount>(createDefaultSnapshot().demandDepositAccount);
     const [timeDeposits, setTimeDeposits] = useState<TimeDeposit[]>([]);
@@ -134,15 +134,18 @@ export const useWorldBanking = ({ userId, starBalance, onAdjustStars, bankSettin
         timeMode === 'realtime' ? Date.now() : bankNowMs
     ), [bankNowMs, timeMode]);
 
+    // Hydrate local state only when query fetches genuinely new data (dataUpdatedAt changes).
+    // This avoids overwriting optimistic updates with stale cache during a background refetch.
     useEffect(() => {
         if (!bankQuery.data) return;
-        if (hasHydratedRef.current && !bankQuery.isRefetching) return;
+        const updatedAt = bankQuery.dataUpdatedAt;
+        if (updatedAt <= lastHydratedAtRef.current) return;
 
         setBankNowMs(bankQuery.data.bankNowMs);
         setDemandDepositAccount(bankQuery.data.demandDepositAccount);
         setTimeDeposits(bankQuery.data.timeDeposits);
-        hasHydratedRef.current = true;
-    }, [bankQuery.data, bankQuery.isRefetching]);
+        lastHydratedAtRef.current = updatedAt;
+    }, [bankQuery.data, bankQuery.dataUpdatedAt]);
 
     const persistMutation = useMutation({
         mutationFn: async (snapshot: WorldBankingSnapshot) => {

@@ -7,7 +7,7 @@ import { useWorldBanking } from '../hooks/useWorldBanking';
 import { useWorldExchange } from '../hooks/useWorldExchange';
 import { supabase } from '../lib/supabase';
 import { calculateExchangePreview, exchangeSelectedResources, type ExchangePriceTable } from '../lib/world/exchangeShop';
-import { INITIAL_WORLD_LAB_STATE, type WorldLabState, type WorldBuildingKey } from '../hooks/useWorldState';
+import { INITIAL_WORLD_LAB_STATE, settleWorldState, type WorldLabState, type WorldBuildingKey } from '../hooks/useWorldState';
 import { ChildWorldBankPanel } from './ChildWorldBankPanel';
 import { World3D } from './World3D';
 import { WorldExchangePanel } from './WorldExchangePanel';
@@ -183,9 +183,18 @@ export const ChildWorldShopStreet: React.FC<ChildWorldShopStreetProps> = ({ user
 
     useEffect(() => {
         if (persistedWorldSnapshot?.worldLab) {
-            setWorldLab(persistedWorldSnapshot.worldLab);
+            const settled = settleWorldState(persistedWorldSnapshot.worldLab, Date.now());
+            setWorldLab(settled);
         }
     }, [persistedWorldSnapshot]);
+
+    // Production tick: accumulate resources every 10 seconds
+    useEffect(() => {
+        const timer = window.setInterval(() => {
+            setWorldLab((prev) => settleWorldState(prev, Date.now()));
+        }, 10000);
+        return () => window.clearInterval(timer);
+    }, []);
 
     const bankSettings = useMemo(() => ({
         demandDailyRate: familyBankSettings?.demand_daily_rate ?? DEFAULT_FAMILY_BANK_SETTINGS.demand_daily_rate,

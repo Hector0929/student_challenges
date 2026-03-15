@@ -14,6 +14,7 @@ import { ShopModal } from '../components/ShopModal';
 import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings } from '../hooks/useFamilySettings';
 import { World3D } from '../components/World3D';
+import { useWorldPersistence } from '../hooks/useWorldPersistence';
 
 import { COMMON_EMOJIS, DAILY_QUEST_TARGET } from '../lib/constants';
 
@@ -49,6 +50,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     const completeQuestMutation = useCompleteQuest();
     const createQuestMutation = useCreateQuest();
     const { data: familySettings } = useFamilySettings();
+    const { data: persistedWorld } = useWorldPersistence(userId);
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isQuestSectionCollapsed, setIsQuestSectionCollapsed] = useState(false);
@@ -296,7 +298,12 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
 
             {/* 3D World Preview */}
             <div className="mb-6">
-                <World3D />
+                <World3D
+                    islandLevel={persistedWorld?.worldLab?.islandLevel}
+                    heroLevel={persistedWorld?.worldLab?.heroLevel}
+                    timeOfDay={persistedWorld?.worldLab?.timeOfDay}
+                    buildings={persistedWorld?.worldLab?.buildings}
+                />
             </div>
 
             {/* Header Section */}
