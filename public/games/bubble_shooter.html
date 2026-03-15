@@ -17,6 +17,7 @@
             user-select: none;
             min-height: 100vh;
             min-height: 100dvh;
+            padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
         }
 
         .neon-text {
@@ -27,6 +28,47 @@
             image-rendering: pixelated;
         }
 
+        .game-shell {
+            position: relative;
+            width: min(100%, 34rem);
+            margin: 0 auto;
+        }
+
+        .game-stage {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            max-height: calc(100dvh - 8rem);
+            background: #0f172a;
+            overflow: hidden;
+            border-radius: 24px;
+            border: 2px solid rgba(71, 85, 105, .9);
+            box-shadow: 0 24px 48px rgba(2, 6, 23, .45), inset 0 0 0 1px rgba(255,255,255,.05);
+        }
+
+        .ui-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 12px;
+            z-index: 10;
+        }
+
+        .hud-card {
+            border: 1px solid rgba(96, 165, 250, .35);
+            background: rgba(15, 23, 42, .72);
+            backdrop-filter: blur(8px);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+        }
+
+        .menu-card {
+            border: 2px solid rgba(6, 182, 212, .8);
+            box-shadow: 0 28px 56px rgba(2, 8, 23, .6);
+        }
+
         @keyframes slide-up-fade {
             0% { transform: translateX(-50%) translateY(0); opacity: 1; }
             100% { transform: translateX(-50%) translateY(-50px); opacity: 0; }
@@ -34,33 +76,54 @@
         .float-score {
             animation: slide-up-fade 0.8s ease-out forwards;
         }
+
+        @media (max-width: 640px) {
+            body {
+                padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+            }
+
+            .game-shell {
+                width: 100%;
+            }
+
+            .game-stage {
+                height: min(76dvh, 820px);
+                aspect-ratio: auto;
+                max-height: none;
+                border-radius: 20px;
+            }
+
+            .ui-layer {
+                padding: 10px;
+            }
+        }
     </style>
 </head>
 
-<body class="min-h-screen h-[100dvh] flex flex-col items-center justify-start py-3 sm:py-5">
+<body class="min-h-screen h-[100dvh] flex flex-col items-center justify-start py-2 sm:py-4">
 
+    <div id="game-shell" class="game-shell">
     <!-- Header UI -->
-    <div id="ui-layer"
-        class="absolute inset-0 pointer-events-none flex flex-col justify-between p-3 z-10 w-full max-w-lg mx-auto">
-        <div class="flex justify-between items-start gap-2">
-            <div class="bg-slate-800/80 rounded-xl px-3 py-2 border border-blue-500/50">
+    <div id="ui-layer" class="ui-layer">
+        <div class="flex justify-between items-start gap-2 sm:gap-3">
+            <div class="hud-card rounded-xl px-2.5 py-2 sm:px-3 sm:py-2">
                 <div class="text-blue-400 text-[10px]">SCORE</div>
-                <div id="score" class="text-xl text-white font-bold">0</div>
+                <div id="score" class="text-lg sm:text-xl text-white font-bold">0</div>
             </div>
-            <div class="flex flex-col items-center gap-1">
+            <div class="flex flex-1 flex-col items-center gap-1 px-1">
                 <div id="combo-display"
                     class="text-yellow-400 text-xs font-bold opacity-0 transition-opacity duration-300"
                     style="text-shadow:0 0 8px #eab308">
                 </div>
-                <div id="mission-display" class="text-cyan-300 text-[11px] font-bold text-center max-w-[150px] truncate"></div>
+                <div id="mission-display" class="text-cyan-300 text-[10px] sm:text-[11px] font-bold text-center max-w-[150px] sm:max-w-[170px] truncate"></div>
                 <div id="phase-display" class="text-fuchsia-300 text-[10px] font-bold"></div>
                 <div
-                    class="bg-gradient-to-r from-purple-600/80 to-blue-600/80 rounded-lg px-3 py-1 border border-purple-400/50">
+                    class="hud-card bg-gradient-to-r from-purple-600/70 to-blue-600/70 rounded-lg px-3 py-1.5 border border-purple-400/50 min-w-[78px] sm:min-w-[88px]">
                     <div class="text-purple-200 text-[10px]">LEVEL</div>
                     <div id="level" class="text-lg text-white font-bold text-center">1</div>
                 </div>
             </div>
-            <div class="bg-slate-800/80 rounded-xl px-3 py-2 border border-blue-500/50 flex flex-col items-center">
+            <div class="hud-card rounded-xl px-2.5 py-2 sm:px-3 sm:py-2 flex flex-col items-center min-w-[64px] sm:min-w-[76px]">
                 <div class="text-blue-400 text-[10px] mb-1">NEXT</div>
                 <canvas id="preview-canvas" width="36" height="36"></canvas>
             </div>
@@ -68,20 +131,24 @@
     </div>
 
     <!-- Floating score popups container -->
-    <div id="popup-container" class="absolute inset-0 pointer-events-none z-20 w-full max-w-lg mx-auto"></div>
+    <div id="popup-container" class="absolute inset-0 pointer-events-none z-20"></div>
 
     <!-- Start / Game Over Screen -->
     <div id="menu-screen"
         class="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div class="bg-slate-900 rounded-2xl p-8 text-center max-w-md mx-4 border-2 border-cyan-500 shadow-2xl">
+        <div class="menu-card bg-slate-900 rounded-2xl p-6 sm:p-8 text-center max-w-md mx-4">
             <div class="text-6xl mb-4 animate-bounce">🫧</div>
             <h1 id="menu-title"
                 class="text-3xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 font-bold mb-2 neon-text">
                 霓虹泡泡龍
             </h1>
             <p id="menu-message" class="text-cyan-200/70 mb-4 tracking-wider text-sm">
-                消除所有泡泡！
+                消除所有泡泡，別讓泡泡線壓到底部！
             </p>
+            <div class="mb-5 space-y-2 text-left text-xs sm:text-sm text-cyan-100/80 bg-slate-800/70 rounded-xl border border-cyan-500/20 p-3">
+                <div><span class="text-cyan-300 font-bold">手機：</span>拖曳瞄準，放開或點一下即可發射。</div>
+                <div><span class="text-cyan-300 font-bold">目標：</span>湊出 3 顆以上同色泡泡並完成任務拿高分。</div>
+            </div>
             <div id="final-score" class="hidden mb-4">
                 <div class="text-yellow-400 text-sm">最終得分</div>
                 <div id="final-score-value" class="text-4xl text-white font-black">0</div>
@@ -95,9 +162,9 @@
         </div>
     </div>
 
-    <div
-        class="relative w-full max-w-lg aspect-square max-h-[calc(100dvh-8rem)] bg-slate-900 overflow-hidden shadow-2xl border-x-2 border-slate-700">
+    <div id="game-stage" class="game-stage">
         <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+    </div>
     </div>
 
     <script>
@@ -349,9 +416,10 @@
 
         function loadBubble() {
             const { r: rad } = getTileParams();
+            const launcherOffset = Math.max(rad * 2.5, canvas.height * 0.12);
             state.activeBubble = {
                 x: canvas.width / 2,
-                y: canvas.height - rad * 2 - 15,
+                y: canvas.height - launcherOffset,
                 dx: 0, dy: 0,
                 bubble: state.nextBubble,
                 active: false,

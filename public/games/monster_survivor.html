@@ -31,7 +31,7 @@
       touch-action: manipulation;
       user-select: none;
       -webkit-user-select: none;
-      padding: 10px;
+      padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
     }
 
     .shell {
@@ -39,6 +39,7 @@
       display: grid;
       gap: 10px;
       grid-template-rows: auto auto 1fr auto;
+      align-content: start;
     }
 
     .title {
@@ -81,6 +82,7 @@
       border-radius: 14px;
       overflow: hidden;
       border: 2px solid #425c92;
+      aspect-ratio: 16 / 9;
       min-height: 320px;
       box-shadow: 0 18px 34px rgba(1, 6, 18, .5), inset 0 0 0 1px rgba(255,255,255,.06);
       background: #0f172a;
@@ -91,7 +93,7 @@
 
     canvas {
       width: 100%;
-      height: auto;
+      height: 100%;
       display: block;
       image-rendering: pixelated;
       image-rendering: crisp-edges;
@@ -131,6 +133,29 @@
       margin: 8px 0;
       line-height: 1.5;
       font-size: .96rem;
+    }
+
+    .guide-list {
+      margin: 12px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+      text-align: left;
+    }
+
+    .guide-list li {
+      border: 1px solid rgba(79, 108, 168, .5);
+      border-radius: 12px;
+      background: rgba(20, 32, 58, .82);
+      padding: 10px 12px;
+      color: var(--text-dim);
+      line-height: 1.45;
+      font-size: .92rem;
+    }
+
+    .guide-list b {
+      color: #fde68a;
     }
 
     .btn {
@@ -184,6 +209,10 @@
 
     .hint b { color: #fde68a; }
 
+    .hint-compact {
+      margin: 0;
+    }
+
     .touch-tag {
       border-radius: 999px;
       border: 1px solid #4f6ca8;
@@ -191,6 +220,7 @@
       font-size: .82rem;
       color: #dbeafe;
       background: rgba(30, 58, 138, .28);
+      white-space: nowrap;
     }
 
     .joystick {
@@ -225,8 +255,95 @@
     }
 
     @media (max-width: 760px) {
-      .hud { grid-template-columns: repeat(2, 1fr); }
-      .joystick { display: block; }
+      body {
+        padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+      }
+
+      .shell {
+        gap: 8px;
+        width: 100%;
+      }
+
+      .title {
+        margin: 0;
+        text-align: left;
+        font-size: clamp(1rem, 5.3vw, 1.32rem);
+        line-height: 1.2;
+      }
+
+      .hud {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+      }
+
+      .item {
+        padding: 6px 4px;
+        border-radius: 10px;
+        font-size: .77rem;
+      }
+
+      .item b {
+        margin-top: 2px;
+        font-size: .98rem;
+      }
+
+      .stage {
+        min-height: 0;
+        border-radius: 16px;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 7px 10px;
+        border-radius: 14px;
+      }
+
+      .hint {
+        font-size: .76rem;
+        line-height: 1.3;
+      }
+
+      .touch-tag {
+        justify-self: end;
+        align-self: center;
+        padding: 5px 9px;
+        font-size: .72rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .dialog {
+        padding: 16px 14px;
+      }
+
+      .guide-list li {
+        padding: 9px 10px;
+        font-size: .88rem;
+      }
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+      .joystick {
+        display: block;
+        width: 84px;
+        height: 84px;
+        bottom: 12px;
+        left: 12px;
+        background: rgba(10, 18, 34, .36);
+        backdrop-filter: blur(4px);
+      }
+
+      .joystick.right {
+        right: 12px;
+      }
+
+      .joystick .stick {
+        width: 36px;
+        height: 36px;
+        left: 22px;
+        top: 22px;
+      }
     }
   </style>
 </head>
@@ -249,12 +366,10 @@
     </section>
 
     <section class="controls">
-      <div class="hint">
-        手機：左下 / 右下虛擬搖桿或<b>畫面拖曳</b>移動。<b>攻擊自動發射</b>。<br>
-        電腦：<b>WASD / 方向鍵</b>移動。<br>
-        每升級可選 1 個能力，目標是活更久、打更多怪。
+      <div class="hint hint-compact">
+        <b>自動攻擊</b>｜擊倒怪物吸寶石升級｜詳細操作請看<b>開始頁說明</b>
       </div>
-      <div class="touch-tag">📱 Mobile Ready</div>
+      <div class="touch-tag">🎮 快速提示</div>
     </section>
   </main>
 
@@ -291,9 +406,9 @@
 
     const keys = { up: false, down: false, left: false, right: false };
 
-    let leftJoystick = { active: false, id: null, x: 0, y: 0 };
-    let rightJoystick = { active: false, id: null, x: 0, y: 0 };
-    let dragMove = { active: false, id: null, startX: 0, startY: 0, x: 0, y: 0 };
+    let leftJoystick = { active: false, id: null, x: 0, y: 0, updatedAt: 0 };
+    let rightJoystick = { active: false, id: null, x: 0, y: 0, updatedAt: 0 };
+    let dragMove = { active: false, id: null, startX: 0, startY: 0, x: 0, y: 0, updatedAt: 0 };
 
     const player = {
       x: WORLD_W / 2,
@@ -558,11 +673,16 @@
     function openStart() {
       state = GAME_STATES.START;
       overlay.style.display = 'flex';
+      const touchControls = isTouchControlsEnabled();
       dialog.innerHTML = `
         <h2>怪獸生存戰（初版）</h2>
         <p>Vampire Survivors 風格：自動攻擊 + 成長 build。</p>
         <p>Boss 會依序登場，擊敗後經過一段間隔才會再出下一隻。</p>
-        <p>先玩 1 局看看手感吧！</p>
+        <ul class="guide-list">
+          <li><b>${touchControls ? '手機操作' : '電腦操作'}</b>：${touchControls ? '左下或右下搖桿移動；也可直接在畫面拖曳移動。' : '使用 WASD 或方向鍵移動角色。'}</li>
+          <li><b>戰鬥方式</b>：角色會自動攻擊最近敵人，不需要額外按攻擊鍵。</li>
+          <li><b>成長節奏</b>：吸收寶石後升級，每次可選 1 個能力，盡量活久一點。</li>
+        </ul>
         <button class="btn" id="startBtn">開始生存</button>
       `;
       document.getElementById('startBtn')?.addEventListener('click', startGame);
@@ -670,9 +790,9 @@
       gems.length = 0;
       fx.length = 0;
 
-      leftJoystick = { active: false, id: null, x: 0, y: 0 };
-      rightJoystick = { active: false, id: null, x: 0, y: 0 };
-      dragMove = { active: false, id: null, startX: 0, startY: 0, x: 0, y: 0 };
+      leftJoystick = { active: false, id: null, x: 0, y: 0, updatedAt: 0 };
+      rightJoystick = { active: false, id: null, x: 0, y: 0, updatedAt: 0 };
+      dragMove = { active: false, id: null, startX: 0, startY: 0, x: 0, y: 0, updatedAt: 0 };
       leftStickEl.style.transform = 'translate(0px, 0px)';
       rightStickEl.style.transform = 'translate(0px, 0px)';
 
@@ -702,12 +822,14 @@
       if (keys.up) y -= 1;
       if (keys.down) y += 1;
 
-      x += leftJoystick.x;
-      y += leftJoystick.y;
-      x += rightJoystick.x;
-      y += rightJoystick.y;
-      x += dragMove.x;
-      y += dragMove.y;
+      const activeTouchInput = [leftJoystick, rightJoystick, dragMove]
+        .filter((inputState) => inputState.active)
+        .sort((a, b) => b.updatedAt - a.updatedAt)[0];
+
+      if (activeTouchInput) {
+        x += activeTouchInput.x;
+        y += activeTouchInput.y;
+      }
 
       const m = Math.hypot(x, y);
       if (m > 1) { x /= m; y /= m; }
@@ -1104,6 +1226,7 @@
         joystickState.x = dx / d;
         joystickState.y = dy / d;
       }
+      joystickState.updatedAt = performance.now();
       updateJoystickVisual(joystickState, stickElement);
     }
 
@@ -1118,10 +1241,11 @@
         dragMove.x = dx / d;
         dragMove.y = dy / d;
       }
+      dragMove.updatedAt = performance.now();
     }
 
-    function isMobileViewport() {
-      return window.matchMedia('(max-width: 760px)').matches;
+    function isTouchControlsEnabled() {
+      return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
     }
 
     function isPointerInsideJoystick(joystickEl, clientX, clientY) {
@@ -1144,26 +1268,31 @@
     });
 
     canvas.addEventListener('pointerdown', (e) => {
-      if (isMobileViewport()) {
+      if (isTouchControlsEnabled()) {
         if (isPointerInsideJoystick(leftJoystickEl, e.clientX, e.clientY) && !leftJoystick.active) {
           leftJoystick.active = true;
           leftJoystick.id = e.pointerId;
+          leftJoystick.updatedAt = performance.now();
           setJoyFromPointer(leftJoystickEl, leftJoystick, leftStickEl, e.clientX, e.clientY);
           canvas.setPointerCapture(e.pointerId);
         } else if (isPointerInsideJoystick(rightJoystickEl, e.clientX, e.clientY) && !rightJoystick.active) {
           rightJoystick.active = true;
           rightJoystick.id = e.pointerId;
+          rightJoystick.updatedAt = performance.now();
           setJoyFromPointer(rightJoystickEl, rightJoystick, rightStickEl, e.clientX, e.clientY);
           canvas.setPointerCapture(e.pointerId);
-        } else {
+        } else if (!leftJoystick.active && !rightJoystick.active && !dragMove.active) {
           dragMove.active = true;
           dragMove.id = e.pointerId;
           dragMove.startX = e.clientX;
           dragMove.startY = e.clientY;
           dragMove.x = 0;
           dragMove.y = 0;
+          dragMove.updatedAt = performance.now();
           setDragMoveFromPointer(e.clientX, e.clientY);
           canvas.setPointerCapture(e.pointerId);
+        } else {
+          return;
         }
       }
     });
@@ -1186,6 +1315,7 @@
       joystickState.id = null;
       joystickState.x = 0;
       joystickState.y = 0;
+      joystickState.updatedAt = 0;
       updateJoystickVisual(joystickState, stickElement);
     }
 
@@ -1197,6 +1327,7 @@
       dragMove.startY = 0;
       dragMove.x = 0;
       dragMove.y = 0;
+      dragMove.updatedAt = 0;
     }
 
     canvas.addEventListener('pointerup', (e) => {
