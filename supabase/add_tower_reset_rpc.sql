@@ -7,11 +7,11 @@ RETURNS tower_progress AS $$
 DECLARE
     result tower_progress;
 BEGIN
-    -- Update the tower progress
+    -- Update the tower progress (keep current dice + add 5 as reward)
     UPDATE tower_progress
     SET 
         current_floor = 1,
-        dice_count = 5,
+        dice_count = dice_count + 5,
         total_climbs = total_climbs + 1,
         updated_at = NOW()
     WHERE user_id = p_user_id
@@ -32,4 +32,4 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION reset_tower_progress(UUID) TO authenticated;
 
 -- Add comment
-COMMENT ON FUNCTION reset_tower_progress IS '重置怪獸塔進度 - 回到第1層並獲得5顆骰子';
+COMMENT ON FUNCTION reset_tower_progress IS '重置怪獸塔進度 - 回到第1層，保留現有骰子並額外獎勵5顆';

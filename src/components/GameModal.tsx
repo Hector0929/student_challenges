@@ -5,6 +5,33 @@ import { RPGDialog } from './RPGDialog';
 import { GAME_COST, GAME_DURATION_SECONDS } from '../lib/constants';
 import { useGameWindowController } from '../hooks/useGameWindowController';
 
+// Session persistence: preserve remaining paid game time across modal open/close
+const getSessionKey = (gameId: string) => `gameSession_${gameId}`;
+
+const saveGameSession = (gameId: string, remainingSeconds: number) => {
+    try {
+        localStorage.setItem(getSessionKey(gameId), JSON.stringify({ endTime: Date.now() + remainingSeconds * 1000 }));
+    } catch { /* ignore */ }
+};
+
+const loadGameSession = (gameId: string): number | null => {
+    try {
+        const raw = localStorage.getItem(getSessionKey(gameId));
+        if (!raw) return null;
+        const { endTime } = JSON.parse(raw) as { endTime: number };
+        const remaining = Math.ceil((endTime - Date.now()) / 1000);
+        if (remaining > 0) return remaining;
+        localStorage.removeItem(getSessionKey(gameId));
+        return null;
+    } catch {
+        return null;
+    }
+};
+
+const clearGameSession = (gameId: string) => {
+    try { localStorage.removeItem(getSessionKey(gameId)); } catch { /* ignore */ }
+};
+
 interface GameModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -231,6 +258,8 @@ export const GameModal: React.FC<GameModalProps> = ({
     const hasInitialized = useRef(false);
     const endTimeRef = useRef<number>(0);
     const starBalanceRef = useRef(starBalance);
+    const timeRemainingRef = useRef(GAME_DURATION_SECONDS);
+    const phaseRef = useRef<GamePhase>('confirm');
     const practiceRewardHandledRef = useRef(false);
     const [showRewardFx, setShowRewardFx] = useState(false);
     const isImmersivePhase = phase === 'playing' || phase === 'paused' || phase === 'timeup';
@@ -286,10 +315,10 @@ export const GameModal: React.FC<GameModalProps> = ({
         }
     };
 
-    // Keep ref in sync
-    useEffect(() => {
-        starBalanceRef.current = starBalance;
-    }, [starBalance]);
+    // Keep refs in sync
+    useEffect(() => { starBalanceRef.current = starBalance; }, [starBalance]);
+    useEffect(() => { timeRemainingRef.current = timeRemaining; }, [timeRemaining]);
+    useEffect(() => { phaseRef.current = phase; }, [phase]);
 
     // 1. Body Scroll Lock & Phase Reset (Logic Cleanup Fix)
     // Removed starBalance from dependencies to prevent unintended timer cleanup on balance updates
@@ -299,16 +328,30 @@ export const GameModal: React.FC<GameModalProps> = ({
             document.body.dataset.gameModalOpen = 'true';
             if (!hasInitialized.current) {
                 hasInitialized.current = true;
-                setTimeRemaining(GAME_DURATION_SECONDS);
                 practiceRewardHandledRef.current = false;
 
                 if (mode === 'practice') {
-                    setPhase('confirm'); // Go to confirm screen, but with different UI
+                    setTimeRemaining(GAME_DURATION_SECONDS);
+                    setPhase('confirm');
                 } else {
-                    setPhase(starBalanceRef.current < GAME_COST ? 'insufficient' : 'confirm');
+                    // Check if there's remaining paid time from a previous session
+                    const savedRemaining = loadGameSession(gameId);
+                    if (savedRemaining !== null && savedRemaining > 0) {
+                        console.log(`[GameModal] Resuming saved session: ${savedRemaining}s remaining`);
+                        setTimeRemaining(savedRemaining);
+                        setPhase('playing');
+                    } else {
+                        setTimeRemaining(GAME_DURATION_SECONDS);
+                        setPhase(starBalanceRef.current < GAME_COST ? 'insufficient' : 'confirm');
+                    }
                 }
             }
         } else {
+            // Save session if user exits mid-game (so they can resume later)
+            if (mode !== 'practice' && (phaseRef.current === 'playing' || phaseRef.current === 'paused') && timeRemainingRef.current > 0) {
+                console.log(`[GameModal] Saving session: ${timeRemainingRef.current}s remaining`);
+                saveGameSession(gameId, timeRemainingRef.current);
+            }
             document.body.style.overflow = 'unset';
             delete document.body.dataset.gameModalOpen;
             hasInitialized.current = false;
@@ -328,7 +371,7 @@ export const GameModal: React.FC<GameModalProps> = ({
                 clearInterval(timerRef.current);
             }
         };
-    }, [isOpen, mode]);
+    }, [isOpen, mode, gameId]);
 
     // 2. Focus Management
     useEffect(() => {
@@ -394,6 +437,7 @@ export const GameModal: React.FC<GameModalProps> = ({
 
                 if (secondsRemaining <= 0) {
                     console.log('[GameModal] Time up!');
+                    clearGameSession(gameId); // Session expired naturally, clear it
                     setPhase('timeup');
                     if (timerRef.current) {
                         clearInterval(timerRef.current);
@@ -410,7 +454,7 @@ export const GameModal: React.FC<GameModalProps> = ({
                 timerRef.current = null;
             }
         };
-    }, [phase]);
+    }, [phase, gameId]);
 
     // Practice reward: every completed 3-minute learning round gives stars
     useEffect(() => {

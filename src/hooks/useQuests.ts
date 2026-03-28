@@ -575,22 +575,19 @@ export const useSpendStars = () => {
                 throw new Error(`星幣不足！需要 ${amount} 顆，目前只有 ${currentBalance} 顆`);
             }
 
-            // 🛑 Race Condition Protection: Check for recent transactions (last 60s)
-            // This prevents "Double Spending" if user has multiple tabs open or network huge lag
+            // 🛑 Race Condition Protection: Check for recent transactions (last 5s)
+            // This prevents "Double Spending" from rapid double-clicks or network retries.
+            // Keep window short (5s) so users can re-pay after exiting a session.
             const { data: recentTx } = await supabase
                 .from('star_transactions')
                 .select('id, created_at')
                 .eq('user_id', userId)
                 .eq('game_id', gameId)
-                .gt('created_at', new Date(Date.now() - 60 * 1000).toISOString())
+                .gt('created_at', new Date(Date.now() - 5 * 1000).toISOString())
                 .limit(1);
 
             if (recentTx && recentTx.length > 0) {
                 console.warn('⚠️ Duplicate transaction detected (idempotency check)');
-                // Ideally we should return the existing one, but for now throwing error is safer
-                // to stop the balance deduction. 
-                // However, UI will show error. Better: Just return mock success?
-                // Let's throw specific error so we know.
                 throw new Error('您剛剛已經支付過這個遊戲了，請勿重複點擊！');
             }
 
