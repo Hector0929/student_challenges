@@ -1,108 +1,8 @@
 import { Suspense, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Float, Environment, ContactShadows, useGLTF, Clone } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Float, Environment, ContactShadows } from '@react-three/drei';
 import type { Group } from 'three';
 import type { AdventureEventType, AdventureRewards, AdventureStatus } from '../lib/world/adventure';
-
-// ─── Model paths ───
-const M = {
-    // Nature
-    pineA: '/models/nature/tree_pineRoundA.glb',
-    pineB: '/models/nature/tree_pineRoundB.glb',
-    pineC: '/models/nature/tree_pineRoundC.glb',
-    pineSmallA: '/models/nature/tree_pineSmallA.glb',
-    pineSmallB: '/models/nature/tree_pineSmallB.glb',
-    pineTallA: '/models/nature/tree_pineTallA_detailed.glb',
-    treeDetailed: '/models/nature/tree_detailed.glb',
-    treeOak: '/models/nature/tree_oak.glb',
-    treeSmall: '/models/nature/tree_small.glb',
-    bush: '/models/nature/plant_bush.glb',
-    bushLarge: '/models/nature/plant_bushLarge.glb',
-    bushSmall: '/models/nature/plant_bushSmall.glb',
-    grass: '/models/nature/grass.glb',
-    grassLarge: '/models/nature/grass_large.glb',
-    flowerRed: '/models/nature/flower_redA.glb',
-    flowerYellow: '/models/nature/flower_yellowA.glb',
-    flowerPurple: '/models/nature/flower_purpleA.glb',
-    rockLargeA: '/models/nature/rock_largeA.glb',
-    rockLargeB: '/models/nature/rock_largeB.glb',
-    rockTallA: '/models/nature/rock_tallA.glb',
-    rockTallB: '/models/nature/rock_tallB.glb',
-    stoneLargeA: '/models/nature/stone_largeA.glb',
-    stoneLargeB: '/models/nature/stone_largeB.glb',
-    stoneTallA: '/models/nature/stone_tallA.glb',
-    cliffBlock: '/models/nature/cliff_block_rock.glb',
-    cliffLarge: '/models/nature/cliff_large_rock.glb',
-    cliffHalf: '/models/nature/cliff_half_rock.glb',
-    cliffCorner: '/models/nature/cliff_corner_rock.glb',
-    cliffTop: '/models/nature/cliff_top_rock.glb',
-    groundGrass: '/models/nature/ground_grass.glb',
-    sign: '/models/nature/sign.glb',
-    logStack: '/models/nature/log_stack.glb',
-    mushroom: '/models/nature/mushroom_redGroup.glb',
-    // Town
-    stall: '/models/town/stall.glb',
-    stallGreen: '/models/town/stall-green.glb',
-    stallRed: '/models/town/stall-red.glb',
-    windmill: '/models/town/windmill.glb',
-    watermill: '/models/town/watermill.glb',
-    lantern: '/models/town/lantern.glb',
-    fountain: '/models/town/fountain-round.glb',
-    bannerGreen: '/models/town/banner-green.glb',
-    // Survival
-    chest: '/models/survival/chest.glb',
-    barrel: '/models/survival/barrel.glb',
-    box: '/models/survival/box.glb',
-    tent: '/models/survival/tent.glb',
-    campfirePit: '/models/survival/campfire-pit.glb',
-    signpost: '/models/survival/signpost.glb',
-    resourceStone: '/models/survival/resource-stone.glb',
-    toolPickaxe: '/models/survival/tool-pickaxe.glb',
-    // Platformer
-    blockGrassLarge: '/models/platformer/block-grass-large.glb',
-    blockGrassOverhang: '/models/platformer/block-grass-overhang-large.glb',
-    blockGrass: '/models/platformer/block-grass.glb',
-    // Characters
-    charMaleA: '/models/characters/character-male-a.glb',
-    charFemaleA: '/models/characters/character-female-a.glb',
-};
-
-// Preload critical models
-[
-    M.blockGrassLarge, M.blockGrassOverhang, M.blockGrass,
-    M.pineA, M.pineB, M.pineSmallA, M.bush, M.bushSmall,
-    M.rockLargeA, M.rockTallA, M.stoneLargeA,
-    M.stall, M.stallGreen, M.windmill, M.lantern,
-    M.cliffBlock, M.cliffLarge, M.cliffHalf,
-    M.groundGrass, M.grass, M.flowerRed,
-    M.charMaleA, M.charFemaleA,
-].forEach((path) => useGLTF.preload(path));
-
-// ─── Reusable GLB component ───
-function GLBModel({
-    path,
-    position = [0, 0, 0],
-    rotation = [0, 0, 0],
-    scale = 1,
-}: {
-    path: string;
-    position?: [number, number, number];
-    rotation?: [number, number, number];
-    scale?: number | [number, number, number];
-}) {
-    const { scene } = useGLTF(path);
-    const s = typeof scale === 'number' ? [scale, scale, scale] as [number, number, number] : scale;
-    return (
-        <Clone
-            object={scene}
-            position={position}
-            rotation={rotation}
-            scale={s}
-            castShadow
-            receiveShadow
-        />
-    );
-}
 
 interface World3DProps {
     islandLevel?: number;
@@ -135,7 +35,6 @@ interface PlotData {
 
 function PlotWorker({ position, type, isDusk }: { position: [number, number, number]; type: PlotType; isDusk: boolean }) {
     const groupRef = useRef<Group>(null);
-    const modelPath = type === 'mine' || type === 'market' ? M.charFemaleA : M.charMaleA;
 
     useFrame((state) => {
         if (!groupRef.current) return;
@@ -146,9 +45,23 @@ function PlotWorker({ position, type, isDusk }: { position: [number, number, num
         groupRef.current.rotation.y = Math.sin(t * 1.1 + position[0]) * 0.6;
     });
 
+    const bodyColor = type === 'mine' ? '#f59e0b' : type === 'market' ? '#f43f5e' : '#60a5fa';
+    const glowColor = isDusk ? '#fde68a' : '#bfdbfe';
+
     return (
         <group ref={groupRef} position={position}>
-            <GLBModel path={modelPath} scale={0.35} />
+            <mesh castShadow position={[0, 0.08, 0]}>
+                <sphereGeometry args={[0.045, 10, 10]} />
+                <meshStandardMaterial color="#fde68a" flatShading />
+            </mesh>
+            <mesh castShadow position={[0, 0.03, 0]}>
+                <capsuleGeometry args={[0.03, 0.08, 4, 8]} />
+                <meshStandardMaterial color={bodyColor} flatShading />
+            </mesh>
+            <mesh position={[0.05, 0.13, 0.02]}>
+                <sphereGeometry args={[0.014, 8, 8]} />
+                <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={0.45} />
+            </mesh>
         </group>
     );
 }
@@ -190,7 +103,18 @@ function AdventureScout({ from, to, isActive, isDusk }: { from: [number, number,
 
     return (
         <group ref={scoutRef} position={from}>
-            <GLBModel path={M.charMaleA} scale={0.4} />
+            <mesh castShadow>
+                <capsuleGeometry args={[0.04, 0.14, 4, 8]} />
+                <meshStandardMaterial color={isDusk ? '#fca5a5' : '#f87171'} flatShading />
+            </mesh>
+            <mesh position={[0, 0.08, -0.06]} castShadow>
+                <coneGeometry args={[0.05, 0.12, 4]} />
+                <meshStandardMaterial color="#fde68a" flatShading />
+            </mesh>
+            <mesh position={[0, 0.02, 0.08]}>
+                <sphereGeometry args={[0.03, 8, 8]} />
+                <meshStandardMaterial color="#93c5fd" emissive="#60a5fa" emissiveIntensity={0.45} />
+            </mesh>
         </group>
     );
 }
@@ -232,50 +156,11 @@ function PlotIsland({
     isSelected: boolean;
     onSelect?: (plotKey: string) => void;
 }) {
+    const baseColor = plot.unlocked ? '#a7d8b1' : '#cbd5e1';
+    const stemColor = plot.unlocked ? '#63a869' : '#94a3b8';
+    const signColor = plot.unlocked ? '#f8fafc' : '#e2e8f0';
+    const labelColor = plot.unlocked ? '#334155' : '#64748b';
     const highlightColor = plot.unlocked ? '#fbbf24' : '#94a3b8';
-
-    const plotDecoration = useMemo(() => {
-        if (!plot.unlocked) {
-            return <GLBModel path={M.box} position={[0, 0.12, 0]} scale={0.25} />;
-        }
-        switch (plot.type) {
-            case 'forest':
-                return (
-                    <>
-                        <GLBModel path={M.pineA} position={[-0.08, 0.12, -0.02]} scale={0.25} />
-                        <GLBModel path={M.pineSmallA} position={[0.1, 0.1, 0.06]} scale={0.2} />
-                        <GLBModel path={M.bushSmall} position={[0.02, 0.1, 0.12]} scale={0.18} />
-                    </>
-                );
-            case 'mine':
-                return (
-                    <>
-                        <GLBModel path={M.rockLargeA} position={[-0.06, 0.1, 0]} scale={0.2} />
-                        <GLBModel path={M.stoneLargeA} position={[0.08, 0.1, 0.04]} scale={0.15} />
-                    </>
-                );
-            case 'market':
-                return <GLBModel path={M.stall} position={[0, 0.1, 0]} scale={0.14} />;
-            case 'academy':
-                return <GLBModel path={M.windmill} position={[0, 0.1, 0]} scale={0.12} />;
-            case 'storage':
-                return (
-                    <>
-                        <GLBModel path={M.chest} position={[-0.06, 0.1, 0]} scale={0.3} />
-                        <GLBModel path={M.barrel} position={[0.08, 0.1, 0.04]} scale={0.25} />
-                    </>
-                );
-            case 'adventure':
-                return (
-                    <>
-                        <GLBModel path={M.tent} position={[0, 0.1, 0]} scale={0.25} />
-                        <GLBModel path={M.campfirePit} position={[0.15, 0.1, 0.1]} scale={0.2} />
-                    </>
-                );
-            default:
-                return null;
-        }
-    }, [plot.unlocked, plot.type]);
 
     return (
         <group
@@ -295,12 +180,104 @@ function PlotIsland({
                         <meshStandardMaterial color={highlightColor} emissive={highlightColor} emissiveIntensity={0.35} />
                     </mesh>
                 )}
-                {/* Island base using platformer grass block */}
-                <GLBModel path={M.blockGrass} position={[0, 0, 0]} scale={0.7} />
-                {/* Sign */}
-                <GLBModel path={M.sign} position={[0, 0.14, 0.4]} scale={0.22} />
-                {/* Plot-specific decoration */}
-                {plotDecoration}
+                <mesh castShadow receiveShadow>
+                    <cylinderGeometry args={[0.58, 0.42, 0.22, 6]} />
+                    <meshStandardMaterial color={baseColor} flatShading />
+                </mesh>
+                <mesh position={[0, -0.12, 0]} castShadow>
+                    <cylinderGeometry args={[0.3, 0.22, 0.14, 6]} />
+                    <meshStandardMaterial color={stemColor} flatShading />
+                </mesh>
+                <mesh position={[0, 0.18, 0.46]} castShadow>
+                    <boxGeometry args={[0.32, 0.14, 0.04]} />
+                    <meshStandardMaterial color={signColor} flatShading />
+                </mesh>
+                <mesh position={[0, 0.18, 0.485]}>
+                    <boxGeometry args={[0.24, 0.02, 0.01]} />
+                    <meshStandardMaterial color={labelColor} flatShading />
+                </mesh>
+
+                {plot.unlocked ? (
+                    <>
+                        {plot.type === 'forest' && (
+                            <>
+                                <mesh position={[-0.1, 0.14, -0.03]} castShadow>
+                                    <coneGeometry args={[0.12, 0.28, 6]} />
+                                    <meshStandardMaterial color="#2f8f45" flatShading />
+                                </mesh>
+                                <mesh position={[0.12, 0.11, 0.08]} castShadow>
+                                    <coneGeometry args={[0.09, 0.2, 6]} />
+                                    <meshStandardMaterial color="#1f7a39" flatShading />
+                                </mesh>
+                            </>
+                        )}
+                        {plot.type === 'mine' && (
+                            <>
+                                <mesh position={[-0.08, 0.08, 0]} castShadow>
+                                    <dodecahedronGeometry args={[0.09, 0]} />
+                                    <meshStandardMaterial color="#94a3b8" flatShading />
+                                </mesh>
+                                <mesh position={[0.06, 0.16, 0.02]} castShadow>
+                                    <octahedronGeometry args={[0.08, 0]} />
+                                    <meshStandardMaterial color="#7dd3fc" emissive="#22d3ee" emissiveIntensity={isDusk ? 0.7 : 0.35} flatShading />
+                                </mesh>
+                            </>
+                        )}
+                        {plot.type === 'market' && (
+                            <>
+                                <mesh position={[0, 0.08, 0]} castShadow>
+                                    <boxGeometry args={[0.18, 0.12, 0.14]} />
+                                    <meshStandardMaterial color="#8D6E63" flatShading />
+                                </mesh>
+                                <mesh position={[0, 0.18, 0]} castShadow>
+                                    <coneGeometry args={[0.14, 0.12, 4]} />
+                                    <meshStandardMaterial color="#fb923c" flatShading />
+                                </mesh>
+                            </>
+                        )}
+                        {plot.type === 'academy' && (
+                            <>
+                                <mesh position={[0, 0.12, 0]} castShadow>
+                                    <cylinderGeometry args={[0.08, 0.1, 0.28, 6]} />
+                                    <meshStandardMaterial color="#7E57C2" flatShading />
+                                </mesh>
+                                <mesh position={[0, 0.32, 0]} castShadow>
+                                    <coneGeometry args={[0.1, 0.12, 6]} />
+                                    <meshStandardMaterial color="#c4b5fd" emissive="#8b5cf6" emissiveIntensity={0.25} flatShading />
+                                </mesh>
+                            </>
+                        )}
+                        {plot.type === 'storage' && (
+                            <>
+                                <mesh position={[0, 0.08, 0]} castShadow>
+                                    <boxGeometry args={[0.18, 0.14, 0.16]} />
+                                    <meshStandardMaterial color="#c08457" flatShading />
+                                </mesh>
+                                <mesh position={[0, 0.18, 0]} castShadow>
+                                    <boxGeometry args={[0.12, 0.05, 0.04]} />
+                                    <meshStandardMaterial color="#fef08a" flatShading />
+                                </mesh>
+                            </>
+                        )}
+                        {plot.type === 'adventure' && (
+                            <>
+                                <mesh position={[0, 0.12, 0]} castShadow>
+                                    <boxGeometry args={[0.04, 0.28, 0.04]} />
+                                    <meshStandardMaterial color="#475569" flatShading />
+                                </mesh>
+                                <mesh position={[0.08, 0.2, 0]} castShadow>
+                                    <boxGeometry args={[0.18, 0.1, 0.02]} />
+                                    <meshStandardMaterial color="#ef4444" flatShading />
+                                </mesh>
+                            </>
+                        )}
+                    </>
+                ) : (
+                    <mesh position={[0, 0.1, 0]} castShadow>
+                        <boxGeometry args={[0.16, 0.08, 0.16]} />
+                        <meshStandardMaterial color="#cbd5e1" flatShading />
+                    </mesh>
+                )}
             </Float>
         </group>
     );
@@ -434,103 +411,132 @@ export function World3D({
                 <pointLight position={[0, 2.2, 0]} intensity={pointIntensity} color={pointColor} />
 
                 <Suspense fallback={null}>
+                    {/* 依等級動態擴建的懸浮小島 */}
                     <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
                         <group scale={[islandScale, islandScale, islandScale]}>
-                            {/* ── Main island base (mixed: grass top + rocky cliffs) ── */}
-                            <group>
-                                {/* Top grass platform layer */}
-                                <GLBModel path={M.blockGrassLarge} position={[0, 0, 0]} scale={2.0} />
-                                <GLBModel path={M.blockGrass} position={[1.6, -0.05, 0]} scale={1.5} />
-                                <GLBModel path={M.blockGrass} position={[-1.6, -0.05, 0]} scale={1.5} />
-                                <GLBModel path={M.blockGrass} position={[0, -0.05, 1.6]} scale={1.5} />
-                                <GLBModel path={M.blockGrass} position={[0, -0.05, -1.6]} scale={1.5} />
-                                <GLBModel path={M.blockGrass} position={[1.1, -0.03, 1.1]} scale={1.3} />
-                                <GLBModel path={M.blockGrass} position={[-1.1, -0.03, 1.1]} scale={1.3} />
-                                <GLBModel path={M.blockGrass} position={[1.1, -0.03, -1.1]} scale={1.3} />
-                                <GLBModel path={M.blockGrass} position={[-1.1, -0.03, -1.1]} scale={1.3} />
-                                {/* Rocky cliff underside */}
-                                <GLBModel path={M.cliffBlock} position={[0, -0.7, 0]} scale={2.2} />
-                                <GLBModel path={M.cliffLarge} position={[0.8, -1.0, 0.5]} scale={1.4} rotation={[0, 0.5, 0]} />
-                                <GLBModel path={M.cliffLarge} position={[-0.8, -1.0, -0.5]} scale={1.4} rotation={[0, 2.1, 0]} />
-                                <GLBModel path={M.cliffHalf} position={[0, -1.3, 0]} scale={1.8} />
-                                <GLBModel path={M.cliffCorner} position={[1.2, -0.9, -0.8]} scale={1.2} rotation={[0, 1.6, 0]} />
-                                <GLBModel path={M.cliffCorner} position={[-1.2, -0.9, 0.8]} scale={1.2} rotation={[0, -1.6, 0]} />
-                                {/* Cloud ring */}
-                                <mesh position={[0, -1.05, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                                    <torusGeometry args={[2.6, 0.08, 8, 28]} />
-                                    <meshStandardMaterial color="#bfdbfe" transparent opacity={0.45} />
+                            {/* 島嶼主體 */}
+                            <mesh receiveShadow castShadow position={[0, -0.5, 0]}>
+                                <cylinderGeometry args={[2, 1.5, 0.8, 6]} />
+                                <meshStandardMaterial color="#42a846" flatShading />
+                            </mesh>
+
+                            {/* 島嶼草皮層 */}
+                            <mesh receiveShadow castShadow position={[0, -0.05, 0]}>
+                                <cylinderGeometry args={[2.02, 2.02, 0.08, 6]} />
+                                <meshStandardMaterial color="#9dd7a9" flatShading />
+                            </mesh>
+
+                            {/* 岩石層 */}
+                            <mesh receiveShadow castShadow position={[0, -1, 0]}>
+                                <cylinderGeometry args={[1.5, 1, 0.5, 6]} />
+                                <meshStandardMaterial color="#78909C" flatShading />
+                            </mesh>
+
+                            {/* 島嶼雲環 */}
+                            <mesh position={[0, -1.05, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                                <torusGeometry args={[2.1, 0.08, 8, 28]} />
+                                <meshStandardMaterial color="#bfdbfe" transparent opacity={0.55} />
+                            </mesh>
+
+                            {forestStage >= 2 && (
+                                <mesh position={[0.95, 0.03, 0.15]} rotation={[0, -0.35, 0]} castShadow>
+                                    <boxGeometry args={[0.28, 0.06, 0.16]} />
+                                    <meshStandardMaterial color="#c08a4b" flatShading />
                                 </mesh>
-                            </group>
+                            )}
+                            {forestStage >= 3 && (
+                                <group position={[1.1, 0.08, -0.3]}>
+                                    <mesh castShadow>
+                                        <cylinderGeometry args={[0.05, 0.06, 0.2, 6]} />
+                                        <meshStandardMaterial color="#8d6e63" flatShading />
+                                    </mesh>
+                                    <mesh position={[0, 0.16, 0]} castShadow>
+                                        <sphereGeometry args={[0.13, 10, 10]} />
+                                        <meshStandardMaterial color="#4ade80" flatShading />
+                                    </mesh>
+                                </group>
+                            )}
 
-                            {/* ── Forest: trees grow with level ── */}
-                            <group>
-                                {(() => {
-                                    const treeModels = [M.pineA, M.pineB, M.pineC, M.pineSmallA, M.pineSmallB, M.treeDetailed, M.treeOak];
-                                    const undergrowth = [M.bush, M.bushSmall, M.grass, M.grassLarge, M.flowerRed, M.flowerYellow, M.mushroom];
-                                    return Array.from({ length: treeCount }).map((_, i) => {
-                                        const a = (i / Math.max(1, treeCount)) * Math.PI * 2;
-                                        const r = 0.7 + (i % 2) * 0.25;
-                                        const x = Math.cos(a) * r;
-                                        const z = Math.sin(a) * r;
-                                        return (
-                                            <group key={`tree-${i}`}>
-                                                <GLBModel
-                                                    path={treeModels[i % treeModels.length]}
-                                                    position={[x, 0.05, z]}
-                                                    scale={0.3 + (i % 3) * 0.08}
-                                                    rotation={[0, (i * 1.3) % (Math.PI * 2), 0]}
-                                                />
-                                                {forestStage >= 2 && i % 2 === 0 && (
-                                                    <GLBModel
-                                                        path={undergrowth[i % undergrowth.length]}
-                                                        position={[x + 0.12, 0.02, z + 0.08]}
-                                                        scale={0.25}
-                                                    />
-                                                )}
-                                            </group>
-                                        );
-                                    });
-                                })()}
-                                {forestStage >= 2 && (
-                                    <GLBModel path={M.logStack} position={[0.85, 0.04, 0.2]} scale={0.3} rotation={[0, 0.4, 0]} />
-                                )}
-                                {forestStage >= 3 && (
-                                    <GLBModel path={M.watermill} position={[1.0, 0.05, -0.35]} scale={0.2} rotation={[0, -0.5, 0]} />
-                                )}
-                            </group>
+                            {/* forest 建築：樹林數量會成長 */}
+                            {Array.from({ length: treeCount }).map((_, i) => {
+                                const a = (i / Math.max(1, treeCount)) * Math.PI * 2;
+                                const r = 0.75 + (i % 2) * 0.22;
+                                const x = Math.cos(a) * r;
+                                const z = Math.sin(a) * r;
+                                const size = 0.18 + (i % 3) * 0.05;
+                                return (
+                                    <group key={`tree-${i}`} position={[x, 0.06, z]}>
+                                        <mesh castShadow position={[0, 0.1, 0]}>
+                                            <cylinderGeometry args={[0.04, 0.05, 0.18, 6]} />
+                                            <meshStandardMaterial color="#8d6e63" flatShading />
+                                        </mesh>
+                                        <mesh castShadow position={[0, 0.25, 0]}>
+                                            <coneGeometry args={[size, 0.3 + size * 0.35, 6]} />
+                                            <meshStandardMaterial color="#2f8f45" flatShading />
+                                        </mesh>
+                                        <mesh castShadow position={[0, 0.39, 0]}>
+                                            <coneGeometry args={[size * 0.72, 0.22 + size * 0.24, 6]} />
+                                            <meshStandardMaterial color="#1f7a39" flatShading />
+                                        </mesh>
+                                        {forestStage >= 3 && i % 2 === 0 && (
+                                            <mesh castShadow position={[0.08, 0.26, 0.02]}>
+                                                <sphereGeometry args={[0.04, 8, 8]} />
+                                                <meshStandardMaterial color="#f87171" flatShading />
+                                            </mesh>
+                                        )}
+                                    </group>
+                                );
+                            })}
 
-                            {/* ── Mine: rocks grow with level ── */}
-                            <group>
-                                {(() => {
-                                    const rockModels = [M.rockLargeA, M.rockLargeB, M.rockTallA, M.rockTallB, M.stoneLargeA, M.stoneLargeB, M.stoneTallA];
-                                    return Array.from({ length: rockCount }).map((_, i) => {
-                                        const a = (i / Math.max(1, rockCount)) * Math.PI * 2 + 0.4;
-                                        const r = 0.55 + (i % 2) * 0.2;
-                                        const x = Math.cos(a) * r;
-                                        const z = Math.sin(a) * r;
-                                        return (
-                                            <GLBModel
-                                                key={`rock-${i}`}
-                                                path={rockModels[i % rockModels.length]}
-                                                position={[x, 0.02, z]}
-                                                scale={0.2 + (i % 2) * 0.06}
-                                                rotation={[0, (i * 2.1) % (Math.PI * 2), 0]}
+                            {/* mine 建築：礦石節點會增加 */}
+                            {Array.from({ length: rockCount }).map((_, i) => {
+                                const a = (i / Math.max(1, rockCount)) * Math.PI * 2 + 0.4;
+                                const r = 0.55 + (i % 2) * 0.25;
+                                const x = Math.cos(a) * r;
+                                const z = Math.sin(a) * r;
+                                return (
+                                    <group key={`rock-${i}`} position={[x, 0.03, z]}>
+                                        <mesh castShadow position={[0, 0.04, 0]}>
+                                            <dodecahedronGeometry args={[0.08 + (i % 2) * 0.02, 0]} />
+                                            <meshStandardMaterial color="#94a3b8" flatShading />
+                                        </mesh>
+                                        <mesh castShadow position={[0.03, 0.1, -0.01]}>
+                                            <octahedronGeometry args={[0.06 + (i % 2) * 0.02, 0]} />
+                                            <meshStandardMaterial
+                                                color={i % 2 === 0 ? '#7dd3fc' : '#c4b5fd'}
+                                                emissive={i % 2 === 0 ? '#22d3ee' : '#a78bfa'}
+                                                emissiveIntensity={0.35}
+                                                flatShading
                                             />
-                                        );
-                                    });
-                                })()}
-                                {mineStage >= 2 && (
-                                    <GLBModel path={M.toolPickaxe} position={[-0.5, 0.08, -0.6]} scale={0.3} rotation={[0, 0.8, 0.4]} />
-                                )}
-                                {mineStage >= 3 && (
-                                    <>
-                                        <GLBModel path={M.resourceStone} position={[-0.6, 0.04, -0.75]} scale={0.3} />
-                                        <GLBModel path={M.barrel} position={[-0.35, 0.04, -0.82]} scale={0.25} />
-                                    </>
-                                )}
-                            </group>
+                                        </mesh>
+                                        {mineStage >= 2 && (
+                                            <mesh castShadow position={[-0.04, 0.02, 0.03]} rotation={[0, 0.3, 0]}>
+                                                <boxGeometry args={[0.1, 0.03, 0.06]} />
+                                                <meshStandardMaterial color="#7c5c3f" flatShading />
+                                            </mesh>
+                                        )}
+                                    </group>
+                                );
+                            })}
 
-                            {/* ── Academy tower (dynamic height stays procedural) ── */}
+                            {mineStage >= 3 && (
+                                <group position={[-0.62, 0.05, -0.72]}>
+                                    <mesh castShadow rotation={[0, Math.PI / 6, 0]}>
+                                        <boxGeometry args={[0.22, 0.12, 0.14]} />
+                                        <meshStandardMaterial color="#64748b" flatShading />
+                                    </mesh>
+                                    <mesh position={[0, 0.12, 0]} castShadow>
+                                        <cylinderGeometry args={[0.02, 0.02, 0.18, 6]} />
+                                        <meshStandardMaterial color="#475569" flatShading />
+                                    </mesh>
+                                    <mesh position={[0.05, 0.18, 0]} castShadow rotation={[0, 0, -0.7]}>
+                                        <boxGeometry args={[0.12, 0.03, 0.03]} />
+                                        <meshStandardMaterial color="#f59e0b" flatShading />
+                                    </mesh>
+                                </group>
+                            )}
+
+                            {/* academy 建築：中央訓練塔會長高 */}
                             <group>
                                 <mesh position={[0, 0.06, 0]} castShadow>
                                     <cylinderGeometry args={[0.22, 0.26, 0.1, 8]} />
@@ -545,47 +551,67 @@ export function World3D({
                                     <meshStandardMaterial color="#B39DDB" emissive="#8b5cf6" emissiveIntensity={0.22} flatShading />
                                 </mesh>
                                 {academyStage >= 2 && (
-                                    <GLBModel path={M.windmill} position={[0.35, 0.04, -0.2]} scale={0.18} rotation={[0, -0.3, 0]} />
+                                    <mesh position={[0, 0.12, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                                        <torusGeometry args={[0.23, 0.02, 8, 24]} />
+                                        <meshStandardMaterial color="#f5d0fe" emissive="#e879f9" emissiveIntensity={0.18} />
+                                    </mesh>
                                 )}
                                 {academyStage >= 3 && (
                                     <>
-                                        <GLBModel path={M.bannerGreen} position={[0.2, 0.2, 0.15]} scale={0.2} />
-                                        <GLBModel path={M.bannerGreen} position={[-0.2, 0.2, -0.15]} scale={0.2} rotation={[0, Math.PI, 0]} />
+                                        <mesh position={[0.18, 0.18, 0.12]} castShadow>
+                                            <boxGeometry args={[0.08, 0.18, 0.08]} />
+                                            <meshStandardMaterial color="#c4b5fd" flatShading />
+                                        </mesh>
+                                        <mesh position={[-0.18, 0.18, -0.12]} castShadow>
+                                            <boxGeometry args={[0.08, 0.18, 0.08]} />
+                                            <meshStandardMaterial color="#c4b5fd" flatShading />
+                                        </mesh>
                                     </>
                                 )}
                             </group>
 
-                            {/* ── Market stalls ── */}
-                            <group>
-                                {(() => {
-                                    const stallModels = [M.stall, M.stallGreen, M.stallRed];
-                                    return Array.from({ length: marketStands }).map((_, i) => (
-                                        <GLBModel
-                                            key={`stall-${i}`}
-                                            path={stallModels[i % stallModels.length]}
-                                            position={[-0.9 + i * 0.35, 0.04, 0.92]}
-                                            scale={0.2}
-                                            rotation={[0, (i % 2 === 0 ? 0 : Math.PI), 0]}
-                                        />
-                                    ));
-                                })()}
-                                <GLBModel path={M.lantern} position={[-1.05, 0.04, 0.85]} scale={0.22} />
-                                {marketStage >= 2 && (
-                                    <GLBModel path={M.lantern} position={[0.15, 0.04, 0.85]} scale={0.22} />
-                                )}
-                                {marketStage >= 3 && (
-                                    <GLBModel path={M.fountain} position={[-0.35, 0.04, 1.15]} scale={0.18} />
-                                )}
-                            </group>
+                            {/* market 建築：攤位數量增加 */}
+                            {Array.from({ length: marketStands }).map((_, i) => (
+                                <group key={`market-${i}`} position={[-0.9 + i * 0.28, 0.08, 0.92]}>
+                                    <mesh castShadow>
+                                        <boxGeometry args={[0.17, 0.12, 0.14]} />
+                                        <meshStandardMaterial color="#8D6E63" flatShading />
+                                    </mesh>
+                                    <mesh position={[0, 0.12, 0]} castShadow>
+                                        <coneGeometry args={[0.12, 0.1, 4]} />
+                                        <meshStandardMaterial color={i % 2 === 0 ? '#fb923c' : '#f43f5e'} flatShading />
+                                    </mesh>
+                                    <mesh position={[0, 0.16, 0]} castShadow>
+                                        <boxGeometry args={[0.14, 0.02, 0.12]} />
+                                        <meshStandardMaterial color="#fef3c7" flatShading />
+                                    </mesh>
+                                    {marketStage >= 2 && (
+                                        <mesh position={[0.05, 0.03, 0.06]} castShadow>
+                                            <boxGeometry args={[0.04, 0.04, 0.04]} />
+                                            <meshStandardMaterial color="#22c55e" flatShading />
+                                        </mesh>
+                                    )}
+                                </group>
+                            ))}
 
-                            {/* ── Scattered decorations ── */}
-                            <GLBModel path={M.grass} position={[0.6, 0.02, -0.3]} scale={0.3} />
-                            <GLBModel path={M.grass} position={[-0.4, 0.02, 0.5]} scale={0.25} />
-                            <GLBModel path={M.flowerRed} position={[1.2, 0.02, 0.6]} scale={0.25} />
-                            <GLBModel path={M.flowerYellow} position={[-1.0, 0.02, -0.8]} scale={0.25} />
-                            <GLBModel path={M.flowerPurple} position={[0.3, 0.02, -1.2]} scale={0.2} />
+                            {marketStage >= 3 && (
+                                <group position={[-0.35, 0.11, 1.02]}>
+                                    <mesh castShadow>
+                                        <boxGeometry args={[0.32, 0.16, 0.18]} />
+                                        <meshStandardMaterial color="#a16207" flatShading />
+                                    </mesh>
+                                    <mesh position={[0, 0.13, 0]} castShadow>
+                                        <coneGeometry args={[0.22, 0.16, 4]} />
+                                        <meshStandardMaterial color="#f43f5e" flatShading />
+                                    </mesh>
+                                    <mesh position={[0, 0.2, 0.1]} castShadow>
+                                        <boxGeometry args={[0.18, 0.05, 0.02]} />
+                                        <meshStandardMaterial color="#fef08a" flatShading />
+                                    </mesh>
+                                </group>
+                            )}
 
-                            {/* ── Floating side islands ── */}
+                            {/* island 擴建：額外浮空小地塊 */}
                             {Array.from({ length: floatingTiles }).map((_, i) => {
                                 const a = (i / Math.max(1, floatingTiles)) * Math.PI * 2;
                                 const r = 2.4;
@@ -593,13 +619,14 @@ export function World3D({
                                 const z = Math.sin(a) * r;
                                 return (
                                     <group key={`tile-${i}`} position={[x, -0.85 + (i % 2) * 0.08, z]}>
-                                        <GLBModel path={M.blockGrass} position={[0, 0, 0]} scale={0.65} />
-                                        {i % 2 === 0 && (
-                                            <GLBModel path={M.pineSmallA} position={[0, 0.18, 0]} scale={0.18} />
-                                        )}
-                                        {i % 3 === 0 && (
-                                            <GLBModel path={M.bushSmall} position={[0.1, 0.14, 0.05]} scale={0.15} />
-                                        )}
+                                        <mesh castShadow receiveShadow>
+                                            <cylinderGeometry args={[0.55, 0.42, 0.22, 6]} />
+                                            <meshStandardMaterial color="#93c5aa" flatShading />
+                                        </mesh>
+                                        <mesh position={[0, -0.12, 0]} castShadow>
+                                            <cylinderGeometry args={[0.32, 0.24, 0.12, 6]} />
+                                            <meshStandardMaterial color="#4f9f58" flatShading />
+                                        </mesh>
                                     </group>
                                 );
                             })}
@@ -705,11 +732,14 @@ export function World3D({
                             })}
 
                             {/* hero icon：角色等級越高，旗幟越大 */}
-                            <GLBModel
-                                path={M.signpost}
-                                position={[0.88, 0.15, -0.55]}
-                                scale={0.22 + heroLevel * 0.008}
-                            />
+                            <mesh position={[0.88, 0.24, -0.55]} castShadow>
+                                <cylinderGeometry args={[0.02, 0.02, 0.25 + heroLevel * 0.015, 6]} />
+                                <meshStandardMaterial color="#424242" flatShading />
+                            </mesh>
+                            <mesh position={[0.96, 0.34 + heroLevel * 0.008, -0.55]} castShadow>
+                                <boxGeometry args={[0.14 + heroLevel * 0.006, 0.09, 0.02]} />
+                                <meshStandardMaterial color="#EF5350" flatShading />
+                            </mesh>
                         </group>
                     </Float>
 
@@ -726,7 +756,7 @@ export function World3D({
 
             {/* UI 覆蓋層 */}
             <div className="absolute top-4 left-4 font-pixel text-xs bg-white/80 p-2 border-2 border-deep-black pointer-events-none">
-                3D 世界 V2.0 - 冒險家家園
+                3D 世界原型 V1.1 - 冒險家家園
             </div>
             <div className="absolute top-4 right-4 font-pixel text-[10px] bg-white/85 p-2 border border-slate-300 rounded pointer-events-none text-slate-700">
                 {isDusk ? '黃昏' : '白天'}｜島 Lv.{islandLevel}｜角色 Lv.{heroLevel}

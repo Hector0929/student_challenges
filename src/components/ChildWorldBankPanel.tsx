@@ -178,19 +178,25 @@ export const ChildWorldBankPanel: React.FC<ChildWorldBankPanelProps> = ({
 
             <div className="mt-4 space-y-3">
                 <div className="font-heading font-bold text-sm">定存清單</div>
-                {timeDeposits.length === 0 ? (
+                {timeDeposits.filter((deposit) => {
+                    const s = getTimeDepositStatus(deposit, bankNowIso);
+                    return s === 'active' || s === 'matured';
+                }).length === 0 ? (
                     <div className="rounded-lg border border-dashed border-sky-300 bg-white p-4 text-sm text-sky-700">
                         目前沒有定存單
                     </div>
                 ) : (
                     timeDeposits.map((deposit, index) => {
                         const status = getTimeDepositStatus(deposit, bankNowIso);
+                        if (status === 'claimed' || status === 'cancelled') return null;
+                        const statusLabel = status === 'active' ? '存款中' : '已到期';
+                        const statusColor = status === 'active' ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700';
                         const expectedInterest = Math.floor(deposit.principal * deposit.dailyRate * deposit.termDays);
                         return (
                             <div key={`${deposit.startAt}-${index}`} className="rounded-lg border border-sky-200 bg-white p-4 text-sm space-y-2">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <div className="font-heading font-bold">定存 #{index + 1}</div>
-                                    <div className="text-xs rounded-full px-2 py-1 bg-sky-100 text-sky-700">{status}</div>
+                                    <div className={`text-xs rounded-full px-2 py-1 ${statusColor}`}>{statusLabel}</div>
                                 </div>
                                 <div>本金：{deposit.principal} ⭐</div>
                                 <div>到期日：{new Date(deposit.maturesAt).toLocaleDateString('zh-TW')}</div>

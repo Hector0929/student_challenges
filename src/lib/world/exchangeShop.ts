@@ -45,15 +45,6 @@ function normalizePriceTable(prices: ExchangePriceTable): ExchangePriceTable {
     };
 }
 
-function assertCanSell(currentResources: WorldResources, selectedResources: WorldResources) {
-    const resourceKeys: Array<keyof WorldResources> = ['wood', 'stone', 'crystal'];
-    for (const resourceKey of resourceKeys) {
-        if (selectedResources[resourceKey] > currentResources[resourceKey]) {
-            throw new Error(`賣出數量不得大於目前擁有的${resourceKey}`);
-        }
-    }
-}
-
 export function createDefaultExchangePriceTable(): ExchangePriceTable {
     return {
         wood: 0.025,
@@ -74,10 +65,16 @@ export function calculateExchangePreview({
     basePrices: ExchangePriceTable;
 }): ExchangePreviewResult {
     const safeCurrentResources = normalizeResources(currentResources);
-    const safeSelectedResources = normalizeSelectedResources(selectedResources);
     const safeBasePrices = normalizePriceTable(basePrices);
 
-    assertCanSell(safeCurrentResources, safeSelectedResources);
+    // Clamp selected to what's actually available — prevents throw during React render
+    // when currentResources updates (after exchange) before selectedResources resets.
+    const rawSelected = normalizeSelectedResources(selectedResources);
+    const safeSelectedResources: WorldResources = {
+        wood: Math.min(rawSelected.wood, Math.floor(safeCurrentResources.wood)),
+        stone: Math.min(rawSelected.stone, Math.floor(safeCurrentResources.stone)),
+        crystal: Math.min(rawSelected.crystal, Math.floor(safeCurrentResources.crystal)),
+    };
 
     const marketMultiplier = getMarketMultiplier(marketLevel);
     const finalUnitPrices: ExchangePriceTable = {
