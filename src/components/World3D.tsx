@@ -351,12 +351,12 @@ export function World3D({
     const environmentPreset = isDusk ? 'sunset' : 'forest';
     const plotDefinitions = useMemo<PlotData[]>(() => {
         const order: Array<{ type: PlotType; label: string; level: number; unlockAt: number; position: [number, number, number] }> = [
-            { type: 'forest', label: '森林地塊', level: forestLv, unlockAt: 2, position: [-2.55, -0.92, 1.45] },
-            { type: 'mine', label: '礦山地塊', level: mineLv, unlockAt: 3, position: [2.6, -0.88, 1.52] },
-            { type: 'market', label: '商業地塊', level: marketLv, unlockAt: 4, position: [-2.45, -0.8, -1.68] },
-            { type: 'academy', label: '訓練地塊', level: academyLv, unlockAt: 5, position: [2.45, -0.76, -1.74] },
-            { type: 'storage', label: '倉儲地塊', level: islandLevel, unlockAt: 6, position: [0.15, -0.98, 2.75] },
-            { type: 'adventure', label: '冒險地塊', level: heroLevel, unlockAt: 7, position: [0.25, -0.9, -2.95] },
+            { type: 'forest', label: '森林地塊', level: forestLv, unlockAt: 2, position: [2.2, -0.05, 3.2] },
+            { type: 'mine', label: '礦山地塊', level: mineLv, unlockAt: 3, position: [3.8, 0.05, 0.0] },
+            { type: 'market', label: '商業地塊', level: marketLv, unlockAt: 4, position: [-2.2, 0.0, 3.2] },
+            { type: 'academy', label: '訓練地塊', level: academyLv, unlockAt: 5, position: [-3.8, 0.1, 0.0] },
+            { type: 'storage', label: '倉儲地塊', level: islandLevel, unlockAt: 6, position: [1.9, -0.08, -3.3] },
+            { type: 'adventure', label: '冒險地塊', level: heroLevel, unlockAt: 7, position: [-1.9, 0.02, -3.3] },
         ];
 
         return order.map((plot, index) => ({
@@ -371,12 +371,12 @@ export function World3D({
     }, [academyLv, forestLv, heroLevel, islandLevel, marketLv, mineLv]);
     const unlockedPlots = plotDefinitions.filter((plot) => plot.unlocked);
     const resourceFlowStart: Record<string, [number, number, number]> = {
-        forest: [-2.55, -0.62, 1.45],
-        mine: [2.6, -0.58, 1.52],
-        market: [-2.45, -0.5, -1.68],
-        academy: [2.45, -0.48, -1.74],
-        storage: [0.15, -0.68, 2.75],
-        adventure: [0.25, -0.6, -2.95],
+        forest: [2.2, 0.25, 3.2],
+        mine: [3.8, 0.35, 0.0],
+        market: [-2.2, 0.3, 3.2],
+        academy: [-3.8, 0.4, 0.0],
+        storage: [1.9, 0.22, -3.3],
+        adventure: [-1.9, 0.32, -3.3],
     };
     const hubTarget: [number, number, number] = [0, 0.25, 0.15];
     const routeTargets: Partial<Record<PlotType, [number, number, number]>> = {
@@ -388,7 +388,7 @@ export function World3D({
         adventure: [0.96, 0.38, -0.55],
     };
     const adventureOrigin = resourceFlowStart.adventure;
-    const adventureDestination: [number, number, number] = [0.15, 1.25, -4.45];
+    const adventureDestination: [number, number, number] = [-2.5, 1.5, -5.5];
     const adventureEventColorMap: Record<AdventureEventType, string> = {
         chest: '#fbbf24',
         lost: '#94a3b8',
@@ -585,20 +585,24 @@ export function World3D({
                             <GLBModel path={M.flowerYellow} position={[-1.0, 0.02, -0.8]} scale={0.25} />
                             <GLBModel path={M.flowerPurple} position={[0.3, 0.02, -1.2]} scale={0.2} />
 
-                            {/* ── Floating side islands ── */}
+                            {/* ── Floating side islands (intermediate ring between main & plots) ── */}
                             {Array.from({ length: floatingTiles }).map((_, i) => {
-                                const a = (i / Math.max(1, floatingTiles)) * Math.PI * 2;
-                                const r = 2.4;
+                                const a = (i / Math.max(1, floatingTiles)) * Math.PI * 2 + Math.PI / floatingTiles;
+                                const r = 2.8;
                                 const x = Math.cos(a) * r;
                                 const z = Math.sin(a) * r;
+                                const yOff = 0.05 + (i % 3) * 0.08;
                                 return (
-                                    <group key={`tile-${i}`} position={[x, -0.85 + (i % 2) * 0.08, z]}>
-                                        <GLBModel path={M.blockGrass} position={[0, 0, 0]} scale={0.65} />
+                                    <group key={`tile-${i}`} position={[x, yOff, z]}>
+                                        <GLBModel path={M.blockGrass} position={[0, 0, 0]} scale={0.55} />
                                         {i % 2 === 0 && (
-                                            <GLBModel path={M.pineSmallA} position={[0, 0.18, 0]} scale={0.18} />
+                                            <GLBModel path={M.pineSmallA} position={[0, 0.18, 0]} scale={0.16} />
                                         )}
                                         {i % 3 === 0 && (
-                                            <GLBModel path={M.bushSmall} position={[0.1, 0.14, 0.05]} scale={0.15} />
+                                            <GLBModel path={M.bushSmall} position={[0.08, 0.14, 0.04]} scale={0.14} />
+                                        )}
+                                        {i % 2 === 1 && (
+                                            <GLBModel path={M.grass} position={[-0.05, 0.12, 0.06]} scale={0.2} />
                                         )}
                                     </group>
                                 );
