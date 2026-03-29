@@ -420,7 +420,7 @@ export function World3D({
     return (
         <div className={containerClass} style={{ background: shellBackground }}>
             <Canvas shadows>
-                <PerspectiveCamera makeDefault position={[5, 5, 5]} fov={fullScreen ? 45 : 50} />
+                <PerspectiveCamera makeDefault position={fullScreen ? [8, 7, 8] : [5, 5, 5]} fov={fullScreen ? 42 : 50} />
                 <OrbitControls
                     enablePan={false}
                     minDistance={3}
