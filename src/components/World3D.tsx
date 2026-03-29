@@ -119,6 +119,8 @@ interface World3DProps {
         academy?: number;
         market?: number;
     };
+    /** When true, fills the parent container (expects parent to be full-viewport) */
+    fullScreen?: boolean;
 }
 
 type PlotType = 'forest' | 'mine' | 'market' | 'academy' | 'storage' | 'adventure';
@@ -320,6 +322,7 @@ export function World3D({
     lastAdventureEventType = null,
     lastAdventureRewards = null,
     buildings,
+    fullScreen = false,
 }: World3DProps) {
     const forestLv = buildings?.forest ?? 1;
     const mineLv = buildings?.mine ?? 1;
@@ -410,10 +413,14 @@ export function World3D({
         return rewards;
     }, [lastAdventureRewards]);
 
+    const containerClass = fullScreen
+        ? 'w-full h-full overflow-hidden relative'
+        : 'w-full h-[400px] rounded-2xl border-4 border-deep-black overflow-hidden relative shadow-clay';
+
     return (
-        <div className="w-full h-[400px] rounded-2xl border-4 border-deep-black overflow-hidden relative shadow-clay" style={{ background: shellBackground }}>
+        <div className={containerClass} style={{ background: shellBackground }}>
             <Canvas shadows>
-                <PerspectiveCamera makeDefault position={[5, 5, 5]} fov={50} />
+                <PerspectiveCamera makeDefault position={[5, 5, 5]} fov={fullScreen ? 45 : 50} />
                 <OrbitControls
                     enablePan={false}
                     minDistance={3}
@@ -729,19 +736,22 @@ export function World3D({
             </Canvas>
 
             {/* UI 覆蓋層 */}
-            <div className="absolute top-4 left-4 font-pixel text-xs bg-white/80 p-2 border-2 border-deep-black pointer-events-none">
-                3D 世界 V2.0 - 冒險家家園
-            </div>
-            <div className="absolute top-4 right-4 font-pixel text-[10px] bg-white/85 p-2 border border-slate-300 rounded pointer-events-none text-slate-700">
+            {!fullScreen && (
+                <div className="absolute top-4 left-4 font-pixel text-xs bg-white/80 p-2 border-2 border-deep-black pointer-events-none">
+                    3D 世界 V2.0 - 冒險家家園
+                </div>
+            )}
+            <div className={`absolute ${fullScreen ? 'top-16 sm:top-4' : 'top-4'} right-4 font-pixel text-[10px] sm:text-xs bg-white/85 p-2 border border-slate-300 rounded pointer-events-none text-slate-700`}>
                 {isDusk ? '黃昏' : '白天'}｜島 Lv.{islandLevel}｜角色 Lv.{heroLevel}
             </div>
-            <div className="absolute bottom-4 left-4 font-pixel text-[10px] bg-white/80 px-2 py-1 border border-slate-300 rounded pointer-events-none text-slate-700">
-                功能地塊 {unlockedPlots.length}/{plotDefinitions.length}｜小精靈與工人正在搬運資源
+            <div className={`absolute ${fullScreen ? 'bottom-6 sm:bottom-4' : 'bottom-4'} left-4 font-pixel text-[10px] bg-white/80 px-2 py-1 border border-slate-300 rounded pointer-events-none text-slate-700`}>
+                功能地塊 {unlockedPlots.length}/{plotDefinitions.length}
+                <span className="hidden sm:inline">｜小精靈與工人正在搬運資源</span>
             </div>
-            <div className="absolute bottom-12 left-4 font-pixel text-[10px] bg-white/80 px-2 py-1 border border-slate-300 rounded pointer-events-none text-slate-700">
+            <div className={`absolute ${fullScreen ? 'bottom-12 sm:bottom-12' : 'bottom-12'} left-4 font-pixel text-[10px] bg-white/80 px-2 py-1 border border-slate-300 rounded pointer-events-none text-slate-700 hidden sm:block`}>
                 冒險狀態 {adventureStatus}{lastAdventureEventType ? `｜事件 ${lastAdventureEventType}` : ''}
             </div>
-            <div className="absolute bottom-4 right-4 font-pixel text-[10px] text-gray-500 pointer-events-none">
+            <div className="absolute bottom-4 right-4 font-pixel text-[10px] text-gray-500 pointer-events-none hidden sm:block">
                 拖越轉動 / 滾輪縮放
             </div>
         </div>

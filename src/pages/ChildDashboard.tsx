@@ -13,7 +13,8 @@ import { LearningArea } from '../components/LearningArea';
 import { ShopModal } from '../components/ShopModal';
 import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings } from '../hooks/useFamilySettings';
-import { World3D } from '../components/World3D';
+import { WorldPreviewCard } from '../components/WorldPreviewCard';
+import { WorldFullScreen } from '../components/WorldFullScreen';
 import { useWorldPersistence } from '../hooks/useWorldPersistence';
 
 import { COMMON_EMOJIS, DAILY_QUEST_TARGET } from '../lib/constants';
@@ -63,6 +64,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false);
     const [isTowerOpen, setIsTowerOpen] = useState(false);
     const [isShopOpen, setIsShopOpen] = useState(false);
+    const [isWorldOpen, setIsWorldOpen] = useState(false);
     const [shopInitialTab, setShopInitialTab] = useState<'monster' | 'world'>('monster');
 
     const questTarget = Math.max(0, progress.total_quests > 0 ? Math.min(progress.total_quests, DAILY_QUEST_TARGET) : DAILY_QUEST_TARGET);
@@ -296,13 +298,15 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                 <TowerV2Preview userId={userId} onClick={() => setIsTowerOpen(true)} />
             </div>
 
-            {/* 3D World Preview */}
+            {/* 3D World Preview Card */}
             <div className="mb-6">
-                <World3D
+                <WorldPreviewCard
                     islandLevel={persistedWorld?.worldLab?.islandLevel}
                     heroLevel={persistedWorld?.worldLab?.heroLevel}
                     timeOfDay={persistedWorld?.worldLab?.timeOfDay}
-                    buildings={persistedWorld?.worldLab?.buildings}
+                    unlockedPlots={Math.max(0, Math.min(6, (persistedWorld?.worldLab?.islandLevel ?? 1) - 1))}
+                    totalPlots={6}
+                    onClick={() => setIsWorldOpen(true)}
                 />
             </div>
 
@@ -573,6 +577,18 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                 userId={userId}
                 starBalance={starBalance || 0}
                 initialTab={shopInitialTab}
+            />
+
+            {/* World Full Screen Modal */}
+            <WorldFullScreen
+                isOpen={isWorldOpen}
+                onClose={() => setIsWorldOpen(false)}
+                onGoHome={onGoHome}
+                starBalance={starBalance || 0}
+                islandLevel={persistedWorld?.worldLab?.islandLevel}
+                heroLevel={persistedWorld?.worldLab?.heroLevel}
+                timeOfDay={persistedWorld?.worldLab?.timeOfDay}
+                buildings={persistedWorld?.worldLab?.buildings}
             />
         </div >
     );
