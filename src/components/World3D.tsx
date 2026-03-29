@@ -329,7 +329,7 @@ export function World3D({
     const academyLv = buildings?.academy ?? 1;
     const marketLv = buildings?.market ?? 1;
 
-    const islandScale = Math.min(1 + Math.max(0, islandLevel - 1) * 0.12, 2.2);
+    const islandScale = Math.min(1 + Math.max(0, islandLevel - 1) * 0.05, 1.4);
     const orbitMaxDistance = Math.min(12 + islandLevel * 0.25, 18);
     const treeCount = Math.min(1 + Math.floor(forestLv / 2), 7);
     const rockCount = Math.min(1 + Math.floor(mineLv / 2), 6);
@@ -420,7 +420,7 @@ export function World3D({
     return (
         <div className={containerClass} style={{ background: shellBackground }}>
             <Canvas shadows>
-                <PerspectiveCamera makeDefault position={fullScreen ? [8, 7, 8] : [5, 5, 5]} fov={fullScreen ? 42 : 50} />
+                <PerspectiveCamera makeDefault position={fullScreen ? [12, 10, 12] : [5, 5, 5]} fov={fullScreen ? 40 : 50} />
                 <OrbitControls
                     enablePan={false}
                     minDistance={3}
