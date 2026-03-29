@@ -11,7 +11,7 @@ import type {
     WorldInventoryRow,
     WorldStateRow,
 } from '../types/database';
-import { INITIAL_WORLD_LAB_STATE, type WorldBuildingKey, type WorldLabState } from './useWorldState';
+import { INITIAL_WORLD_LAB_STATE, type WorldBuildingKey, type WorldLabState, type WorldTerrain, type WorldTheme } from './useWorldState';
 
 export interface WorldPersistenceSnapshot {
     worldLab: WorldLabState;
@@ -78,6 +78,8 @@ export function buildWorldPersistencePayload({
         user_id: userId,
         island_level: worldLab.islandLevel,
         time_of_day_pref: worldLab.timeOfDay,
+        world_theme: worldLab.worldTheme,
+        world_terrain: worldLab.worldTerrain,
         last_collected_at: new Date(worldLab.lastTickAt).toISOString(),
     };
 
@@ -175,12 +177,25 @@ export function parseWorldPersistenceSnapshot({
         }
     }
 
+    const VALID_THEMES: WorldTheme[] = ['normal', 'night', 'sakura'];
+    const VALID_TERRAINS: WorldTerrain[] = ['grassland', 'desert', 'snow'];
+    // Migrate legacy world_theme values that used to encode terrain info
+    const legacyRaw = stateRow?.world_theme ?? 'normal';
+    const legacyTerrainMap: Record<string, WorldTerrain> = { grassland: 'grassland', desert: 'desert', snow: 'snow', night: 'grassland', sakura: 'grassland' };
+    const legacyAtmosMap: Record<string, WorldTheme> = { grassland: 'normal', desert: 'normal', snow: 'normal', night: 'night', sakura: 'sakura' };
+    const parsedTheme: WorldTheme = VALID_THEMES.includes(legacyRaw as WorldTheme) ? (legacyRaw as WorldTheme) : (legacyAtmosMap[legacyRaw] ?? 'normal');
+    const legacyTerrain: WorldTerrain = legacyTerrainMap[legacyRaw] ?? 'grassland';
+    const parsedTerrainRaw = stateRow?.world_terrain ?? legacyTerrain;
+    const parsedTerrain: WorldTerrain = VALID_TERRAINS.includes(parsedTerrainRaw as WorldTerrain) ? (parsedTerrainRaw as WorldTerrain) : legacyTerrain;
+
     const worldLab: WorldLabState = {
         islandLevel: stateRow?.island_level ?? INITIAL_WORLD_LAB_STATE.islandLevel,
         heroLevel: characterRow?.level ?? INITIAL_WORLD_LAB_STATE.heroLevel,
         heroPower: characterRow?.power ?? INITIAL_WORLD_LAB_STATE.heroPower,
         monsterShards: inventoryRow?.monster_shards ?? INITIAL_WORLD_LAB_STATE.monsterShards,
         timeOfDay: stateRow?.time_of_day_pref ?? INITIAL_WORLD_LAB_STATE.timeOfDay,
+        worldTheme: parsedTheme,
+        worldTerrain: parsedTerrain,
         buildings: buildingLevels,
         resources: {
             wood: inventoryRow?.wood ?? INITIAL_WORLD_LAB_STATE.resources.wood,

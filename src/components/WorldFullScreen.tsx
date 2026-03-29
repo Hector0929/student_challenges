@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, Home, Star } from 'lucide-react';
+import { ArrowLeft, Home, Star, Palette } from 'lucide-react';
 import { World3D } from './World3D';
 import { useGameWindowController } from '../hooks/useGameWindowController';
 import type { AdventureEventType, AdventureRewards, AdventureStatus } from '../lib/world/adventure';
+import type { WorldTheme } from '../hooks/useWorldState';
 
 interface WorldFullScreenProps {
     isOpen: boolean;
@@ -24,6 +25,8 @@ interface WorldFullScreenProps {
         academy?: number;
         market?: number;
     };
+    worldTheme?: WorldTheme;
+    onThemeChange?: (theme: WorldTheme) => void;
 }
 
 export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
@@ -40,7 +43,10 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
     lastAdventureEventType,
     lastAdventureRewards,
     buildings,
+    worldTheme = 'normal',
+    onThemeChange,
 }) => {
+    const [showPicker, setShowPicker] = useState(false);
     const { handleEndGame, handleGoHome } = useGameWindowController({
         isOpen,
         isImmersivePhase: isOpen,
@@ -54,10 +60,8 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
             delete document.body.dataset.gameModalOpen;
             return;
         }
-
         document.body.style.overflow = 'hidden';
         document.body.dataset.gameModalOpen = 'true';
-
         return () => {
             document.body.style.overflow = 'unset';
             delete document.body.dataset.gameModalOpen;
@@ -65,6 +69,14 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
     }, [isOpen]);
 
     if (!isOpen) return null;
+
+    const atmosOptions: Array<{ key: WorldTheme; label: string; emoji: string; colors: string }> = [
+        { key: 'normal', label: '晴天', emoji: '☀️', colors: 'from-sky-400 to-blue-500' },
+        { key: 'night',  label: '星夜', emoji: '🌙', colors: 'from-indigo-600 to-purple-700' },
+        { key: 'sakura', label: '櫻花', emoji: '🌸', colors: 'from-pink-300 to-rose-400' },
+        { key: 'monster_forest', label: '怪獸森林', emoji: '🌲', colors: 'from-green-400 to-emerald-600' },
+        { key: 'monster_sky', label: '怪獸飛行', emoji: '☁️', colors: 'from-purple-300 to-pink-400' },
+    ];
 
     const modalTree = (
         <div className="fixed inset-0 z-[120] bg-black flex flex-col">
@@ -84,6 +96,13 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowPicker(!showPicker)}
+                        className={`p-2 rounded-xl backdrop-blur-sm transition-colors ${showPicker ? 'bg-white/40 text-white' : 'bg-white/20 text-white hover:bg-white/30'}`}
+                        aria-label="切換背景"
+                    >
+                        <Palette size={20} />
+                    </button>
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-yellow-400/90 backdrop-blur-sm border border-yellow-500/50">
                         <Star size={14} className="text-yellow-700" fill="currentColor" />
                         <span className="font-pixel text-sm text-amber-800">{starBalance}</span>
@@ -100,6 +119,34 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
                 </div>
             </div>
 
+            {/* Background picker panel */}
+            {showPicker && (
+                <div className="absolute top-14 right-3 sm:right-4 z-20 pointer-events-auto">
+                    <div className="bg-black/75 backdrop-blur-md rounded-2xl border border-white/20 p-3 shadow-2xl min-w-[130px]">
+                        <div className="font-pixel text-white/60 text-[10px] mb-2 uppercase tracking-wider">背景</div>
+                        <div className="flex flex-col gap-1.5">
+                            {atmosOptions.map((t) => (
+                                <button
+                                    key={t.key}
+                                    onClick={() => { onThemeChange?.(t.key); setShowPicker(false); }}
+                                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl transition-all text-left ${
+                                        worldTheme === t.key
+                                            ? 'bg-white/25 ring-2 ring-white/50'
+                                            : 'bg-white/10 hover:bg-white/20'
+                                    }`}
+                                >
+                                    <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${t.colors} flex items-center justify-center text-xs`}>
+                                        {t.emoji}
+                                    </div>
+                                    <span className="font-pixel text-white text-xs">{t.label}</span>
+                                    {worldTheme === t.key && <span className="ml-auto text-[10px] text-yellow-300">✓</span>}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* 3D world fills the rest */}
             <div className="flex-1">
                 <World3D
@@ -107,6 +154,7 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
                     islandLevel={islandLevel}
                     heroLevel={heroLevel}
                     timeOfDay={timeOfDay}
+                    worldTheme={worldTheme}
                     selectedPlotKey={selectedPlotKey}
                     onPlotSelect={onPlotSelect}
                     adventureStatus={adventureStatus}

@@ -15,7 +15,8 @@ import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQ
 import { useFamilySettings } from '../hooks/useFamilySettings';
 import { WorldPreviewCard } from '../components/WorldPreviewCard';
 import { WorldFullScreen } from '../components/WorldFullScreen';
-import { useWorldPersistence } from '../hooks/useWorldPersistence';
+import { useWorldPersistence, useSaveWorldPersistence } from '../hooks/useWorldPersistence';
+import type { WorldTheme } from '../hooks/useWorldState';
 
 import { COMMON_EMOJIS, DAILY_QUEST_TARGET } from '../lib/constants';
 
@@ -52,6 +53,27 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     const createQuestMutation = useCreateQuest();
     const { data: familySettings } = useFamilySettings();
     const { data: persistedWorld } = useWorldPersistence(userId);
+    const saveWorldMutation = useSaveWorldPersistence(userId);
+
+    // Local state for immediate UI feedback — synced from DB on load
+    const [localTheme, setLocalTheme] = useState<WorldTheme>('normal');
+    useEffect(() => {
+        if (persistedWorld?.worldLab?.worldTheme) setLocalTheme(persistedWorld.worldLab.worldTheme);
+    }, [persistedWorld?.worldLab?.worldTheme]);
+
+    const handleThemeChange = (theme: WorldTheme) => {
+        if (!persistedWorld) return;
+        setLocalTheme(theme);
+        const updatedWorldLab = { ...persistedWorld.worldLab, worldTheme: theme };
+        saveWorldMutation.mutate({
+            worldLab: updatedWorldLab,
+            activeAdventure: persistedWorld.activeAdventure,
+            lastAdventureResult: persistedWorld.lastAdventureResult,
+            bankNowMs: persistedWorld.bankNowMs,
+            demandDepositAccount: persistedWorld.demandDepositAccount,
+            timeDeposits: persistedWorld.timeDeposits,
+        });
+    };
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isQuestSectionCollapsed, setIsQuestSectionCollapsed] = useState(false);
@@ -589,6 +611,8 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                 heroLevel={persistedWorld?.worldLab?.heroLevel}
                 timeOfDay={persistedWorld?.worldLab?.timeOfDay}
                 buildings={persistedWorld?.worldLab?.buildings}
+                worldTheme={localTheme}
+                onThemeChange={handleThemeChange}
             />
         </div >
     );

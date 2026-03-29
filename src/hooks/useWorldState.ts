@@ -12,6 +12,11 @@ import { calculateProductionRates, getUnlockedPlotKeys } from '../lib/world/prod
 import { applyOfflineProduction, getStorageCapacity } from '../lib/world/storage';
 import type { WorldResources } from '../lib/world/types';
 
+/** Atmosphere / background preset (lighting, sky color, particles) */
+export type WorldTheme = 'normal' | 'night' | 'sakura' | 'monster_forest' | 'monster_sky';
+/** Terrain surface color (grass top of floating island blocks) */
+export type WorldTerrain = 'grassland' | 'desert' | 'snow';
+
 export type WorldBuildingKey = 'forest' | 'mine' | 'academy' | 'market';
 
 export interface WorldLabState {
@@ -20,6 +25,8 @@ export interface WorldLabState {
     heroPower: number;
     monsterShards: number;
     timeOfDay: 'day' | 'dusk';
+    worldTheme: WorldTheme;
+    worldTerrain: WorldTerrain;
     buildings: Record<WorldBuildingKey, number>;
     resources: WorldResources;
     lastTickAt: number;
@@ -58,6 +65,8 @@ export const INITIAL_WORLD_LAB_STATE: WorldLabState = {
     heroPower: 120,
     monsterShards: 0,
     timeOfDay: 'day',
+    worldTheme: 'normal',
+    worldTerrain: 'grassland',
     buildings: {
         forest: 1,
         mine: 1,

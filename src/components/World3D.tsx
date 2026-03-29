@@ -1,8 +1,147 @@
 import { Suspense, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Float, Environment, ContactShadows, useGLTF, Clone } from '@react-three/drei';
+import { Box3 } from 'three';
 import type { Group } from 'three';
 import type { AdventureEventType, AdventureRewards, AdventureStatus } from '../lib/world/adventure';
+import type { WorldTerrain, WorldTheme } from '../hooks/useWorldState';
+
+type EnvPreset = 'forest' | 'sunset' | 'dawn' | 'park' | 'night' | 'apartment' | 'city' | 'lobby' | 'studio' | 'warehouse';
+
+// ─── Atmosphere presets (sky/lighting/background) ───
+interface AtmosphereParticles {
+    color: string;
+    emissive: string;
+    count: number;
+    size: number;
+    speed: number;
+    fallSpeed: number; // 0 = float/twinkle, positive = fall
+    spread: number;
+    usePlane: boolean;
+}
+
+interface AtmospherePreset {
+    shellBg: string;
+    shellBgDusk: string;
+    ambientDay: number;
+    ambientDusk: number;
+    hemisphereSkyDay: string;
+    hemisphereSkyDusk: string;
+    hemisphereGroundDay: string;
+    hemisphereGroundDusk: string;
+    sunColorDay: string;
+    sunColorDusk: string;
+    pointColorDay: string;
+    pointColorDusk: string;
+    pointIntensityDay: number;
+    pointIntensityDusk: number;
+    envPresetDay: EnvPreset;
+    envPresetDusk: EnvPreset;
+    cloudColor: string;
+    fireflyColor: string;
+    fireflyEmissive: string;
+    particles?: AtmosphereParticles;
+}
+
+const ATMOSPHERE_PRESETS: Record<WorldTheme, AtmospherePreset> = {
+    normal: {
+        shellBg: 'url(/images/backgrounds/bg_normal.png) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_normal.png) center/cover no-repeat',
+        ambientDay: 0.55, ambientDusk: 0.4,
+        hemisphereSkyDay: '#dbeafe', hemisphereSkyDusk: '#fdba74',
+        hemisphereGroundDay: '#9ca3af', hemisphereGroundDusk: '#7c3aed',
+        sunColorDay: '#ffffff', sunColorDusk: '#fb923c',
+        pointColorDay: '#c4b5fd', pointColorDusk: '#f59e0b',
+        pointIntensityDay: 0.38, pointIntensityDusk: 0.54,
+        envPresetDay: 'forest', envPresetDusk: 'sunset',
+        cloudColor: '#bfdbfe',
+        fireflyColor: '#fef08a', fireflyEmissive: '#fde047',
+    },
+    night: {
+        shellBg: 'url(/images/backgrounds/bg_night.png) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_night.png) center/cover no-repeat',
+        ambientDay: 0.25, ambientDusk: 0.2,
+        hemisphereSkyDay: '#312e81', hemisphereSkyDusk: '#1e1b4b',
+        hemisphereGroundDay: '#1e293b', hemisphereGroundDusk: '#0f172a',
+        sunColorDay: '#818cf8', sunColorDusk: '#6366f1',
+        pointColorDay: '#a78bfa', pointColorDusk: '#8b5cf6',
+        pointIntensityDay: 0.6, pointIntensityDusk: 0.7,
+        envPresetDay: 'night', envPresetDusk: 'night',
+        cloudColor: '#4338ca',
+        fireflyColor: '#c4b5fd', fireflyEmissive: '#a78bfa',
+        particles: { color: '#e0e7ff', emissive: '#818cf8', count: 22, size: 0.02, speed: 0.28, fallSpeed: 0, spread: 5.5, usePlane: false },
+    },
+    sakura: {
+        shellBg: 'url(/images/backgrounds/bg_sakura.png) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_sakura.png) center/cover no-repeat',
+        ambientDay: 0.6, ambientDusk: 0.42,
+        hemisphereSkyDay: '#fce7f3', hemisphereSkyDusk: '#f9a8d4',
+        hemisphereGroundDay: '#f0abfc', hemisphereGroundDusk: '#86198f',
+        sunColorDay: '#fdf2f8', sunColorDusk: '#f472b6',
+        pointColorDay: '#f9a8d4', pointColorDusk: '#ec4899',
+        pointIntensityDay: 0.42, pointIntensityDusk: 0.52,
+        envPresetDay: 'park', envPresetDusk: 'sunset',
+        cloudColor: '#fbcfe8',
+        fireflyColor: '#fbcfe8', fireflyEmissive: '#f9a8d4',
+        particles: { color: '#fbcfe8', emissive: '#f9a8d4', count: 20, size: 0.026, speed: 0.55, fallSpeed: 0.38, spread: 4.0, usePlane: true },
+    },
+    monster_forest: {
+        shellBg: 'url(/images/backgrounds/bg_monster_forest.png) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_monster_forest.png) center/cover no-repeat',
+        ambientDay: 0.55, ambientDusk: 0.4,
+        hemisphereSkyDay: '#dbeafe', hemisphereSkyDusk: '#fdba74',
+        hemisphereGroundDay: '#9ca3af', hemisphereGroundDusk: '#7c3aed',
+        sunColorDay: '#ffffff', sunColorDusk: '#fb923c',
+        pointColorDay: '#c4b5fd', pointColorDusk: '#f59e0b',
+        pointIntensityDay: 0.38, pointIntensityDusk: 0.54,
+        envPresetDay: 'forest', envPresetDusk: 'sunset',
+        cloudColor: '#bfdbfe',
+        fireflyColor: '#fef08a', fireflyEmissive: '#fde047',
+    },
+    monster_sky: {
+        shellBg: 'url(/images/backgrounds/bg_monster_sky.png) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_monster_sky.png) center/cover no-repeat',
+        ambientDay: 0.55, ambientDusk: 0.4,
+        hemisphereSkyDay: '#fce7f3', hemisphereSkyDusk: '#f9a8d4',
+        hemisphereGroundDay: '#f0abfc', hemisphereGroundDusk: '#86198f',
+        sunColorDay: '#fdf2f8', sunColorDusk: '#f472b6',
+        pointColorDay: '#f9a8d4', pointColorDusk: '#ec4899',
+        pointIntensityDay: 0.42, pointIntensityDusk: 0.52,
+        envPresetDay: 'park', envPresetDusk: 'sunset',
+        cloudColor: '#fbcfe8',
+        fireflyColor: '#fbcfe8', fireflyEmissive: '#f9a8d4',
+    },
+};
+
+// ─── Terrain configs (island surface) ───
+interface TerrainConfig {
+    /** null = keep original GLB green */
+    skinColor: string | null;
+    showFlowers: boolean;
+    groundColor: string;
+    groundOpacity: number;
+    particles?: AtmosphereParticles;
+}
+
+const TERRAIN_CONFIGS: Record<WorldTerrain, TerrainConfig> = {
+    grassland: {
+        skinColor: null,
+        showFlowers: true,
+        groundColor: '#86efac', groundOpacity: 0.18,
+    },
+    desert: {
+        skinColor: '#e8c97a',
+        showFlowers: false,
+        groundColor: '#d97706', groundOpacity: 0.35,
+        particles: { color: '#fde68a', emissive: '#b45309', count: 14, size: 0.014, speed: 0.45, fallSpeed: 0.28, spread: 4.0, usePlane: false },
+    },
+    snow: {
+        skinColor: '#dff4fb',
+        showFlowers: false,
+        groundColor: '#e0f2fe', groundOpacity: 0.4,
+        particles: { color: '#f0f9ff', emissive: '#bae6fd', count: 24, size: 0.01, speed: 0.75, fallSpeed: 1.0, spread: 4.5, usePlane: true },
+    },
+};
 
 // ─── Model paths ───
 const M = {
@@ -104,6 +243,108 @@ function GLBModel({
     );
 }
 
+function AtmosphericParticle({
+    initialX, initialY, initialZ, color, emissive, size, speed, fallSpeed, usePlane, phase,
+}: {
+    initialX: number; initialY: number; initialZ: number;
+    color: string; emissive: string; size: number; speed: number;
+    fallSpeed: number; usePlane: boolean; phase: number;
+}) {
+    const ref = useRef<Group>(null);
+    const topY = 2.2;
+    const bottomY = -1.8;
+    const range = topY - bottomY;
+
+    useFrame((state) => {
+        if (!ref.current) return;
+        const t = state.clock.getElapsedTime() * speed + phase;
+
+        let y: number;
+        if (fallSpeed > 0) {
+            const elapsed = (state.clock.getElapsedTime() * fallSpeed * 0.18 + phase * 0.6) % range;
+            y = topY - elapsed;
+        } else {
+            y = initialY + Math.sin(t * 0.9) * 0.35;
+            // Stars twinkle
+            const pulse = 0.75 + Math.sin(t * 2.8 + phase) * 0.25;
+            ref.current.scale.setScalar(pulse);
+        }
+
+        ref.current.position.x = initialX + Math.sin(t * 0.65 + phase) * 0.3;
+        ref.current.position.y = y;
+        ref.current.position.z = initialZ + Math.cos(t * 0.5 + phase) * 0.3;
+
+        if (usePlane) {
+            ref.current.rotation.x = Math.sin(t * 1.1) * 0.9;
+            ref.current.rotation.z = Math.cos(t * 0.8) * 0.7;
+        }
+    });
+
+    return (
+        <group ref={ref} position={[initialX, initialY, initialZ]}>
+            {usePlane ? (
+                <mesh>
+                    <planeGeometry args={[size * 2.2, size * 1.4]} />
+                    <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={0.45} transparent opacity={0.82} side={2} />
+                </mesh>
+            ) : (
+                <mesh>
+                    <sphereGeometry args={[size, 6, 6]} />
+                    <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={0.65} />
+                </mesh>
+            )}
+        </group>
+    );
+}
+
+// Grass block with terrain skin color applied via material override.
+// Grass block with an optional flat color overlay on the top face.
+// Uses Box3 to measure the GLB's actual bounding box so the plane sits exactly
+// on top regardless of scale variation between blockGrass and blockGrassLarge.
+function TerrainBlock({
+    path,
+    position = [0, 0, 0],
+    rotation = [0, 0, 0],
+    scale = 1,
+    skinColor,
+}: {
+    path: string;
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    scale?: number | [number, number, number];
+    skinColor: string | null;
+}) {
+    const { scene } = useGLTF(path);
+    const sc = typeof scale === 'number' ? scale : scale[0];
+
+    // Measure the unscaled model's bounding box once, then multiply by scale.
+    const { topY, w, slabH } = useMemo(() => {
+        const box = new Box3().setFromObject(scene);
+        const blockW = (box.max.x - box.min.x) * sc;
+        // slab height covers the rounded top rim that slopes down from the peak
+        const slab = (box.max.y - box.min.y) * sc * 0.22;
+        return {
+            topY: box.max.y * sc,
+            w: blockW * 0.98,    // near-full width to cover rounded corners
+            slabH: slab,
+        };
+    }, [scene, sc]);
+
+    return (
+        <group position={position} rotation={rotation}>
+            <GLBModel path={path} scale={scale} />
+            {skinColor && (
+                // A thin slab positioned so its top face aligns with the block's peak.
+                // The slab height reaches down enough to cover the curved green rim.
+                <mesh position={[0, topY - slabH / 2, 0]} receiveShadow>
+                    <boxGeometry args={[w, slabH, w]} />
+                    <meshStandardMaterial color={skinColor} roughness={0.95} metalness={0} />
+                </mesh>
+            )}
+        </group>
+    );
+}
+
 interface World3DProps {
     islandLevel?: number;
     heroLevel?: number;
@@ -121,6 +362,8 @@ interface World3DProps {
     };
     /** When true, fills the parent container (expects parent to be full-viewport) */
     fullScreen?: boolean;
+    /** Sky/atmosphere preset */
+    worldTheme?: WorldTheme;
 }
 
 type PlotType = 'forest' | 'mine' | 'market' | 'academy' | 'storage' | 'adventure';
@@ -228,11 +471,13 @@ function PlotIsland({
     isDusk,
     isSelected,
     onSelect,
+    terrainSkinColor,
 }: {
     plot: PlotData;
     isDusk: boolean;
     isSelected: boolean;
     onSelect?: (plotKey: string) => void;
+    terrainSkinColor: string | null;
 }) {
     const highlightColor = plot.unlocked ? '#fbbf24' : '#94a3b8';
 
@@ -298,7 +543,7 @@ function PlotIsland({
                     </mesh>
                 )}
                 {/* Island base using platformer grass block */}
-                <GLBModel path={M.blockGrass} position={[0, 0, 0]} scale={0.7} />
+                <TerrainBlock path={M.blockGrass} position={[0, 0, 0]} scale={0.7} skinColor={terrainSkinColor} />
                 {/* Sign */}
                 <GLBModel path={M.sign} position={[0, 0.14, 0.4]} scale={0.22} />
                 {/* Plot-specific decoration */}
@@ -323,7 +568,9 @@ export function World3D({
     lastAdventureRewards = null,
     buildings,
     fullScreen = false,
+    worldTheme = 'normal',
 }: World3DProps) {
+    const worldTerrain: WorldTerrain = 'grassland';
     const forestLv = buildings?.forest ?? 1;
     const mineLv = buildings?.mine ?? 1;
     const academyLv = buildings?.academy ?? 1;
@@ -342,16 +589,18 @@ export function World3D({
     const academyStage = academyLv >= 6 ? 3 : academyLv >= 3 ? 2 : 1;
     const marketStage = marketLv >= 6 ? 3 : marketLv >= 3 ? 2 : 1;
     const isDusk = timeOfDay === 'dusk';
-    const shellBackground = isDusk
-        ? 'linear-gradient(180deg, rgba(251,191,36,0.18) 0%, rgba(125,211,252,0.1) 32%, rgba(30,41,59,0.3) 100%)'
-        : 'rgba(191, 219, 254, 0.35)';
-    const ambientIntensity = isDusk ? 0.4 : 0.55;
-    const hemisphereSky = isDusk ? '#fdba74' : '#dbeafe';
-    const hemisphereGround = isDusk ? '#7c3aed' : '#9ca3af';
-    const sunColor = isDusk ? '#fb923c' : '#ffffff';
-    const pointColor = isDusk ? '#f59e0b' : '#c4b5fd';
-    const pointIntensity = isDusk ? 0.54 : 0.38;
-    const environmentPreset = isDusk ? 'sunset' : 'forest';
+    const atmos = ATMOSPHERE_PRESETS[worldTheme] ?? ATMOSPHERE_PRESETS.normal;
+    const terrain = TERRAIN_CONFIGS[worldTerrain] ?? TERRAIN_CONFIGS.grassland;
+    const shellBackground = isDusk ? atmos.shellBgDusk : atmos.shellBg;
+    const ambientIntensity = isDusk ? atmos.ambientDusk : atmos.ambientDay;
+    const hemisphereSky = isDusk ? atmos.hemisphereSkyDusk : atmos.hemisphereSkyDay;
+    const hemisphereGround = isDusk ? atmos.hemisphereGroundDusk : atmos.hemisphereGroundDay;
+    const sunColor = isDusk ? atmos.sunColorDusk : atmos.sunColorDay;
+    const pointColor = isDusk ? atmos.pointColorDusk : atmos.pointColorDay;
+    const pointIntensity = isDusk ? atmos.pointIntensityDusk : atmos.pointIntensityDay;
+    const environmentPreset = isDusk ? atmos.envPresetDusk : atmos.envPresetDay;
+    // Particles: terrain-specific particles take priority (snow/sand), fallback to atmosphere (stars/sakura)
+    const activeParticles = terrain.particles ?? atmos.particles ?? null;
     const plotDefinitions = useMemo<PlotData[]>(() => {
         const order: Array<{ type: PlotType; label: string; level: number; unlockAt: number; position: [number, number, number] }> = [
             { type: 'forest', label: '森林地塊', level: forestLv, unlockAt: 2, position: [2.2, -0.05, 3.2] },
@@ -446,15 +695,15 @@ export function World3D({
                             {/* ── Main island base (mixed: grass top + rocky cliffs) ── */}
                             <group>
                                 {/* Top grass platform layer */}
-                                <GLBModel path={M.blockGrassLarge} position={[0, 0, 0]} scale={2.0} />
-                                <GLBModel path={M.blockGrass} position={[1.6, -0.05, 0]} scale={1.5} />
-                                <GLBModel path={M.blockGrass} position={[-1.6, -0.05, 0]} scale={1.5} />
-                                <GLBModel path={M.blockGrass} position={[0, -0.05, 1.6]} scale={1.5} />
-                                <GLBModel path={M.blockGrass} position={[0, -0.05, -1.6]} scale={1.5} />
-                                <GLBModel path={M.blockGrass} position={[1.1, -0.03, 1.1]} scale={1.3} />
-                                <GLBModel path={M.blockGrass} position={[-1.1, -0.03, 1.1]} scale={1.3} />
-                                <GLBModel path={M.blockGrass} position={[1.1, -0.03, -1.1]} scale={1.3} />
-                                <GLBModel path={M.blockGrass} position={[-1.1, -0.03, -1.1]} scale={1.3} />
+                                <TerrainBlock path={M.blockGrassLarge} position={[0, 0, 0]} scale={2.0} skinColor={terrain.skinColor} />
+                                <TerrainBlock path={M.blockGrass} position={[1.6, -0.05, 0]} scale={1.5} skinColor={terrain.skinColor} />
+                                <TerrainBlock path={M.blockGrass} position={[-1.6, -0.05, 0]} scale={1.5} skinColor={terrain.skinColor} />
+                                <TerrainBlock path={M.blockGrass} position={[0, -0.05, 1.6]} scale={1.5} skinColor={terrain.skinColor} />
+                                <TerrainBlock path={M.blockGrass} position={[0, -0.05, -1.6]} scale={1.5} skinColor={terrain.skinColor} />
+                                <TerrainBlock path={M.blockGrass} position={[1.1, -0.03, 1.1]} scale={1.3} skinColor={terrain.skinColor} />
+                                <TerrainBlock path={M.blockGrass} position={[-1.1, -0.03, 1.1]} scale={1.3} skinColor={terrain.skinColor} />
+                                <TerrainBlock path={M.blockGrass} position={[1.1, -0.03, -1.1]} scale={1.3} skinColor={terrain.skinColor} />
+                                <TerrainBlock path={M.blockGrass} position={[-1.1, -0.03, -1.1]} scale={1.3} skinColor={terrain.skinColor} />
                                 {/* Rocky cliff underside */}
                                 <GLBModel path={M.cliffBlock} position={[0, -0.7, 0]} scale={2.2} />
                                 <GLBModel path={M.cliffLarge} position={[0.8, -1.0, 0.5]} scale={1.4} rotation={[0, 0.5, 0]} />
@@ -465,7 +714,7 @@ export function World3D({
                                 {/* Cloud ring */}
                                 <mesh position={[0, -1.05, 0]} rotation={[Math.PI / 2, 0, 0]}>
                                     <torusGeometry args={[2.6, 0.08, 8, 28]} />
-                                    <meshStandardMaterial color="#bfdbfe" transparent opacity={0.45} />
+                                    <meshStandardMaterial color={atmos.cloudColor} transparent opacity={0.45} />
                                 </mesh>
                             </group>
 
@@ -601,7 +850,7 @@ export function World3D({
                                 const yOff = 0.05 + (i % 3) * 0.08;
                                 return (
                                     <group key={`tile-${i}`} position={[x, yOff, z]}>
-                                        <GLBModel path={M.blockGrass} position={[0, 0, 0]} scale={0.55} />
+                                        <TerrainBlock path={M.blockGrass} position={[0, 0, 0]} scale={0.55} skinColor={terrain.skinColor} />
                                         {i % 2 === 0 && (
                                             <GLBModel path={M.pineSmallA} position={[0, 0.18, 0]} scale={0.16} />
                                         )}
@@ -622,6 +871,7 @@ export function World3D({
                                     isDusk={isDusk}
                                     isSelected={selectedPlotKey === plot.key}
                                     onSelect={onPlotSelect}
+                                    terrainSkinColor={terrain.skinColor}
                                 />
                             ))}
 
@@ -709,7 +959,7 @@ export function World3D({
                                     >
                                         <mesh>
                                             <sphereGeometry args={[0.018 + (i % 2) * 0.005, 8, 8]} />
-                                            <meshStandardMaterial color="#fef08a" emissive="#fde047" emissiveIntensity={0.55} />
+                                            <meshStandardMaterial color={atmos.fireflyColor} emissive={atmos.fireflyEmissive} emissiveIntensity={0.55} />
                                         </mesh>
                                     </Float>
                                 );
@@ -721,6 +971,33 @@ export function World3D({
                                 position={[0.88, 0.15, -0.55]}
                                 scale={0.22 + heroLevel * 0.008}
                             />
+
+                            {/* ── Themed ground glow disk ── */}
+                            <mesh position={[0, -1.6, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                                <circleGeometry args={[3.0, 32]} />
+                                <meshStandardMaterial color={terrain.groundColor} transparent opacity={terrain.groundOpacity} />
+                            </mesh>
+
+                            {/* ── Atmospheric particles (terrain or atmosphere) ── */}
+                            {activeParticles && Array.from({ length: activeParticles.count }).map((_, i) => {
+                                const a = (i / activeParticles.count) * Math.PI * 2;
+                                const r = 0.6 + (i % 4) * (activeParticles.spread / 4);
+                                return (
+                                    <AtmosphericParticle
+                                        key={`atm-${i}`}
+                                        initialX={Math.cos(a) * r}
+                                        initialY={0.5 + (i % 3) * 0.6}
+                                        initialZ={Math.sin(a) * r}
+                                        color={activeParticles.color}
+                                        emissive={activeParticles.emissive}
+                                        size={activeParticles.size}
+                                        speed={activeParticles.speed}
+                                        fallSpeed={activeParticles.fallSpeed}
+                                        usePlane={activeParticles.usePlane}
+                                        phase={i * 1.37}
+                                    />
+                                );
+                            })}
                         </group>
                     </Float>
 

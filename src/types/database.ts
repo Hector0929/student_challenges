@@ -141,6 +141,8 @@ export interface WorldStateRow {
     user_id: string;
     island_level: number;
     time_of_day_pref: 'day' | 'dusk';
+    world_theme?: string;
+    world_terrain?: string;
     last_collected_at: string;
     created_at?: string;
     updated_at?: string;
