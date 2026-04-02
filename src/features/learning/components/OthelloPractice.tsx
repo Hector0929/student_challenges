@@ -93,13 +93,72 @@ function countPieces(board: Board): { black: number; white: number } {
     return { black, white };
 }
 
-// ── Simple AI: picks move that flips the most pieces ─────────────────────
+// ── AI: Minimax + Alpha-Beta + positional weights (depth 5) ──────────────
+// Positional weight table — corners = huge value, X-squares = penalty
+const POS_WEIGHTS: number[][] = [
+    [120, -20,  20,   5,   5,  20, -20, 120],
+    [-20, -40,  -5,  -5,  -5,  -5, -40, -20],
+    [ 20,  -5,  15,   3,   3,  15,  -5,  20],
+    [  5,  -5,   3,   3,   3,   3,  -5,   5],
+    [  5,  -5,   3,   3,   3,   3,  -5,   5],
+    [ 20,  -5,  15,   3,   3,  15,  -5,  20],
+    [-20, -40,  -5,  -5,  -5,  -5, -40, -20],
+    [120, -20,  20,   5,   5,  20, -20, 120],
+];
+
+function evaluate(board: Board): number {
+    let score = 0;
+    for (let r = 0; r < 8; r++)
+        for (let c = 0; c < 8; c++) {
+            if (board[r][c] === 2) score += POS_WEIGHTS[r][c];
+            else if (board[r][c] === 1) score -= POS_WEIGHTS[r][c];
+        }
+    // Mobility bonus: more moves = better
+    score += getLegalMoves(board, 2).length * 5;
+    score -= getLegalMoves(board, 1).length * 5;
+    return score;
+}
+
+function minimax(board: Board, depth: number, alpha: number, beta: number, maximising: boolean): number {
+    const player: 1 | 2 = maximising ? 2 : 1;
+    const moves = getLegalMoves(board, player);
+
+    if (depth === 0 || (moves.length === 0 && getLegalMoves(board, maximising ? 1 : 2).length === 0)) {
+        return evaluate(board);
+    }
+
+    if (moves.length === 0) {
+        // Pass turn
+        return minimax(board, depth - 1, alpha, beta, !maximising);
+    }
+
+    if (maximising) {
+        let best = -Infinity;
+        for (const [r, c] of moves) {
+            const val = minimax(applyMove(board, r, c, 2), depth - 1, alpha, beta, false);
+            best = Math.max(best, val);
+            alpha = Math.max(alpha, val);
+            if (beta <= alpha) break;
+        }
+        return best;
+    } else {
+        let best = Infinity;
+        for (const [r, c] of moves) {
+            const val = minimax(applyMove(board, r, c, 1), depth - 1, alpha, beta, true);
+            best = Math.min(best, val);
+            beta = Math.min(beta, val);
+            if (beta <= alpha) break;
+        }
+        return best;
+    }
+}
+
 function aiMove(board: Board): [number, number] | null {
     const moves = getLegalMoves(board, 2);
     if (moves.length === 0) return null;
-    let best = moves[0], bestScore = -1;
+    let best = moves[0], bestScore = -Infinity;
     for (const [r, c] of moves) {
-        const score = getFlips(board, r, c, 2).length;
+        const score = minimax(applyMove(board, r, c, 2), 4, -Infinity, Infinity, false);
         if (score > bestScore) { bestScore = score; best = [r, c]; }
     }
     return best;
