@@ -304,9 +304,7 @@ export const useWorldBanking = ({ userId, starBalance, onAdjustStars, bankSettin
             await commitSnapshot({
                 bankNowMs: getCurrentNowMs(),
                 demandDepositAccount,
-                timeDeposits: timeDeposits.map((item, itemIndex) => (
-                    itemIndex === index ? result.updatedDeposit : item
-                )),
+                timeDeposits: timeDeposits.filter((_, itemIndex) => itemIndex !== index),
             });
 
             return { ok: true, payout: result.payout };
@@ -332,9 +330,7 @@ export const useWorldBanking = ({ userId, starBalance, onAdjustStars, bankSettin
             await commitSnapshot({
                 bankNowMs: getCurrentNowMs(),
                 demandDepositAccount,
-                timeDeposits: timeDeposits.map((item, itemIndex) => (
-                    itemIndex === index ? result.updatedDeposit : item
-                )),
+                timeDeposits: timeDeposits.filter((_, itemIndex) => itemIndex !== index),
             });
 
             return { ok: true, payout: result.payout };

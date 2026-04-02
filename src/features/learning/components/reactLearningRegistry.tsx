@@ -7,6 +7,7 @@ import { PerimeterPractice } from './PerimeterPractice';
 import { VolumePractice } from './VolumePractice';
 import { LinearEquationPractice } from './LinearEquationPractice';
 import { PolynomialsPractice } from './PolynomialsPractice';
+import { OthelloPractice } from './OthelloPractice';
 
 export const getLearningEmbeddedContent = (item: LearningItem): React.ReactNode | null => {
     if (item.launcher.type !== 'react') {
@@ -14,6 +15,8 @@ export const getLearningEmbeddedContent = (item: LearningItem): React.ReactNode 
     }
 
     switch (item.launcher.target) {
+        case 'othello':
+            return <OthelloPractice />;
         case 'fractions':
             return <FractionsPractice />;
         case 'factors_multiples':

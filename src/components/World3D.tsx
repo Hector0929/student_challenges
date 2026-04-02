@@ -1,7 +1,7 @@
-import { Suspense, useMemo, useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Suspense, useMemo, useRef, useState, useEffect } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Float, Environment, ContactShadows, useGLTF, Clone } from '@react-three/drei';
-import { Box3 } from 'three';
+import { Box3, Vector3 } from 'three';
 import type { Group } from 'three';
 import type { AdventureEventType, AdventureRewards, AdventureStatus } from '../lib/world/adventure';
 import type { WorldTerrain, WorldTheme } from '../hooks/useWorldState';
@@ -385,15 +385,16 @@ function PlotWorker({ position, type, isDusk }: { position: [number, number, num
     useFrame((state) => {
         if (!groupRef.current) return;
         const t = state.clock.getElapsedTime();
-        groupRef.current.position.x = position[0] + Math.sin(t * 1.4 + position[0] * 2) * 0.06;
-        groupRef.current.position.y = position[1] + Math.sin(t * 2.2 + position[2]) * 0.035;
-        groupRef.current.position.z = position[2] + Math.cos(t * 1.4 + position[2] * 2) * 0.06;
+        // Walk only on XZ plane — y stays fixed at surface
+        groupRef.current.position.x = position[0] + Math.sin(t * 1.4 + position[0] * 2) * 0.04;
+        groupRef.current.position.y = position[1];
+        groupRef.current.position.z = position[2] + Math.cos(t * 1.4 + position[2] * 2) * 0.04;
         groupRef.current.rotation.y = Math.sin(t * 1.1 + position[0]) * 0.6;
     });
 
     return (
         <group ref={groupRef} position={position}>
-            <GLBModel path={modelPath} scale={0.35} />
+            <GLBModel path={modelPath} scale={0.1} />
         </group>
     );
 }
@@ -479,78 +480,156 @@ function PlotIsland({
     onSelect?: (plotKey: string) => void;
     terrainSkinColor: string | null;
 }) {
-    const highlightColor = plot.unlocked ? '#fbbf24' : '#94a3b8';
+    const { scene: blockScene } = useGLTF(M.blockGrass);
+    const surfaceY = useMemo(() => {
+        const box = new Box3().setFromObject(blockScene);
+        return box.max.y * 0.7; // plot island uses scale 0.7
+    }, [blockScene]);
+
+    if (!plot.unlocked) return null;
+
+    const workerCount = 1;
 
     const plotDecoration = useMemo(() => {
-        if (!plot.unlocked) {
-            return <GLBModel path={M.box} position={[0, 0.12, 0]} scale={0.25} />;
-        }
+        const sy = surfaceY;
         switch (plot.type) {
             case 'forest':
                 return (
                     <>
-                        <GLBModel path={M.pineA} position={[-0.08, 0.12, -0.02]} scale={0.25} />
-                        <GLBModel path={M.pineSmallA} position={[0.1, 0.1, 0.06]} scale={0.2} />
-                        <GLBModel path={M.bushSmall} position={[0.02, 0.1, 0.12]} scale={0.18} />
+                        <GLBModel path={M.pineA}      position={[-0.12, sy, -0.06]} scale={0.28} />
+                        <GLBModel path={M.pineSmallA} position={[0.12, sy, 0.04]}   scale={0.22} />
+                        <GLBModel path={M.bushSmall}  position={[0.0, sy, 0.15]}    scale={0.2} />
                     </>
                 );
             case 'mine':
                 return (
                     <>
-                        <GLBModel path={M.rockLargeA} position={[-0.06, 0.1, 0]} scale={0.2} />
-                        <GLBModel path={M.stoneLargeA} position={[0.08, 0.1, 0.04]} scale={0.15} />
+                        <GLBModel path={M.rockLargeA}  position={[-0.1, sy, -0.02]} scale={0.22} rotation={[0, 0.5, 0]} />
+                        <GLBModel path={M.stoneLargeA} position={[0.1, sy, 0.06]}   scale={0.18} rotation={[0, 1.2, 0]} />
+                        <GLBModel path={M.rockTallA}   position={[0.0, sy, -0.14]}  scale={0.16} rotation={[0, 2.0, 0]} />
                     </>
                 );
             case 'market':
-                return <GLBModel path={M.stall} position={[0, 0.1, 0]} scale={0.14} />;
+                return (
+                    <>
+                        <GLBModel path={M.stall}   position={[-0.08, sy, 0]}   scale={0.16} />
+                        <GLBModel path={M.lantern} position={[0.14, sy, 0.08]} scale={0.2} />
+                    </>
+                );
             case 'academy':
-                return <GLBModel path={M.windmill} position={[0, 0.1, 0]} scale={0.12} />;
+                return <GLBModel path={M.windmill} position={[0, sy, 0]} scale={0.15} />;
             case 'storage':
                 return (
                     <>
-                        <GLBModel path={M.chest} position={[-0.06, 0.1, 0]} scale={0.3} />
-                        <GLBModel path={M.barrel} position={[0.08, 0.1, 0.04]} scale={0.25} />
+                        <GLBModel path={M.chest}  position={[-0.1, sy, 0]}    scale={0.28} />
+                        <GLBModel path={M.barrel} position={[0.1, sy, 0.04]}  scale={0.22} />
                     </>
                 );
             case 'adventure':
                 return (
                     <>
-                        <GLBModel path={M.tent} position={[0, 0.1, 0]} scale={0.25} />
-                        <GLBModel path={M.campfirePit} position={[0.15, 0.1, 0.1]} scale={0.2} />
+                        <GLBModel path={M.tent}        position={[0, sy, -0.06]}   scale={0.24} />
+                        <GLBModel path={M.campfirePit} position={[0.15, sy, 0.12]} scale={0.2} />
                     </>
                 );
             default:
                 return null;
         }
-    }, [plot.unlocked, plot.type]);
+    }, [plot.type, surfaceY]);
 
     return (
         <group
             position={plot.position}
             onClick={() => onSelect?.(plot.key)}
-            onPointerOver={() => {
-                if (typeof document !== 'undefined') document.body.style.cursor = 'pointer';
-            }}
-            onPointerOut={() => {
-                if (typeof document !== 'undefined') document.body.style.cursor = 'default';
-            }}
+            onPointerOver={() => { if (typeof document !== 'undefined') document.body.style.cursor = 'pointer'; }}
+            onPointerOut={() => { if (typeof document !== 'undefined') document.body.style.cursor = 'default'; }}
         >
             <Float speed={1.3} rotationIntensity={0.08} floatIntensity={0.08}>
                 {isSelected && (
                     <mesh position={[0, 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
                         <torusGeometry args={[0.5, 0.03, 10, 26]} />
-                        <meshStandardMaterial color={highlightColor} emissive={highlightColor} emissiveIntensity={0.35} />
+                        <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.35} />
                     </mesh>
                 )}
-                {/* Island base using platformer grass block */}
                 <TerrainBlock path={M.blockGrass} position={[0, 0, 0]} scale={0.7} skinColor={terrainSkinColor} />
-                {/* Sign */}
-                <GLBModel path={M.sign} position={[0, 0.14, 0.4]} scale={0.22} />
-                {/* Plot-specific decoration */}
                 {plotDecoration}
+                {/* Workers float with the island */}
+                {Array.from({ length: workerCount }).map((_, i) => (
+                    <PlotWorker
+                        key={`pw-${i}`}
+                        type={plot.type}
+                        isDusk={isDusk}
+                        position={[
+                            (i - (workerCount - 1) / 2) * 0.2,
+                            surfaceY,
+                            i % 2 === 0 ? -0.08 : 0.08,
+                        ]}
+                    />
+                ))}
             </Float>
         </group>
     );
+}
+
+const ISLAND_DRAG_LIMIT = 15;
+
+// Keeps OrbitControls.target locked to the island group position every frame
+// so that rotation always orbits around the island, even after a drag.
+function OrbitTargetSyncer({
+    islandGroupRef,
+}: {
+    islandGroupRef: React.RefObject<Group | null>;
+}) {
+    const { controls } = useThree();
+    useFrame(() => {
+        if (!islandGroupRef.current || !controls || !('target' in controls)) return;
+        const orb = controls as unknown as { target: Vector3 };
+        const pos = islandGroupRef.current.position;
+        // Only update when position has actually changed to avoid fighting OrbitControls
+        if (orb.target.x !== pos.x || orb.target.y !== pos.y || orb.target.z !== pos.z) {
+            orb.target.copy(pos);
+        }
+    });
+    return null;
+}
+
+function IslandDragHandler({
+    dragRef,
+    islandGroupRef,
+    enabled,
+}: {
+    dragRef: { current: { pendingDx: number; pendingDy: number } };
+    islandGroupRef: React.RefObject<Group | null>;
+    enabled: boolean;
+}) {
+    const { camera } = useThree();
+    const rv = useRef(new Vector3());
+    const fv = useRef(new Vector3());
+    const up = useRef(new Vector3(0, 1, 0));
+
+    useFrame(() => {
+        if (!enabled || !islandGroupRef.current) return;
+        const { pendingDx, pendingDy } = dragRef.current;
+        if (pendingDx === 0 && pendingDy === 0) return;
+        dragRef.current.pendingDx = 0;
+        dragRef.current.pendingDy = 0;
+
+        camera.getWorldDirection(fv.current);
+        rv.current.crossVectors(fv.current, up.current).normalize();
+        fv.current.y = 0;
+        fv.current.normalize();
+        rv.current.y = 0;
+        rv.current.normalize();
+
+        const scale = camera.position.length() * 0.003;
+        const pos = islandGroupRef.current.position;
+        pos.x = Math.max(-ISLAND_DRAG_LIMIT, Math.min(ISLAND_DRAG_LIMIT,
+            pos.x + rv.current.x * pendingDx * scale - fv.current.x * pendingDy * scale));
+        pos.z = Math.max(-ISLAND_DRAG_LIMIT, Math.min(ISLAND_DRAG_LIMIT,
+            pos.z + rv.current.z * pendingDx * scale - fv.current.z * pendingDy * scale));
+    });
+
+    return null;
 }
 
 /**
@@ -571,13 +650,21 @@ export function World3D({
     worldTheme = 'normal',
 }: World3DProps) {
     const worldTerrain: WorldTerrain = 'grassland';
+
+    // Measure the actual top surface of the main island's center block so decorations sit on it
+    const { scene: blockGrassLargeScene } = useGLTF(M.blockGrassLarge);
+    const islandSurfaceY = useMemo(() => {
+        const box = new Box3().setFromObject(blockGrassLargeScene);
+        return box.max.y * 2.0; // main island uses scale 2.0
+    }, [blockGrassLargeScene]);
+
     const forestLv = buildings?.forest ?? 1;
     const mineLv = buildings?.mine ?? 1;
     const academyLv = buildings?.academy ?? 1;
     const marketLv = buildings?.market ?? 1;
 
     const islandScale = Math.min(1 + Math.max(0, islandLevel - 1) * 0.05, 1.4);
-    const orbitMaxDistance = Math.min(12 + islandLevel * 0.25, 18);
+    const orbitMaxDistance = Math.min(24 + islandLevel * 0.5, 36);
     const treeCount = Math.min(1 + Math.floor(forestLv / 2), 7);
     const rockCount = Math.min(1 + Math.floor(mineLv / 2), 6);
     const towerHeight = 0.28 + academyLv * 0.08;
@@ -666,16 +753,100 @@ export function World3D({
         ? 'w-full h-full overflow-hidden relative'
         : 'w-full h-[400px] rounded-2xl border-4 border-deep-black overflow-hidden relative shadow-clay';
 
+    // ── Island drag state ──────────────────────────────────────────────────
+    const [isPressing, setIsPressing] = useState(false);
+    const [isDragMode, setIsDragMode] = useState(false);
+    const [pressPos, setPressPos] = useState({ x: 0, y: 0 });
+    const isDragModeRef = useRef(false);
+    const isPressingRef = useRef(false);
+    const islandGroupRef = useRef<Group | null>(null);
+    const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const dragRef = useRef({ startX: 0, startY: 0, lastX: 0, lastY: 0, pendingDx: 0, pendingDy: 0 });
+
+    useEffect(() => () => {
+        if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    }, []);
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        // Only left-button on mouse; all touches accepted
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        // Capture the pointer on this div so OrbitControls (canvas) can't steal pointermove events
+        e.currentTarget.setPointerCapture(e.pointerId);
+        const s = dragRef.current;
+        s.startX = e.clientX; s.startY = e.clientY;
+        s.lastX = e.clientX; s.lastY = e.clientY;
+        s.pendingDx = 0; s.pendingDy = 0;
+        isPressingRef.current = true;
+        setIsPressing(true);
+        setPressPos({ x: e.clientX, y: e.clientY });
+        longPressTimerRef.current = setTimeout(() => {
+            if (isPressingRef.current) {
+                isDragModeRef.current = true;
+                setIsDragMode(true);
+                isPressingRef.current = false;
+                setIsPressing(false);
+                if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
+            }
+        }, 800);
+    };
+
+    const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+        const s = dragRef.current;
+        if (isDragModeRef.current) {
+            s.pendingDx += e.clientX - s.lastX;
+            s.pendingDy += e.clientY - s.lastY;
+            s.lastX = e.clientX;
+            s.lastY = e.clientY;
+            return;
+        }
+        if (isPressingRef.current) {
+            const dx = e.clientX - s.startX;
+            const dy = e.clientY - s.startY;
+            if (Math.sqrt(dx * dx + dy * dy) > 12) {
+                isPressingRef.current = false;
+                setIsPressing(false);
+                if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
+            }
+        }
+        s.lastX = e.clientX;
+        s.lastY = e.clientY;
+    };
+
+    const handlePointerUp = () => {
+        isPressingRef.current = false;
+        setIsPressing(false);
+        if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
+        isDragModeRef.current = false;
+        setIsDragMode(false);
+        dragRef.current.pendingDx = 0;
+        dragRef.current.pendingDy = 0;
+    };
+    // ──────────────────────────────────────────────────────────────────────
+
     return (
-        <div className={containerClass} style={{ background: shellBackground }}>
+        <div
+            className={containerClass}
+            style={{ background: shellBackground, cursor: isDragMode ? 'grabbing' : isPressing ? 'grab' : undefined }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onContextMenu={(e) => e.preventDefault()}
+        >
+            {/* Background fade overlay — sits on top of CSS bg image but below the WebGL canvas */}
+            <div className="absolute inset-0 pointer-events-none bg-white/50" />
             <Canvas shadows>
                 <PerspectiveCamera makeDefault position={fullScreen ? [12, 10, 12] : [5, 5, 5]} fov={fullScreen ? 40 : 50} />
                 <OrbitControls
+                    enableRotate={!isDragMode}
+                    enableZoom={!isDragMode}
                     enablePan={false}
                     minDistance={3}
                     maxDistance={orbitMaxDistance}
                     makeDefault
                 />
+                <IslandDragHandler dragRef={dragRef} islandGroupRef={islandGroupRef} enabled={isDragMode} />
+                <OrbitTargetSyncer islandGroupRef={islandGroupRef} />
 
                 {/* 環境光設計 */}
                 <ambientLight intensity={ambientIntensity} />
@@ -690,6 +861,7 @@ export function World3D({
                 <pointLight position={[0, 2.2, 0]} intensity={pointIntensity} color={pointColor} />
 
                 <Suspense fallback={null}>
+                    <group ref={islandGroupRef}>
                     <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
                         <group scale={[islandScale, islandScale, islandScale]}>
                             {/* ── Main island base (mixed: grass top + rocky cliffs) ── */}
@@ -718,6 +890,8 @@ export function World3D({
                                 </mesh>
                             </group>
 
+                            {/* ── All decorations lifted to actual island surface ── */}
+                            <group position={[0, islandSurfaceY, 0]}>
                             {/* ── Forest: trees grow with level ── */}
                             <group>
                                 {(() => {
@@ -840,6 +1014,7 @@ export function World3D({
                             <GLBModel path={M.flowerRed} position={[1.2, 0.02, 0.6]} scale={0.25} />
                             <GLBModel path={M.flowerYellow} position={[-1.0, 0.02, -0.8]} scale={0.25} />
                             <GLBModel path={M.flowerPurple} position={[0.3, 0.02, -1.2]} scale={0.2} />
+                            </group>{/* end decorations surface group */}
 
                             {/* ── Floating side islands (intermediate ring between main & plots) ── */}
                             {Array.from({ length: floatingTiles }).map((_, i) => {
@@ -864,7 +1039,7 @@ export function World3D({
                                 );
                             })}
 
-                            {plotDefinitions.map((plot) => (
+                            {unlockedPlots.map((plot) => (
                                 <PlotIsland
                                     key={plot.key}
                                     plot={plot}
@@ -875,21 +1050,6 @@ export function World3D({
                                 />
                             ))}
 
-                            {unlockedPlots.flatMap((plot, index) => {
-                                const workerCount = Math.min(3, 1 + Math.floor(Math.max(0, plot.level - 1) / 2));
-                                return Array.from({ length: workerCount }).map((_, workerIndex) => (
-                                    <PlotWorker
-                                        key={`worker-${plot.key}-${workerIndex}`}
-                                        type={plot.type}
-                                        isDusk={isDusk}
-                                        position={[
-                                            plot.position[0] + (workerIndex - (workerCount - 1) / 2) * 0.11,
-                                            plot.position[1] + 0.22 + (index % 2) * 0.015,
-                                            plot.position[2] + (workerIndex % 2 === 0 ? -0.04 : 0.06),
-                                        ]}
-                                    />
-                                ));
-                            })}
 
                             {unlockedPlots
                                 .filter((plot) => ['forest', 'mine', 'market', 'storage'].includes(plot.type))
@@ -1000,6 +1160,7 @@ export function World3D({
                             })}
                         </group>
                     </Float>
+                    </group>
 
                     <Environment preset={environmentPreset} />
                     <ContactShadows
@@ -1029,8 +1190,36 @@ export function World3D({
                 冒險狀態 {adventureStatus}{lastAdventureEventType ? `｜事件 ${lastAdventureEventType}` : ''}
             </div>
             <div className="absolute bottom-4 right-4 font-pixel text-[10px] text-gray-500 pointer-events-none hidden sm:block">
-                拖越轉動 / 滾輪縮放
+                {isDragMode ? '放開即停止拖曳' : '拖曳轉動 / 滾輪縮放'}
             </div>
+
+            {/* Long-press progress ring */}
+            {isPressing && (
+                <div
+                    className="pointer-events-none absolute z-20"
+                    style={{ left: pressPos.x - 28, top: pressPos.y - 28 }}
+                >
+                    <svg width="56" height="56" viewBox="0 0 56 56">
+                        <circle cx="28" cy="28" r="20" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="3" />
+                        <circle
+                            cx="28" cy="28" r="20" fill="none"
+                            stroke="white" strokeWidth="3.5"
+                            strokeLinecap="round"
+                            strokeDasharray="125.66 125.66"
+                            strokeDashoffset="125.66"
+                            transform="rotate(-90 28 28)"
+                            style={{ animation: 'longpress-ring 0.8s linear forwards' }}
+                        />
+                    </svg>
+                </div>
+            )}
+
+            {/* Drag mode badge */}
+            {isDragMode && (
+                <div className="pointer-events-none absolute bottom-10 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 rounded-full bg-black/55 backdrop-blur-sm border border-white/20">
+                    <span className="font-pixel text-white text-[11px]">✦ 拖曳島嶼中</span>
+                </div>
+            )}
         </div>
     );
 }

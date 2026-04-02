@@ -3,6 +3,11 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes longpress-ring {
+  from { stroke-dashoffset: 125.66; }
+  to   { stroke-dashoffset: 0; }
+}
+
 /* ========================================
    Cute Claymorphism Design System
    ======================================== */

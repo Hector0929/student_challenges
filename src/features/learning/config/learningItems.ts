@@ -76,7 +76,28 @@ export const LANGUAGE_LEARNING_ITEMS: LearningItem[] = [
     },
 ];
 
+export const FUN_LEARNING_ITEMS: LearningItem[] = [
+    {
+        id: 'othello',
+        name: '黑白棋',
+        icon: '♟',
+        description: '挑戰電腦，翻轉棋盤！',
+        subjectId: 'math',
+        stageId: 'general',
+        order: 99,
+        enabledByDefault: true,
+        status: 'active',
+        launcher: {
+            type: 'react',
+            target: 'othello',
+        },
+        accentColorToken: 'slate',
+        tags: ['棋盤', '邏輯', '策略'],
+    },
+];
+
 export const LEARNING_ITEMS: LearningItem[] = [
     ...LANGUAGE_LEARNING_ITEMS,
     ...MATH_LEARNING_ITEMS,
+    ...FUN_LEARNING_ITEMS,
 ];
