@@ -236,12 +236,32 @@ export function OthelloPractice() {
                         setGameOver(true);
                         const { black: b, white: w } = countPieces(next2);
                         setMessage(b > w ? '🎉 你贏了！' : b < w ? '😢 電腦贏了！' : '🤝 平局！');
+                        setThinking(false);
                     } else {
+                        // Human has no moves — AI goes again
                         setMessage('你沒有合法步，電腦繼續！');
                         setPlayer(2);
-                        setThinking(false);
-                        return;
+                        setTimeout(() => {
+                            const move2 = aiMove(next2);
+                            if (move2) {
+                                const [ar2, ac2] = move2;
+                                const next3 = applyMove(next2, ar2, ac2, 2);
+                                setBoard(next3);
+                                setLastPlaced([ar2, ac2]);
+                                setLastFlips(getFlips(next2, ar2, ac2, 2));
+                                if (getLegalMoves(next3, 1).length === 0 && getLegalMoves(next3, 2).length === 0) {
+                                    setGameOver(true);
+                                    const { black: b, white: w } = countPieces(next3);
+                                    setMessage(b > w ? '🎉 你贏了！' : b < w ? '😢 電腦贏了！' : '🤝 平局！');
+                                } else {
+                                    setPlayer(getLegalMoves(next3, 1).length > 0 ? 1 : 2);
+                                    setMessage(getLegalMoves(next3, 1).length > 0 ? null : '你沒有合法步，電腦繼續！');
+                                }
+                            }
+                            setThinking(false);
+                        }, 800);
                     }
+                    return;
                 } else {
                     setPlayer(1);
                 }
