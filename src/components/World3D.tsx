@@ -378,7 +378,7 @@ interface PlotData {
     unlocked: boolean;
 }
 
-function PlotWorker({ position, type, isDusk }: { position: [number, number, number]; type: PlotType; isDusk: boolean }) {
+function PlotWorker({ position, type }: { position: [number, number, number]; type: PlotType }) {
     const groupRef = useRef<Group>(null);
     const modelPath = type === 'mine' || type === 'market' ? M.charFemaleA : M.charMaleA;
 
@@ -420,7 +420,7 @@ function ResourceOrb({ from, to, color }: { from: [number, number, number]; to: 
     );
 }
 
-function AdventureScout({ from, to, isActive, isDusk }: { from: [number, number, number]; to: [number, number, number]; isActive: boolean; isDusk: boolean }) {
+function AdventureScout({ from, to, isActive }: { from: [number, number, number]; to: [number, number, number]; isActive: boolean }) {
     const scoutRef = useRef<Group>(null);
 
     useFrame((state) => {
@@ -469,13 +469,11 @@ function AdventureBeacon({ position, color, active }: { position: [number, numbe
 
 function PlotIsland({
     plot,
-    isDusk,
     isSelected,
     onSelect,
     terrainSkinColor,
 }: {
     plot: PlotData;
-    isDusk: boolean;
     isSelected: boolean;
     onSelect?: (plotKey: string) => void;
     terrainSkinColor: string | null;
@@ -558,7 +556,6 @@ function PlotIsland({
                     <PlotWorker
                         key={`pw-${i}`}
                         type={plot.type}
-                        isDusk={isDusk}
                         position={[
                             (i - (workerCount - 1) / 2) * 0.2,
                             surfaceY,
@@ -1043,7 +1040,6 @@ export function World3D({
                                 <PlotIsland
                                     key={plot.key}
                                     plot={plot}
-                                    isDusk={isDusk}
                                     isSelected={selectedPlotKey === plot.key}
                                     onSelect={onPlotSelect}
                                     terrainSkinColor={terrain.skinColor}
@@ -1079,7 +1075,6 @@ export function World3D({
                                 from={adventureOrigin}
                                 to={adventureDestination}
                                 isActive={adventureStatus === 'running'}
-                                isDusk={isDusk}
                             />
 
                             <AdventureBeacon
