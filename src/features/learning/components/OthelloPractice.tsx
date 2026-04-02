@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type Cell = 0 | 1 | 2; // 0=empty, 1=black, 2=white
