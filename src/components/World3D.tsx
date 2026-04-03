@@ -362,9 +362,10 @@ function TerrainBlock({
             {skinColor && (
                 // A thin slab positioned so its top face aligns with the block's peak.
                 // The slab height reaches down enough to cover the curved green rim.
-                <mesh position={[0, topY - slabH / 2, 0]} receiveShadow>
+                // polygonOffset pushes it in front of the GLB faces at the same depth.
+                <mesh position={[0, topY - slabH / 2, 0]} receiveShadow renderOrder={1}>
                     <boxGeometry args={[w, slabH, w]} />
-                    <meshStandardMaterial color={skinColor} roughness={0.95} metalness={0} />
+                    <meshStandardMaterial color={skinColor} roughness={0.95} metalness={0} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
                 </mesh>
             )}
         </group>
@@ -493,16 +494,51 @@ function AdventureBeacon({ position, color, active }: { position: [number, numbe
     );
 }
 
+// ─── Per-plot-type visual identity ───
+const PLOT_ISLAND_CONFIG: Record<PlotType, {
+    terrainColor: string;
+    ringColor: string;
+    ringEmissive: string;
+    workerCount: number;
+}> = {
+    forest:    { terrainColor: '#16a34a', ringColor: '#4ade80', ringEmissive: '#22c55e', workerCount: 2 },
+    mine:      { terrainColor: '#94a3b8', ringColor: '#cbd5e1', ringEmissive: '#94a3b8', workerCount: 2 },
+    market:    { terrainColor: '#fbbf24', ringColor: '#fde68a', ringEmissive: '#f59e0b', workerCount: 2 },
+    academy:   { terrainColor: '#a855f7', ringColor: '#d8b4fe', ringEmissive: '#a855f7', workerCount: 1 },
+    storage:   { terrainColor: '#f97316', ringColor: '#fed7aa', ringEmissive: '#f97316', workerCount: 1 },
+    adventure: { terrainColor: '#ef4444', ringColor: '#fca5a5', ringEmissive: '#ef4444', workerCount: 2 },
+};
+
+function PlotIslandRing({ color, emissive }: { color: string; emissive: string }) {
+    const ringRef = useRef<Group>(null);
+    useFrame((state) => {
+        if (!ringRef.current) return;
+        ringRef.current.rotation.y = state.clock.getElapsedTime() * 0.5;
+    });
+    return (
+        <group ref={ringRef} position={[0, -0.32, 0]}>
+            {/* Flat glowing base disc visible from isometric view */}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[0.5, 0.78, 32]} />
+                <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={1.2} transparent opacity={0.75} side={2} depthWrite={false} />
+            </mesh>
+            {/* Upright spinning ring for side visibility */}
+            <mesh rotation={[0, 0, 0]}>
+                <torusGeometry args={[0.62, 0.035, 8, 36]} />
+                <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={1.0} transparent opacity={0.9} />
+            </mesh>
+        </group>
+    );
+}
+
 function PlotIsland({
     plot,
     isSelected,
     onSelect,
-    terrainSkinColor,
 }: {
     plot: PlotData;
     isSelected: boolean;
     onSelect?: (plotKey: string) => void;
-    terrainSkinColor: string | null;
 }) {
     const { scene: blockScene } = useGLTF(M.blockGrass);
     const surfaceY = useMemo(() => {
@@ -512,7 +548,7 @@ function PlotIsland({
 
     if (!plot.unlocked) return null;
 
-    const workerCount = 1;
+    const cfg = PLOT_ISLAND_CONFIG[plot.type];
 
     const plotDecoration = useMemo(() => {
         const sy = surfaceY;
@@ -520,40 +556,63 @@ function PlotIsland({
             case 'forest':
                 return (
                     <>
-                        <GLBModel path={M.pineA}      position={[-0.12, sy, -0.06]} scale={0.28} />
-                        <GLBModel path={M.pineSmallA} position={[0.12, sy, 0.04]}   scale={0.22} />
-                        <GLBModel path={M.bushSmall}  position={[0.0, sy, 0.15]}    scale={0.2} />
+                        <GLBModel path={M.pineA}       position={[-0.13, sy, -0.08]} scale={0.32} rotation={[0, 0.3, 0]} />
+                        <GLBModel path={M.pineB}       position={[0.14, sy, -0.05]}  scale={0.26} rotation={[0, 1.8, 0]} />
+                        <GLBModel path={M.pineSmallA}  position={[0.0, sy, 0.18]}    scale={0.24} rotation={[0, 0.9, 0]} />
+                        <GLBModel path={M.bush}        position={[-0.05, sy, 0.05]}  scale={0.22} />
+                        <GLBModel path={M.flowerRed}   position={[0.08, sy, 0.12]}   scale={0.2} />
+                        <GLBModel path={M.logStack}    position={[0.18, sy, 0.14]}   scale={0.22} rotation={[0, 0.5, 0]} />
                     </>
                 );
             case 'mine':
                 return (
                     <>
-                        <GLBModel path={M.rockLargeA}  position={[-0.1, sy, -0.02]} scale={0.22} rotation={[0, 0.5, 0]} />
-                        <GLBModel path={M.stoneLargeA} position={[0.1, sy, 0.06]}   scale={0.18} rotation={[0, 1.2, 0]} />
-                        <GLBModel path={M.rockTallA}   position={[0.0, sy, -0.14]}  scale={0.16} rotation={[0, 2.0, 0]} />
+                        <GLBModel path={M.rockLargeA}    position={[-0.08, sy, -0.05]} scale={0.28} rotation={[0, 0.5, 0]} />
+                        <GLBModel path={M.stoneTallA}     position={[0.12, sy, 0.0]}   scale={0.26} rotation={[0, 2.2, 0]} />
+                        <GLBModel path={M.rockTallA}      position={[0.0, sy, -0.17]}  scale={0.22} rotation={[0, 1.1, 0]} />
+                        <GLBModel path={M.stoneLargeB}    position={[-0.15, sy, 0.12]} scale={0.2}  rotation={[0, 3.0, 0]} />
+                        <GLBModel path={M.toolPickaxe}    position={[0.06, sy, 0.15]}  scale={0.28} rotation={[0, 0.8, 0.35]} />
+                        <GLBModel path={M.resourceStone}  position={[-0.04, sy, 0.05]} scale={0.22} />
                     </>
                 );
             case 'market':
                 return (
                     <>
-                        <GLBModel path={M.stall}   position={[-0.08, sy, 0]}   scale={0.16} />
-                        <GLBModel path={M.lantern} position={[0.14, sy, 0.08]} scale={0.2} />
+                        <GLBModel path={M.stallGreen}  position={[-0.1, sy, -0.04]}  scale={0.2}  rotation={[0, 0.4, 0]} />
+                        <GLBModel path={M.stallRed}    position={[0.1, sy, 0.08]}    scale={0.18} rotation={[0, -0.6, 0]} />
+                        <GLBModel path={M.lantern}     position={[-0.18, sy, 0.14]}  scale={0.22} />
+                        <GLBModel path={M.lantern}     position={[0.18, sy, -0.1]}   scale={0.22} />
+                        <GLBModel path={M.bannerGreen} position={[0.0, sy, -0.18]}   scale={0.22} rotation={[0, 1.5, 0]} />
                     </>
                 );
             case 'academy':
-                return <GLBModel path={M.windmill} position={[0, sy, 0]} scale={0.15} />;
+                return (
+                    <>
+                        <GLBModel path={M.windmill}      position={[0, sy, -0.04]}   scale={0.18} />
+                        <GLBModel path={M.bannerGreen}   position={[-0.18, sy, 0.08]} scale={0.2}  rotation={[0, 2.0, 0]} />
+                        <GLBModel path={M.fountain}      position={[0.1, sy, 0.14]}   scale={0.14} />
+                        <GLBModel path={M.flowerPurple}  position={[-0.08, sy, 0.16]} scale={0.22} />
+                        <GLBModel path={M.mushroom}      position={[0.18, sy, -0.06]} scale={0.22} />
+                    </>
+                );
             case 'storage':
                 return (
                     <>
-                        <GLBModel path={M.chest}  position={[-0.1, sy, 0]}    scale={0.28} />
-                        <GLBModel path={M.barrel} position={[0.1, sy, 0.04]}  scale={0.22} />
+                        <GLBModel path={M.chest}   position={[-0.12, sy, -0.04]} scale={0.3}  />
+                        <GLBModel path={M.barrel}  position={[0.1, sy, 0.0]}     scale={0.26} rotation={[0, 0.6, 0]} />
+                        <GLBModel path={M.barrel}  position={[0.16, sy, 0.12]}   scale={0.22} rotation={[0, 1.8, 0]} />
+                        <GLBModel path={M.box}     position={[-0.06, sy, 0.14]}  scale={0.24} />
+                        <GLBModel path={M.box}     position={[0.0, sy, -0.16]}   scale={0.2}  rotation={[0, 0.4, 0]} />
                     </>
                 );
             case 'adventure':
                 return (
                     <>
-                        <GLBModel path={M.tent}        position={[0, sy, -0.06]}   scale={0.24} />
-                        <GLBModel path={M.campfirePit} position={[0.15, sy, 0.12]} scale={0.2} />
+                        <GLBModel path={M.tent}        position={[-0.06, sy, -0.08]}  scale={0.26} rotation={[0, 0.3, 0]} />
+                        <GLBModel path={M.campfirePit} position={[0.14, sy, 0.1]}     scale={0.24} />
+                        <GLBModel path={M.signpost}    position={[-0.16, sy, 0.14]}   scale={0.24} rotation={[0, -0.5, 0]} />
+                        <GLBModel path={M.chest}       position={[0.0, sy, 0.18]}     scale={0.2}  />
+                        <GLBModel path={M.sign}        position={[0.17, sy, -0.1]}    scale={0.24} rotation={[0, 1.2, 0]} />
                     </>
                 );
             default:
@@ -568,24 +627,28 @@ function PlotIsland({
             onPointerOver={() => { if (typeof document !== 'undefined') document.body.style.cursor = 'pointer'; }}
             onPointerOut={() => { if (typeof document !== 'undefined') document.body.style.cursor = 'default'; }}
         >
+            {/* Permanent type-identity ring (always visible, type-coloured) */}
+            <PlotIslandRing color={cfg.ringColor} emissive={cfg.ringEmissive} />
+
             <Float speed={1.3} rotationIntensity={0.08} floatIntensity={0.08}>
                 {isSelected && (
                     <mesh position={[0, 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                        <torusGeometry args={[0.5, 0.03, 10, 26]} />
-                        <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.35} />
+                        <torusGeometry args={[0.52, 0.05, 10, 32]} />
+                        <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.6} />
                     </mesh>
                 )}
-                <TerrainBlock path={M.blockGrass} position={[0, 0, 0]} scale={0.7} skinColor={terrainSkinColor} />
+                {/* Type-specific terrain color overrides world terrain */}
+                <TerrainBlock path={M.blockGrass} position={[0, 0, 0]} scale={0.7} skinColor={cfg.terrainColor} />
                 {plotDecoration}
-                {/* Workers float with the island */}
-                {Array.from({ length: workerCount }).map((_, i) => (
+                {/* Workers */}
+                {Array.from({ length: cfg.workerCount }).map((_, i) => (
                     <PlotWorker
                         key={`pw-${i}`}
                         type={plot.type}
                         position={[
-                            (i - (workerCount - 1) / 2) * 0.2,
+                            (i - (cfg.workerCount - 1) / 2) * 0.22,
                             surfaceY,
-                            i % 2 === 0 ? -0.08 : 0.08,
+                            i % 2 === 0 ? -0.09 : 0.09,
                         ]}
                     />
                 ))}
@@ -1068,7 +1131,6 @@ export function World3D({
                                     plot={plot}
                                     isSelected={selectedPlotKey === plot.key}
                                     onSelect={onPlotSelect}
-                                    terrainSkinColor={terrain.skinColor}
                                 />
                             ))}
 
