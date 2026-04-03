@@ -13,7 +13,7 @@ import { applyOfflineProduction, getStorageCapacity } from '../lib/world/storage
 import type { WorldResources } from '../lib/world/types';
 
 /** Atmosphere / background preset (lighting, sky color, particles) */
-export type WorldTheme = 'normal' | 'night' | 'sakura' | 'monster_forest' | 'monster_sky';
+export type WorldTheme = 'normal' | 'night' | 'sakura' | 'rainbow_dragon' | 'star_fairy' | 'slime' | 'flame_bird';
 /** Terrain surface color (grass top of floating island blocks) */
 export type WorldTerrain = 'grassland' | 'desert' | 'snow';
 

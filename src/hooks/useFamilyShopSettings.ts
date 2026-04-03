@@ -53,6 +53,11 @@ export const useFamilyExchangeRates = (overrideFamilyId?: string) => {
                 .maybeSingle();
 
             if (error) {
+                // A 404 / PGRST116 just means no row exists yet — treat as null (defaults apply)
+                const status = (error as { status?: number }).status;
+                if (status === 404 || (error as { code?: string }).code === 'PGRST116') {
+                    return null;
+                }
                 console.error('Error fetching family exchange rates:', error);
                 throw error;
             }

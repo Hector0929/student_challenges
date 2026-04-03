@@ -28,13 +28,15 @@ export const ChildWorldBankPanel: React.FC<ChildWorldBankPanelProps> = ({
     onClaimTimeDeposit,
     onCancelTimeDeposit,
 }) => {
-    const [demandAmount, setDemandAmount] = useState('');
+    const [depositAmount, setDepositAmount] = useState('');
+    const [withdrawAmount, setWithdrawAmount] = useState('');
     const [timeDepositAmount, setTimeDepositAmount] = useState('');
 
-    const demandAmountValue = Math.max(0, Math.floor(Number(demandAmount) || 0));
+    const depositAmountValue = Math.max(0, Math.floor(Number(depositAmount) || 0));
+    const withdrawAmountValue = Math.max(0, Math.floor(Number(withdrawAmount) || 0));
     const timeDepositAmountValue = Math.max(0, Math.floor(Number(timeDepositAmount) || 0));
 
-    const demandQuickOptions = Array.from(new Set([
+    const depositQuickOptions = Array.from(new Set([
         10,
         Math.floor(starBalance / 2),
         starBalance,
@@ -53,17 +55,17 @@ export const ChildWorldBankPanel: React.FC<ChildWorldBankPanelProps> = ({
     ])).filter((value) => value > 0);
 
     const commitDemandDeposit = () => {
-        const amount = Math.max(0, Math.floor(Number(demandAmount) || 0));
+        const amount = Math.max(0, Math.floor(Number(depositAmount) || 0));
         if (amount <= 0) return;
         onDepositDemand(amount);
-        setDemandAmount('');
+        setDepositAmount('');
     };
 
     const commitDemandWithdraw = () => {
-        const amount = Math.max(0, Math.floor(Number(demandAmount) || 0));
+        const amount = Math.max(0, Math.floor(Number(withdrawAmount) || 0));
         if (amount <= 0) return;
         onWithdrawDemand(amount);
-        setDemandAmount('');
+        setWithdrawAmount('');
     };
 
     const commitTimeDeposit = () => {
@@ -101,51 +103,47 @@ export const ChildWorldBankPanel: React.FC<ChildWorldBankPanelProps> = ({
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* 存入活存 */}
                 <div className="rounded-lg border border-sky-200 bg-white p-4 space-y-3">
-                    <div className="font-heading font-bold">活存操作</div>
+                    <div className="font-heading font-bold">存入活存</div>
                     <input
                         aria-label="孩子活存金額"
                         type="text"
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        value={demandAmount}
-                        onChange={(event) => setDemandAmount(event.target.value.replace(/[^0-9]/g, ''))}
+                        value={depositAmount}
+                        onChange={(event) => setDepositAmount(event.target.value.replace(/[^0-9]/g, ''))}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                        placeholder="輸入金額"
+                        placeholder="輸入存入金額"
                     />
-                    <div className="text-xs text-sky-700">可用 {starBalance} ⭐ ｜ 可提領 {demandDepositAccount.balance} ⭐</div>
+                    <div className="text-xs text-sky-700">可用星幣 {starBalance} ⭐，存入後可隨時提領。</div>
                     <div className="flex flex-wrap gap-2">
-                        {demandQuickOptions.map((value) => (
+                        {depositQuickOptions.map((value) => (
                             <button
-                                key={`demand-${value}`}
+                                key={`deposit-${value}`}
                                 type="button"
-                                onClick={() => setDemandAmount(String(value))}
+                                onClick={() => setDepositAmount(String(value))}
                                 className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-heading text-sky-800 hover:bg-sky-100"
                                 aria-label={`活存快捷 ${value} 星`}
                             >
                                 {value} 星
                             </button>
                         ))}
-                        {withdrawQuickOptions.length > 0 && (
-                            <button
-                                type="button"
-                                onClick={() => setDemandAmount(String(demandDepositAccount.balance))}
-                                className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[11px] font-heading text-indigo-800 hover:bg-indigo-100"
-                                aria-label="活存全額提領"
-                            >
-                                活存全額
-                            </button>
-                        )}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        <button disabled={demandAmountValue <= 0 || demandAmountValue > starBalance} onClick={commitDemandDeposit} className="px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed">🏦 存入活存</button>
-                        <button disabled={demandAmountValue <= 0 || demandAmountValue > demandDepositAccount.balance} onClick={commitDemandWithdraw} className="px-4 py-2 bg-white text-sky-700 rounded-lg border border-sky-300 hover:bg-sky-50 disabled:opacity-50 disabled:cursor-not-allowed">💸 提領活存</button>
-                        <button onClick={onSettleDemandInterest} className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg border border-indigo-300 hover:bg-indigo-200">💹 結算利息</button>
+                        <button
+                            disabled={depositAmountValue <= 0 || depositAmountValue > starBalance}
+                            onClick={commitDemandDeposit}
+                            className="px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            🏦 存入活存
+                        </button>
                     </div>
                 </div>
 
+                {/* 建立定存 */}
                 <div className="rounded-lg border border-sky-200 bg-white p-4 space-y-3">
-                    <div className="font-heading font-bold">定存操作</div>
+                    <div className="font-heading font-bold">建立定存</div>
                     <input
                         aria-label="孩子定存金額"
                         type="text"
@@ -175,6 +173,59 @@ export const ChildWorldBankPanel: React.FC<ChildWorldBankPanelProps> = ({
                     </div>
                 </div>
             </div>
+
+            {/* 活存帳戶 */}
+            {demandDepositAccount.balance > 0 && (
+                <div className="mt-4">
+                    <div className="font-heading font-bold text-sm mb-2">活存帳戶</div>
+                    <div className="rounded-lg border border-sky-200 bg-white p-4 text-sm space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="font-heading font-bold">活存餘額：{demandDepositAccount.balance} ⭐</div>
+                            <div className="text-xs text-sky-600">上次結息：{new Date(demandDepositAccount.lastInterestAt).toLocaleDateString('zh-TW')}</div>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <input
+                                    aria-label="提領活存金額"
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    value={withdrawAmount}
+                                    onChange={(event) => setWithdrawAmount(event.target.value.replace(/[^0-9]/g, ''))}
+                                    className="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                                    placeholder="輸入提領金額"
+                                />
+                                {withdrawQuickOptions.map((value) => (
+                                    <button
+                                        key={`withdraw-${value}`}
+                                        type="button"
+                                        onClick={() => setWithdrawAmount(String(value))}
+                                        className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[11px] font-heading text-indigo-800 hover:bg-indigo-100 whitespace-nowrap"
+                                        aria-label={`提領快捷 ${value} 星`}
+                                    >
+                                        {value} 星
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    disabled={withdrawAmountValue <= 0 || withdrawAmountValue > demandDepositAccount.balance}
+                                    onClick={commitDemandWithdraw}
+                                    className="px-4 py-2 bg-white text-sky-700 rounded-lg border border-sky-300 hover:bg-sky-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    💸 提領活存
+                                </button>
+                                <button
+                                    onClick={onSettleDemandInterest}
+                                    className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg border border-indigo-300 hover:bg-indigo-200"
+                                >
+                                    💹 結算利息
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="mt-4 space-y-3">
                 <div className="font-heading font-bold text-sm">定存清單</div>

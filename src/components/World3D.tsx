@@ -85,31 +85,57 @@ const ATMOSPHERE_PRESETS: Record<WorldTheme, AtmospherePreset> = {
         fireflyColor: '#fbcfe8', fireflyEmissive: '#f9a8d4',
         particles: { color: '#fbcfe8', emissive: '#f9a8d4', count: 20, size: 0.026, speed: 0.55, fallSpeed: 0.38, spread: 4.0, usePlane: true },
     },
-    monster_forest: {
-        shellBg: 'url(/images/backgrounds/bg_monster_forest.png) center/cover no-repeat',
-        shellBgDusk: 'url(/images/backgrounds/bg_monster_forest.png) center/cover no-repeat',
-        ambientDay: 0.55, ambientDusk: 0.4,
-        hemisphereSkyDay: '#dbeafe', hemisphereSkyDusk: '#fdba74',
-        hemisphereGroundDay: '#9ca3af', hemisphereGroundDusk: '#7c3aed',
-        sunColorDay: '#ffffff', sunColorDusk: '#fb923c',
-        pointColorDay: '#c4b5fd', pointColorDusk: '#f59e0b',
-        pointIntensityDay: 0.38, pointIntensityDusk: 0.54,
-        envPresetDay: 'forest', envPresetDusk: 'sunset',
-        cloudColor: '#bfdbfe',
-        fireflyColor: '#fef08a', fireflyEmissive: '#fde047',
-    },
-    monster_sky: {
-        shellBg: 'url(/images/backgrounds/bg_monster_sky.png) center/cover no-repeat',
-        shellBgDusk: 'url(/images/backgrounds/bg_monster_sky.png) center/cover no-repeat',
-        ambientDay: 0.55, ambientDusk: 0.4,
-        hemisphereSkyDay: '#fce7f3', hemisphereSkyDusk: '#f9a8d4',
-        hemisphereGroundDay: '#f0abfc', hemisphereGroundDusk: '#86198f',
-        sunColorDay: '#fdf2f8', sunColorDusk: '#f472b6',
-        pointColorDay: '#f9a8d4', pointColorDusk: '#ec4899',
-        pointIntensityDay: 0.42, pointIntensityDusk: 0.52,
+    rainbow_dragon: {
+        shellBg: 'url(/images/backgrounds/bg_rainbow_dragon.png) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_rainbow_dragon.png) center/cover no-repeat',
+        ambientDay: 0.6, ambientDusk: 0.45,
+        hemisphereSkyDay: '#fdf4ff', hemisphereSkyDusk: '#fbcfe8',
+        hemisphereGroundDay: '#fae8ff', hemisphereGroundDusk: '#fce7f3',
+        sunColorDay: '#ffffff', sunColorDusk: '#fdf2f8',
+        pointColorDay: '#e879f9', pointColorDusk: '#d946ef',
+        pointIntensityDay: 0.4, pointIntensityDusk: 0.5,
         envPresetDay: 'park', envPresetDusk: 'sunset',
-        cloudColor: '#fbcfe8',
-        fireflyColor: '#fbcfe8', fireflyEmissive: '#f9a8d4',
+        cloudColor: '#fdf4ff',
+        fireflyColor: '#fae8ff', fireflyEmissive: '#f0abfc',
+    },
+    star_fairy: {
+        shellBg: 'url(/images/backgrounds/bg_star_fairy.png) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_star_fairy.png) center/cover no-repeat',
+        ambientDay: 0.55, ambientDusk: 0.4,
+        hemisphereSkyDay: '#eff6ff', hemisphereSkyDusk: '#bfdbfe',
+        hemisphereGroundDay: '#dbeafe', hemisphereGroundDusk: '#93c5fd',
+        sunColorDay: '#ffffff', sunColorDusk: '#dbeafe',
+        pointColorDay: '#60a5fa', pointColorDusk: '#3b82f6',
+        pointIntensityDay: 0.4, pointIntensityDusk: 0.5,
+        envPresetDay: 'forest', envPresetDusk: 'sunset',
+        cloudColor: '#eff6ff',
+        fireflyColor: '#dbeafe', fireflyEmissive: '#93c5fd',
+    },
+    slime: {
+        shellBg: 'url(/images/backgrounds/bg_slime.png) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_slime.png) center/cover no-repeat',
+        ambientDay: 0.6, ambientDusk: 0.45,
+        hemisphereSkyDay: '#f0fdf4', hemisphereSkyDusk: '#bbf7d0',
+        hemisphereGroundDay: '#dcfce7', hemisphereGroundDusk: '#86efac',
+        sunColorDay: '#ffffff', sunColorDusk: '#dcfce7',
+        pointColorDay: '#4ade80', pointColorDusk: '#22c55e',
+        pointIntensityDay: 0.4, pointIntensityDusk: 0.5,
+        envPresetDay: 'park', envPresetDusk: 'sunset',
+        cloudColor: '#f0fdf4',
+        fireflyColor: '#dcfce7', fireflyEmissive: '#86efac',
+    },
+    flame_bird: {
+        shellBg: 'url(/images/backgrounds/bg_flame_bird.png) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_flame_bird.png) center/cover no-repeat',
+        ambientDay: 0.58, ambientDusk: 0.42,
+        hemisphereSkyDay: '#fff7ed', hemisphereSkyDusk: '#fed7aa',
+        hemisphereGroundDay: '#ffedd5', hemisphereGroundDusk: '#fdba74',
+        sunColorDay: '#ffffff', sunColorDusk: '#ffedd5',
+        pointColorDay: '#fb923c', pointColorDusk: '#f97316',
+        pointIntensityDay: 0.4, pointIntensityDusk: 0.5,
+        envPresetDay: 'sunset', envPresetDusk: 'sunset',
+        cloudColor: '#fff7ed',
+        fireflyColor: '#ffedd5', fireflyEmissive: '#fdba74',
     },
 };
 
@@ -1170,22 +1196,60 @@ export function World3D({
 
             {/* UI 覆蓋層 */}
             {!fullScreen && (
-                <div className="absolute top-4 left-4 font-pixel text-xs bg-white/80 p-2 border-2 border-deep-black pointer-events-none">
-                    3D 世界 V2.0 - 冒險家家園
+                <div className="absolute top-3 left-3 pointer-events-none">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/50 shadow-sm">
+                        <span className="text-sm">🏝</span>
+                        <span className="font-pixel text-[11px] text-white drop-shadow-sm">冒險家家園</span>
+                    </div>
                 </div>
             )}
-            <div className={`absolute ${fullScreen ? 'top-16 sm:top-4' : 'top-4'} right-4 font-pixel text-[10px] sm:text-xs bg-white/85 p-2 border border-slate-300 rounded pointer-events-none text-slate-700`}>
-                {isDusk ? '黃昏' : '白天'}｜島 Lv.{islandLevel}｜角色 Lv.{heroLevel}
+
+            {/* Level badges — top right (only in embedded/non-fullscreen mode) */}
+            <div className={`absolute top-3 right-3 pointer-events-none ${fullScreen ? 'hidden' : ''}`}>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/55 backdrop-blur-md border border-white/25 shadow-lg">
+                    <span className="text-xs">🏝</span>
+                    <span className="font-pixel text-[11px] text-white">Lv.{islandLevel}</span>
+                    <span className="w-px h-3 bg-white/40 mx-0.5" />
+                    <span className="text-xs">⚔️</span>
+                    <span className="font-pixel text-[11px] text-white">Lv.{heroLevel}</span>
+                    <span className="w-px h-3 bg-white/40 mx-0.5" />
+                    <span className="text-sm leading-none">{isDusk ? '🌆' : '☀️'}</span>
+                </div>
             </div>
-            <div className={`absolute ${fullScreen ? 'bottom-6 sm:bottom-4' : 'bottom-4'} left-4 font-pixel text-[10px] bg-white/80 px-2 py-1 border border-slate-300 rounded pointer-events-none text-slate-700`}>
-                功能地塊 {unlockedPlots.length}/{plotDefinitions.length}
-                <span className="hidden sm:inline">｜小精靈與工人正在搬運資源</span>
+
+            {/* Status card — bottom left */}
+            <div className={`absolute ${fullScreen ? 'bottom-6 sm:bottom-5' : 'bottom-4'} left-3 pointer-events-none flex flex-col gap-1.5`}>
+                {/* Adventure status */}
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/55 backdrop-blur-md border border-white/25 shadow-lg">
+                    <span className="text-xs">⚔️</span>
+                    <span className="font-pixel text-[11px] text-white">
+                        冒險{' '}
+                        <span className={`${adventureStatus === 'idle' ? 'text-white/60' : 'text-yellow-300'}`}>
+                            {adventureStatus ?? 'idle'}
+                        </span>
+                        {lastAdventureEventType && (
+                            <span className="text-white/70"> · {lastAdventureEventType}</span>
+                        )}
+                    </span>
+                </div>
+                {/* Plot + worker status */}
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/55 backdrop-blur-md border border-white/25 shadow-lg">
+                    <span className="text-xs">🗺️</span>
+                    <span className="font-pixel text-[11px] text-white">
+                        地塊 {unlockedPlots.length}<span className="text-white/60">/{plotDefinitions.length}</span>
+                    </span>
+                    <span className="hidden sm:inline w-px h-3 bg-white/35 mx-0.5" />
+                    <span className="hidden sm:inline font-pixel text-[11px] text-white/80">✨ 工人搬運中</span>
+                </div>
             </div>
-            <div className={`absolute ${fullScreen ? 'bottom-12 sm:bottom-12' : 'bottom-12'} left-4 font-pixel text-[10px] bg-white/80 px-2 py-1 border border-slate-300 rounded pointer-events-none text-slate-700 hidden sm:block`}>
-                冒險狀態 {adventureStatus}{lastAdventureEventType ? `｜事件 ${lastAdventureEventType}` : ''}
-            </div>
-            <div className="absolute bottom-4 right-4 font-pixel text-[10px] text-gray-500 pointer-events-none hidden sm:block">
-                {isDragMode ? '放開即停止拖曳' : '拖曳轉動 / 滾輪縮放'}
+
+            {/* Control hint — bottom right */}
+            <div className="absolute bottom-5 right-3 pointer-events-none hidden sm:block">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/45 backdrop-blur-md border border-white/20 shadow-md">
+                    <span className="font-pixel text-[10px] text-white/80">
+                        {isDragMode ? '✋ 放開即停止拖曳' : '🖱 拖曳轉動 · 滾輪縮放'}
+                    </span>
+                </div>
             </div>
 
             {/* Long-press progress ring */}
@@ -1211,8 +1275,12 @@ export function World3D({
 
             {/* Drag mode badge */}
             {isDragMode && (
-                <div className="pointer-events-none absolute bottom-10 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 rounded-full bg-black/55 backdrop-blur-sm border border-white/20">
-                    <span className="font-pixel text-white text-[11px]">✦ 拖曳島嶼中</span>
+                <div className="pointer-events-none absolute bottom-20 left-1/2 -translate-x-1/2 z-20">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600/70 backdrop-blur-md border border-indigo-300/40 shadow-xl shadow-indigo-900/30">
+                        <span className="text-sm animate-pulse">✦</span>
+                        <span className="font-pixel text-white text-[12px] tracking-wide">拖曳島嶼中</span>
+                        <span className="text-sm animate-pulse">✦</span>
+                    </div>
                 </div>
             )}
         </div>

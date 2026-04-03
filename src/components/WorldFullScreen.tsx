@@ -74,46 +74,49 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
         { key: 'normal', label: '晴天', emoji: '☀️', colors: 'from-sky-400 to-blue-500' },
         { key: 'night',  label: '星夜', emoji: '🌙', colors: 'from-indigo-600 to-purple-700' },
         { key: 'sakura', label: '櫻花', emoji: '🌸', colors: 'from-pink-300 to-rose-400' },
-        { key: 'monster_forest', label: '怪獸森林', emoji: '🌲', colors: 'from-green-400 to-emerald-600' },
-        { key: 'monster_sky', label: '怪獸飛行', emoji: '☁️', colors: 'from-purple-300 to-pink-400' },
+        { key: 'rainbow_dragon', label: '彩虹龍', emoji: '🌈', colors: 'from-fuchsia-300 to-purple-400' },
+        { key: 'star_fairy', label: '星光精靈', emoji: '✨', colors: 'from-blue-300 to-indigo-400' },
+        { key: 'slime', label: '果凍史萊姆', emoji: '💧', colors: 'from-emerald-300 to-teal-400' },
+        { key: 'flame_bird', label: '烈焰飛鳥', emoji: '🔥', colors: 'from-orange-300 to-red-400' },
     ];
 
     const modalTree = (
         <div className="fixed inset-0 z-[120] bg-black flex flex-col">
             {/* Top bar */}
-            <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-b from-black/60 to-transparent pointer-events-auto">
-                <div className="flex items-center gap-2">
+            <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-b from-black/50 via-black/20 to-transparent pointer-events-auto">
+                <div className="flex items-center gap-2.5">
                     <button
                         onClick={handleEndGame}
-                        className="p-2 rounded-xl bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors"
+                        className="p-2 rounded-full bg-black/45 backdrop-blur-md text-white hover:bg-black/60 active:scale-95 transition-all border border-white/25 shadow-lg"
                         aria-label="返回"
                     >
-                        <ArrowLeft size={20} />
+                        <ArrowLeft size={18} />
                     </button>
-                    <span className="font-pixel text-white text-xs sm:text-sm drop-shadow-lg">
-                        冒險家家園
-                    </span>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/45 backdrop-blur-md border border-white/25 shadow-lg">
+                        <span className="text-base leading-none">🏝</span>
+                        <span className="font-pixel text-white text-xs sm:text-sm tracking-wide" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>冒險家家園</span>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setShowPicker(!showPicker)}
-                        className={`p-2 rounded-xl backdrop-blur-sm transition-colors ${showPicker ? 'bg-white/40 text-white' : 'bg-white/20 text-white hover:bg-white/30'}`}
+                        className={`p-2 rounded-full backdrop-blur-md transition-all border shadow-lg ${showPicker ? 'bg-black/65 text-white border-white/40' : 'bg-black/45 text-white hover:bg-black/60 border-white/25'}`}
                         aria-label="切換背景"
                     >
-                        <Palette size={20} />
+                        <Palette size={18} />
                     </button>
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-yellow-400/90 backdrop-blur-sm border border-yellow-500/50">
-                        <Star size={14} className="text-yellow-700" fill="currentColor" />
-                        <span className="font-pixel text-sm text-amber-800">{starBalance}</span>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-400 backdrop-blur-md border border-amber-500/60 shadow-lg">
+                        <Star size={13} className="text-amber-800" fill="currentColor" />
+                        <span className="font-pixel text-sm font-bold text-amber-900">{starBalance.toLocaleString()}</span>
                     </div>
                     {onGoHome && (
                         <button
                             onClick={handleGoHome}
-                            className="p-2 rounded-xl bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors"
+                            className="p-2 rounded-full bg-black/45 backdrop-blur-md text-white hover:bg-black/60 active:scale-95 transition-all border border-white/25 shadow-lg"
                             aria-label="回首頁"
                         >
-                            <Home size={20} />
+                            <Home size={18} />
                         </button>
                     )}
                 </div>
@@ -122,24 +125,26 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
             {/* Background picker panel */}
             {showPicker && (
                 <div className="absolute top-14 right-3 sm:right-4 z-20 pointer-events-auto">
-                    <div className="bg-black/75 backdrop-blur-md rounded-2xl border border-white/20 p-3 shadow-2xl min-w-[130px]">
-                        <div className="font-pixel text-white/60 text-[10px] mb-2 uppercase tracking-wider">背景</div>
-                        <div className="flex flex-col gap-1.5">
+                    <div className="bg-black/60 backdrop-blur-xl rounded-2xl border border-white/20 p-3.5 shadow-2xl min-w-[150px]">
+                        <div className="font-pixel text-white/50 text-[10px] mb-2.5 uppercase tracking-widest text-center">選擇場景</div>
+                        <div className="flex flex-col gap-1">
                             {atmosOptions.map((t) => (
                                 <button
                                     key={t.key}
                                     onClick={() => { onThemeChange?.(t.key); setShowPicker(false); }}
-                                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl transition-all text-left ${
+                                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-left active:scale-95 ${
                                         worldTheme === t.key
-                                            ? 'bg-white/25 ring-2 ring-white/50'
-                                            : 'bg-white/10 hover:bg-white/20'
+                                            ? 'bg-white/25 ring-1 ring-white/50 shadow-inner'
+                                            : 'bg-white/8 hover:bg-white/18'
                                     }`}
                                 >
-                                    <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${t.colors} flex items-center justify-center text-xs`}>
+                                    <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${t.colors} flex items-center justify-center text-sm shadow-md flex-shrink-0`}>
                                         {t.emoji}
                                     </div>
                                     <span className="font-pixel text-white text-xs">{t.label}</span>
-                                    {worldTheme === t.key && <span className="ml-auto text-[10px] text-yellow-300">✓</span>}
+                                    {worldTheme === t.key && (
+                                        <span className="ml-auto text-[11px] text-yellow-300 drop-shadow-sm">✓</span>
+                                    )}
                                 </button>
                             ))}
                         </div>
