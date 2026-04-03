@@ -408,19 +408,27 @@ interface PlotData {
 function PlotWorker({ position, type }: { position: [number, number, number]; type: PlotType }) {
     const groupRef = useRef<Group>(null);
     const modelPath = type === 'mine' || type === 'market' ? M.charFemaleA : M.charMaleA;
+    const { scene: charScene } = useGLTF(modelPath);
+
+    // Adjust Y so the character's bounding-box bottom (feet) sits exactly at position[1].
+    // Without this, if the GLB origin is above the feet the character floats in the air.
+    const groundedY = useMemo(() => {
+        const box = new Box3().setFromObject(charScene);
+        return position[1] - box.min.y * 0.1; // 0.1 = render scale
+    }, [charScene, position[1]]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useFrame((state) => {
         if (!groupRef.current) return;
         const t = state.clock.getElapsedTime();
-        // Walk only on XZ plane — y stays fixed at surface
+        // Walk only on XZ plane — y stays fixed at grounded surface
         groupRef.current.position.x = position[0] + Math.sin(t * 1.4 + position[0] * 2) * 0.04;
-        groupRef.current.position.y = position[1];
+        groupRef.current.position.y = groundedY;
         groupRef.current.position.z = position[2] + Math.cos(t * 1.4 + position[2] * 2) * 0.04;
         groupRef.current.rotation.y = Math.sin(t * 1.1 + position[0]) * 0.6;
     });
 
     return (
-        <group ref={groupRef} position={position}>
+        <group ref={groupRef} position={[position[0], groundedY, position[2]]}>
             <GLBModel path={modelPath} scale={0.1} />
         </group>
     );
