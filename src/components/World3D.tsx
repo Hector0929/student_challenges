@@ -268,6 +268,40 @@ function GLBModel({
     );
 }
 
+// ─── Auto-grounding GLB: shifts model up so its bottom face sits at y=0 ───
+// This handles GLBs whose pivot is at the model centre rather than the base.
+function GroundedGLBModel({
+    path,
+    position = [0, 0, 0],
+    rotation = [0, 0, 0],
+    scale = 1,
+}: {
+    path: string;
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    scale?: number | [number, number, number];
+}) {
+    const { scene } = useGLTF(path);
+    const s = typeof scale === 'number' ? [scale, scale, scale] as [number, number, number] : scale;
+    const scaleY = s[1];
+    // Measure the bounding box of the raw (unscaled) scene geometry
+    const groundLift = useMemo(() => {
+        const box = new Box3().setFromObject(scene);
+        // box.min.y is negative when pivot is at centre; multiply by scaleY to get world units
+        return -box.min.y * scaleY;
+    }, [scene, scaleY]);
+    return (
+        <Clone
+            object={scene}
+            position={[position[0], position[1] + groundLift, position[2]]}
+            rotation={rotation}
+            scale={s}
+            castShadow
+            receiveShadow
+        />
+    );
+}
+
 function AtmosphericParticle({
     initialX, initialY, initialZ, color, emissive, size, speed, fallSpeed, usePlane, phase,
 }: {
@@ -371,6 +405,30 @@ function TerrainBlock({
     );
 }
 
+// ── Decoration catalog ───────────────────────────────────────────────────────
+// Each entry defines a purchasable decoration that appears on the main island.
+// x/z are in the island's local coordinate system (parent group is at islandSurfaceY).
+// GroundedGLBModel auto-lifts each model so its mesh bottom = y=0; yOffset is an
+// additional fine-tune nudge on top of that (leave undefined / 0 for most models).
+export const DECORATION_CATALOG: Array<{
+    key: string;
+    path: string;
+    scale: number;
+    x: number;
+    z: number;
+    yOffset?: number;   // extra nudge above auto-ground (default 0)
+    rotation?: number;  // y-axis rotation in radians
+}> = [
+    { key: 'lantern_east', path: '/models/town/lantern.glb',         scale: 0.3,  x:  1.35, z:  0.75 },
+    { key: 'lantern_west', path: '/models/town/lantern.glb',         scale: 0.3,  x: -1.40, z: -0.65 },
+    { key: 'fountain',     path: '/models/town/fountain-round.glb',  scale: 0.22, x: -0.1,  z:  1.3  },
+    { key: 'windmill',     path: '/models/town/windmill.glb',        scale: 0.24, x:  1.05, z: -1.1,  rotation: 0.3  },
+    { key: 'chest',        path: '/models/survival/chest.glb',       scale: 0.26, x: -1.1,  z:  1.05 },
+    { key: 'mushroom',     path: '/models/nature/mushroom_redGroup.glb', scale: 0.26, x: 0.5, z: 1.55 },
+    { key: 'tent',         path: '/models/survival/tent.glb',        scale: 0.24, x: -1.55, z:  1.25, rotation: -0.4 },
+    { key: 'banner',       path: '/models/town/banner-green.glb',    scale: 0.24, x:  1.6,  z: -0.1,  rotation: 0.2  },
+];
+
 interface World3DProps {
     islandLevel?: number;
     timeOfDay?: 'day' | 'dusk';
@@ -381,6 +439,8 @@ interface World3DProps {
         mine?: number;
         crystal?: number;
     };
+    /** Keys from DECORATION_CATALOG that the child has purchased */
+    decorations?: string[];
     /** When true, fills the parent container (expects parent to be full-viewport) */
     fullScreen?: boolean;
     /** Sky/atmosphere preset */
@@ -438,22 +498,31 @@ function PlotWorker({ position, type }: { position: [number, number, number]; ty
     );
 }
 
-function ResourceOrb({ from, to, color }: { from: [number, number, number]; to: [number, number, number]; color: string }) {
+function ResourceOrb({ from, to, color, phase = 0 }: { from: [number, number, number]; to: [number, number, number]; color: string; phase?: number }) {
     const orbRef = useRef<Group>(null);
 
     useFrame((state) => {
         if (!orbRef.current) return;
-        const t = (state.clock.getElapsedTime() * 0.28 + (from[0] + from[2]) * 0.07) % 1;
+        const t = (state.clock.getElapsedTime() * 0.32 + phase) % 1;
         orbRef.current.position.x = from[0] + (to[0] - from[0]) * t;
-        orbRef.current.position.y = from[1] + (to[1] - from[1]) * t + Math.sin(t * Math.PI) * 0.18;
+        orbRef.current.position.y = from[1] + (to[1] - from[1]) * t + Math.sin(t * Math.PI) * 0.28;
         orbRef.current.position.z = from[2] + (to[2] - from[2]) * t;
+        // Swell in arc midpoint
+        const pulse = 1 + Math.sin(t * Math.PI) * 0.35;
+        orbRef.current.scale.setScalar(pulse);
     });
 
     return (
         <group ref={orbRef} position={from}>
+            {/* Core bright sphere */}
             <mesh>
-                <sphereGeometry args={[0.026, 8, 8]} />
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />
+                <sphereGeometry args={[0.032, 8, 8]} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.8} />
+            </mesh>
+            {/* Soft glow halo */}
+            <mesh>
+                <sphereGeometry args={[0.062, 8, 8]} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} transparent opacity={0.28} depthWrite={false} />
             </mesh>
         </group>
     );
@@ -550,9 +619,13 @@ function PlotIsland({
     onSelect?: (plotKey: string) => void;
 }) {
     const { scene: blockScene } = useGLTF(M.blockGrass);
+
+    // Island grows from 100% (level 1) to 130% (level 7) — uniform scale on the whole group
+    const islandGrowth = 1 + Math.min(Math.max(0, plot.level - 1), 6) * 0.05;
+
     const surfaceY = useMemo(() => {
         const box = new Box3().setFromObject(blockScene);
-        return box.max.y * 0.7; // plot island uses scale 0.7
+        return box.max.y * 0.7; // base scale 0.7; the group scale handles growth
     }, [blockScene]);
 
     if (!plot.unlocked) return null;
@@ -619,6 +692,7 @@ function PlotIsland({
     return (
         <group
             position={plot.position}
+            scale={islandGrowth}
             onClick={() => onSelect?.(plot.key)}
             onPointerOver={() => { if (typeof document !== 'undefined') document.body.style.cursor = 'pointer'; }}
             onPointerOut={() => { if (typeof document !== 'undefined') document.body.style.cursor = 'default'; }}
@@ -724,6 +798,7 @@ export function World3D({
     selectedPlotKey,
     onPlotSelect,
     buildings,
+    decorations = [],
     fullScreen = false,
     worldTheme = 'normal',
 }: World3DProps) {
@@ -1009,6 +1084,21 @@ export function World3D({
                             <GLBModel path={M.flowerRed} position={[1.2, 0.02, 0.6]} scale={0.25} />
                             <GLBModel path={M.flowerYellow} position={[-1.0, 0.02, -0.8]} scale={0.25} />
                             <GLBModel path={M.flowerPurple} position={[0.3, 0.02, -1.2]} scale={0.2} />
+
+                            {/* ── Purchased decorations ── */}
+                            {/* GroundedGLBModel auto-lifts each model so its base sits on y=0  */}
+                            {/* (the parent group already positions everything at islandSurfaceY) */}
+                            {DECORATION_CATALOG
+                                .filter((d) => decorations.includes(d.key))
+                                .map((d) => (
+                                    <GroundedGLBModel
+                                        key={d.key}
+                                        path={d.path}
+                                        position={[d.x, d.yOffset ?? 0, d.z]}
+                                        scale={d.scale}
+                                        rotation={[0, d.rotation ?? 0, 0]}
+                                    />
+                                ))}
                             </group>{/* end decorations surface group */}
 
                             {/* ── Floating side islands (intermediate ring between main & plots) ── */}
@@ -1045,23 +1135,19 @@ export function World3D({
 
 
                             {unlockedPlots.flatMap((plot) => {
-                                    const orbCount = Math.min(3, 1 + Math.floor(Math.max(0, plot.level - 1) / 3));
+                                    // level 1 → 1 orb, level 4 → 2, level 7 → 3, level 10 → 4
+                                    const orbCount = Math.min(4, 1 + Math.floor(Math.max(0, plot.level - 1) / 3));
+                                    const from = resourceFlowStart[plot.type];
                                     const to = routeTargets[plot.type];
-                                    const color = plot.type === 'forest' ? '#4ade80' : plot.type === 'mine' ? '#7dd3fc' : '#67e8f9';
+                                    const color = plot.type === 'forest' ? '#4ade80' : plot.type === 'mine' ? '#94a3b8' : '#67e8f9';
                                     return Array.from({ length: orbCount }).map((_, orbIndex) => (
                                         <ResourceOrb
                                             key={`orb-${plot.key}-${orbIndex}`}
-                                            from={[
-                                                resourceFlowStart[plot.type][0] + orbIndex * 0.04,
-                                                resourceFlowStart[plot.type][1] + (orbIndex % 2) * 0.03,
-                                                resourceFlowStart[plot.type][2] - orbIndex * 0.03,
-                                            ]}
-                                            to={[
-                                                to[0] + orbIndex * 0.02,
-                                                to[1] + (orbIndex % 2) * 0.03,
-                                                to[2] - orbIndex * 0.02,
-                                            ]}
+                                            from={from}
+                                            to={to}
                                             color={color}
+                                            // Stagger each orb evenly around the loop so they never stack
+                                            phase={orbIndex / orbCount}
                                         />
                                     ));
                                 })}
@@ -1086,12 +1172,7 @@ export function World3D({
                                 );
                             })}
 
-                            {/* hero icon：角色等級越高，旗幟越大 */}
-                            <GLBModel
-                                path={M.signpost}
-                                position={[0.88, 0.15, -0.55]}
-                                scale={0.22 + heroLevel * 0.008}
-                            />
+                            <GLBModel path={M.signpost} position={[0.88, 0.15, -0.55]} scale={0.24} />
 
                             {/* ── Themed ground glow disk ── */}
                             <mesh position={[0, -1.6, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -1150,28 +1231,12 @@ export function World3D({
                     <span className="text-xs">🏝</span>
                     <span className="font-pixel text-[11px] text-white">Lv.{islandLevel}</span>
                     <span className="w-px h-3 bg-white/40 mx-0.5" />
-                    <span className="text-xs">⚔️</span>
-                    <span className="font-pixel text-[11px] text-white">Lv.{heroLevel}</span>
-                    <span className="w-px h-3 bg-white/40 mx-0.5" />
                     <span className="text-sm leading-none">{isDusk ? '🌆' : '☀️'}</span>
                 </div>
             </div>
 
             {/* Status card — bottom left */}
             <div className={`absolute ${fullScreen ? 'bottom-6 sm:bottom-5' : 'bottom-4'} left-3 pointer-events-none flex flex-col gap-1.5`}>
-                {/* Adventure status */}
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/55 backdrop-blur-md border border-white/25 shadow-lg">
-                    <span className="text-xs">⚔️</span>
-                    <span className="font-pixel text-[11px] text-white">
-                        冒險{' '}
-                        <span className={`${adventureStatus === 'idle' ? 'text-white/60' : 'text-yellow-300'}`}>
-                            {adventureStatus ?? 'idle'}
-                        </span>
-                        {lastAdventureEventType && (
-                            <span className="text-white/70"> · {lastAdventureEventType}</span>
-                        )}
-                    </span>
-                </div>
                 {/* Plot + worker status */}
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/55 backdrop-blur-md border border-white/25 shadow-lg">
                     <span className="text-xs">🗺️</span>

@@ -1,30 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, Home, Star, Palette } from 'lucide-react';
+import { ArrowLeft, Home, Star, Palette, ShoppingBag } from 'lucide-react';
 import { World3D } from './World3D';
+import { WorldIslandShopDrawer } from './WorldIslandShopDrawer';
 import { useGameWindowController } from '../hooks/useGameWindowController';
-import type { AdventureEventType, AdventureRewards, AdventureStatus } from '../lib/world/adventure';
-import type { WorldTheme } from '../hooks/useWorldState';
+import { useWorldPersistence } from '../hooks/useWorldPersistence';
+import { settleWorldState, type WorldLabState, type WorldTheme } from '../hooks/useWorldState';
 
 interface WorldFullScreenProps {
     isOpen: boolean;
     onClose: () => void;
     onGoHome?: () => void;
+    /** Child user ID — required to enable the island shop */
+    userId?: string;
     starBalance?: number;
-    islandLevel?: number;
-    heroLevel?: number;
     timeOfDay?: 'day' | 'dusk';
-    selectedPlotKey?: string;
-    onPlotSelect?: (plotKey: string) => void;
-    adventureStatus?: AdventureStatus;
-    lastAdventureEventType?: AdventureEventType | null;
-    lastAdventureRewards?: AdventureRewards | null;
-    buildings?: {
-        forest?: number;
-        mine?: number;
-        academy?: number;
-        market?: number;
-    };
     worldTheme?: WorldTheme;
     onThemeChange?: (theme: WorldTheme) => void;
 }
@@ -33,26 +23,39 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
     isOpen,
     onClose,
     onGoHome,
+    userId,
     starBalance = 0,
-    islandLevel,
-    heroLevel,
     timeOfDay,
-    selectedPlotKey,
-    onPlotSelect,
-    adventureStatus,
-    lastAdventureEventType,
-    lastAdventureRewards,
-    buildings,
     worldTheme = 'normal',
     onThemeChange,
 }) => {
     const [showPicker, setShowPicker] = useState(false);
+    const [showShop, setShowShop] = useState(false);
     const { handleEndGame, handleGoHome } = useGameWindowController({
         isOpen,
         isImmersivePhase: isOpen,
         onClose,
         onGoHome,
     });
+
+    // Load world state so the 3D view updates immediately after shop changes
+    const { data: persistedWorldSnapshot } = useWorldPersistence(userId ?? '');
+    const [worldLab, setWorldLab] = useState<WorldLabState | null>(null);
+
+    const [decorations, setDecorations] = useState<string[]>(() => {
+        if (!userId) return [];
+        try {
+            const raw = localStorage.getItem(`questmon-decorations-${userId}`);
+            return raw ? (JSON.parse(raw) as string[]) : [];
+        } catch { return []; }
+    });
+
+    // Sync world state from persistence
+    useEffect(() => {
+        if (persistedWorldSnapshot?.worldLab) {
+            setWorldLab(settleWorldState(persistedWorldSnapshot.worldLab, Date.now()));
+        }
+    }, [persistedWorldSnapshot]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -70,14 +73,18 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
 
     if (!isOpen) return null;
 
+    const islandLevel   = worldLab?.islandLevel;
+    const buildings     = worldLab?.buildings;
+    const resolvedTime  = worldLab?.timeOfDay ?? timeOfDay;
+
     const atmosOptions: Array<{ key: WorldTheme; label: string; emoji: string; colors: string }> = [
-        { key: 'normal', label: '晴天', emoji: '☀️', colors: 'from-sky-400 to-blue-500' },
-        { key: 'night',  label: '星夜', emoji: '🌙', colors: 'from-indigo-600 to-purple-700' },
-        { key: 'sakura', label: '櫻花', emoji: '🌸', colors: 'from-pink-300 to-rose-400' },
-        { key: 'rainbow_dragon', label: '彩虹龍', emoji: '🌈', colors: 'from-fuchsia-300 to-purple-400' },
-        { key: 'star_fairy', label: '星光精靈', emoji: '✨', colors: 'from-blue-300 to-indigo-400' },
-        { key: 'slime', label: '果凍史萊姆', emoji: '💧', colors: 'from-emerald-300 to-teal-400' },
-        { key: 'flame_bird', label: '烈焰飛鳥', emoji: '🔥', colors: 'from-orange-300 to-red-400' },
+        { key: 'normal',        label: '晴天',       emoji: '☀️', colors: 'from-sky-400 to-blue-500' },
+        { key: 'night',         label: '星夜',       emoji: '🌙', colors: 'from-indigo-600 to-purple-700' },
+        { key: 'sakura',        label: '櫻花',       emoji: '🌸', colors: 'from-pink-300 to-rose-400' },
+        { key: 'rainbow_dragon',label: '彩虹龍',     emoji: '🌈', colors: 'from-fuchsia-300 to-purple-400' },
+        { key: 'star_fairy',    label: '星光精靈',   emoji: '✨', colors: 'from-blue-300 to-indigo-400' },
+        { key: 'slime',         label: '果凍史萊姆', emoji: '💧', colors: 'from-emerald-300 to-teal-400' },
+        { key: 'flame_bird',    label: '烈焰飛鳥',   emoji: '🔥', colors: 'from-orange-300 to-red-400' },
     ];
 
     const modalTree = (
@@ -99,17 +106,31 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2">
+                    {/* Theme picker toggle */}
                     <button
-                        onClick={() => setShowPicker(!showPicker)}
+                        onClick={() => { setShowPicker(!showPicker); setShowShop(false); }}
                         className={`p-2 rounded-full backdrop-blur-md transition-all border shadow-lg ${showPicker ? 'bg-black/65 text-white border-white/40' : 'bg-black/45 text-white hover:bg-black/60 border-white/25'}`}
                         aria-label="切換背景"
                     >
                         <Palette size={18} />
                     </button>
+
+                    {/* Island shop button */}
+                    {userId && (
+                        <button
+                            onClick={() => { setShowShop(!showShop); setShowPicker(false); }}
+                            className={`p-2 rounded-full backdrop-blur-md transition-all border shadow-lg ${showShop ? 'bg-amber-500/80 text-amber-950 border-amber-400/60' : 'bg-black/45 text-white hover:bg-black/60 border-white/25'}`}
+                            aria-label="島嶼商店"
+                        >
+                            <ShoppingBag size={18} />
+                        </button>
+                    )}
+
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-400 backdrop-blur-md border border-amber-500/60 shadow-lg">
                         <Star size={13} className="text-amber-800" fill="currentColor" />
                         <span className="font-pixel text-sm font-bold text-amber-900">{starBalance.toLocaleString()}</span>
                     </div>
+
                     {onGoHome && (
                         <button
                             onClick={handleGoHome}
@@ -157,17 +178,24 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
                 <World3D
                     fullScreen
                     islandLevel={islandLevel}
-                    heroLevel={heroLevel}
-                    timeOfDay={timeOfDay}
+                    timeOfDay={resolvedTime}
                     worldTheme={worldTheme}
-                    selectedPlotKey={selectedPlotKey}
-                    onPlotSelect={onPlotSelect}
-                    adventureStatus={adventureStatus}
-                    lastAdventureEventType={lastAdventureEventType}
-                    lastAdventureRewards={lastAdventureRewards}
                     buildings={buildings}
+                    decorations={decorations}
                 />
             </div>
+
+            {/* Island shop drawer */}
+            {userId && (
+                <WorldIslandShopDrawer
+                    isOpen={showShop}
+                    onClose={() => setShowShop(false)}
+                    userId={userId}
+                    starBalance={starBalance}
+                    onWorldLabChange={(updated) => setWorldLab(updated)}
+                    onDecorationsChange={(updated) => setDecorations(updated)}
+                />
+            )}
         </div>
     );
 
