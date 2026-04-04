@@ -2,7 +2,7 @@ import { Suspense, useMemo, useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Float, Environment, ContactShadows, useGLTF, Clone } from '@react-three/drei';
 import { Box3, Vector3 } from 'three';
-import type { Group, Mesh } from 'three';
+import type { Group } from 'three';
 import type { WorldTerrain, WorldTheme } from '../hooks/useWorldState';
 
 type EnvPreset = 'forest' | 'sunset' | 'dawn' | 'park' | 'night' | 'apartment' | 'city' | 'lobby' | 'studio' | 'warehouse';
@@ -228,7 +228,6 @@ const M = {
     blockGrass: '/models/platformer/block-grass.glb',
     // Characters
     charMaleA: '/models/characters/character-male-a.glb',
-    charFemaleA: '/models/characters/character-female-a.glb',
 };
 
 // Preload critical models
@@ -239,7 +238,7 @@ const M = {
     M.stall, M.stallGreen, M.windmill, M.lantern,
     M.cliffBlock, M.cliffLarge, M.cliffHalf,
     M.groundGrass, M.grass, M.flowerRed,
-    M.charMaleA, M.charFemaleA,
+    M.charMaleA,
 ].forEach((path) => useGLTF.preload(path));
 
 // ─── Reusable GLB component ───
@@ -459,45 +458,6 @@ interface PlotData {
     unlocked: boolean;
 }
 
-function PlotWorker({ position, type }: { position: [number, number, number]; type: PlotType }) {
-    const groupRef = useRef<Group>(null);
-    const modelPath = type === 'mine' ? M.charFemaleA : M.charMaleA;
-    const { scene: charScene } = useGLTF(modelPath);
-
-    // Find the lowest geometry vertex (feet) without including armature/bone transforms.
-    // Box3.setFromObject() is unreliable for rigged characters — it includes bone world
-    // positions which can push min.y far negative. Reading mesh.geometry.boundingBox
-    // gives raw vertex coords in the mesh's local space, unaffected by the skeleton.
-    const [px, py, pz] = position;
-    const adjustedY = useMemo(() => {
-        let minY = Infinity;
-        charScene.traverse((child) => {
-            const mesh = child as Mesh;
-            if (mesh.isMesh && mesh.geometry) {
-                mesh.geometry.computeBoundingBox();
-                const bb = mesh.geometry.boundingBox;
-                if (bb) minY = Math.min(minY, bb.min.y);
-            }
-        });
-        const footOffset = minY === Infinity ? 0 : -minY * 0.1; // 0.1 = render scale
-        return py + footOffset;
-    }, [charScene, py]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    useFrame((state) => {
-        if (!groupRef.current) return;
-        const t = state.clock.getElapsedTime();
-        groupRef.current.position.x = px + Math.sin(t * 1.4 + px * 2) * 0.04;
-        groupRef.current.position.z = pz + Math.cos(t * 1.4 + pz * 2) * 0.04;
-        groupRef.current.rotation.y = Math.sin(t * 1.1 + px) * 0.6;
-    });
-
-    return (
-        <group ref={groupRef} position={[px, adjustedY, pz]}>
-            <GLBModel path={modelPath} scale={0.1} />
-        </group>
-    );
-}
-
 function ResourceOrb({ from, to, color, phase = 0 }: { from: [number, number, number]; to: [number, number, number]; color: string; phase?: number }) {
     const orbRef = useRef<Group>(null);
 
@@ -528,63 +488,15 @@ function ResourceOrb({ from, to, color, phase = 0 }: { from: [number, number, nu
     );
 }
 
-function AdventureScout({ from, to, isActive }: { from: [number, number, number]; to: [number, number, number]; isActive: boolean }) {
-    const scoutRef = useRef<Group>(null);
-
-    useFrame((state) => {
-        if (!scoutRef.current || !isActive) return;
-        const t = (state.clock.getElapsedTime() * 0.12) % 1;
-        scoutRef.current.position.x = from[0] + (to[0] - from[0]) * t;
-        scoutRef.current.position.y = from[1] + (to[1] - from[1]) * t + Math.sin(t * Math.PI) * 0.35;
-        scoutRef.current.position.z = from[2] + (to[2] - from[2]) * t;
-        scoutRef.current.rotation.y = Math.atan2(to[0] - from[0], to[2] - from[2]);
-    });
-
-    if (!isActive) return null;
-
-    return (
-        <group ref={scoutRef} position={from}>
-            <GLBModel path={M.charMaleA} scale={0.4} />
-        </group>
-    );
-}
-
-function AdventureBeacon({ position, color, active }: { position: [number, number, number]; color: string; active: boolean }) {
-    const beaconRef = useRef<Group>(null);
-
-    useFrame((state) => {
-        if (!beaconRef.current || !active) return;
-        const pulse = 1 + Math.sin(state.clock.getElapsedTime() * 3.2) * 0.18;
-        beaconRef.current.scale.setScalar(pulse);
-        beaconRef.current.rotation.y += 0.02;
-    });
-
-    if (!active) return null;
-
-    return (
-        <group ref={beaconRef} position={position}>
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[0.22, 0.026, 8, 28]} />
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.55} />
-            </mesh>
-            <mesh position={[0, 0.18, 0]}>
-                <octahedronGeometry args={[0.08, 0]} />
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.85} flatShading />
-            </mesh>
-        </group>
-    );
-}
-
 // ─── Per-plot-type visual identity ───
 const PLOT_ISLAND_CONFIG: Record<PlotType, {
     terrainColor: string;
     ringColor: string;
     ringEmissive: string;
-    workerCount: number;
 }> = {
-    forest:  { terrainColor: '#16a34a', ringColor: '#4ade80', ringEmissive: '#22c55e', workerCount: 2 },
-    mine:    { terrainColor: '#94a3b8', ringColor: '#cbd5e1', ringEmissive: '#94a3b8', workerCount: 2 },
-    crystal: { terrainColor: '#a5f3fc', ringColor: '#67e8f9', ringEmissive: '#06b6d4', workerCount: 1 },
+    forest:  { terrainColor: '#16a34a', ringColor: '#4ade80', ringEmissive: '#22c55e' },
+    mine:    { terrainColor: '#94a3b8', ringColor: '#cbd5e1', ringEmissive: '#94a3b8' },
+    crystal: { terrainColor: '#a5f3fc', ringColor: '#67e8f9', ringEmissive: '#06b6d4' },
 };
 
 function PlotIslandRing({ color, emissive }: { color: string; emissive: string }) {
@@ -710,18 +622,6 @@ function PlotIsland({
                 {/* Type-specific terrain color overrides world terrain */}
                 <TerrainBlock path={M.blockGrass} position={[0, 0, 0]} scale={0.7} skinColor={cfg.terrainColor} />
                 {plotDecoration}
-                {/* Workers */}
-                {Array.from({ length: cfg.workerCount }).map((_, i) => (
-                    <PlotWorker
-                        key={`pw-${i}`}
-                        type={plot.type}
-                        position={[
-                            (i - (cfg.workerCount - 1) / 2) * 0.22,
-                            surfaceY,
-                            i % 2 === 0 ? -0.09 : 0.09,
-                        ]}
-                    />
-                ))}
             </group>
         </group>
     );
@@ -859,7 +759,6 @@ export function World3D({
         mine:    [3.8,  0.35, 0.0],
         crystal: [-3.5, 0.3,  2.0],
     };
-    const hubTarget: [number, number, number] = [0, 0.25, 0.15];
     const routeTargets: Record<PlotType, [number, number, number]> = {
         forest:  [-0.35, 0.16,  0.55],
         mine:    [ 0.45, 0.16,  0.28],

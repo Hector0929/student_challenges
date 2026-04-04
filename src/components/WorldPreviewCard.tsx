@@ -7,6 +7,7 @@ interface WorldPreviewCardProps {
     timeOfDay?: 'day' | 'dusk';
     unlockedPlots?: number;
     totalPlots?: number;
+    screenshotUrl?: string;
     onClick: () => void;
 }
 
@@ -16,6 +17,7 @@ export const WorldPreviewCard: React.FC<WorldPreviewCardProps> = ({
     timeOfDay = 'day',
     unlockedPlots = 0,
     totalPlots = 6,
+    screenshotUrl,
     onClick,
 }) => {
     const isDusk = timeOfDay === 'dusk';
@@ -27,32 +29,41 @@ export const WorldPreviewCard: React.FC<WorldPreviewCardProps> = ({
         <button
             type="button"
             onClick={onClick}
-            className={`w-full bg-gradient-to-br ${bgGradient} border-4 border-deep-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden group`}
+            className={`w-full border-4 border-deep-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden group ${screenshotUrl ? '' : `bg-gradient-to-br ${bgGradient}`}`}
         >
-            {/* Island illustration (CSS-based, no 3D rendering) */}
+            {/* Preview area */}
             <div className="relative h-36 sm:h-44 flex items-center justify-center overflow-hidden">
-                {/* Animated floating island icon */}
-                <div className="animate-float flex flex-col items-center">
-                    <div className="text-6xl sm:text-7xl mb-1 drop-shadow-lg">🏝️</div>
-                    <div className="flex gap-1 text-lg sm:text-xl">
-                        <span>🌲</span>
-                        <span>⛰️</span>
-                        <span>🏪</span>
-                        {islandLevel >= 5 && <span>🏛️</span>}
-                        {islandLevel >= 6 && <span>📦</span>}
-                        {islandLevel >= 7 && <span>🗺️</span>}
-                    </div>
-                </div>
-
-                {/* Decorative clouds */}
-                <div className="absolute top-3 left-6 text-2xl opacity-40 animate-pulse">☁️</div>
-                <div className="absolute top-8 right-8 text-xl opacity-30 animate-pulse" style={{ animationDelay: '1s' }}>☁️</div>
-                <div className="absolute bottom-4 left-1/4 text-lg opacity-20 animate-pulse" style={{ animationDelay: '2s' }}>☁️</div>
-
-                {/* Time indicator */}
-                <div className="absolute top-3 right-3 text-2xl">
-                    {isDusk ? '🌅' : '☀️'}
-                </div>
+                {screenshotUrl ? (
+                    <>
+                        <img
+                            src={screenshotUrl}
+                            alt="家園預覽"
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        {/* Subtle vignette */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                        <div className="absolute bottom-2 right-2 text-lg">{isDusk ? '🌅' : '☀️'}</div>
+                    </>
+                ) : (
+                    <>
+                        {/* Animated floating island icon */}
+                        <div className="animate-float flex flex-col items-center">
+                            <div className="text-6xl sm:text-7xl mb-1 drop-shadow-lg">🏝️</div>
+                            <div className="flex gap-1 text-lg sm:text-xl">
+                                <span>🌲</span>
+                                <span>⛰️</span>
+                                <span>🏪</span>
+                                {islandLevel >= 5 && <span>🏛️</span>}
+                                {islandLevel >= 6 && <span>📦</span>}
+                                {islandLevel >= 7 && <span>🗺️</span>}
+                            </div>
+                        </div>
+                        <div className="absolute top-3 left-6 text-2xl opacity-40 animate-pulse">☁️</div>
+                        <div className="absolute top-8 right-8 text-xl opacity-30 animate-pulse" style={{ animationDelay: '1s' }}>☁️</div>
+                        <div className="absolute bottom-4 left-1/4 text-lg opacity-20 animate-pulse" style={{ animationDelay: '2s' }}>☁️</div>
+                        <div className="absolute top-3 right-3 text-2xl">{isDusk ? '🌅' : '☀️'}</div>
+                    </>
+                )}
             </div>
 
             {/* Info bar */}

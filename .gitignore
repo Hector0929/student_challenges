@@ -28,3 +28,4 @@ dist-ssr
 
 # Raw 3D model source packs (selected models are in public/models/)
 3Dmodles/
+.claude/

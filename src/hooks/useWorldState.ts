@@ -11,6 +11,7 @@ import { exchangeAllResources, getMarketMultiplier } from '../lib/world/economy'
 import { calculateProductionRates, getUnlockedPlotKeys } from '../lib/world/production';
 import { applyOfflineProduction, getStorageCapacity } from '../lib/world/storage';
 import type { WorldResources } from '../lib/world/types';
+import type { PlacedDecoration } from '../lib/world/decorations';
 
 /** Atmosphere / background preset (lighting, sky color, particles) */
 export type WorldTheme = 'normal' | 'night' | 'sakura' | 'rainbow_dragon' | 'star_fairy' | 'slime' | 'flame_bird';
@@ -30,6 +31,8 @@ export interface WorldLabState {
     buildings: Record<WorldBuildingKey, number>;
     resources: WorldResources;
     lastTickAt: number;
+    /** 已放置在懸空島上的裝飾品 */
+    placedDecorations: PlacedDecoration[];
 }
 
 export interface PlotPreview {
@@ -79,6 +82,7 @@ export const INITIAL_WORLD_LAB_STATE: WorldLabState = {
         crystal: 0,
     },
     lastTickAt: Date.now(),
+    placedDecorations: [],
 };
 
 function getRatesForState(state: WorldLabState) {

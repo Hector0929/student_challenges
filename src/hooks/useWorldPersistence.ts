@@ -203,6 +203,8 @@ export function parseWorldPersistenceSnapshot({
             crystal: inventoryRow?.crystal ?? INITIAL_WORLD_LAB_STATE.resources.crystal,
         },
         lastTickAt: stateRow?.last_collected_at ? new Date(stateRow.last_collected_at).getTime() : INITIAL_WORLD_LAB_STATE.lastTickAt,
+        // 飾品資料存在 localStorage，此處先給空陣列；ChildWorldShopStreet 會在 useEffect 中從 localStorage 補回
+        placedDecorations: [],
     };
 
     const activeAdventure: AdventureMission | null = adventureRow
