@@ -606,11 +606,8 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                 isOpen={isWorldOpen}
                 onClose={() => setIsWorldOpen(false)}
                 onGoHome={onGoHome}
+                userId={userId}
                 starBalance={starBalance || 0}
-                islandLevel={persistedWorld?.worldLab?.islandLevel}
-                heroLevel={persistedWorld?.worldLab?.heroLevel}
-                timeOfDay={persistedWorld?.worldLab?.timeOfDay}
-                buildings={persistedWorld?.worldLab?.buildings}
                 worldTheme={localTheme}
                 onThemeChange={handleThemeChange}
             />

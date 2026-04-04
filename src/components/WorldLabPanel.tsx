@@ -163,13 +163,9 @@ export const WorldLabPanel: React.FC<WorldLabPanelProps> = ({
                 </div>
                 <World3D
                     islandLevel={worldLab.islandLevel}
-                    heroLevel={worldLab.heroLevel}
                     timeOfDay={worldLab.timeOfDay}
                     selectedPlotKey={selectedPlotKey}
                     onPlotSelect={onSelectPlot}
-                    adventureStatus={activeAdventureStatus}
-                    lastAdventureEventType={lastAdventureResult?.eventType ?? null}
-                    lastAdventureRewards={lastAdventureResult?.rewards ?? null}
                     buildings={worldLab.buildings}
                 />
             </div>
