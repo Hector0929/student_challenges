@@ -2,8 +2,7 @@ import { Suspense, useMemo, useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Float, Environment, ContactShadows, useGLTF, Clone } from '@react-three/drei';
 import { Box3, Vector3 } from 'three';
-import type { Group } from 'three';
-import type { AdventureEventType, AdventureRewards, AdventureStatus } from '../lib/world/adventure';
+import type { Group, Mesh } from 'three';
 import type { WorldTerrain, WorldTheme } from '../hooks/useWorldState';
 
 type EnvPreset = 'forest' | 'sunset' | 'dawn' | 'park' | 'night' | 'apartment' | 'city' | 'lobby' | 'studio' | 'warehouse';
@@ -374,18 +373,13 @@ function TerrainBlock({
 
 interface World3DProps {
     islandLevel?: number;
-    heroLevel?: number;
     timeOfDay?: 'day' | 'dusk';
     selectedPlotKey?: string;
     onPlotSelect?: (plotKey: string) => void;
-    adventureStatus?: AdventureStatus;
-    lastAdventureEventType?: AdventureEventType | null;
-    lastAdventureRewards?: AdventureRewards | null;
     buildings?: {
         forest?: number;
         mine?: number;
-        academy?: number;
-        market?: number;
+        crystal?: number;
     };
     /** When true, fills the parent container (expects parent to be full-viewport) */
     fullScreen?: boolean;
@@ -393,7 +387,7 @@ interface World3DProps {
     worldTheme?: WorldTheme;
 }
 
-type PlotType = 'forest' | 'mine' | 'market' | 'academy' | 'storage' | 'adventure';
+type PlotType = 'forest' | 'mine' | 'crystal';
 
 interface PlotData {
     key: string;
@@ -407,28 +401,38 @@ interface PlotData {
 
 function PlotWorker({ position, type }: { position: [number, number, number]; type: PlotType }) {
     const groupRef = useRef<Group>(null);
-    const modelPath = type === 'mine' || type === 'market' ? M.charFemaleA : M.charMaleA;
+    const modelPath = type === 'mine' ? M.charFemaleA : M.charMaleA;
     const { scene: charScene } = useGLTF(modelPath);
 
-    // Adjust Y so the character's bounding-box bottom (feet) sits exactly at position[1].
-    // Without this, if the GLB origin is above the feet the character floats in the air.
-    const groundedY = useMemo(() => {
-        const box = new Box3().setFromObject(charScene);
-        return position[1] - box.min.y * 0.1; // 0.1 = render scale
-    }, [charScene, position[1]]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Find the lowest geometry vertex (feet) without including armature/bone transforms.
+    // Box3.setFromObject() is unreliable for rigged characters — it includes bone world
+    // positions which can push min.y far negative. Reading mesh.geometry.boundingBox
+    // gives raw vertex coords in the mesh's local space, unaffected by the skeleton.
+    const [px, py, pz] = position;
+    const adjustedY = useMemo(() => {
+        let minY = Infinity;
+        charScene.traverse((child) => {
+            const mesh = child as Mesh;
+            if (mesh.isMesh && mesh.geometry) {
+                mesh.geometry.computeBoundingBox();
+                const bb = mesh.geometry.boundingBox;
+                if (bb) minY = Math.min(minY, bb.min.y);
+            }
+        });
+        const footOffset = minY === Infinity ? 0 : -minY * 0.1; // 0.1 = render scale
+        return py + footOffset;
+    }, [charScene, py]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useFrame((state) => {
         if (!groupRef.current) return;
         const t = state.clock.getElapsedTime();
-        // Walk only on XZ plane — y stays fixed at grounded surface
-        groupRef.current.position.x = position[0] + Math.sin(t * 1.4 + position[0] * 2) * 0.04;
-        groupRef.current.position.y = groundedY;
-        groupRef.current.position.z = position[2] + Math.cos(t * 1.4 + position[2] * 2) * 0.04;
-        groupRef.current.rotation.y = Math.sin(t * 1.1 + position[0]) * 0.6;
+        groupRef.current.position.x = px + Math.sin(t * 1.4 + px * 2) * 0.04;
+        groupRef.current.position.z = pz + Math.cos(t * 1.4 + pz * 2) * 0.04;
+        groupRef.current.rotation.y = Math.sin(t * 1.1 + px) * 0.6;
     });
 
     return (
-        <group ref={groupRef} position={[position[0], groundedY, position[2]]}>
+        <group ref={groupRef} position={[px, adjustedY, pz]}>
             <GLBModel path={modelPath} scale={0.1} />
         </group>
     );
@@ -509,12 +513,9 @@ const PLOT_ISLAND_CONFIG: Record<PlotType, {
     ringEmissive: string;
     workerCount: number;
 }> = {
-    forest:    { terrainColor: '#16a34a', ringColor: '#4ade80', ringEmissive: '#22c55e', workerCount: 2 },
-    mine:      { terrainColor: '#94a3b8', ringColor: '#cbd5e1', ringEmissive: '#94a3b8', workerCount: 2 },
-    market:    { terrainColor: '#fbbf24', ringColor: '#fde68a', ringEmissive: '#f59e0b', workerCount: 2 },
-    academy:   { terrainColor: '#a855f7', ringColor: '#d8b4fe', ringEmissive: '#a855f7', workerCount: 1 },
-    storage:   { terrainColor: '#f97316', ringColor: '#fed7aa', ringEmissive: '#f97316', workerCount: 1 },
-    adventure: { terrainColor: '#ef4444', ringColor: '#fca5a5', ringEmissive: '#ef4444', workerCount: 2 },
+    forest:  { terrainColor: '#16a34a', ringColor: '#4ade80', ringEmissive: '#22c55e', workerCount: 2 },
+    mine:    { terrainColor: '#94a3b8', ringColor: '#cbd5e1', ringEmissive: '#94a3b8', workerCount: 2 },
+    crystal: { terrainColor: '#a5f3fc', ringColor: '#67e8f9', ringEmissive: '#06b6d4', workerCount: 1 },
 };
 
 function PlotIslandRing({ color, emissive }: { color: string; emissive: string }) {
@@ -583,44 +584,31 @@ function PlotIsland({
                         <GLBModel path={M.resourceStone}  position={[-0.04, sy, 0.05]} scale={0.22} />
                     </>
                 );
-            case 'market':
+            case 'crystal':
                 return (
                     <>
-                        <GLBModel path={M.stallGreen}  position={[-0.1, sy, -0.04]}  scale={0.2}  rotation={[0, 0.4, 0]} />
-                        <GLBModel path={M.stallRed}    position={[0.1, sy, 0.08]}    scale={0.18} rotation={[0, -0.6, 0]} />
-                        <GLBModel path={M.lantern}     position={[-0.18, sy, 0.14]}  scale={0.22} />
-                        <GLBModel path={M.lantern}     position={[0.18, sy, -0.1]}   scale={0.22} />
-                        <GLBModel path={M.bannerGreen} position={[0.0, sy, -0.18]}   scale={0.22} rotation={[0, 1.5, 0]} />
-                    </>
-                );
-            case 'academy':
-                return (
-                    <>
-                        <GLBModel path={M.windmill}      position={[0, sy, -0.04]}   scale={0.18} />
-                        <GLBModel path={M.bannerGreen}   position={[-0.18, sy, 0.08]} scale={0.2}  rotation={[0, 2.0, 0]} />
-                        <GLBModel path={M.fountain}      position={[0.1, sy, 0.14]}   scale={0.14} />
-                        <GLBModel path={M.flowerPurple}  position={[-0.08, sy, 0.16]} scale={0.22} />
-                        <GLBModel path={M.mushroom}      position={[0.18, sy, -0.06]} scale={0.22} />
-                    </>
-                );
-            case 'storage':
-                return (
-                    <>
-                        <GLBModel path={M.chest}   position={[-0.12, sy, -0.04]} scale={0.3}  />
-                        <GLBModel path={M.barrel}  position={[0.1, sy, 0.0]}     scale={0.26} rotation={[0, 0.6, 0]} />
-                        <GLBModel path={M.barrel}  position={[0.16, sy, 0.12]}   scale={0.22} rotation={[0, 1.8, 0]} />
-                        <GLBModel path={M.box}     position={[-0.06, sy, 0.14]}  scale={0.24} />
-                        <GLBModel path={M.box}     position={[0.0, sy, -0.16]}   scale={0.2}  rotation={[0, 0.4, 0]} />
-                    </>
-                );
-            case 'adventure':
-                return (
-                    <>
-                        <GLBModel path={M.tent}        position={[-0.06, sy, -0.08]}  scale={0.26} rotation={[0, 0.3, 0]} />
-                        <GLBModel path={M.campfirePit} position={[0.14, sy, 0.1]}     scale={0.24} />
-                        <GLBModel path={M.signpost}    position={[-0.16, sy, 0.14]}   scale={0.24} rotation={[0, -0.5, 0]} />
-                        <GLBModel path={M.chest}       position={[0.0, sy, 0.18]}     scale={0.2}  />
-                        <GLBModel path={M.sign}        position={[0.17, sy, -0.1]}    scale={0.24} rotation={[0, 1.2, 0]} />
+                        {/* Crystals are pure Three.js geometry — origin is at center, so y = sy + radius sits base on surface */}
+                        <mesh position={[-0.06, sy + 0.1, -0.07]} rotation={[0.15, 0.4, 0.2]} scale={[0.065, 0.14, 0.065]} castShadow>
+                            <octahedronGeometry args={[1, 0]} />
+                            <meshStandardMaterial color="#67e8f9" emissive="#06b6d4" emissiveIntensity={1.0} transparent opacity={0.88} />
+                        </mesh>
+                        <mesh position={[0.11, sy + 0.075, 0.04]} rotation={[-0.1, 1.3, -0.18]} scale={[0.05, 0.105, 0.05]} castShadow>
+                            <octahedronGeometry args={[1, 0]} />
+                            <meshStandardMaterial color="#c4b5fd" emissive="#7c3aed" emissiveIntensity={0.9} transparent opacity={0.9} />
+                        </mesh>
+                        <mesh position={[0.03, sy + 0.055, 0.15]} rotation={[0.2, 0.9, 0.1]} scale={[0.04, 0.09, 0.04]} castShadow>
+                            <octahedronGeometry args={[1, 0]} />
+                            <meshStandardMaterial color="#67e8f9" emissive="#06b6d4" emissiveIntensity={1.1} transparent opacity={0.85} />
+                        </mesh>
+                        <mesh position={[-0.14, sy + 0.06, 0.09]} rotation={[-0.12, 2.2, 0.25]} scale={[0.045, 0.1, 0.045]} castShadow>
+                            <octahedronGeometry args={[1, 0]} />
+                            <meshStandardMaterial color="#a5f3fc" emissive="#0891b2" emissiveIntensity={0.8} transparent opacity={0.9} />
+                        </mesh>
+                        <mesh position={[0.16, sy + 0.045, -0.11]} rotation={[0.3, 0.6, -0.1]} scale={[0.035, 0.075, 0.035]} castShadow>
+                            <octahedronGeometry args={[1, 0]} />
+                            <meshStandardMaterial color="#67e8f9" emissive="#06b6d4" emissiveIntensity={1.2} transparent opacity={0.85} />
+                        </mesh>
+                        <GLBModel path={M.rockLargeA} position={[-0.1, sy, -0.1]} scale={0.16} rotation={[0, 0.9, 0]} />
                     </>
                 );
             default:
@@ -638,7 +626,7 @@ function PlotIsland({
             {/* Permanent type-identity ring (always visible, type-coloured) */}
             <PlotIslandRing color={cfg.ringColor} emissive={cfg.ringEmissive} />
 
-            <Float speed={1.3} rotationIntensity={0.08} floatIntensity={0.08}>
+            <group>
                 {isSelected && (
                     <mesh position={[0, 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
                         <torusGeometry args={[0.52, 0.05, 10, 32]} />
@@ -660,7 +648,7 @@ function PlotIsland({
                         ]}
                     />
                 ))}
-            </Float>
+            </group>
         </group>
     );
 }
@@ -732,13 +720,9 @@ function IslandDragHandler({
  */
 export function World3D({
     islandLevel = 1,
-    heroLevel = 1,
     timeOfDay = 'day',
     selectedPlotKey,
     onPlotSelect,
-    adventureStatus = 'idle',
-    lastAdventureEventType = null,
-    lastAdventureRewards = null,
     buildings,
     fullScreen = false,
     worldTheme = 'normal',
@@ -754,21 +738,15 @@ export function World3D({
 
     const forestLv = buildings?.forest ?? 1;
     const mineLv = buildings?.mine ?? 1;
-    const academyLv = buildings?.academy ?? 1;
-    const marketLv = buildings?.market ?? 1;
 
     const islandScale = Math.min(1 + Math.max(0, islandLevel - 1) * 0.05, 1.4);
     const orbitMaxDistance = Math.min(24 + islandLevel * 0.5, 36);
     const treeCount = Math.min(1 + Math.floor(forestLv / 2), 7);
     const rockCount = Math.min(1 + Math.floor(mineLv / 2), 6);
-    const towerHeight = 0.28 + academyLv * 0.08;
-    const marketStands = Math.min(1 + Math.floor(marketLv / 2), 4);
     const floatingTiles = Math.min(Math.max(0, islandLevel - 1), 6);
-    const fireflyCount = Math.min(4 + Math.floor((forestLv + academyLv) / 2), 12);
+    const fireflyCount = Math.min(4 + Math.floor(forestLv / 2), 10);
     const forestStage = forestLv >= 6 ? 3 : forestLv >= 3 ? 2 : 1;
     const mineStage = mineLv >= 6 ? 3 : mineLv >= 3 ? 2 : 1;
-    const academyStage = academyLv >= 6 ? 3 : academyLv >= 3 ? 2 : 1;
-    const marketStage = marketLv >= 6 ? 3 : marketLv >= 3 ? 2 : 1;
     const isDusk = timeOfDay === 'dusk';
     const atmos = ATMOSPHERE_PRESETS[worldTheme] ?? ATMOSPHERE_PRESETS.normal;
     const terrain = TERRAIN_CONFIGS[worldTerrain] ?? TERRAIN_CONFIGS.grassland;
@@ -782,14 +760,12 @@ export function World3D({
     const environmentPreset = isDusk ? atmos.envPresetDusk : atmos.envPresetDay;
     // Particles: terrain-specific particles take priority (snow/sand), fallback to atmosphere (stars/sakura)
     const activeParticles = terrain.particles ?? atmos.particles ?? null;
+    const crystalLv = buildings?.crystal ?? 1;
     const plotDefinitions = useMemo<PlotData[]>(() => {
         const order: Array<{ type: PlotType; label: string; level: number; unlockAt: number; position: [number, number, number] }> = [
-            { type: 'forest', label: '森林地塊', level: forestLv, unlockAt: 2, position: [2.2, -0.05, 3.2] },
-            { type: 'mine', label: '礦山地塊', level: mineLv, unlockAt: 3, position: [3.8, 0.05, 0.0] },
-            { type: 'market', label: '商業地塊', level: marketLv, unlockAt: 4, position: [-2.2, 0.0, 3.2] },
-            { type: 'academy', label: '訓練地塊', level: academyLv, unlockAt: 5, position: [-3.8, 0.1, 0.0] },
-            { type: 'storage', label: '倉儲地塊', level: islandLevel, unlockAt: 6, position: [1.9, -0.08, -3.3] },
-            { type: 'adventure', label: '冒險地塊', level: heroLevel, unlockAt: 7, position: [-1.9, 0.02, -3.3] },
+            { type: 'forest',  label: '森林地塊', level: forestLv,  unlockAt: 2, position: [2.2,  -0.05, 3.2]  },
+            { type: 'mine',    label: '石頭地塊', level: mineLv,    unlockAt: 3, position: [3.8,   0.05, 0.0]  },
+            { type: 'crystal', label: '水晶地塊', level: crystalLv, unlockAt: 4, position: [-3.5,  0.0,  2.0]  },
         ];
 
         return order.map((plot, index) => ({
@@ -801,47 +777,19 @@ export function World3D({
             level: plot.level,
             unlocked: islandLevel >= plot.unlockAt,
         }));
-    }, [academyLv, forestLv, heroLevel, islandLevel, marketLv, mineLv]);
+    }, [crystalLv, forestLv, islandLevel, mineLv]);
     const unlockedPlots = plotDefinitions.filter((plot) => plot.unlocked);
-    const resourceFlowStart: Record<string, [number, number, number]> = {
-        forest: [2.2, 0.25, 3.2],
-        mine: [3.8, 0.35, 0.0],
-        market: [-2.2, 0.3, 3.2],
-        academy: [-3.8, 0.4, 0.0],
-        storage: [1.9, 0.22, -3.3],
-        adventure: [-1.9, 0.32, -3.3],
+    const resourceFlowStart: Record<PlotType, [number, number, number]> = {
+        forest:  [2.2,  0.25, 3.2],
+        mine:    [3.8,  0.35, 0.0],
+        crystal: [-3.5, 0.3,  2.0],
     };
     const hubTarget: [number, number, number] = [0, 0.25, 0.15];
-    const routeTargets: Partial<Record<PlotType, [number, number, number]>> = {
-        forest: [-0.35, 0.16, 0.55],
-        mine: [0.45, 0.16, 0.28],
-        market: [-0.85, 0.18, 0.92],
-        academy: [0.08, 0.52, 0.04],
-        storage: [0.22, 0.16, 1.08],
-        adventure: [0.96, 0.38, -0.55],
+    const routeTargets: Record<PlotType, [number, number, number]> = {
+        forest:  [-0.35, 0.16,  0.55],
+        mine:    [ 0.45, 0.16,  0.28],
+        crystal: [-0.45, 0.18, -0.42],
     };
-    const adventureOrigin = resourceFlowStart.adventure;
-    const adventureDestination: [number, number, number] = [-2.5, 1.5, -5.5];
-    const adventureEventColorMap: Record<AdventureEventType, string> = {
-        chest: '#fbbf24',
-        lost: '#94a3b8',
-        monster: '#ef4444',
-        npc: '#22c55e',
-        weather: '#38bdf8',
-    };
-    const adventureEventColor = lastAdventureEventType ? adventureEventColorMap[lastAdventureEventType] : '#a78bfa';
-    const adventureRewardOrbs = useMemo(() => {
-        if (!lastAdventureRewards) return [];
-
-        const rewards = [
-            lastAdventureRewards.wood > 0 ? { key: 'wood', color: '#4ade80' } : null,
-            lastAdventureRewards.stone > 0 ? { key: 'stone', color: '#cbd5e1' } : null,
-            lastAdventureRewards.crystal > 0 ? { key: 'crystal', color: '#7c3aed' } : null,
-            lastAdventureRewards.monsterShards > 0 ? { key: 'monsterShards', color: '#ec4899' } : null,
-        ].filter(Boolean) as Array<{ key: string; color: string }>;
-
-        return rewards;
-    }, [lastAdventureRewards]);
 
     const containerClass = fullScreen
         ? 'w-full h-full overflow-hidden relative'
@@ -1054,53 +1002,6 @@ export function World3D({
                                 )}
                             </group>
 
-                            {/* ── Academy tower (dynamic height stays procedural) ── */}
-                            <group>
-                                <mesh position={[0, 0.06, 0]} castShadow>
-                                    <cylinderGeometry args={[0.22, 0.26, 0.1, 8]} />
-                                    <meshStandardMaterial color="#ddd6fe" flatShading />
-                                </mesh>
-                                <mesh position={[0, 0.18 + towerHeight / 2, 0]} castShadow>
-                                    <cylinderGeometry args={[0.12, 0.16, towerHeight, 6]} />
-                                    <meshStandardMaterial color="#7E57C2" flatShading />
-                                </mesh>
-                                <mesh position={[0, 0.24 + towerHeight, 0]} castShadow>
-                                    <coneGeometry args={[0.15, 0.18, 6]} />
-                                    <meshStandardMaterial color="#B39DDB" emissive="#8b5cf6" emissiveIntensity={0.22} flatShading />
-                                </mesh>
-                                {academyStage >= 2 && (
-                                    <GLBModel path={M.windmill} position={[0.35, 0.04, -0.2]} scale={0.18} rotation={[0, -0.3, 0]} />
-                                )}
-                                {academyStage >= 3 && (
-                                    <>
-                                        <GLBModel path={M.bannerGreen} position={[0.2, 0.2, 0.15]} scale={0.2} />
-                                        <GLBModel path={M.bannerGreen} position={[-0.2, 0.2, -0.15]} scale={0.2} rotation={[0, Math.PI, 0]} />
-                                    </>
-                                )}
-                            </group>
-
-                            {/* ── Market stalls ── */}
-                            <group>
-                                {(() => {
-                                    const stallModels = [M.stall, M.stallGreen, M.stallRed];
-                                    return Array.from({ length: marketStands }).map((_, i) => (
-                                        <GLBModel
-                                            key={`stall-${i}`}
-                                            path={stallModels[i % stallModels.length]}
-                                            position={[-0.9 + i * 0.35, 0.04, 0.92]}
-                                            scale={0.2}
-                                            rotation={[0, (i % 2 === 0 ? 0 : Math.PI), 0]}
-                                        />
-                                    ));
-                                })()}
-                                <GLBModel path={M.lantern} position={[-1.05, 0.04, 0.85]} scale={0.22} />
-                                {marketStage >= 2 && (
-                                    <GLBModel path={M.lantern} position={[0.15, 0.04, 0.85]} scale={0.22} />
-                                )}
-                                {marketStage >= 3 && (
-                                    <GLBModel path={M.fountain} position={[-0.35, 0.04, 1.15]} scale={0.18} />
-                                )}
-                            </group>
 
                             {/* ── Scattered decorations ── */}
                             <GLBModel path={M.grass} position={[0.6, 0.02, -0.3]} scale={0.3} />
@@ -1143,12 +1044,10 @@ export function World3D({
                             ))}
 
 
-                            {unlockedPlots
-                                .filter((plot) => ['forest', 'mine', 'market', 'storage'].includes(plot.type))
-                                .flatMap((plot) => {
+                            {unlockedPlots.flatMap((plot) => {
                                     const orbCount = Math.min(3, 1 + Math.floor(Math.max(0, plot.level - 1) / 3));
-                                    const to = routeTargets[plot.type] ?? hubTarget;
-                                    const color = plot.type === 'forest' ? '#4ade80' : plot.type === 'mine' ? '#7dd3fc' : plot.type === 'storage' ? '#fef08a' : '#f59e0b';
+                                    const to = routeTargets[plot.type];
+                                    const color = plot.type === 'forest' ? '#4ade80' : plot.type === 'mine' ? '#7dd3fc' : '#67e8f9';
                                     return Array.from({ length: orbCount }).map((_, orbIndex) => (
                                         <ResourceOrb
                                             key={`orb-${plot.key}-${orbIndex}`}
@@ -1166,35 +1065,6 @@ export function World3D({
                                         />
                                     ));
                                 })}
-
-                            <AdventureScout
-                                from={adventureOrigin}
-                                to={adventureDestination}
-                                isActive={adventureStatus === 'running'}
-                            />
-
-                            <AdventureBeacon
-                                position={[adventureOrigin[0], adventureOrigin[1] + 0.24, adventureOrigin[2]]}
-                                color={adventureStatus === 'completed' || adventureStatus === 'claimed' ? adventureEventColor : '#818cf8'}
-                                active={adventureStatus === 'completed' || adventureStatus === 'claimed'}
-                            />
-
-                            {adventureRewardOrbs.map((reward, orbIndex) => (
-                                <ResourceOrb
-                                    key={`adventure-reward-${reward.key}`}
-                                    from={[
-                                        adventureOrigin[0] + orbIndex * 0.05,
-                                        adventureOrigin[1] + 0.08 + (orbIndex % 2) * 0.03,
-                                        adventureOrigin[2] - orbIndex * 0.04,
-                                    ]}
-                                    to={[
-                                        hubTarget[0] + orbIndex * 0.05,
-                                        hubTarget[1] + 0.04 + (orbIndex % 2) * 0.04,
-                                        hubTarget[2] - orbIndex * 0.05,
-                                    ]}
-                                    color={reward.color}
-                                />
-                            ))}
 
                             {/* 生動感：飄浮光點 */}
                             {Array.from({ length: fireflyCount }).map((_, i) => {
