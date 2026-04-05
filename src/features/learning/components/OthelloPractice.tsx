@@ -4,8 +4,7 @@ import { useState, useCallback, useMemo } from 'react';
 type Cell = 0 | 1 | 2; // 0=empty, 1=black, 2=white
 type Board = Cell[][];
 type BgTheme = 'forest' | 'ocean' | 'sakura' | 'night' | 'desert';
-
-const DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]] as const;
+type Difficulty = 'easy' | 'medium' | 'hard';
 
 const BG_THEMES: Record<BgTheme, { label: string; emoji: string; board: string; bg: string; cell: string }> = {
     forest: {
@@ -39,6 +38,42 @@ const BG_THEMES: Record<BgTheme, { label: string; emoji: string; board: string; 
         cell: 'bg-amber-400 border-amber-600',
     },
 };
+
+const DIFFICULTY_CONFIG: Record<Difficulty, {
+    label: string;
+    emoji: string;
+    desc: string;
+    color: string;
+    activeColor: string;
+    delay: number;
+}> = {
+    easy: {
+        label: '弱',
+        emoji: '🌱',
+        desc: '隨機落子，適合新手練習',
+        color: 'bg-emerald-500/20 border-emerald-400/30 text-emerald-200',
+        activeColor: 'bg-emerald-500/50 border-emerald-300 text-white ring-2 ring-emerald-300/60',
+        delay: 400,
+    },
+    medium: {
+        label: '中',
+        emoji: '⚔️',
+        desc: '思考兩步，有基本策略',
+        color: 'bg-amber-500/20 border-amber-400/30 text-amber-200',
+        activeColor: 'bg-amber-500/50 border-amber-300 text-white ring-2 ring-amber-300/60',
+        delay: 600,
+    },
+    hard: {
+        label: '強',
+        emoji: '💀',
+        desc: '深度策略，極難擊敗',
+        color: 'bg-red-500/20 border-red-400/30 text-red-200',
+        activeColor: 'bg-red-500/50 border-red-300 text-white ring-2 ring-red-300/60',
+        delay: 800,
+    },
+};
+
+const DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]] as const;
 
 // ── Game logic ─────────────────────────────────────────────────────────────
 function makeBoard(): Board {
@@ -93,7 +128,7 @@ function countPieces(board: Board): { black: number; white: number } {
     return { black, white };
 }
 
-// ── AI: Minimax + Alpha-Beta + positional weights (depth 5) ──────────────
+// ── AI ─────────────────────────────────────────────────────────────────────
 // Positional weight table — corners = huge value, X-squares = penalty
 const POS_WEIGHTS: number[][] = [
     [120, -20,  20,   5,   5,  20, -20, 120],
@@ -113,7 +148,6 @@ function evaluate(board: Board): number {
             if (board[r][c] === 2) score += POS_WEIGHTS[r][c];
             else if (board[r][c] === 1) score -= POS_WEIGHTS[r][c];
         }
-    // Mobility bonus: more moves = better
     score += getLegalMoves(board, 2).length * 5;
     score -= getLegalMoves(board, 1).length * 5;
     return score;
@@ -128,7 +162,6 @@ function minimax(board: Board, depth: number, alpha: number, beta: number, maxim
     }
 
     if (moves.length === 0) {
-        // Pass turn
         return minimax(board, depth - 1, alpha, beta, !maximising);
     }
 
@@ -153,12 +186,22 @@ function minimax(board: Board, depth: number, alpha: number, beta: number, maxim
     }
 }
 
-function aiMove(board: Board): [number, number] | null {
+// 根據難度選擇 AI 策略：
+//   easy   → 隨機落子（無策略）
+//   medium → minimax 深度 2（基本策略）
+//   hard   → minimax 深度 4（深度策略，現行強度）
+function aiMoveForDifficulty(board: Board, difficulty: Difficulty): [number, number] | null {
     const moves = getLegalMoves(board, 2);
     if (moves.length === 0) return null;
+
+    if (difficulty === 'easy') {
+        return moves[Math.floor(Math.random() * moves.length)];
+    }
+
+    const depth = difficulty === 'medium' ? 2 : 4;
     let best = moves[0], bestScore = -Infinity;
     for (const [r, c] of moves) {
-        const score = minimax(applyMove(board, r, c, 2), 4, -Infinity, Infinity, false);
+        const score = minimax(applyMove(board, r, c, 2), depth, -Infinity, Infinity, false);
         if (score > bestScore) { bestScore = score; best = [r, c]; }
     }
     return best;
@@ -167,7 +210,7 @@ function aiMove(board: Board): [number, number] | null {
 // ── Component ──────────────────────────────────────────────────────────────
 export function OthelloPractice() {
     const [board, setBoard] = useState<Board>(makeBoard);
-    const [player, setPlayer] = useState<1 | 2>(1); // 1=black(human), 2=white(AI)
+    const [player, setPlayer] = useState<1 | 2>(1);
     const [lastFlips, setLastFlips] = useState<[number, number][]>([]);
     const [lastPlaced, setLastPlaced] = useState<[number,number] | null>(null);
     const [gameOver, setGameOver] = useState(false);
@@ -175,13 +218,29 @@ export function OthelloPractice() {
     const [showThemePicker, setShowThemePicker] = useState(false);
     const [thinking, setThinking] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
+    const [difficulty, setDifficulty] = useState<Difficulty>('medium');
+    const [gameStarted, setGameStarted] = useState(false);
 
     const legalMoves = useMemo(() => getLegalMoves(board, 1), [board]);
     const legalSet = useMemo(() => new Set(legalMoves.map(([r,c]) => `${r},${c}`)), [legalMoves]);
     const { black, white } = useMemo(() => countPieces(board), [board]);
     const t = BG_THEMES[theme];
+    const d = DIFFICULTY_CONFIG[difficulty];
 
-    const reset = useCallback(() => {
+    const startGame = useCallback((selectedDifficulty: Difficulty) => {
+        setDifficulty(selectedDifficulty);
+        setBoard(makeBoard());
+        setPlayer(1);
+        setLastFlips([]);
+        setLastPlaced(null);
+        setGameOver(false);
+        setMessage(null);
+        setThinking(false);
+        setGameStarted(true);
+    }, []);
+
+    const backToMenu = useCallback(() => {
+        setGameStarted(false);
         setBoard(makeBoard());
         setPlayer(1);
         setLastFlips([]);
@@ -201,10 +260,8 @@ export function OthelloPractice() {
         setLastPlaced([r, c]);
         setLastFlips(flips);
 
-        // Check if AI has moves
         const aiMoves = getLegalMoves(next, 2);
         if (aiMoves.length === 0) {
-            // Check if human has moves
             if (getLegalMoves(next, 1).length === 0) {
                 setGameOver(true);
                 setPlayer(1);
@@ -217,12 +274,11 @@ export function OthelloPractice() {
             return;
         }
 
-        // AI turn
         setPlayer(2);
         setThinking(true);
         setMessage(null);
         setTimeout(() => {
-            const move = aiMove(next);
+            const move = aiMoveForDifficulty(next, difficulty);
             if (move) {
                 const [ar, ac] = move;
                 const aiFlips = getFlips(next, ar, ac, 2);
@@ -238,11 +294,10 @@ export function OthelloPractice() {
                         setMessage(b > w ? '🎉 你贏了！' : b < w ? '😢 電腦贏了！' : '🤝 平局！');
                         setThinking(false);
                     } else {
-                        // Human has no moves — AI goes again
                         setMessage('你沒有合法步，電腦繼續！');
                         setPlayer(2);
                         setTimeout(() => {
-                            const move2 = aiMove(next2);
+                            const move2 = aiMoveForDifficulty(next2, difficulty);
                             if (move2) {
                                 const [ar2, ac2] = move2;
                                 const next3 = applyMove(next2, ar2, ac2, 2);
@@ -259,7 +314,7 @@ export function OthelloPractice() {
                                 }
                             }
                             setThinking(false);
-                        }, 800);
+                        }, d.delay);
                     }
                     return;
                 } else {
@@ -267,19 +322,105 @@ export function OthelloPractice() {
                 }
             }
             setThinking(false);
-        }, 600);
-    }, [board, gameOver, player, thinking]);
+        }, d.delay);
+    }, [board, gameOver, player, thinking, difficulty, d.delay]);
 
     const flipSet = useMemo(() => new Set(lastFlips.map(([r,c]) => `${r},${c}`)), [lastFlips]);
 
+    // ── 難度選擇畫面 ──────────────────────────────────────────────────────
+    if (!gameStarted) {
+        return (
+            <div className={`h-full w-full flex flex-col items-center justify-center bg-gradient-to-br ${t.bg} overflow-y-auto py-6 px-4`}>
+                {/* Theme picker in corner */}
+                <div className="absolute top-4 right-4">
+                    <button
+                        onClick={() => setShowThemePicker(v => !v)}
+                        className="p-2 rounded-xl bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors text-sm"
+                    >
+                        🎨
+                    </button>
+                    {showThemePicker && (
+                        <div className="absolute right-0 top-10 bg-black/70 backdrop-blur-md rounded-2xl border border-white/20 p-3 z-10 min-w-[180px]">
+                            <div className="font-pixel text-white/60 text-[10px] mb-2 uppercase tracking-wider">選擇背景</div>
+                            <div className="flex flex-col gap-1.5">
+                                {(Object.keys(BG_THEMES) as BgTheme[]).map(k => (
+                                    <button
+                                        key={k}
+                                        onClick={() => { setTheme(k); setShowThemePicker(false); }}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-white font-pixel text-xs transition-all ${
+                                            theme === k ? 'bg-white/30 ring-2 ring-white/50' : 'bg-white/10 hover:bg-white/20'
+                                        }`}
+                                    >
+                                        {BG_THEMES[k].emoji} {BG_THEMES[k].label}
+                                        {theme === k && <span className="text-yellow-300 text-[10px] ml-auto">✓</span>}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Title */}
+                <div className="text-center mb-8">
+                    <div className="font-pixel text-white text-2xl drop-shadow-lg mb-2">♟ 黑白棋</div>
+                    <div className="font-pixel text-white/50 text-xs">選擇電腦難度，開始對戰</div>
+                </div>
+
+                {/* Difficulty cards */}
+                <div className="w-full max-w-xs flex flex-col gap-3 mb-8">
+                    {(Object.keys(DIFFICULTY_CONFIG) as Difficulty[]).map(key => {
+                        const cfg = DIFFICULTY_CONFIG[key];
+                        const isSelected = difficulty === key;
+                        return (
+                            <button
+                                key={key}
+                                onClick={() => setDifficulty(key)}
+                                className={`
+                                    flex items-center gap-4 px-5 py-4 rounded-2xl border-2 text-left
+                                    transition-all duration-200 active:scale-95
+                                    ${isSelected ? cfg.activeColor : cfg.color + ' hover:brightness-125'}
+                                `}
+                            >
+                                <span className="text-2xl">{cfg.emoji}</span>
+                                <div className="flex-1">
+                                    <div className="font-pixel text-base mb-0.5">{cfg.label}</div>
+                                    <div className="font-pixel text-[10px] opacity-70">{cfg.desc}</div>
+                                </div>
+                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                    isSelected ? 'bg-white border-white' : 'border-white/40 bg-transparent'
+                                }`}>
+                                    {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-gray-800" />}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Start button */}
+                <button
+                    onClick={() => startGame(difficulty)}
+                    className="px-10 py-3 rounded-2xl bg-yellow-400 text-amber-900 font-pixel text-sm hover:bg-yellow-300 active:scale-95 transition-all shadow-lg shadow-yellow-500/30"
+                >
+                    開始遊戲 {DIFFICULTY_CONFIG[difficulty].emoji}
+                </button>
+            </div>
+        );
+    }
+
+    // ── 遊戲畫面 ──────────────────────────────────────────────────────────
     return (
         <div className={`h-full w-full flex flex-col items-center justify-start bg-gradient-to-br ${t.bg} overflow-y-auto py-4 px-2`}>
 
             {/* Header */}
             <div className="w-full max-w-md flex items-center justify-between mb-3 px-1">
-                <div className="font-pixel text-white text-lg drop-shadow">♟ 黑白棋</div>
                 <div className="flex items-center gap-2">
-                    {/* Theme button */}
+                    <div className="font-pixel text-white text-lg drop-shadow">♟ 黑白棋</div>
+                    {/* 難度標籤 */}
+                    <span className={`font-pixel text-[10px] px-2 py-0.5 rounded-full border ${d.color}`}>
+                        {d.emoji} {d.label}
+                    </span>
+                </div>
+                <div className="flex items-center gap-2">
                     <button
                         onClick={() => setShowThemePicker(v => !v)}
                         className="p-2 rounded-xl bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors text-sm"
@@ -287,7 +428,7 @@ export function OthelloPractice() {
                         🎨
                     </button>
                     <button
-                        onClick={reset}
+                        onClick={backToMenu}
                         className="px-3 py-1.5 rounded-xl bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors font-pixel text-xs"
                     >
                         重新開始
@@ -385,10 +526,10 @@ export function OthelloPractice() {
                 </div>
             </div>
 
-            {/* Game over overlay button */}
+            {/* Game over */}
             {gameOver && (
                 <button
-                    onClick={reset}
+                    onClick={backToMenu}
                     className="mt-5 px-6 py-2.5 rounded-2xl bg-yellow-400 text-amber-900 font-pixel text-sm hover:bg-yellow-300 transition-colors shadow-lg"
                 >
                     再玩一局
