@@ -4,8 +4,9 @@ import { ArrowLeft, Home, Star, Palette, ShoppingBag } from 'lucide-react';
 import { World3D } from './World3D';
 import { WorldIslandShopDrawer } from './WorldIslandShopDrawer';
 import { useGameWindowController } from '../hooks/useGameWindowController';
-import { useWorldPersistence } from '../hooks/useWorldPersistence';
+import { useSaveWorldPersistence, useWorldPersistence } from '../hooks/useWorldPersistence';
 import { settleWorldState, type WorldLabState, type WorldTheme } from '../hooks/useWorldState';
+import type { PlacedDecoration } from '../lib/world/decorations';
 
 interface WorldFullScreenProps {
     isOpen: boolean;
@@ -31,6 +32,7 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
 }) => {
     const [showPicker, setShowPicker] = useState(false);
     const [showShop, setShowShop] = useState(false);
+    const saveTheme = useSaveWorldPersistence(userId);
     const { handleEndGame, handleGoHome } = useGameWindowController({
         isOpen,
         isImmersivePhase: isOpen,
@@ -42,11 +44,11 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
     const { data: persistedWorldSnapshot } = useWorldPersistence(userId ?? '');
     const [worldLab, setWorldLab] = useState<WorldLabState | null>(null);
 
-    const [decorations, setDecorations] = useState<string[]>(() => {
+    const [placedDecorations, setPlacedDecorations] = useState<PlacedDecoration[]>(() => {
         if (!userId) return [];
         try {
-            const raw = localStorage.getItem(`questmon-decorations-${userId}`);
-            return raw ? (JSON.parse(raw) as string[]) : [];
+            const raw = localStorage.getItem(`world-decorations-${userId}`);
+            return raw ? (JSON.parse(raw) as PlacedDecoration[]) : [];
         } catch { return []; }
     });
 
@@ -152,7 +154,23 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
                             {atmosOptions.map((t) => (
                                 <button
                                     key={t.key}
-                                    onClick={() => { onThemeChange?.(t.key); setShowPicker(false); }}
+                                    onClick={() => {
+                                    // Save theme using the current local worldLab (fresh data),
+                                    // NOT the stale server cache in ChildDashboard — avoids
+                                    // overwriting resource changes made in WorldIslandShopDrawer.
+                                    onThemeChange?.(t.key);
+                                    setShowPicker(false);
+                                    if (worldLab && userId) {
+                                        saveTheme.mutate({
+                                            worldLab: { ...worldLab, worldTheme: t.key },
+                                            activeAdventure: persistedWorldSnapshot?.activeAdventure ?? null,
+                                            lastAdventureResult: persistedWorldSnapshot?.lastAdventureResult ?? null,
+                                            bankNowMs: persistedWorldSnapshot?.bankNowMs,
+                                            demandDepositAccount: persistedWorldSnapshot?.demandDepositAccount,
+                                            timeDeposits: persistedWorldSnapshot?.timeDeposits,
+                                        });
+                                    }
+                                }}
                                     className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-left active:scale-95 ${
                                         worldTheme === t.key
                                             ? 'bg-white/25 ring-1 ring-white/50 shadow-inner'
@@ -181,7 +199,7 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
                     timeOfDay={resolvedTime}
                     worldTheme={worldTheme}
                     buildings={buildings}
-                    decorations={decorations}
+                    placedDecorations={placedDecorations}
                 />
             </div>
 
@@ -193,7 +211,7 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
                     userId={userId}
                     starBalance={starBalance}
                     onWorldLabChange={(updated) => setWorldLab(updated)}
-                    onDecorationsChange={(updated) => setDecorations(updated)}
+                    onDecorationsChange={(updated) => setPlacedDecorations(updated)}
                 />
             )}
         </div>

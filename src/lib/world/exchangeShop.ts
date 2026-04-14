@@ -110,5 +110,16 @@ export function exchangeSelectedResources(args: {
     marketLevel: number;
     basePrices: ExchangePriceTable;
 }): ExchangePreviewResult {
+    const rawSelected = normalizeSelectedResources(args.selectedResources);
+    const safeCurrent = normalizeResources(args.currentResources);
+
+    if (
+        rawSelected.wood > Math.floor(safeCurrent.wood) ||
+        rawSelected.stone > Math.floor(safeCurrent.stone) ||
+        rawSelected.crystal > Math.floor(safeCurrent.crystal)
+    ) {
+        throw new Error('賣出數量不得大於目前擁有資源');
+    }
+
     return calculateExchangePreview(args);
 }

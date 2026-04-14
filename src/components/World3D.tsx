@@ -4,6 +4,7 @@ import { OrbitControls, PerspectiveCamera, Float, Environment, ContactShadows, u
 import { Box3, Vector3 } from 'three';
 import type { Group } from 'three';
 import type { WorldTerrain, WorldTheme } from '../hooks/useWorldState';
+import { DECORATION_CATALOG as DECO_LIB_CATALOG, DECORATION_SLOTS, type PlacedDecoration } from '../lib/world/decorations';
 
 type EnvPreset = 'forest' | 'sunset' | 'dawn' | 'park' | 'night' | 'apartment' | 'city' | 'lobby' | 'studio' | 'warehouse';
 
@@ -438,8 +439,10 @@ interface World3DProps {
         mine?: number;
         crystal?: number;
     };
-    /** Keys from DECORATION_CATALOG that the child has purchased */
+    /** Keys from DECORATION_CATALOG that the child has purchased (legacy string[] system) */
     decorations?: string[];
+    /** Resource-purchased decorations from lib/world/decorations.ts */
+    placedDecorations?: PlacedDecoration[];
     /** When true, fills the parent container (expects parent to be full-viewport) */
     fullScreen?: boolean;
     /** Sky/atmosphere preset */
@@ -699,6 +702,7 @@ export function World3D({
     onPlotSelect,
     buildings,
     decorations = [],
+    placedDecorations = [],
     fullScreen = false,
     worldTheme = 'normal',
 }: World3DProps) {
@@ -998,6 +1002,24 @@ export function World3D({
                                         rotation={[0, d.rotation ?? 0, 0]}
                                     />
                                 ))}
+
+                            {/* ── Resource-purchased decorations (from decorations.ts) ── */}
+                            {placedDecorations.map((placed, idx) => {
+                                const entry = DECO_LIB_CATALOG.find((e) => e.id === placed.id);
+                                const slot  = DECORATION_SLOTS[placed.slotIndex];
+                                if (!entry || !slot) return null;
+                                const [sx, , sz] = slot;
+                                const rotY = (placed.slotIndex * 1.37) % (Math.PI * 2);
+                                return (
+                                    <GroundedGLBModel
+                                        key={`placed-${placed.id}-${placed.slotIndex}-${idx}`}
+                                        path={entry.modelPath}
+                                        position={[sx, entry.yOffset, sz]}
+                                        scale={entry.scale}
+                                        rotation={[0, rotY, 0]}
+                                    />
+                                );
+                            })}
                             </group>{/* end decorations surface group */}
 
                             {/* ── Floating side islands (intermediate ring between main & plots) ── */}

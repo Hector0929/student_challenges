@@ -9,26 +9,10 @@ import { useWorldExchange } from '../hooks/useWorldExchange';
 import { supabase } from '../lib/supabase';
 import { calculateExchangePreview, exchangeSelectedResources, type ExchangePriceTable } from '../lib/world/exchangeShop';
 import { INITIAL_WORLD_LAB_STATE, settleWorldState, type WorldLabState, type WorldBuildingKey } from '../hooks/useWorldState';
+import { DECORATION_CATALOG, countPlaced, findNextFreeSlot, type PlacedDecoration } from '../lib/world/decorations';
 import { WorldExchangePanel } from './WorldExchangePanel';
 
 // ── Constants ──────────────────────────────────────────────────────────────
-
-const DECO_SHOP: Array<{
-    key: string;
-    name: string;
-    emoji: string;
-    price: number;
-    description: string;
-}> = [
-    { key: 'lantern_east', name: '東側燈籠',  emoji: '🏮', price: 30,  description: '主島東邊多一盞溫暖的燈籠。' },
-    { key: 'lantern_west', name: '西側燈籠',  emoji: '🏮', price: 30,  description: '主島西邊多一盞燈籠，對稱更好看。' },
-    { key: 'fountain',     name: '噴水池',    emoji: '⛲', price: 100, description: '島中央多一座噴水池，超氣派。' },
-    { key: 'windmill',     name: '風車',      emoji: '🎡', price: 70,  description: '島邊角一座會轉的風車。' },
-    { key: 'chest',        name: '寶箱',      emoji: '📦', price: 50,  description: '一個神秘的寶箱，裡面到底裝了什麼？' },
-    { key: 'mushroom',     name: '蘑菇叢',    emoji: '🍄', price: 30,  description: '一叢紅點蘑菇，讓島更有童話感。' },
-    { key: 'tent',         name: '探險帳篷',  emoji: '⛺', price: 60,  description: '勇者的帳篷，象徵冒險精神。' },
-    { key: 'banner',       name: '旗幟',      emoji: '🚩', price: 40,  description: '一面飄揚的旗幟，代表你的島。' },
-];
 
 const BUILDING_UPGRADE_CARDS: Array<{
     key: WorldBuildingKey;
@@ -78,7 +62,7 @@ interface WorldIslandShopDrawerProps {
     /** Called after any world state change so parent can refresh 3D view */
     onWorldLabChange?: (updated: WorldLabState) => void;
     /** Called after decoration changes so parent can refresh 3D view */
-    onDecorationsChange?: (updated: string[]) => void;
+    onDecorationsChange?: (updated: PlacedDecoration[]) => void;
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -101,14 +85,15 @@ export const WorldIslandShopDrawer: React.FC<WorldIslandShopDrawerProps> = ({
     const [tab, setTab] = useState<TabKey>('upgrade');
     const [message, setMessage] = useState('');
 
-    // Decorations: persisted in localStorage
-    const decoStorageKey = `questmon-decorations-${userId}`;
-    const [decorations, setDecorations] = useState<string[]>(() => {
+    // Decorations: persisted in localStorage as PlacedDecoration[]
+    const decoStorageKey = `world-decorations-${userId}`;
+    const [placedDecos, setPlacedDecos] = useState<PlacedDecoration[]>(() => {
         try {
-            const raw = localStorage.getItem(decoStorageKey);
-            return raw ? (JSON.parse(raw) as string[]) : [];
+            const raw = localStorage.getItem(`world-decorations-${userId}`);
+            return raw ? (JSON.parse(raw) as PlacedDecoration[]) : [];
         } catch { return []; }
     });
+    const [decoTab, setDecoTab] = useState<'wood' | 'stone' | 'crystal'>('wood');
 
     // Load world state from persistence
     useEffect(() => {
@@ -211,16 +196,40 @@ export const WorldIslandShopDrawer: React.FC<WorldIslandShopDrawerProps> = ({
         flash(`🛒 已購入 +${quantity} ${title}`);
     };
 
-    const buyDecoration = async (item: typeof DECO_SHOP[number]) => {
-        if (decorations.includes(item.key)) return;
-        if (starBalance < item.price) { flash(`❌ 星幣不足，需要 ${item.price} ⭐`); return; }
-        const ok = await adjustStars(-item.price, `購買裝飾品：${item.name}`);
-        if (!ok) { flash('❌ 購買失敗'); return; }
-        const next = [...decorations, item.key];
-        setDecorations(next);
+    const buyDecoration = async (entry: typeof DECORATION_CATALOG[number]) => {
+        const placed = countPlaced(placedDecos, entry.id);
+        if (entry.maxCount !== -1 && placed >= entry.maxCount) {
+            flash(`❌ ${entry.name} 已達放置上限 (${entry.maxCount})`); return;
+        }
+        const slotIndex = findNextFreeSlot(placedDecos);
+        if (slotIndex === -1) { flash('❌ 島上已沒有空位了！'); return; }
+        // Check resource costs
+        const { wood = 0, stone = 0, crystal = 0 } = entry.cost;
+        if (worldLab.resources.wood < wood)    { flash(`❌ 木材不足，需要 ${wood} 🌲`);   return; }
+        if (worldLab.resources.stone < stone)  { flash(`❌ 石材不足，需要 ${stone} 🪨`);  return; }
+        if (worldLab.resources.crystal < crystal) { flash(`❌ 晶礦不足，需要 ${crystal} 💎`); return; }
+        // Deduct resources and save
+        const nextResources = {
+            wood:    worldLab.resources.wood    - wood,
+            stone:   worldLab.resources.stone   - stone,
+            crystal: worldLab.resources.crystal - crystal,
+        };
+        await saveWorld({ ...worldLab, resources: nextResources });
+        const next: PlacedDecoration[] = [...placedDecos, { id: entry.id, slotIndex }];
+        setPlacedDecos(next);
         onDecorationsChange?.(next);
         try { localStorage.setItem(decoStorageKey, JSON.stringify(next)); } catch { /* ignore */ }
-        flash(`🎉 ${item.emoji} ${item.name} 已放到你的島上！`);
+        flash(`🎉 ${entry.emoji} ${entry.name} 已放到你的島上！`);
+    };
+
+    const removeDecoration = (entry: typeof DECORATION_CATALOG[number]) => {
+        const targetIndex = placedDecos.reduce<number>((last, d, i) => d.id === entry.id ? i : last, -1);
+        if (targetIndex === -1) return;
+        const next = placedDecos.filter((_, i) => i !== targetIndex);
+        setPlacedDecos(next);
+        onDecorationsChange?.(next);
+        try { localStorage.setItem(decoStorageKey, JSON.stringify(next)); } catch { /* ignore */ }
+        flash(`🗑️ ${entry.emoji} ${entry.name} 已移除`);
     };
 
     // ── Exchange ───────────────────────────────────────────────────────────
@@ -247,12 +256,17 @@ export const WorldIslandShopDrawer: React.FC<WorldIslandShopDrawerProps> = ({
         if (result.starsEarned <= 0) return { ok: false, error: '請輸入要賣出的資源數量' };
         const ok = await adjustStars(result.starsEarned, '資源兌換為星星');
         if (!ok) return { ok: false, error: '兌換失敗' };
-        await saveWorld({
-            ...worldLab,
-            heroLevel:  worldLab.heroLevel  + (result.starsEarned >= 50 ? 1 : 0),
-            heroPower:  worldLab.heroPower  + Math.floor(result.starsEarned * 0.6),
-            resources:  result.remainingResources,
-        });
+        try {
+            await saveWorld({
+                ...worldLab,
+                lastTickAt: Date.now(),  // update tick so re-load doesn't re-accumulate already-counted production
+                heroLevel:  worldLab.heroLevel  + (result.starsEarned >= 50 ? 1 : 0),
+                heroPower:  worldLab.heroPower  + Math.floor(result.starsEarned * 0.6),
+                resources:  result.remainingResources,
+            });
+        } catch (err) {
+            return { ok: false, error: err instanceof Error ? err.message : '資源儲存失敗，請重試' };
+        }
         return { ok: true, starsEarned: result.starsEarned };
     };
 
@@ -406,38 +420,94 @@ export const WorldIslandShopDrawer: React.FC<WorldIslandShopDrawerProps> = ({
                     {/* ── 島嶼裝飾 ─────────────────────────────────────── */}
                     {tab === 'deco' && (
                         <div className="space-y-3">
-                            <div className="text-xs text-white/50 px-1 pt-1">
-                                購買後永久放置在主島上，讓你的島嶼更有個性！
+                            {/* Summary bar */}
+                            <div className="flex items-center justify-between px-1 pt-1">
+                                <span className="text-xs text-white/50">消耗材料購買，可重複放置，共 {placedDecos.length}/24 個槽位</span>
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                {DECO_SHOP.map((item) => {
-                                    const owned = decorations.includes(item.key);
+
+                            {/* Category tabs */}
+                            <div className="flex gap-1.5">
+                                {(['wood', 'stone', 'crystal'] as const).map((cat) => {
+                                    const labels = { wood: '🌲 木材', stone: '🪨 石材', crystal: '💎 晶礦' };
+                                    const active = decoTab === cat;
                                     return (
-                                        <div
-                                            key={item.key}
-                                            className={`rounded-2xl border p-3 flex flex-col items-center text-center gap-1.5 ${
-                                                owned
-                                                    ? 'bg-purple-500/20 border-purple-400/50'
-                                                    : 'bg-white/8 border-white/12'
+                                        <button
+                                            key={cat}
+                                            onClick={() => setDecoTab(cat)}
+                                            className={`flex-1 rounded-xl px-2 py-1.5 text-xs font-pixel transition-all ${
+                                                active
+                                                    ? 'bg-white/20 text-white border border-white/30 shadow'
+                                                    : 'bg-white/8 text-white/50 hover:bg-white/14 border border-transparent'
                                             }`}
                                         >
-                                            <div className="text-3xl">{item.emoji}</div>
-                                            <div className="font-pixel text-white text-xs">{item.name}</div>
-                                            <div className="text-[11px] text-white/50 leading-snug">{item.description}</div>
-                                            {owned ? (
-                                                <div className="mt-1 w-full rounded-lg bg-purple-400/25 px-2 py-1.5 text-xs font-pixel text-purple-300">
-                                                    ✅ 已擁有
+                                            {labels[cat]}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Decoration grid */}
+                            <div className="grid grid-cols-2 gap-2.5">
+                                {DECORATION_CATALOG.filter((e) => e.category === decoTab).map((entry) => {
+                                    const placedCount = countPlaced(placedDecos, entry.id);
+                                    const atMax = entry.maxCount !== -1 && placedCount >= entry.maxCount;
+                                    const noSlots = findNextFreeSlot(placedDecos) === -1;
+                                    const { wood = 0, stone = 0, crystal = 0 } = entry.cost;
+                                    const canAfford =
+                                        worldLab.resources.wood    >= wood &&
+                                        worldLab.resources.stone   >= stone &&
+                                        worldLab.resources.crystal >= crystal;
+
+                                    return (
+                                        <div
+                                            key={entry.id}
+                                            className={`rounded-2xl border p-3 flex flex-col gap-1.5 ${
+                                                placedCount > 0
+                                                    ? 'bg-emerald-500/10 border-emerald-400/30'
+                                                    : 'bg-white/6 border-white/10'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-2xl">{entry.emoji}</span>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-pixel text-white text-xs leading-tight">{entry.name}</div>
+                                                    {placedCount > 0 && (
+                                                        <div className="text-[10px] text-emerald-400 mt-0.5">
+                                                            已放 {placedCount}/{entry.maxCount === -1 ? '∞' : entry.maxCount}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            ) : (
+                                            </div>
+
+                                            <div className="text-[10px] text-white/45 leading-snug">{entry.description}</div>
+
+                                            {/* Cost display */}
+                                            <div className="flex gap-1.5 flex-wrap">
+                                                {wood    > 0 && <span className={`text-[11px] px-1.5 py-0.5 rounded-md ${worldLab.resources.wood    >= wood    ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}`}>🌲 {wood}</span>}
+                                                {stone   > 0 && <span className={`text-[11px] px-1.5 py-0.5 rounded-md ${worldLab.resources.stone   >= stone   ? 'bg-slate-400/20 text-slate-300'   : 'bg-red-500/20 text-red-300'}`}>🪨 {stone}</span>}
+                                                {crystal > 0 && <span className={`text-[11px] px-1.5 py-0.5 rounded-md ${worldLab.resources.crystal >= crystal ? 'bg-cyan-500/20 text-cyan-300'     : 'bg-red-500/20 text-red-300'}`}>💎 {crystal}</span>}
+                                            </div>
+
+                                            <div className="flex gap-1.5 mt-0.5">
                                                 <button
                                                     type="button"
-                                                    onClick={() => void buyDecoration(item)}
-                                                    disabled={starBalance < item.price}
-                                                    className="mt-1 w-full rounded-lg bg-purple-500/70 px-2 py-1.5 text-xs font-pixel text-purple-100 hover:bg-purple-400/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                                    onClick={() => void buyDecoration(entry)}
+                                                    disabled={atMax || noSlots || !canAfford || saveWorldPersistence.isPending}
+                                                    className="flex-1 rounded-lg bg-purple-500/70 px-2 py-1.5 text-xs font-pixel text-purple-100 hover:bg-purple-400/70 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
                                                 >
-                                                    {item.price}⭐ 購買
+                                                    {atMax ? '已滿' : noSlots ? '無空位' : '＋放置'}
                                                 </button>
-                                            )}
+                                                {placedCount > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeDecoration(entry)}
+                                                        className="rounded-lg bg-white/10 px-2 py-1.5 text-xs text-white/50 hover:bg-red-500/30 hover:text-red-300 transition-colors"
+                                                        title="移除一個"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     );
                                 })}
