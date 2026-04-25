@@ -142,9 +142,12 @@ export const ParentControl: React.FC = () => {
             is_active: true
         });
 
-        // Auto-assign to creator if it exists
+        // Wish tasks are pre-assigned to the child (userId) at creation time.
+        // created_by holds the parent's auth ID (for RLS), not the child's profile ID,
+        // so we must NOT overwrite existing assignments with it.
         const quest = quests?.find(q => q.id === questId);
-        if (quest?.created_by) {
+        const alreadyAssigned = quest?.quest_assignments && quest.quest_assignments.length > 0;
+        if (!alreadyAssigned && quest?.created_by) {
             await updateAssignmentsMutation.mutateAsync({
                 questId,
                 childIds: [quest.created_by]

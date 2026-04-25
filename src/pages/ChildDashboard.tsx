@@ -11,7 +11,7 @@ import { RPGButton } from '../components/RPGButton';
 import { RewardTime } from '../components/RewardTime';
 import { LearningArea } from '../components/LearningArea';
 import { ShopModal } from '../components/ShopModal';
-import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useStarBalance } from '../hooks/useQuests';
+import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useUpdateQuestAssignments, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings } from '../hooks/useFamilySettings';
 import { WorldPreviewCard } from '../components/WorldPreviewCard';
 import { WorldFullScreen } from '../components/WorldFullScreen';
@@ -51,6 +51,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     const { data: starBalance } = useStarBalance(userId);
     const completeQuestMutation = useCompleteQuest();
     const createQuestMutation = useCreateQuest();
+    const updateAssignmentsMutation = useUpdateQuestAssignments();
     const { data: familySettings } = useFamilySettings();
     const { data: persistedWorld } = useWorldPersistence(userId);
 
@@ -152,7 +153,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
             const creatorId = session?.user?.id || userId;
             const childName = user?.name || '孩子';
 
-            await createQuestMutation.mutateAsync({
+            const newQuest = await createQuestMutation.mutateAsync({
                 title: formData.title,
                 description: `由 ${childName} 建立的願望任務`,
                 icon: formData.icon,
@@ -161,6 +162,14 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                 status: 'pending',
                 created_by: creatorId,
             });
+            // Pre-assign to the wishing child so approval can find the correct child_id.
+            // (created_by stores the parent's auth ID for RLS, not the child's profile ID)
+            if (newQuest?.id) {
+                await updateAssignmentsMutation.mutateAsync({
+                    questId: newQuest.id,
+                    childIds: [userId],
+                });
+            }
             console.log('✅ Quest created successfully');
             alert('✅ 任務已送出審核！\n\n請等待爸爸媽媽核准。');
             handleCloseDialog();
