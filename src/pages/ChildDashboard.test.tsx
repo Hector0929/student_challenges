@@ -9,6 +9,7 @@ const useDailyLogsMock = vi.fn();
 const useDailyProgressMock = vi.fn();
 const useCompleteQuestMock = vi.fn();
 const useCreateQuestMock = vi.fn();
+const useUpdateQuestAssignmentsMock = vi.fn();
 const useStarBalanceMock = vi.fn();
 const useFamilySettingsMock = vi.fn();
 const useUserMock = vi.fn();
@@ -78,6 +79,7 @@ vi.mock('../hooks/useQuests', () => ({
     useDailyProgress: (...args: unknown[]) => useDailyProgressMock(...args),
     useCompleteQuest: () => useCompleteQuestMock(),
     useCreateQuest: () => useCreateQuestMock(),
+    useUpdateQuestAssignments: () => useUpdateQuestAssignmentsMock(),
     useStarBalance: (...args: unknown[]) => useStarBalanceMock(...args),
 }));
 
@@ -98,6 +100,7 @@ describe('ChildDashboard', () => {
         useDailyProgressMock.mockReturnValue({ completed_quests: 0, total_quests: 0, earned_points: 0 });
         useCompleteQuestMock.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
         useCreateQuestMock.mockReturnValue({ mutateAsync: vi.fn() });
+        useUpdateQuestAssignmentsMock.mockReturnValue({ mutateAsync: vi.fn() });
         useStarBalanceMock.mockReturnValue({ data: 120 });
         useFamilySettingsMock.mockReturnValue({
             data: {

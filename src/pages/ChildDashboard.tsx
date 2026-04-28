@@ -44,7 +44,16 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
             return true;
         }
         // Check if assigned to this user
-        return quest.quest_assignments.some(qa => qa.child_id === userId);
+        if (quest.quest_assignments.some(qa => qa.child_id === userId)) {
+            return true;
+        }
+
+        // Backward compatibility:
+        // some legacy approved wishes were mistakenly assigned only to created_by.
+        // If every assignment equals created_by, treat as global so child can still see it.
+        const assignedOnlyToCreator = !!quest.created_by
+            && quest.quest_assignments.every((qa) => qa.child_id === quest.created_by);
+        return assignedOnlyToCreator;
     });
     const { data: logs, isLoading: logsLoading } = useDailyLogs(userId);
     const progress = useDailyProgress(userId);

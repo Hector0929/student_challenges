@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle, XCircle, Clock, ArrowRightLeft, Coins, ClipboardCheck } from 'lucide-react';
-import { useDailyLogs, useApproveQuest, useRejectQuest } from '../hooks/useQuests';
+import { useDailyLogs, useApproveQuest, useRejectQuest, usePendingQuests, useUpdateQuest, useDeleteQuest } from '../hooks/useQuests';
 import { usePendingExchangeRequests, useApproveExchangeRequest, useRejectExchangeRequest } from '../hooks/useExchangeRequests';
 import { formatDate } from '../lib/supabase';
 import type { DailyLog, Quest } from '../types/database';
@@ -17,8 +17,11 @@ export const ParentApproval: React.FC = () => {
 
     // Quest Approval
     const { data: pendingLogs, isLoading: logsLoading } = useDailyLogs('all', null, 'completed');
+    const { data: pendingWishQuests, isLoading: pendingWishLoading } = usePendingQuests();
     const approveQuest = useApproveQuest();
     const rejectQuest = useRejectQuest();
+    const approveWishQuest = useUpdateQuest();
+    const rejectWishQuest = useDeleteQuest();
 
     // Exchange Approval
     const { data: pendingExchanges, isLoading: exchangeLoading } = usePendingExchangeRequests();
@@ -71,7 +74,30 @@ export const ParentApproval: React.FC = () => {
         }
     };
 
-    const isLoading = logsLoading || exchangeLoading;
+    const handleApproveWish = async (questId: string) => {
+        try {
+            await approveWishQuest.mutateAsync({
+                id: questId,
+                status: 'active',
+                is_active: true,
+            });
+        } catch (error) {
+            console.error('Failed to approve wish quest:', error);
+            alert('核准許願失敗，請重試');
+        }
+    };
+
+    const handleRejectWish = async (questId: string) => {
+        if (!confirm('確定要拒絕並刪除這個許願嗎？')) return;
+        try {
+            await rejectWishQuest.mutateAsync(questId);
+        } catch (error) {
+            console.error('Failed to reject wish quest:', error);
+            alert('拒絕許願失敗，請重試');
+        }
+    };
+
+    const isLoading = logsLoading || exchangeLoading || pendingWishLoading;
 
     if (isLoading) {
         return (
@@ -86,6 +112,8 @@ export const ParentApproval: React.FC = () => {
 
     const logs = (pendingLogs || []) as DailyLogWithDetails[];
     const exchanges = pendingExchanges || [];
+    const wishes = pendingWishQuests || [];
+    const questPendingCount = logs.length + wishes.length;
 
     return (
         <div className="max-w-6xl mx-auto">
@@ -104,12 +132,12 @@ export const ParentApproval: React.FC = () => {
                 </div>
                 <div className="clay-star bg-amber-400 self-start md:self-auto">
                     <span>📋</span>
-                    <span>{logs.length + exchanges.length} 待處理</span>
+                    <span>{questPendingCount + exchanges.length} 待處理</span>
                 </div>
             </div>
 
             <p className="font-body text-sm mb-4" style={{ color: 'var(--color-text-light)' }}>
-                        {logs.length} 個任務 · {exchanges.length} 個兌換申請
+                        {questPendingCount} 個任務 · {exchanges.length} 個兌換申請
             </p>
 
             {/* Tabs */}
@@ -120,9 +148,9 @@ export const ParentApproval: React.FC = () => {
                 >
                     <CheckCircle size={14} />
                     任務審核
-                    {logs.length > 0 && (
+                    {questPendingCount > 0 && (
                         <span className="bg-yellow-400 text-deep-black px-2 py-0.5 text-xs rounded-full">
-                            {logs.length}
+                            {questPendingCount}
                         </span>
                     )}
                 </button>
@@ -143,8 +171,60 @@ export const ParentApproval: React.FC = () => {
             {/* Quest Approval Tab */}
             {activeTab === 'quests' && (
                 <>
-                    {logs.length > 0 ? (
+                    {questPendingCount > 0 ? (
                         <div className="space-y-6">
+                            {wishes.map((quest) => (
+                                <div key={`wish-${quest.id}`} className="clay-card p-5 animate-bounce-in relative overflow-hidden border-2 border-yellow-300" style={{ borderRadius: '24px' }}>
+                                    <div className="flex items-start gap-4">
+                                        <div className="clay-icon-circle bg-white text-4xl shrink-0" style={{ width: '64px', height: '64px', borderRadius: '18px' }}>
+                                            {quest.icon || '🎯'}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between gap-4 mb-2">
+                                                <div>
+                                                    <h3 className="font-heading font-bold text-xl mb-1 leading-relaxed" style={{ color: 'var(--color-text)' }}>
+                                                        {quest.title}
+                                                    </h3>
+                                                    <p className="font-body text-sm text-gray-600 mb-2">{quest.description || '孩子提交的許願任務'}</p>
+                                                </div>
+                                                <div className="clay-star bg-amber-400 shrink-0">
+                                                    <span>⭐</span>
+                                                    <span>{quest.reward_points || 0}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border-2 bg-yellow-50 border-yellow-300 text-yellow-700">
+                                                <Clock size={14} className="text-orange-600" />
+                                                <span className="font-heading text-xs">等待核准（許願任務）</span>
+                                            </div>
+
+                                            <div className="flex gap-3">
+                                                <button
+                                                    onClick={() => handleApproveWish(quest.id)}
+                                                    disabled={approveWishQuest.isPending}
+                                                    className="flex-1 py-3 px-4 rounded-2xl bg-emerald-500 text-white border-b-4 border-emerald-700 font-heading font-bold hover:brightness-110 active:scale-95 transition-all disabled:opacity-60"
+                                                >
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <CheckCircle size={16} />
+                                                        <span>✓ 核准許願</span>
+                                                    </div>
+                                                </button>
+                                                <button
+                                                    onClick={() => handleRejectWish(quest.id)}
+                                                    disabled={rejectWishQuest.isPending}
+                                                    className="flex-1 py-3 px-4 rounded-2xl bg-white text-gray-600 border-2 border-gray-300 font-heading font-bold hover:bg-gray-100 active:scale-95 transition-all disabled:opacity-60"
+                                                >
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <XCircle size={16} />
+                                                        <span>✗ 拒絕許願</span>
+                                                    </div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+
                             {logs.map((log) => (
                                 <div key={log.id} className="clay-card p-5 animate-bounce-in relative overflow-hidden" style={{ borderRadius: '24px' }}>
                                     <div className="flex items-start gap-4">

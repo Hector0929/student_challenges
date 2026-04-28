@@ -146,7 +146,14 @@ export const useDailyProgress = (userId: string, date: string = getTodayDate()) 
             return true;
         }
         // Check if assigned to this user
-        return quest.quest_assignments.some(qa => qa.child_id === userId);
+        if (quest.quest_assignments.some(qa => qa.child_id === userId)) {
+            return true;
+        }
+
+        // Backward compatibility for legacy wishes that were assigned to created_by only.
+        const assignedOnlyToCreator = !!quest.created_by
+            && quest.quest_assignments.every((qa) => qa.child_id === quest.created_by);
+        return assignedOnlyToCreator;
     });
 
     const progress: DailyProgress = {

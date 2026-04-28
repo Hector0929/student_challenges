@@ -17,9 +17,9 @@ interface OfflineProductionInput {
 export function getStorageCapacity(storageLevel: number): StorageCapacity {
     const normalizedLevel = Math.max(1, Math.floor(storageLevel));
     return {
-        woodCap: 150 + normalizedLevel * 90,
-        stoneCap: 120 + normalizedLevel * 75,
-        crystalCap: 45 + normalizedLevel * 28,
+        woodCap: (150 + normalizedLevel * 90) * 20,
+        stoneCap: (120 + normalizedLevel * 75) * 20,
+        crystalCap: (45 + normalizedLevel * 28) * 20,
         offlineHoursCap: 4 + normalizedLevel * 2,
     };
 }

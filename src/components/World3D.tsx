@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Float, Environment, ContactShadows, useGLTF, Clone } from '@react-three/drei';
 import { Box3, Vector3 } from 'three';
 import type { Group } from 'three';
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import type { WorldTerrain, WorldTheme } from '../hooks/useWorldState';
 import { DECORATION_CATALOG as DECO_LIB_CATALOG, DECORATION_SLOTS, type PlacedDecoration } from '../lib/world/decorations';
 
@@ -707,6 +708,7 @@ export function World3D({
     worldTheme = 'normal',
 }: World3DProps) {
     const worldTerrain: WorldTerrain = 'grassland';
+    const controlsRef = useRef<OrbitControlsImpl | null>(null);
 
     // Measure the actual top surface of the main island's center block so decorations sit on it
     const { scene: blockGrassLargeScene } = useGLTF(M.blockGrassLarge);
@@ -719,7 +721,9 @@ export function World3D({
     const mineLv = buildings?.mine ?? 1;
 
     const islandScale = Math.min(1 + Math.max(0, islandLevel - 1) * 0.05, 1.4);
-    const orbitMaxDistance = Math.min(24 + islandLevel * 0.5, 36);
+    const orbitMinDistance = fullScreen ? Math.max(8, 7 + islandScale * 3) : 3;
+    const orbitMaxDistance = fullScreen ? Math.min(30 + islandLevel * 0.7, 46) : Math.min(24 + islandLevel * 0.5, 36);
+    const defaultCameraPosition = fullScreen ? ([14, 13, 14] as [number, number, number]) : ([5, 5, 5] as [number, number, number]);
     const treeCount = Math.min(1 + Math.floor(forestLv / 2), 7);
     const rockCount = Math.min(1 + Math.floor(mineLv / 2), 6);
     const floatingTiles = Math.min(Math.max(0, islandLevel - 1), 6);
@@ -841,6 +845,17 @@ export function World3D({
         dragRef.current.pendingDx = 0;
         dragRef.current.pendingDy = 0;
     };
+
+    const resetView = () => {
+        if (islandGroupRef.current) {
+            islandGroupRef.current.position.set(0, 0, 0);
+        }
+        const controls = controlsRef.current;
+        if (!controls) return;
+        controls.object?.position.set(defaultCameraPosition[0], defaultCameraPosition[1], defaultCameraPosition[2]);
+        controls.target.set(0, 0, 0);
+        controls.update();
+    };
     // ──────────────────────────────────────────────────────────────────────
 
     return (
@@ -856,13 +871,18 @@ export function World3D({
             {/* Background fade overlay — sits on top of CSS bg image but below the WebGL canvas */}
             <div className="absolute inset-0 pointer-events-none bg-white/50" />
             <Canvas shadows>
-                <PerspectiveCamera makeDefault position={fullScreen ? [12, 10, 12] : [5, 5, 5]} fov={fullScreen ? 40 : 50} />
+                <PerspectiveCamera makeDefault position={defaultCameraPosition} fov={fullScreen ? 38 : 50} />
                 <OrbitControls
+                    ref={controlsRef}
                     enableRotate={!isDragMode}
                     enableZoom={!isDragMode}
                     enablePan={false}
-                    minDistance={3}
+                    minDistance={orbitMinDistance}
                     maxDistance={orbitMaxDistance}
+                    minPolarAngle={Math.PI / 6}
+                    maxPolarAngle={Math.PI / 2.2}
+                    enableDamping
+                    dampingFactor={0.08}
                     makeDefault
                 />
                 <IslandDragHandler dragRef={dragRef} islandGroupRef={islandGroupRef} enabled={isDragMode} />
@@ -1177,6 +1197,19 @@ export function World3D({
                     </span>
                 </div>
             </div>
+
+            {/* Quick reset for large islands: jump back to top-visible camera */}
+            {fullScreen && (
+                <div className="absolute bottom-16 right-3 pointer-events-auto">
+                    <button
+                        type="button"
+                        onClick={resetView}
+                        className="px-3 py-1.5 rounded-full bg-black/55 hover:bg-black/70 text-white border border-white/25 shadow-lg transition-colors font-pixel text-[10px]"
+                    >
+                        俯視重置
+                    </button>
+                </div>
+            )}
 
             {/* Long-press progress ring */}
             {isPressing && (

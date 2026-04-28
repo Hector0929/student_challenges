@@ -28,11 +28,16 @@ export const ParentControl: React.FC = () => {
     const { data: children } = useQuery({
         queryKey: ['children'],
         queryFn: async () => {
-            const { data } = await supabase
+            let query = supabase
                 .from('profiles')
                 .select('*')
-                .eq('role', 'child')
-                .order('name');
+                .eq('role', 'child');
+
+            if (user?.family_id) {
+                query = query.eq('family_id', user.family_id);
+            }
+
+            const { data } = await query.order('name');
             return data as Profile[];
         },
     });
@@ -142,15 +147,33 @@ export const ParentControl: React.FC = () => {
             is_active: true
         });
 
-        // Wish tasks are pre-assigned to the child (userId) at creation time.
-        // created_by holds the parent's auth ID (for RLS), not the child's profile ID,
-        // so we must NOT overwrite existing assignments with it.
+        // Wish tasks should already be assigned to the child at creation time.
+        // If assignments are missing, ONLY fallback to creator when creator is actually a child.
+        // Never assign to a parent ID, otherwise child page won't show the task.
         const quest = quests?.find(q => q.id === questId);
-        const alreadyAssigned = quest?.quest_assignments && quest.quest_assignments.length > 0;
-        if (!alreadyAssigned && quest?.created_by) {
+        const hasAssignedChild = (quest?.quest_assignments ?? []).some((qa) =>
+            (children ?? []).some((child) => child.id === qa.child_id)
+        );
+
+        if (!hasAssignedChild && quest?.created_by) {
+            const { data: creatorProfile } = await supabase
+                .from('profiles')
+                .select('id, role, family_id')
+                .eq('id', quest.created_by)
+                .maybeSingle();
+
+            if (creatorProfile?.role === 'child' && (!user?.family_id || creatorProfile.family_id === user.family_id)) {
+                await updateAssignmentsMutation.mutateAsync({
+                    questId,
+                    childIds: [creatorProfile.id]
+                });
+            }
+        }
+
+        if (!hasAssignedChild && !quest?.created_by) {
             await updateAssignmentsMutation.mutateAsync({
                 questId,
-                childIds: [quest.created_by]
+                childIds: []
             });
         }
     };

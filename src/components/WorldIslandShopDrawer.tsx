@@ -147,12 +147,26 @@ export const WorldIslandShopDrawer: React.FC<WorldIslandShopDrawerProps> = ({
     const storageLevel = Math.max(1, worldLab.buildings.storage ?? 1);
     const storageCapacity = useMemo(() => getStorageCapacity(storageLevel), [storageLevel]);
 
-    const estimateHoursToCap = (current: number, ratePerHour: number, cap: number): string => {
-        if (current >= cap) return '已滿倉';
-        if (ratePerHour <= 0) return '未產出';
-        const hours = Math.max(0, (cap - current) / ratePerHour);
+    const formatHours = (hours: number): string => {
         if (hours < 1) return `${Math.ceil(hours * 60)} 分鐘`;
         return `${hours.toFixed(1)} 小時`;
+    };
+
+    const estimateHoursToCap = (current: number, ratePerHour: number, cap: number): { fromNow: string; fromEmpty: string } => {
+        if (ratePerHour <= 0) return { fromNow: '未產出', fromEmpty: '未產出' };
+        if (current >= cap) {
+            return {
+                fromNow: '已滿倉',
+                fromEmpty: formatHours(cap / ratePerHour),
+            };
+        }
+
+        const fromNowHours = Math.max(0, (cap - current) / ratePerHour);
+        const fromEmptyHours = Math.max(0, cap / ratePerHour);
+        return {
+            fromNow: formatHours(fromNowHours),
+            fromEmpty: formatHours(fromEmptyHours),
+        };
     };
 
     const resourceSupplyCatalog = useMemo(() => RESOURCE_SUPPLY_CATALOG.map((item) => {
@@ -406,9 +420,18 @@ export const WorldIslandShopDrawer: React.FC<WorldIslandShopDrawerProps> = ({
                             </div>
                             <div className="rounded-xl bg-emerald-500/10 border border-emerald-300/30 px-3 py-3 text-xs text-emerald-100 space-y-1.5">
                                 <div className="font-pixel text-[11px] text-emerald-200">⏱️ 每小時產量（分開顯示）</div>
-                                <div>🌲 木材：+{productionRates.woodPerHour.toFixed(1)} /h（上限 {storageCapacity.woodCap}，約 {estimateHoursToCap(worldLab.resources.wood, productionRates.woodPerHour, storageCapacity.woodCap)} 滿倉）</div>
-                                <div>🪨 石材：+{productionRates.stonePerHour.toFixed(1)} /h（上限 {storageCapacity.stoneCap}，約 {estimateHoursToCap(worldLab.resources.stone, productionRates.stonePerHour, storageCapacity.stoneCap)} 滿倉）</div>
-                                <div>💎 晶礦：+{productionRates.crystalPerHour.toFixed(1)} /h（上限 {storageCapacity.crystalCap}，約 {estimateHoursToCap(worldLab.resources.crystal, productionRates.crystalPerHour, storageCapacity.crystalCap)} 滿倉）</div>
+                                <div>{(() => {
+                                    const eta = estimateHoursToCap(worldLab.resources.wood, productionRates.woodPerHour, storageCapacity.woodCap);
+                                    return `🌲 木材：+${productionRates.woodPerHour.toFixed(1)} /h（上限 ${storageCapacity.woodCap}，目前約 ${eta.fromNow} 滿倉 / 空倉約 ${eta.fromEmpty}）`;
+                                })()}</div>
+                                <div>{(() => {
+                                    const eta = estimateHoursToCap(worldLab.resources.stone, productionRates.stonePerHour, storageCapacity.stoneCap);
+                                    return `🪨 石材：+${productionRates.stonePerHour.toFixed(1)} /h（上限 ${storageCapacity.stoneCap}，目前約 ${eta.fromNow} 滿倉 / 空倉約 ${eta.fromEmpty}）`;
+                                })()}</div>
+                                <div>{(() => {
+                                    const eta = estimateHoursToCap(worldLab.resources.crystal, productionRates.crystalPerHour, storageCapacity.crystalCap);
+                                    return `💎 晶礦：+${productionRates.crystalPerHour.toFixed(1)} /h（上限 ${storageCapacity.crystalCap}，目前約 ${eta.fromNow} 滿倉 / 空倉約 ${eta.fromEmpty}）`;
+                                })()}</div>
                                 <div className="text-[10px] text-emerald-200/80">離線最多只結算 {storageCapacity.offlineHoursCap} 小時，所以太久沒開會被上限截斷。</div>
                             </div>
                             {BUILDING_UPGRADE_CARDS.map((building) => {
