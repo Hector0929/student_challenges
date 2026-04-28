@@ -151,7 +151,7 @@ export interface WorldStateRow {
 export interface WorldBuildingRow {
     id?: string;
     user_id: string;
-    building_key: 'forest' | 'mine' | 'academy' | 'market' | 'storage' | 'adventure';
+    building_key: 'forest' | 'mine' | 'crystal' | 'academy' | 'market' | 'storage' | 'adventure';
     level: number;
     worker_count?: number;
     assigned_plot_key?: string | null;

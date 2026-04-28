@@ -21,7 +21,7 @@ describe('ChildWorldSummaryCard', () => {
                     heroPower: 150,
                     monsterShards: 0,
                     timeOfDay: 'day',
-                    buildings: { forest: 2, mine: 2, academy: 1, market: 1 },
+                    buildings: { forest: 2, mine: 2, crystal: 1, academy: 1, market: 1, storage: 1 },
                     resources: { wood: 33, stone: 12, crystal: 7 },
                     lastTickAt: Date.now(),
                 },

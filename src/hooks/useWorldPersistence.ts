@@ -44,6 +44,8 @@ interface WorldPersistencePayload {
     timeDepositRows?: WorldTimeDepositRow[];
 }
 
+type StateRowCompatPayload = Omit<WorldStateRow, 'world_terrain'>;
+
 interface RawWorldPersistenceQuery {
     stateRow: WorldStateRow | null;
     inventoryRow: WorldInventoryRow | null;
@@ -54,7 +56,19 @@ interface RawWorldPersistenceQuery {
     timeDepositRows: WorldTimeDepositRow[];
 }
 
-const BUILDING_KEYS: Array<WorldBuildingKey> = ['forest', 'mine', 'academy', 'market'];
+interface MergeWorldPersistenceSnapshotArgs {
+    previousSnapshot: WorldPersistenceSnapshot | null | undefined;
+    worldLab: WorldLabState;
+    activeAdventure: AdventureMission | null;
+    lastAdventureResult: AdventureClaimResult | null;
+    bankNowMs?: number;
+    demandDepositAccount?: DemandDepositAccount;
+    timeDeposits?: TimeDeposit[];
+}
+
+const worldStatesSupportsTerrainByUser = new Map<string, boolean>();
+
+const BUILDING_KEYS: Array<WorldBuildingKey> = ['forest', 'mine', 'crystal', 'academy', 'market', 'storage'];
 
 function parseLastAdventureResult(value: unknown): AdventureClaimResult | null {
     if (!value || typeof value !== 'object') return null;
@@ -242,6 +256,32 @@ export function parseWorldPersistenceSnapshot({
     };
 }
 
+export function mergeWorldPersistenceSnapshot({
+    previousSnapshot,
+    worldLab,
+    activeAdventure,
+    lastAdventureResult,
+    bankNowMs,
+    demandDepositAccount,
+    timeDeposits,
+}: MergeWorldPersistenceSnapshotArgs): WorldPersistenceSnapshot {
+    return {
+        worldLab,
+        activeAdventure,
+        lastAdventureResult,
+        bankNowMs: typeof bankNowMs === 'number'
+            ? bankNowMs
+            : previousSnapshot?.bankNowMs ?? Date.now(),
+        demandDepositAccount: demandDepositAccount
+            ?? previousSnapshot?.demandDepositAccount
+            ?? {
+                balance: 0,
+                lastInterestAt: new Date().toISOString(),
+            },
+        timeDeposits: timeDeposits ?? previousSnapshot?.timeDeposits ?? [],
+    };
+}
+
 export function useWorldPersistence(userId?: string) {
     return useQuery({
         queryKey: ['world-persistence', userId],
@@ -303,8 +343,33 @@ export function useSaveWorldPersistence(userId?: string) {
                 timeDeposits,
             });
 
+            const upsertWorldStateCompat = async (stateRow: WorldStateRow) => {
+                const supportsTerrain = worldStatesSupportsTerrainByUser.get(userId);
+                if (supportsTerrain === false) {
+                    const { world_terrain: _ignored, ...legacyStateRow } = stateRow as WorldStateRow & { world_terrain?: WorldStateRow['world_terrain'] };
+                    return supabase.from('world_states').upsert(legacyStateRow as StateRowCompatPayload, { onConflict: 'user_id' });
+                }
+
+                const firstAttempt = await supabase.from('world_states').upsert(stateRow, { onConflict: 'user_id' });
+                if (!firstAttempt.error) {
+                    worldStatesSupportsTerrainByUser.set(userId, true);
+                    return firstAttempt;
+                }
+
+                const message = (firstAttempt.error as { message?: string }).message ?? '';
+                const code = (firstAttempt.error as { code?: string }).code;
+                const isMissingTerrainColumn = code === 'PGRST204' && message.includes('world_terrain');
+                if (!isMissingTerrainColumn) return firstAttempt;
+
+                // Backward compatibility for environments that haven't added world_terrain yet.
+                // Retry without this column so world save still works.
+                const { world_terrain: _ignored, ...legacyStateRow } = stateRow as WorldStateRow & { world_terrain?: WorldStateRow['world_terrain'] };
+                worldStatesSupportsTerrainByUser.set(userId, false);
+                return supabase.from('world_states').upsert(legacyStateRow as StateRowCompatPayload, { onConflict: 'user_id' });
+            };
+
             const [stateResult, inventoryResult, characterResult, buildingsResult, adventureUpsertResult] = await Promise.all([
-                supabase.from('world_states').upsert(payload.stateRow, { onConflict: 'user_id' }),
+                upsertWorldStateCompat(payload.stateRow),
                 supabase.from('world_inventory').upsert(payload.inventoryRow, { onConflict: 'user_id' }),
                 supabase.from('world_characters').upsert(payload.characterRow, { onConflict: 'user_id' }),
                 supabase.from('world_buildings').upsert(payload.buildingRows, { onConflict: 'user_id,building_key' }),
@@ -334,9 +399,25 @@ export function useSaveWorldPersistence(userId?: string) {
                 throw mutationErrors[0];
             }
 
-            return true;
+            return {
+                worldLab,
+                activeAdventure,
+                lastAdventureResult,
+                bankNowMs,
+                demandDepositAccount,
+                timeDeposits,
+            };
         },
-        onSuccess: () => {
+        onSuccess: (result) => {
+            queryClient.setQueryData<WorldPersistenceSnapshot | null>(['world-persistence', userId], (previousSnapshot) => mergeWorldPersistenceSnapshot({
+                previousSnapshot,
+                worldLab: result.worldLab,
+                activeAdventure: result.activeAdventure,
+                lastAdventureResult: result.lastAdventureResult,
+                bankNowMs: result.bankNowMs,
+                demandDepositAccount: result.demandDepositAccount,
+                timeDeposits: result.timeDeposits,
+            }));
             queryClient.invalidateQueries({ queryKey: ['world-persistence', userId] });
         },
     });

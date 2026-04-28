@@ -1,4 +1,4 @@
-export type PlotType = 'forest' | 'mine' | 'market' | 'academy' | 'storage' | 'adventure';
+export type PlotType = 'forest' | 'mine' | 'crystal' | 'market' | 'academy' | 'storage' | 'adventure';
 
 export interface WorldResources {
     wood: number;
@@ -9,6 +9,7 @@ export interface WorldResources {
 export interface WorldBuildingLevels {
     forest: number;
     mine: number;
+    crystal?: number;
     academy: number;
     market?: number;
     storage?: number;

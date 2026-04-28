@@ -18,7 +18,7 @@ export type WorldTheme = 'normal' | 'night' | 'sakura' | 'rainbow_dragon' | 'sta
 /** Terrain surface color (grass top of floating island blocks) */
 export type WorldTerrain = 'grassland' | 'desert' | 'snow';
 
-export type WorldBuildingKey = 'forest' | 'mine' | 'academy' | 'market';
+export type WorldBuildingKey = 'forest' | 'mine' | 'crystal' | 'academy' | 'market' | 'storage';
 
 export interface WorldLabState {
     islandLevel: number;
@@ -73,8 +73,10 @@ export const INITIAL_WORLD_LAB_STATE: WorldLabState = {
     buildings: {
         forest: 1,
         mine: 1,
+        crystal: 1,
         academy: 1,
         market: 1,
+        storage: 1,
     },
     resources: {
         wood: 0,
@@ -91,6 +93,7 @@ function getRatesForState(state: WorldLabState) {
         buildingLevels: {
             forest: state.buildings.forest,
             mine: state.buildings.mine,
+            crystal: state.buildings.crystal,
             academy: state.buildings.academy,
         },
     });
@@ -106,7 +109,7 @@ export function settleWorldState(state: WorldLabState, now: number): WorldLabSta
         currentResources: state.resources,
         productionRates: getRatesForState(state),
         elapsedHours: hours,
-        storageLevel: Math.max(1, state.islandLevel),
+        storageLevel: Math.max(1, state.buildings.storage),
     });
 
     return {
@@ -121,7 +124,7 @@ export function useWorldState({ active, starBalance, onAdjustStars, exchangePric
     const [worldLab, setWorldLab] = useState<WorldLabState>(INITIAL_WORLD_LAB_STATE);
 
     const worldRates = useMemo(() => getRatesForState(worldLab), [worldLab]);
-    const storageLevel = Math.max(1, worldLab.islandLevel);
+    const storageLevel = Math.max(1, worldLab.buildings.storage);
     const storageCapacity = useMemo(() => getStorageCapacity(storageLevel), [storageLevel]);
     const unlockedPlotKeys = useMemo(() => getUnlockedPlotKeys(worldLab.islandLevel), [worldLab.islandLevel]);
     const unlockedPlotSet = useMemo(() => new Set(unlockedPlotKeys), [unlockedPlotKeys]);
@@ -134,11 +137,12 @@ export function useWorldState({ active, starBalance, onAdjustStars, exchangePric
     const plotPreviews = useMemo<PlotPreview[]>(() => ([
         { key: 'forest', label: '森林地塊', unlockAt: 2, status: `伐木 Lv.${worldLab.buildings.forest}` },
         { key: 'mine', label: '礦山地塊', unlockAt: 3, status: `採礦 Lv.${worldLab.buildings.mine}` },
+        { key: 'crystal', label: '水晶礦場', unlockAt: 4, status: `晶礦 Lv.${worldLab.buildings.crystal}` },
         { key: 'market', label: '商業地塊', unlockAt: 4, status: `交易 Lv.${worldLab.buildings.market}` },
         { key: 'academy', label: '訓練地塊', unlockAt: 5, status: `學院 Lv.${worldLab.buildings.academy}` },
-        { key: 'storage', label: '倉儲地塊', unlockAt: 6, status: `容量 ${storageCapacity.woodCap}/${storageCapacity.stoneCap}/${storageCapacity.crystalCap}` },
+        { key: 'storage', label: '倉儲地塊', unlockAt: 6, status: `倉庫 Lv.${worldLab.buildings.storage} ｜容量 ${storageCapacity.woodCap}/${storageCapacity.stoneCap}/${storageCapacity.crystalCap}` },
         { key: 'adventure', label: '冒險地塊', unlockAt: 7, status: `角色 Lv.${worldLab.heroLevel} 可派遣` },
-    ]), [storageCapacity.crystalCap, storageCapacity.stoneCap, storageCapacity.woodCap, worldLab.buildings.academy, worldLab.buildings.forest, worldLab.buildings.market, worldLab.buildings.mine, worldLab.heroLevel]);
+    ]), [storageCapacity.crystalCap, storageCapacity.stoneCap, storageCapacity.woodCap, worldLab.buildings.academy, worldLab.buildings.crystal, worldLab.buildings.forest, worldLab.buildings.market, worldLab.buildings.mine, worldLab.buildings.storage, worldLab.heroLevel]);
 
     const plotDetails = useMemo<PlotDetail[]>(() => ([
         {
@@ -156,13 +160,23 @@ export function useWorldState({ active, starBalance, onAdjustStars, exchangePric
             label: '礦山地塊',
             unlockAt: 3,
             status: `採礦 Lv.${worldLab.buildings.mine}`,
-            description: '提供石材與晶礦感，後續可延伸成稀有礦脈系統。',
+            description: '提供石材主產出，升級後礦工效率更高。',
             workerCount: Math.min(3, 1 + Math.floor(Math.max(0, worldLab.buildings.mine - 1) / 2)),
             routeText: '礦山地塊 → 主島鍛造區',
             resourceText: `石材 +${worldRates.stonePerHour.toFixed(1)}/h`,
         },
         {
-            key: 'market-2',
+            key: 'crystal-2',
+            label: '水晶礦場',
+            unlockAt: 4,
+            status: `晶礦 Lv.${worldLab.buildings.crystal}`,
+            description: '提供晶礦主產出，獨立於石材礦山。',
+            workerCount: Math.min(3, 1 + Math.floor(Math.max(0, worldLab.buildings.crystal - 1) / 2)),
+            routeText: '水晶礦場 → 主島精煉區',
+            resourceText: `晶礦 +${worldRates.crystalPerHour.toFixed(1)}/h`,
+        },
+        {
+            key: 'market-3',
             label: '商業地塊',
             unlockAt: 4,
             status: `交易 Lv.${worldLab.buildings.market}`,
@@ -172,7 +186,7 @@ export function useWorldState({ active, starBalance, onAdjustStars, exchangePric
             resourceText: `商店倍率 x${marketMultiplier.toFixed(2)}`,
         },
         {
-            key: 'academy-3',
+            key: 'academy-4',
             label: '訓練地塊',
             unlockAt: 5,
             status: `學院 Lv.${worldLab.buildings.academy}`,
@@ -182,17 +196,17 @@ export function useWorldState({ active, starBalance, onAdjustStars, exchangePric
             resourceText: `效率加成 x${(1 + worldLab.buildings.academy * 0.08).toFixed(2)}`,
         },
         {
-            key: 'storage-4',
+            key: 'storage-5',
             label: '倉儲地塊',
             unlockAt: 6,
-            status: '集中資源與加速配送',
-            description: '收納各地資源，未來可擴成離線收益上限與加速倉儲。',
-            workerCount: Math.min(3, Math.max(1, Math.floor(worldLab.islandLevel / 2))),
+            status: `倉庫 Lv.${worldLab.buildings.storage} 集中資源與加速配送`,
+            description: '收納各地資源，升級可提升各資源上限與離線結算時數。',
+            workerCount: Math.min(3, 1 + Math.floor(Math.max(0, worldLab.buildings.storage - 1) / 2)),
             routeText: '各地塊 → 倉儲地塊 → 主島',
             resourceText: `上限 ${storageCapacity.woodCap}/${storageCapacity.stoneCap}/${storageCapacity.crystalCap}，離線 ${storageCapacity.offlineHoursCap}h`,
         },
         {
-            key: 'adventure-5',
+            key: 'adventure-6',
             label: '冒險地塊',
             unlockAt: 7,
             status: `角色 Lv.${worldLab.heroLevel} 可派遣`,
@@ -201,7 +215,7 @@ export function useWorldState({ active, starBalance, onAdjustStars, exchangePric
             routeText: '冒險地塊 → 外部世界 / 遠征回收',
             resourceText: `角色戰力 ${worldLab.heroPower}`,
         },
-    ]), [marketMultiplier, storageCapacity.crystalCap, storageCapacity.offlineHoursCap, storageCapacity.stoneCap, storageCapacity.woodCap, worldLab.buildings.academy, worldLab.buildings.forest, worldLab.buildings.market, worldLab.buildings.mine, worldLab.heroLevel, worldLab.heroPower, worldLab.islandLevel, worldRates.stonePerHour, worldRates.woodPerHour]);
+    ]), [marketMultiplier, storageCapacity.crystalCap, storageCapacity.offlineHoursCap, storageCapacity.stoneCap, storageCapacity.woodCap, worldLab.buildings.academy, worldLab.buildings.crystal, worldLab.buildings.forest, worldLab.buildings.market, worldLab.buildings.mine, worldLab.buildings.storage, worldLab.heroLevel, worldLab.heroPower, worldLab.islandLevel, worldRates.crystalPerHour, worldRates.stonePerHour, worldRates.woodPerHour]);
 
     const selectedPlot = plotDetails.find((plot) => plot.key === selectedPlotKey) ?? plotDetails[0];
     const selectedPlotType = selectedPlot.key.split('-')[0];
@@ -228,7 +242,7 @@ export function useWorldState({ active, starBalance, onAdjustStars, exchangePric
                 currentResources: settled.resources,
                 productionRates: getRatesForState(settled),
                 elapsedHours: hours,
-                storageLevel: Math.max(1, settled.islandLevel),
+                storageLevel: Math.max(1, settled.buildings.storage),
             });
 
             return {
@@ -268,7 +282,7 @@ export function useWorldState({ active, starBalance, onAdjustStars, exchangePric
         setWorldLab((prev) => {
             const settled = settleWorldState(prev, Date.now());
             const nextBuildings = { ...settled.buildings, [key]: settled.buildings[key] + 1 };
-            const totalLv = nextBuildings.forest + nextBuildings.mine + nextBuildings.academy + nextBuildings.market;
+            const totalLv = nextBuildings.forest + nextBuildings.mine + nextBuildings.crystal + nextBuildings.academy + nextBuildings.market + nextBuildings.storage;
             const nextIslandLv = Math.max(settled.islandLevel, 1 + Math.floor(totalLv / 6));
 
             return {

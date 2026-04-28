@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>方塊衝刺 - 四大主題</title>
+    <title>方塊衝刺 - 六大主題</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -16,10 +16,17 @@
         .jungle-btn { background:linear-gradient(145deg,#14532d,#166534); border:1px solid #22c55e; box-shadow:0 0 15px rgba(34,197,94,0.5); transition:all 0.2s; }
         .sky-btn { background:linear-gradient(145deg,#0c4a6e,#0369a1); border:1px solid #38bdf8; box-shadow:0 0 15px rgba(56,189,248,0.5); transition:all 0.2s; }
         .egypt-btn { background:linear-gradient(145deg,#78350f,#92400e); border:1px solid #f59e0b; box-shadow:0 0 15px rgba(245,158,11,0.5); transition:all 0.2s; }
+        .ocean-btn { background:linear-gradient(145deg,#0c1445,#155e75); border:1px solid #22d3ee; box-shadow:0 0 15px rgba(34,211,238,0.45); transition:all 0.2s; }
+        .volcano-btn { background:linear-gradient(145deg,#3b0a0a,#451a03); border:1px solid #ef4444; box-shadow:0 0 15px rgba(239,68,68,0.45); transition:all 0.2s; }
         canvas { image-rendering:pixelated; }
         .level-card { transition:all 0.3s; cursor:pointer; }
         .level-card:hover { transform:translateY(-4px); }
         .level-card.locked { opacity:0.45; pointer-events:none; }
+        .reward-chip { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:40px; padding:10px 14px; border-radius:999px; border:1px solid rgba(255,255,255,0.18); background:linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04)); color:#fff; letter-spacing:0.08em; }
+        .reward-burst { position:relative; overflow:hidden; }
+        .reward-burst::before { content:''; position:absolute; inset:-40%; background:conic-gradient(from 90deg, transparent 0deg, rgba(255,255,255,0.18) 90deg, transparent 180deg, rgba(255,255,255,0.12) 270deg, transparent 360deg); animation:rewardSpin 9s linear infinite; opacity:0.7; }
+        .reward-burst > * { position:relative; z-index:1; }
+        @keyframes rewardSpin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
     </style>
 </head>
 <body class="h-[100dvh] w-screen relative select-none" oncontextmenu="return false;">
@@ -62,7 +69,7 @@
         <div class="text-center mb-6">
             <div class="text-6xl mb-3 animate-bounce">🏃💨</div>
             <h1 class="text-3xl sm:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 font-bold mb-2 neon-text">方塊衝刺</h1>
-            <p class="text-purple-300 tracking-wider text-sm">選擇關卡開始冒險</p>
+            <p class="text-purple-300 tracking-wider text-sm">六大主題，逐關突破</p>
         </div>
         <div class="grid grid-cols-2 gap-3 mb-5" id="level-cards"></div>
         <div class="text-center">
@@ -85,11 +92,13 @@
 
 <!-- Level Clear Screen -->
 <div id="level-clear-screen" class="hidden absolute inset-0 z-20 flex items-center justify-center bg-emerald-900/80 backdrop-blur-md">
-    <div class="bg-gray-900 rounded-2xl p-8 text-center max-w-sm mx-4 border-2 border-emerald-400 shadow-2xl pointer-events-auto">
+    <div id="clear-panel" class="reward-burst bg-gray-900 rounded-2xl p-8 text-center max-w-sm mx-4 border-2 border-emerald-400 shadow-2xl pointer-events-auto">
         <div id="clear-emoji" class="text-6xl mb-4">🏆</div>
         <h2 class="text-3xl text-emerald-400 font-bold mb-2" id="clear-title">LEVEL CLEAR!</h2>
         <div class="text-gray-400 mb-2 text-sm" id="clear-level-title"></div>
         <div class="text-gray-400 mb-5 text-lg">過關分數<br><span id="clear-score" class="font-bold text-white text-4xl">0</span></div>
+        <div id="clear-reward-chip" class="reward-chip mb-3">+1 關卡解鎖</div>
+        <div id="clear-flavor-text" class="text-xs tracking-[0.25em] text-white/70 uppercase mb-5">Momentum bonus stabilized</div>
         <div id="unlock-next-info" class="text-cyan-300 text-sm mb-6"></div>
         <button id="next-level-btn" onclick="goNextLevel()" class="clay-btn text-white px-8 py-3 w-full text-lg rounded-xl mb-3">NEXT LEVEL</button>
         <button onclick="backToLevelSelect()" class="bg-gray-700 hover:bg-gray-600 text-white px-8 py-2 w-full text-sm rounded-xl">回到關卡選擇</button>
@@ -129,9 +138,19 @@ const nextLevelBtn = document.getElementById('next-level-btn');
 const clearEmojiEl = document.getElementById('clear-emoji');
 const clearTitleEl = document.getElementById('clear-title');
 const levelCardsEl = document.getElementById('level-cards');
+const clearPanelEl = document.getElementById('clear-panel');
+const clearRewardChipEl = document.getElementById('clear-reward-chip');
+const clearFlavorTextEl = document.getElementById('clear-flavor-text');
 
 const STORAGE_KEY = 'parkour_v3_unlock';
 const STORAGE_HS_KEY = 'parkour_v3_highscores';
+
+/* ===== USER ID (per-user isolation) ===== */
+const urlParams = new URLSearchParams(window.location.search);
+const PLAYER_USER_ID = urlParams.get('userId') || '';
+function getUserStorageKey(base) {
+    return PLAYER_USER_ID ? `${base}_${PLAYER_USER_ID}` : base;
+}
 
 /* ===== THEME DEFINITIONS ===== */
 const THEMES = {
@@ -167,6 +186,28 @@ const THEMES = {
         platform: '#92400e', platformTop: '#f59e0b',
         treasure: '#fbbf24', treasureGlow: '#f59e0b',
         buildingColors: ['#3b1a06','#5c2d0e','#78350f'],
+    },
+    ocean: {
+        bg: '#0c1445', floor: '#1e3a5f', floorLine: '#22d3ee',
+        bgTop: '#0c1445', bgBottom: '#164e63',
+        player: '#f97316', playerGlow: '#fb923c',
+        coral: '#ec4899', coralDark: '#be185d',
+        seaweed: '#10b981', seaweedDark: '#059669',
+        bubble: 'rgba(34,211,238,0.5)', bubbleGlow: '#22d3ee',
+        jellyfish: '#c084fc', jellyfishGlow: '#a855f7',
+        platform: '#155e75', platformTop: '#22d3ee',
+        shell: '#fbbf24', shellGlow: '#f59e0b',
+        buildingColors: ['#0c1445','#1e3a5f','#155e75'],
+    },
+    volcano: {
+        bg: '#1c0a00', floor: '#3b0a0a', floorLine: '#ef4444',
+        lava: '#ef4444', lavaDark: '#dc2626', lavaGlow: '#f97316',
+        player: '#22d3ee', playerGlow: '#06b6d4',
+        rock: '#57534e', rockDark: '#44403c',
+        fireball: '#f97316', fireballGlow: '#fb923c',
+        platform: '#44403c', platformTop: '#ef4444',
+        gem: '#a855f7', gemGlow: '#7c3aed',
+        buildingColors: ['#1c0a00','#3b0a0a','#451a03'],
     }
 };
 
@@ -201,12 +242,27 @@ const LEVELS = [
         mode: 'runner_finish', speed: 5.5, minGap: 240, maxGap: 340,
         totalDistance: 6000,
         patterns: ['egyptSmallPyramid','egyptBigPyramid','egyptSphinx','egyptStairUp','egyptPlatformJewel','egyptMixedSet']
+    },
+    {
+        id: 5, name: '深海探險', emoji: '🌊', theme: 'ocean',
+        description: '收集 25 個貝殼',
+        targetCollect: 25, collectName: '🐚', collectLabel: 'SHELLS',
+        mode: 'flappy', speed: 3.2, minGap: 300, maxGap: 400,
+        gapHeight: 180, flapForce: -5.8, gravity: 0.25,
+        patterns: ['oceanShellRow','oceanCoral','oceanJellyfish','oceanShellRow','oceanCoral','oceanSeaweedGap','oceanJellyfish','oceanNarrowCoral']
+    },
+    {
+        id: 6, name: '火山煉獄', emoji: '🌋', theme: 'volcano',
+        description: '收集 25 顆寶石',
+        targetCollect: 25, collectName: '💎', collectLabel: 'GEMS',
+        mode: 'runner', speed: 6.5, minGap: 280, maxGap: 400,
+        patterns: ['volcanoRock','volcanoDoubleRock','volcanoFireball','volcanoPlatformGem','volcanoRock','volcanoLavaGap','volcanoFireball','volcanoMixed']
     }
 ];
 
-let unlockedLevel = Math.min(LEVELS.length, Math.max(1, parseInt(localStorage.getItem(STORAGE_KEY)||'1',10)||1));
+let unlockedLevel = Math.min(LEVELS.length, Math.max(1, parseInt(localStorage.getItem(getUserStorageKey(STORAGE_KEY))||'1',10)||1));
 let highScores = {};
-try { highScores = JSON.parse(localStorage.getItem(STORAGE_HS_KEY)||'{}')||{}; } catch { highScores = {}; }
+try { highScores = JSON.parse(localStorage.getItem(getUserStorageKey(STORAGE_HS_KEY))||'{}')||{}; } catch { highScores = {}; }
 
 /* ===== GAME STATE ===== */
 let state = {
@@ -334,6 +390,31 @@ class Collectible {
             ctx.moveTo(0,-6); ctx.lineTo(5,0); ctx.lineTo(0,6); ctx.lineTo(-5,0);
             ctx.closePath(); ctx.fill();
             ctx.shadowBlur=0;
+        } else if (this.type === 'shell') {
+            ctx.shadowBlur=12; ctx.shadowColor='#22d3ee';
+            ctx.fillStyle='#fbbf24';
+            ctx.beginPath();
+            ctx.arc(0, 0, 10, Math.PI, 0);
+            ctx.closePath(); ctx.fill();
+            ctx.strokeStyle='#d97706'; ctx.lineWidth=1.5;
+            for(let i=0;i<5;i++){
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(Math.cos(Math.PI+i*Math.PI/4)*10, Math.sin(Math.PI+i*Math.PI/4)*10);
+                ctx.stroke();
+            }
+            ctx.shadowBlur=0;
+        } else if (this.type === 'gem') {
+            ctx.shadowBlur=14; ctx.shadowColor='#a855f7';
+            ctx.fillStyle='#a855f7';
+            ctx.beginPath();
+            ctx.moveTo(0,-12); ctx.lineTo(8,-4); ctx.lineTo(8,4); ctx.lineTo(0,12); ctx.lineTo(-8,4); ctx.lineTo(-8,-4);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle='#c4b5fd';
+            ctx.beginPath();
+            ctx.moveTo(0,-8); ctx.lineTo(5,-2); ctx.lineTo(0,4); ctx.lineTo(-5,-2);
+            ctx.closePath(); ctx.fill();
+            ctx.shadowBlur=0;
         } else {
             ctx.shadowBlur=14; ctx.shadowColor='#fbbf24';
             ctx.fillStyle='#fbbf24';
@@ -394,6 +475,42 @@ let treasure = null;
 function getTheme() { return THEMES[LEVELS[state.levelIndex].theme] || THEMES.neon; }
 function getLvl() { return LEVELS[state.levelIndex]; }
 function getFloorY() { return canvas.height - CONFIG_FLOOR; }
+function getClearRewardMeta(lvl) {
+    if (lvl.theme === 'ocean') {
+        return {
+            chip: '深海珍藏 +1',
+            flavor: 'Current synced. Shell vault secured.',
+            panelBg: 'linear-gradient(135deg, rgba(8,47,73,0.96), rgba(12,20,69,0.96))',
+            border: '#22d3ee',
+            title: '#67e8f9'
+        };
+    }
+    if (lvl.theme === 'volcano') {
+        return {
+            chip: '熔岩獎章 +1',
+            flavor: 'Heat survived. Core pressure broken.',
+            panelBg: 'linear-gradient(135deg, rgba(69,10,10,0.96), rgba(28,10,0,0.96))',
+            border: '#fb923c',
+            title: '#fdba74'
+        };
+    }
+    if (lvl.theme === 'egypt') {
+        return {
+            chip: '寶藏開啟',
+            flavor: 'Ancient vault unlocked.',
+            panelBg: 'linear-gradient(135deg, rgba(69,26,3,0.96), rgba(120,53,15,0.96))',
+            border: '#f59e0b',
+            title: '#fcd34d'
+        };
+    }
+    return {
+        chip: '關卡突破 +1',
+        flavor: 'Chain your rhythm. Keep moving.',
+        panelBg: 'linear-gradient(135deg, rgba(17,24,39,0.96), rgba(31,41,55,0.96))',
+        border: '#34d399',
+        title: '#6ee7b7'
+    };
+}
 
 /* ===== BACKGROUND ===== */
 function initBackground() {
@@ -437,6 +554,51 @@ function drawBackground() {
     const theme = getTheme();
     const lvl = getLvl();
     if (lvl.mode === 'flappy') {
+        if (lvl.theme === 'ocean') {
+            const grad = ctx.createLinearGradient(0,0,0,canvas.height);
+            grad.addColorStop(0, '#082f49');
+            grad.addColorStop(0.45, theme.bgTop||'#0c1445');
+            grad.addColorStop(1, theme.bgBottom||'#164e63');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+
+            ctx.fillStyle = 'rgba(125,211,252,0.08)';
+            for(let i=0;i<4;i++){
+                const rayX = ((state.time*0.6)+(i*220))%(canvas.width+260)-130;
+                ctx.beginPath();
+                ctx.moveTo(rayX, 0);
+                ctx.lineTo(rayX+90, 0);
+                ctx.lineTo(rayX+30, canvas.height);
+                ctx.lineTo(rayX-60, canvas.height);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.fillStyle = 'rgba(34,211,238,0.18)';
+            for(let i=0;i<18;i++){
+                const bubbleX = ((state.time*1.3)+(i*77))%(canvas.width+30)-15;
+                const bubbleY = canvas.height - ((state.time*2.1+i*35)%(canvas.height+80));
+                ctx.beginPath();
+                ctx.arc(bubbleX, bubbleY, 3 + (i%4), 0, Math.PI*2);
+                ctx.fill();
+            }
+
+            ctx.fillStyle = 'rgba(236,72,153,0.18)';
+            for(let i=0;i<6;i++){
+                const fishX = canvas.width - (((state.time*1.1)+(i*180))%(canvas.width+120));
+                const fishY = 110 + i*70 + Math.sin(state.time*0.03+i)*18;
+                ctx.beginPath();
+                ctx.ellipse(fishX, fishY, 20, 8, 0, 0, Math.PI*2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(fishX+18, fishY);
+                ctx.lineTo(fishX+30, fishY-7);
+                ctx.lineTo(fishX+30, fishY+7);
+                ctx.closePath();
+                ctx.fill();
+            }
+            return;
+        }
         /* Sky gradient */
         const grad = ctx.createLinearGradient(0,0,0,canvas.height);
         grad.addColorStop(0, theme.bgTop||'#38bdf8');
@@ -449,6 +611,37 @@ function drawBackground() {
             const cx = ((state.time*0.8+i*250)%( canvas.width+300))-150;
             const cy = 60+i*90+Math.sin(state.time*0.01+i)*20;
             drawCloudShape(cx, cy, 80+i*15, 25+i*5);
+        }
+        return;
+    }
+    if (lvl.theme === 'volcano') {
+        const sky = ctx.createLinearGradient(0,0,0,canvas.height);
+        sky.addColorStop(0, '#1c0a00');
+        sky.addColorStop(0.55, '#2b0a0a');
+        sky.addColorStop(1, '#451a03');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+
+        ctx.fillStyle = 'rgba(239,68,68,0.12)';
+        for(let i=0;i<24;i++){
+            const emberX = ((state.time*1.8)+(i*53))%(canvas.width+50)-25;
+            const emberY = canvas.height - 180 - ((state.time*1.7+i*29)%220);
+            ctx.fillRect(emberX, emberY, 2 + (i%2), 2 + (i%2));
+        }
+
+        const floorY = getFloorY();
+        ctx.fillStyle = '#2b0a0a';
+        for(let i=0;i<5;i++){
+            const baseX = (i*260) - ((state.time*0.7)%(260));
+            ctx.beginPath();
+            ctx.moveTo(baseX, floorY);
+            ctx.lineTo(baseX+70, floorY-140-(i%2)*40);
+            ctx.lineTo(baseX+150, floorY);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = 'rgba(249,115,22,0.24)';
+            ctx.fillRect(baseX+66, floorY-90-(i%2)*30, 6, 42);
+            ctx.fillStyle = '#2b0a0a';
         }
         return;
     }
@@ -633,12 +826,93 @@ function spawnEgyptPattern(name, sx) {
     }
 }
 
+/* ---- OCEAN (flappy) patterns ---- */
+function spawnOceanPattern(name, sx) {
+    const ch = canvas.height;
+    const gapH = LEVELS[state.levelIndex].gapHeight || 180;
+    switch(name){
+        case 'oceanCoral': {
+            const gapY = 80 + Math.random() * (ch - gapH - 160);
+            obstacles.push(createObs('coral_top',sx,0,55,gapY));
+            obstacles.push(createObs('coral_bottom',sx,gapY+gapH,55,ch-gapY-gapH));
+            collectibles.push(new Collectible(sx+28, gapY+gapH/2, 'shell'));
+            break;
+        }
+        case 'oceanShellRow': {
+            const baseY = 100 + Math.random()*(ch-250);
+            for(let i=0;i<3;i++) collectibles.push(new Collectible(sx+i*50, baseY+Math.sin(i)*30, 'shell'));
+            break;
+        }
+        case 'oceanJellyfish': {
+            const jy = 80+Math.random()*(ch-200);
+            obstacles.push(createObs('jellyfish',sx+80,jy,36,40,{vySeed:Math.random()*Math.PI*2}));
+            collectibles.push(new Collectible(sx+20, jy-60, 'shell'));
+            break;
+        }
+        case 'oceanSeaweedGap': {
+            const gapY = 80 + Math.random() * (ch - gapH - 160);
+            obstacles.push(createObs('seaweed_top',sx,0,50,gapY));
+            obstacles.push(createObs('seaweed_bottom',sx,gapY+gapH,50,ch-gapY-gapH));
+            collectibles.push(new Collectible(sx+25, gapY+gapH/2, 'shell'));
+            collectibles.push(new Collectible(sx+25, gapY+gapH/2-40, 'shell'));
+            break;
+        }
+        case 'oceanNarrowCoral': {
+            const gapY = 100 + Math.random() * (ch - gapH - 200);
+            const narrowGap = gapH * 0.8;
+            obstacles.push(createObs('coral_top',sx,0,55,gapY));
+            obstacles.push(createObs('coral_bottom',sx,gapY+narrowGap,55,ch-gapY-narrowGap));
+            collectibles.push(new Collectible(sx+28, gapY+narrowGap/2, 'shell'));
+            break;
+        }
+    }
+}
+
+/* ---- VOLCANO patterns ---- */
+function spawnVolcanoPattern(name, sx) {
+    const fy = getFloorY();
+    switch(name){
+        case 'volcanoRock':
+            obstacles.push(createObs('volcanoRock',sx,fy-48,48,48));
+            if(Math.random()<0.4) collectibles.push(new Collectible(sx+30,fy-120,'gem'));
+            break;
+        case 'volcanoDoubleRock':
+            obstacles.push(createObs('volcanoRock',sx,fy-48,48,48));
+            obstacles.push(createObs('volcanoRock',sx+95,fy-48,48,48));
+            collectibles.push(new Collectible(sx+70,fy-140,'gem'));
+            break;
+        case 'volcanoFireball':
+            obstacles.push(createObs('fireball',sx+50,fy-150,36,36,{vySeed:Math.random()*Math.PI*2}));
+            collectibles.push(new Collectible(sx+20,fy-80,'gem'));
+            break;
+        case 'volcanoPlatformGem':
+            obstacles.push(createObs('volcanoPlatform',sx,fy-85,80,14));
+            obstacles.push(createObs('volcanoPlatform',sx+115,fy-140,80,14));
+            if(Math.random()<0.5) collectibles.push(new Collectible(sx+30,fy-130,'gem'));
+            collectibles.push(new Collectible(sx+145,fy-185,'gem'));
+            break;
+        case 'volcanoLavaGap':
+            obstacles.push(createObs('lavaPool',sx+20,fy-16,100,16));
+            obstacles.push(createObs('volcanoPlatform',sx+40,fy-80,70,14));
+            collectibles.push(new Collectible(sx+65,fy-125,'gem'));
+            break;
+        case 'volcanoMixed':
+            obstacles.push(createObs('volcanoRock',sx,fy-48,48,48));
+            obstacles.push(createObs('fireball',sx+140,fy-130,36,36,{vySeed:Math.random()*Math.PI*2}));
+            obstacles.push(createObs('volcanoPlatform',sx+70,fy-110,80,14));
+            collectibles.push(new Collectible(sx+100,fy-155,'gem'));
+            break;
+    }
+}
+
 function spawnPattern(name, sx) {
     const theme = getLvl().theme;
     if (theme === 'neon') spawnNeonPattern(name, sx);
     else if (theme === 'jungle') spawnJunglePattern(name, sx);
     else if (theme === 'sky') spawnSkyPattern(name, sx);
     else if (theme === 'egypt') spawnEgyptPattern(name, sx);
+    else if (theme === 'ocean') spawnOceanPattern(name, sx);
+    else if (theme === 'volcano') spawnVolcanoPattern(name, sx);
 }
 
 /* ===== DRAW OBSTACLES ===== */
@@ -819,6 +1093,141 @@ function drawObstacle(obs) {
         ctx.lineWidth=1;
         ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
     }
+    /* ---- Ocean obstacles ---- */
+    else if (obs.type === 'coral_top' || obs.type === 'coral_bottom') {
+        ctx.shadowBlur=8; ctx.shadowColor=theme.coral||'#ec4899';
+        ctx.fillStyle = theme.coral || '#ec4899';
+        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+        ctx.fillStyle = theme.coralDark || '#be185d';
+        if (obs.type === 'coral_top') {
+            /* coral branch tip at bottom */
+            ctx.beginPath();
+            ctx.moveTo(obs.x-4, obs.y+obs.h); ctx.lineTo(obs.x+obs.w/2, obs.y+obs.h+18);
+            ctx.lineTo(obs.x+obs.w+4, obs.y+obs.h); ctx.closePath(); ctx.fill();
+            ctx.beginPath();
+            ctx.arc(obs.x+12, obs.y+obs.h, 8, 0, Math.PI); ctx.fill();
+            ctx.beginPath();
+            ctx.arc(obs.x+obs.w-12, obs.y+obs.h, 8, 0, Math.PI); ctx.fill();
+        } else {
+            /* coral branch tip at top */
+            ctx.beginPath();
+            ctx.moveTo(obs.x-4, obs.y); ctx.lineTo(obs.x+obs.w/2, obs.y-18);
+            ctx.lineTo(obs.x+obs.w+4, obs.y); ctx.closePath(); ctx.fill();
+            ctx.beginPath();
+            ctx.arc(obs.x+12, obs.y, 8, Math.PI, 0); ctx.fill();
+            ctx.beginPath();
+            ctx.arc(obs.x+obs.w-12, obs.y, 8, Math.PI, 0); ctx.fill();
+        }
+        ctx.strokeStyle='#f9a8d4'; ctx.lineWidth=2;
+        ctx.strokeRect(obs.x,obs.y,obs.w,obs.h);
+    }
+    else if (obs.type === 'seaweed_top' || obs.type === 'seaweed_bottom') {
+        ctx.fillStyle = theme.seaweed || '#10b981';
+        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+        /* wavy seaweed tips */
+        ctx.fillStyle = theme.seaweedDark || '#059669';
+        const tipY = obs.type === 'seaweed_top' ? obs.y+obs.h : obs.y;
+        const dir = obs.type === 'seaweed_top' ? 1 : -1;
+        for(let i=0;i<4;i++){
+            const sx=obs.x+6+i*12;
+            const wave=Math.sin(state.time*0.05+i)*4;
+            ctx.beginPath();
+            ctx.moveTo(sx, tipY);
+            ctx.quadraticCurveTo(sx+6+wave, tipY+dir*20, sx+12, tipY);
+            ctx.fill();
+        }
+    }
+    else if (obs.type === 'jellyfish') {
+        ctx.translate(obs.x+obs.w/2, obs.y+obs.h/2);
+        const bob = Math.sin(state.time*0.1+(obs.vySeed||0))*3;
+        ctx.translate(0, bob);
+        ctx.shadowBlur=15; ctx.shadowColor=theme.jellyfishGlow||'#a855f7';
+        /* dome */
+        ctx.fillStyle = theme.jellyfish || '#c084fc';
+        ctx.beginPath();
+        ctx.ellipse(0, -5, obs.w/2, obs.h*0.4, 0, Math.PI, 0);
+        ctx.fill();
+        /* inner glow */
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.beginPath();
+        ctx.ellipse(0, -8, obs.w*0.3, obs.h*0.2, 0, Math.PI, 0);
+        ctx.fill();
+        /* tentacles */
+        ctx.strokeStyle = theme.jellyfish || '#c084fc';
+        ctx.lineWidth = 2; ctx.globalAlpha = 0.7;
+        for(let i=-1;i<=1;i++){
+            const wave = Math.sin(state.time*0.08+i*2)*5;
+            ctx.beginPath();
+            ctx.moveTo(i*8, -2);
+            ctx.quadraticCurveTo(i*8+wave, obs.h*0.3, i*10+wave, obs.h*0.5);
+            ctx.stroke();
+        }
+        ctx.globalAlpha=1;
+    }
+    /* ---- Volcano obstacles ---- */
+    else if (obs.type === 'volcanoRock') {
+        ctx.shadowBlur=8; ctx.shadowColor=theme.lavaGlow||'#f97316';
+        ctx.fillStyle = theme.rock || '#57534e';
+        ctx.beginPath();
+        ctx.moveTo(obs.x+5, obs.y+obs.h);
+        ctx.lineTo(obs.x+10, obs.y+8);
+        ctx.lineTo(obs.x+obs.w/2, obs.y);
+        ctx.lineTo(obs.x+obs.w-8, obs.y+6);
+        ctx.lineTo(obs.x+obs.w-3, obs.y+obs.h);
+        ctx.closePath(); ctx.fill();
+        /* lava cracks */
+        ctx.strokeStyle = theme.lava || '#ef4444';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(obs.x+obs.w/2, obs.y+4);
+        ctx.lineTo(obs.x+obs.w/2-5, obs.y+obs.h*0.5);
+        ctx.lineTo(obs.x+obs.w/2+3, obs.y+obs.h*0.8);
+        ctx.stroke();
+    }
+    else if (obs.type === 'fireball') {
+        ctx.translate(obs.x+obs.w/2, obs.y+obs.h/2);
+        ctx.rotate(state.time*0.12);
+        ctx.shadowBlur=16; ctx.shadowColor=theme.fireballGlow||'#fb923c';
+        /* outer flame */
+        ctx.fillStyle = theme.fireball || '#f97316';
+        ctx.beginPath(); ctx.arc(0,0,obs.w/2,0,Math.PI*2); ctx.fill();
+        /* inner core */
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath(); ctx.arc(0,0,obs.w/3.5,0,Math.PI*2); ctx.fill();
+        /* flame tips */
+        ctx.fillStyle = theme.fireball || '#f97316';
+        for(let i=0;i<5;i++){
+            const a = (i/5)*Math.PI*2 + state.time*0.1;
+            const r = obs.w/2;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a)*r*0.6, Math.sin(a)*r*0.6);
+            ctx.lineTo(Math.cos(a)*r*1.4, Math.sin(a)*r*1.4);
+            ctx.lineTo(Math.cos(a+0.3)*r*0.7, Math.sin(a+0.3)*r*0.7);
+            ctx.closePath(); ctx.fill();
+        }
+    }
+    else if (obs.type === 'volcanoPlatform') {
+        ctx.shadowBlur=10; ctx.shadowColor=theme.lava||'#ef4444';
+        ctx.fillStyle = theme.platform || '#44403c';
+        ctx.fillRect(obs.x,obs.y,obs.w,obs.h);
+        ctx.fillStyle = theme.platformTop || '#ef4444';
+        ctx.fillRect(obs.x,obs.y,obs.w,4);
+        ctx.strokeStyle = '#78716c';
+        ctx.strokeRect(obs.x,obs.y,obs.w,obs.h);
+    }
+    else if (obs.type === 'lavaPool') {
+        const pulse = 0.7 + Math.sin(state.time*0.08)*0.3;
+        ctx.shadowBlur=14*pulse; ctx.shadowColor=theme.lavaGlow||'#f97316';
+        ctx.fillStyle = theme.lava || '#ef4444';
+        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+        /* bubbling effect */
+        ctx.fillStyle = theme.lavaGlow || '#f97316';
+        for(let i=0;i<4;i++){
+            const bx = obs.x+15+i*22+Math.sin(state.time*0.06+i)*5;
+            const by = obs.y-4+Math.sin(state.time*0.1+i*1.5)*3;
+            ctx.beginPath(); ctx.arc(bx, by, 3+Math.sin(state.time*0.15+i)*1, 0, Math.PI*2); ctx.fill();
+        }
+    }
 
     ctx.restore();
 }
@@ -838,18 +1247,24 @@ function updateObstacleBehavior(obs, dt) {
     } else if (obs.type === 'bird') {
         obs.x -= (state.speed+2)*dt;
         obs.y += Math.sin(state.time*0.15+(obs.vySeed||0))*1.8*dt;
+    } else if (obs.type === 'jellyfish') {
+        obs.x -= (state.speed+1.6)*dt;
+        obs.y += Math.sin(state.time*0.12+(obs.vySeed||0))*1.6*dt;
+    } else if (obs.type === 'fireball') {
+        obs.x -= (state.speed+2.6)*dt;
+        obs.y += Math.sin(state.time*0.18+(obs.vySeed||0))*2.1*dt;
     } else {
         obs.x -= state.speed*dt;
     }
 }
 
 function isDangerous(obs) {
-    const safe = ['platform','junglePlatform','egyptPlatform','pipe_top','pipe_bottom','cloud_obs','egyptStair'];
+    const safe = ['platform','junglePlatform','egyptPlatform','volcanoPlatform','pipe_top','pipe_bottom','cloud_obs','coral_top','coral_bottom','seaweed_top','seaweed_bottom','egyptStair'];
     return !safe.includes(obs.type);
 }
 
 function isPlatformType(obs) {
-    return obs.type === 'platform' || obs.type === 'junglePlatform' || obs.type === 'egyptPlatform';
+    return obs.type === 'platform' || obs.type === 'junglePlatform' || obs.type === 'egyptPlatform' || obs.type === 'volcanoPlatform';
 }
 
 function updateObstacles(dt) {
@@ -993,7 +1408,12 @@ function buildLevelCards() {
     LEVELS.forEach((lvl, idx) => {
         const locked = idx+1 > unlockedLevel;
         const hs = highScores[lvl.id] || 0;
-        const themeClass = lvl.theme==='jungle'?'jungle-btn':lvl.theme==='sky'?'sky-btn':lvl.theme==='egypt'?'egypt-btn':'clay-btn';
+        const themeClass = lvl.theme==='jungle' ? 'jungle-btn'
+            : lvl.theme==='sky' ? 'sky-btn'
+            : lvl.theme==='egypt' ? 'egypt-btn'
+            : lvl.theme==='ocean' ? 'ocean-btn'
+            : lvl.theme==='volcano' ? 'volcano-btn'
+            : 'clay-btn';
         const card = document.createElement('div');
         card.className = `level-card rounded-xl p-4 text-center pointer-events-auto ${locked?'locked':themeClass}`;
         card.innerHTML = `
@@ -1015,8 +1435,8 @@ function backToLevelSelect() {
 }
 
 function resetProgress() {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(STORAGE_HS_KEY);
+    localStorage.removeItem(getUserStorageKey(STORAGE_KEY));
+    localStorage.removeItem(getUserStorageKey(STORAGE_HS_KEY));
     unlockedLevel = 1;
     highScores = {};
     buildLevelCards();
@@ -1059,13 +1479,17 @@ function startGame(levelIdx) {
 
     if(lvl.mode === 'flappy'){
         phaseEl.textContent = `第 ${lvl.id} 關「${lvl.name}」：按住螢幕飛行，鬆開下降`;
-        hintEl.textContent = '[按住] 飛起 ｜ [鬆開] 下降';
+        hintEl.textContent = lvl.theme === 'ocean'
+            ? '[按住] 上浮 ｜ [鬆開] 下沉 ｜ 閃開珊瑚與水母'
+            : '[按住] 飛起 ｜ [鬆開] 下降';
     } else if(lvl.mode === 'runner_finish'){
         phaseEl.textContent = `第 ${lvl.id} 關「${lvl.name}」：到達終點打開寶藏`;
         hintEl.textContent = '[SPACE / ↑] 跳躍（可二段跳）';
     } else {
         phaseEl.textContent = `第 ${lvl.id} 關「${lvl.name}」：收集 ${lvl.targetCollect} 個${lvl.collectName}`;
-        hintEl.textContent = '[SPACE / ↑] 跳躍（可二段跳）｜踩平台更安全';
+        hintEl.textContent = lvl.theme === 'volcano'
+            ? '[SPACE / ↑] 跳躍（可二段跳）｜避開火球與熔岩'
+            : '[SPACE / ↑] 跳躍（可二段跳）｜踩平台更安全';
     }
 
     startCountdown(() => { state.isPlaying = true; requestAnimationFrame(loop); });
@@ -1107,19 +1531,25 @@ function triggerLevelClear() {
     state.isPlaying = false;
     const lvl = getLvl();
     const thisScore = Math.floor(state.score);
+    const rewardMeta = getClearRewardMeta(lvl);
 
     highScores[lvl.id] = Math.max(highScores[lvl.id]||0, thisScore);
-    localStorage.setItem(STORAGE_HS_KEY, JSON.stringify(highScores));
+    localStorage.setItem(getUserStorageKey(STORAGE_HS_KEY), JSON.stringify(highScores));
 
     if(lvl.id < LEVELS.length && lvl.id >= unlockedLevel){
         unlockedLevel = lvl.id + 1;
-        localStorage.setItem(STORAGE_KEY, String(unlockedLevel));
+        localStorage.setItem(getUserStorageKey(STORAGE_KEY), String(unlockedLevel));
     }
 
-    clearEmojiEl.textContent = lvl.id===4 ? '💎' : '🏆';
-    clearTitleEl.textContent = lvl.id===4 ? 'TREASURE FOUND!' : 'LEVEL CLEAR!';
+    clearEmojiEl.textContent = lvl.id===4 ? '💎' : lvl.id===5 ? '🐚' : lvl.id===6 ? '🌋' : '🏆';
+    clearTitleEl.textContent = lvl.id===4 ? 'TREASURE FOUND!' : lvl.id===5 ? 'DEEP SEA CLEAR!' : lvl.id===6 ? 'VOLCANO MASTERED!' : 'LEVEL CLEAR!';
     clearLevelTitleEl.textContent = `第 ${lvl.id} 關「${lvl.name}」完成`;
     clearScoreEl.textContent = thisScore;
+    clearRewardChipEl.textContent = rewardMeta.chip;
+    clearFlavorTextEl.textContent = rewardMeta.flavor;
+    clearPanelEl.style.background = rewardMeta.panelBg;
+    clearPanelEl.style.borderColor = rewardMeta.border;
+    clearTitleEl.style.color = rewardMeta.title;
 
     if(lvl.id < LEVELS.length){
         unlockNextInfoEl.textContent = `已解鎖第 ${lvl.id+1} 關「${LEVELS[lvl.id].name}」`;
@@ -1222,6 +1652,23 @@ function loop(ts) {
                 const gx=(i*37+state.time*1.5)%(canvas.width+20)-10;
                 ctx.fillRect(gx, canvas.height-CONFIG_FLOOR-3, 2, 6+Math.sin(i)*3);
             }
+        }
+        if(lvl.theme === 'volcano'){
+            ctx.fillStyle='rgba(249,115,22,0.22)';
+            for(let i=0;i<28;i++){
+                const sx=(i*53+state.time*2.4)%(canvas.width+40)-20;
+                const sy=canvas.height-CONFIG_FLOOR+12+Math.sin(i*1.7+state.time*0.04)*18;
+                ctx.fillRect(sx,sy,2,2);
+            }
+        }
+    } else if (lvl.theme === 'ocean') {
+        ctx.fillStyle='rgba(34,211,238,0.16)';
+        for(let i=0;i<22;i++){
+            const bx=(i*61+state.time*1.8)%(canvas.width+30)-15;
+            const by=(canvas.height-40)-(i*27%220)-((state.time*1.5+i)%40);
+            ctx.beginPath();
+            ctx.arc(bx, by, 3+(i%3), 0, Math.PI*2);
+            ctx.fill();
         }
     }
 

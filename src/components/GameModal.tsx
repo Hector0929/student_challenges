@@ -239,8 +239,7 @@ export const GameModal: React.FC<GameModalProps> = ({
     gameUrl,
     gameName,
     gameId,
-
-    // gameId and userId are unused in this component but passed in props
+    userId,
     starBalance,
     onSpendStars,
     onRefreshBalance,
@@ -541,7 +540,7 @@ export const GameModal: React.FC<GameModalProps> = ({
                         ) : (
                             <iframe
                                 ref={iframeRef}
-                                src={gameUrl}
+                                src={userId ? `${gameUrl}${gameUrl.includes('?') ? '&' : '?'}userId=${encodeURIComponent(userId)}` : gameUrl}
                                 className="w-full h-full border-none"
                                 title={gameName}
                                 allow="fullscreen"

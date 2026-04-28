@@ -9,6 +9,8 @@ import { useWorldExchange } from '../hooks/useWorldExchange';
 import { supabase } from '../lib/supabase';
 import { calculateExchangePreview, exchangeSelectedResources, type ExchangePriceTable } from '../lib/world/exchangeShop';
 import { INITIAL_WORLD_LAB_STATE, settleWorldState, type WorldLabState, type WorldBuildingKey } from '../hooks/useWorldState';
+import { calculateProductionRates } from '../lib/world/production';
+import { getStorageCapacity } from '../lib/world/storage';
 import { DECORATION_CATALOG, countPlaced, findNextFreeSlot, type PlacedDecoration } from '../lib/world/decorations';
 import { WorldExchangePanel } from './WorldExchangePanel';
 
@@ -32,8 +34,22 @@ const BUILDING_UPGRADE_CARDS: Array<{
         key: 'mine',
         title: '採礦場',
         emoji: '⛏️',
-        description: '提升石材產量，後續也會帶動晶礦取得。',
+        description: '提升石材產量，供應鍛造與建設。',
         unlockHint: '島 Lv.3 解鎖礦山地塊。',
+    },
+    {
+        key: 'crystal',
+        title: '水晶礦場',
+        emoji: '💎',
+        description: '獨立提升晶礦產量，與石材礦場分開升級。',
+        unlockHint: '島 Lv.4 解鎖水晶礦場。',
+    },
+    {
+        key: 'storage',
+        title: '倉庫',
+        emoji: '📦',
+        description: '提升各資源容量上限與離線可結算時數，避免太快滿倉。',
+        unlockHint: '島 Lv.6 解鎖倉儲地塊。',
     },
 ];
 
@@ -118,6 +134,27 @@ export const WorldIslandShopDrawer: React.FC<WorldIslandShopDrawerProps> = ({
         crystal: familyExchangeRates?.crystal_rate ?? DEFAULT_FAMILY_EXCHANGE_RATES.crystal_rate,
     }), [familyExchangeRates]);
 
+    const productionRates = useMemo(() => calculateProductionRates({
+        islandLevel: worldLab.islandLevel,
+        buildingLevels: {
+            forest: worldLab.buildings.forest,
+            mine: worldLab.buildings.mine,
+            crystal: worldLab.buildings.crystal,
+            academy: worldLab.buildings.academy,
+        },
+    }), [worldLab.buildings.academy, worldLab.buildings.crystal, worldLab.buildings.forest, worldLab.buildings.mine, worldLab.islandLevel]);
+
+    const storageLevel = Math.max(1, worldLab.buildings.storage ?? 1);
+    const storageCapacity = useMemo(() => getStorageCapacity(storageLevel), [storageLevel]);
+
+    const estimateHoursToCap = (current: number, ratePerHour: number, cap: number): string => {
+        if (current >= cap) return '已滿倉';
+        if (ratePerHour <= 0) return '未產出';
+        const hours = Math.max(0, (cap - current) / ratePerHour);
+        if (hours < 1) return `${Math.ceil(hours * 60)} 分鐘`;
+        return `${hours.toFixed(1)} 小時`;
+    };
+
     const resourceSupplyCatalog = useMemo(() => RESOURCE_SUPPLY_CATALOG.map((item) => {
         const unitPrice = exchangePriceTable[item.resourceKey];
         const price = Math.max(1, Math.ceil(unitPrice * item.quantity * 10));
@@ -174,7 +211,7 @@ export const WorldIslandShopDrawer: React.FC<WorldIslandShopDrawerProps> = ({
         if (!ok) { flash('❌ 升級失敗'); return; }
 
         const nextBuildings = { ...worldLab.buildings, [buildingKey]: worldLab.buildings[buildingKey] + 1 };
-        const nextTotal = nextBuildings.forest + nextBuildings.mine;
+        const nextTotal = Object.values(nextBuildings).reduce((sum, lv) => sum + lv, 0);
         const nextIslandLevel = Math.max(worldLab.islandLevel, 1 + Math.floor(nextTotal / 6));
         await saveWorld({ ...worldLab, buildings: nextBuildings, islandLevel: nextIslandLevel });
         flash(`🏗️ ${title} 升到 Lv.${worldLab.buildings[buildingKey] + 1}`);
@@ -214,12 +251,16 @@ export const WorldIslandShopDrawer: React.FC<WorldIslandShopDrawerProps> = ({
             stone:   worldLab.resources.stone   - stone,
             crystal: worldLab.resources.crystal - crystal,
         };
-        await saveWorld({ ...worldLab, resources: nextResources });
-        const next: PlacedDecoration[] = [...placedDecos, { id: entry.id, slotIndex }];
-        setPlacedDecos(next);
-        onDecorationsChange?.(next);
-        try { localStorage.setItem(decoStorageKey, JSON.stringify(next)); } catch { /* ignore */ }
-        flash(`🎉 ${entry.emoji} ${entry.name} 已放到你的島上！`);
+        try {
+            await saveWorld({ ...worldLab, resources: nextResources });
+            const next: PlacedDecoration[] = [...placedDecos, { id: entry.id, slotIndex }];
+            setPlacedDecos(next);
+            onDecorationsChange?.(next);
+            try { localStorage.setItem(decoStorageKey, JSON.stringify(next)); } catch { /* ignore */ }
+            flash(`🎉 ${entry.emoji} ${entry.name} 已放到你的島上！`);
+        } catch (err) {
+            flash(`❌ 儲存失敗，請重試（${err instanceof Error ? err.message : '未知錯誤'}）`);
+        }
     };
 
     const removeDecoration = (entry: typeof DECORATION_CATALOG[number]) => {
@@ -361,7 +402,14 @@ export const WorldIslandShopDrawer: React.FC<WorldIslandShopDrawerProps> = ({
                                 升級建築可提升資源產量，建築總等級每累積 6 級，島嶼就會升一級。
                             </div>
                             <div className="rounded-xl bg-white/8 border border-white/12 px-3 py-2 text-xs text-white/60">
-                                島 Lv.{worldLab.islandLevel} ／ 建築總等 {worldLab.buildings.forest + worldLab.buildings.mine}
+                                島 Lv.{worldLab.islandLevel} ／ 建築總等 {Object.values(worldLab.buildings).reduce((sum, lv) => sum + lv, 0)}
+                            </div>
+                            <div className="rounded-xl bg-emerald-500/10 border border-emerald-300/30 px-3 py-3 text-xs text-emerald-100 space-y-1.5">
+                                <div className="font-pixel text-[11px] text-emerald-200">⏱️ 每小時產量（分開顯示）</div>
+                                <div>🌲 木材：+{productionRates.woodPerHour.toFixed(1)} /h（上限 {storageCapacity.woodCap}，約 {estimateHoursToCap(worldLab.resources.wood, productionRates.woodPerHour, storageCapacity.woodCap)} 滿倉）</div>
+                                <div>🪨 石材：+{productionRates.stonePerHour.toFixed(1)} /h（上限 {storageCapacity.stoneCap}，約 {estimateHoursToCap(worldLab.resources.stone, productionRates.stonePerHour, storageCapacity.stoneCap)} 滿倉）</div>
+                                <div>💎 晶礦：+{productionRates.crystalPerHour.toFixed(1)} /h（上限 {storageCapacity.crystalCap}，約 {estimateHoursToCap(worldLab.resources.crystal, productionRates.crystalPerHour, storageCapacity.crystalCap)} 滿倉）</div>
+                                <div className="text-[10px] text-emerald-200/80">離線最多只結算 {storageCapacity.offlineHoursCap} 小時，所以太久沒開會被上限截斷。</div>
                             </div>
                             {BUILDING_UPGRADE_CARDS.map((building) => {
                                 const level = worldLab.buildings[building.key];

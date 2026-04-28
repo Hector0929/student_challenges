@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS world_states (
 CREATE TABLE IF NOT EXISTS world_buildings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  building_key TEXT NOT NULL CHECK (building_key IN ('forest', 'mine', 'academy', 'market', 'storage', 'adventure')),
+  building_key TEXT NOT NULL CHECK (building_key IN ('forest', 'mine', 'crystal', 'academy', 'market', 'storage', 'adventure')),
   level INTEGER NOT NULL DEFAULT 1 CHECK (level >= 1),
   worker_count INTEGER NOT NULL DEFAULT 0 CHECK (worker_count >= 0),
   assigned_plot_key TEXT,

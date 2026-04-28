@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildWorldPersistencePayload, parseWorldPersistenceSnapshot } from '../hooks/useWorldPersistence';
+import { buildWorldPersistencePayload, mergeWorldPersistenceSnapshot, parseWorldPersistenceSnapshot } from '../hooks/useWorldPersistence';
 
 describe('world persistence mapping', () => {
     it('builds rows for world tables from current world state', () => {
@@ -11,7 +11,7 @@ describe('world persistence mapping', () => {
                 heroPower: 220,
                 monsterShards: 9,
                 timeOfDay: 'dusk',
-                buildings: { forest: 3, mine: 2, academy: 2, market: 1 },
+                buildings: { forest: 3, mine: 2, crystal: 2, academy: 2, market: 1, storage: 1 },
                 resources: { wood: 40, stone: 18, crystal: 6 },
                 lastTickAt: new Date('2026-03-12T10:00:00.000Z').getTime(),
             },
@@ -46,7 +46,7 @@ describe('world persistence mapping', () => {
         expect(payload.stateRow.user_id).toBe('user-1');
         expect(payload.inventoryRow.monster_shards).toBe(9);
         expect(payload.characterRow.level).toBe(4);
-        expect(payload.buildingRows).toHaveLength(4);
+        expect(payload.buildingRows).toHaveLength(6);
         expect(payload.adventureRow?.mission_type).toBe('standard');
         expect(payload.bankAccountRow.balance).toBe(150);
         expect(payload.timeDepositRows).toHaveLength(1);
@@ -127,5 +127,57 @@ describe('world persistence mapping', () => {
         expect(snapshot?.demandDepositAccount.balance).toBe(230);
         expect(snapshot?.timeDeposits[0].principal).toBe(120);
         expect(snapshot?.bankNowMs).toBe(new Date('2026-03-18T00:00:00.000Z').getTime());
+    });
+
+    it('merges freshly saved world data into the cached snapshot immediately', () => {
+        const merged = mergeWorldPersistenceSnapshot({
+            previousSnapshot: {
+                worldLab: {
+                    islandLevel: 3,
+                    heroLevel: 2,
+                    heroPower: 80,
+                    monsterShards: 0,
+                    timeOfDay: 'day',
+                    buildings: { forest: 1, mine: 1, crystal: 1, academy: 1, market: 1, storage: 1 },
+                    resources: { wood: 120, stone: 50, crystal: 8 },
+                    lastTickAt: new Date('2026-03-12T10:00:00.000Z').getTime(),
+                },
+                activeAdventure: null,
+                lastAdventureResult: null,
+                bankNowMs: new Date('2026-03-12T11:00:00.000Z').getTime(),
+                demandDepositAccount: {
+                    balance: 300,
+                    lastInterestAt: '2026-03-12T09:00:00.000Z',
+                },
+                timeDeposits: [
+                    {
+                        id: 'deposit-1',
+                        principal: 100,
+                        dailyRate: 0.01,
+                        startAt: '2026-03-11T00:00:00.000Z',
+                        maturesAt: '2026-03-18T00:00:00.000Z',
+                        termDays: 7,
+                        status: 'active',
+                    },
+                ],
+            },
+            worldLab: {
+                islandLevel: 3,
+                heroLevel: 3,
+                heroPower: 95,
+                monsterShards: 0,
+                timeOfDay: 'day',
+                buildings: { forest: 1, mine: 1, crystal: 1, academy: 1, market: 1, storage: 1 },
+                resources: { wood: 40, stone: 20, crystal: 4 },
+                lastTickAt: new Date('2026-03-12T12:00:00.000Z').getTime(),
+            },
+            activeAdventure: null,
+            lastAdventureResult: null,
+        });
+
+        expect(merged.worldLab.resources).toEqual({ wood: 40, stone: 20, crystal: 4 });
+        expect(merged.worldLab.heroPower).toBe(95);
+        expect(merged.demandDepositAccount.balance).toBe(300);
+        expect(merged.timeDeposits).toHaveLength(1);
     });
 });

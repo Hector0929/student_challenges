@@ -3,6 +3,7 @@ import type { PlotType, ProductionRates, WorldBuildingLevels } from './types';
 const PLOT_UNLOCK_LEVELS: Record<PlotType, number> = {
     forest: 2,
     mine: 3,
+    crystal: 4,
     market: 4,
     academy: 5,
     storage: 6,
@@ -11,7 +12,7 @@ const PLOT_UNLOCK_LEVELS: Record<PlotType, number> = {
 
 interface ProductionInput {
     islandLevel: number;
-    buildingLevels: Pick<WorldBuildingLevels, 'forest' | 'mine' | 'academy'>;
+    buildingLevels: Pick<WorldBuildingLevels, 'forest' | 'mine' | 'academy' | 'crystal'>;
 }
 
 export interface CalculatedProductionRates extends ProductionRates {
@@ -23,6 +24,7 @@ export function calculateProductionRates({ islandLevel, buildingLevels }: Produc
     const normalizedIslandLevel = Math.max(1, Math.floor(islandLevel));
     const forest = Math.max(0, Math.floor(buildingLevels.forest));
     const mine = Math.max(0, Math.floor(buildingLevels.mine));
+    const crystal = Math.max(0, Math.floor(buildingLevels.crystal ?? 0));
     const academy = Math.max(0, Math.floor(buildingLevels.academy));
 
     const academyBoost = 1 + academy * 0.08;
@@ -33,7 +35,7 @@ export function calculateProductionRates({ islandLevel, buildingLevels }: Produc
         islandBoost,
         woodPerHour: (14 + forest * 8) * academyBoost * islandBoost,
         stonePerHour: (10 + mine * 7) * academyBoost * islandBoost,
-        crystalPerHour: (4 + normalizedIslandLevel * 2) * academyBoost,
+        crystalPerHour: (8 + crystal * 4) * academyBoost * islandBoost,
     };
 }
 

@@ -15,7 +15,7 @@ describe('WorldLabPanel', () => {
             heroPower: 180,
             monsterShards: 4,
             timeOfDay: 'day' as const,
-            buildings: { forest: 2, mine: 2, academy: 1, market: 1 },
+            buildings: { forest: 2, mine: 2, crystal: 1, academy: 1, market: 1, storage: 1 },
             resources: { wood: 25, stone: 10, crystal: 5 },
             lastTickAt: Date.now(),
         },
