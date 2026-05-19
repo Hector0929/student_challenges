@@ -78,6 +78,15 @@ export const useCreateExchangeRequest = () => {
                 throw new Error('用戶資訊不完整');
             }
 
+            const { data: currentBalance, error: balanceError } = await supabase
+                .rpc('get_child_star_balance', { child_id: user.id });
+            if (balanceError) {
+                throw new Error('無法取得星幣餘額，請稍後再試');
+            }
+            if ((currentBalance ?? 0) < params.starAmount) {
+                throw new Error(`星幣不足，目前剩 ${currentBalance ?? 0} ⭐，需要 ${params.starAmount} ⭐`);
+            }
+
             const { data, error } = await supabase
                 .from('exchange_requests')
                 .insert({
@@ -133,7 +142,17 @@ export const useApproveExchangeRequest = () => {
                 throw new Error('找不到此兌換申請');
             }
 
-            // 2. Update request status
+            // 2. Verify child still has enough balance (may have spent stars since request was created)
+            const { data: currentBalance, error: balanceError } = await supabase
+                .rpc('get_child_star_balance', { child_id: request.child_id });
+            if (balanceError) {
+                throw new Error('無法取得孩子的星幣餘額');
+            }
+            if ((currentBalance ?? 0) < request.star_amount) {
+                throw new Error(`孩子目前星幣不足（剩 ${currentBalance ?? 0} ⭐，需要 ${request.star_amount} ⭐），無法完成兌換`);
+            }
+
+            // 3. Update request status
             const { error: updateError } = await supabase
                 .from('exchange_requests')
                 .update({
@@ -147,7 +166,7 @@ export const useApproveExchangeRequest = () => {
                 throw updateError;
             }
 
-            // 3. Create star_transaction to deduct stars
+            // 4. Create star_transaction to deduct stars
             const { error: transactionError } = await supabase
                 .from('star_transactions')
                 .insert({
