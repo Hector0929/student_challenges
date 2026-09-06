@@ -403,7 +403,7 @@ export const DebugPage: React.FC = () => {
                     onClick={() => setActiveTab('towerV3')}
                     className={activeTab === 'towerV3' ? 'active' : ''}
                 >
-                    🧪 怪獸塔 Gen3
+                    🏰 怪獸塔 V3 (2.5D)
                 </button>
                 <button
                     onClick={() => setActiveTab('worldLab')}
@@ -712,45 +712,94 @@ export const DebugPage: React.FC = () => {
                 </div>
             )}
 
-            {/* Tower Gen3 Tab Content */}
+            {/* Tower V3 (2.5D) Tab Content */}
             {activeTab === 'towerV3' && user && (
                 <div className="space-y-4">
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                        <h3 className="font-pixel text-lg mb-3 flex items-center gap-2">
-                            🧪 怪獸塔 Gen3 - 開發沙盒
-                        </h3>
+                    {/* V3 Preview Card */}
+                    <div className="bg-white rounded-2xl p-5 shadow-sm border-2 border-amber-200">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-pixel text-lg flex items-center gap-2 text-amber-800">
+                                🏰 怪獸塔 V3 (2.5D) · 開發驗證專區
+                            </h3>
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-300">
+                                2.5D Isometric Engine
+                            </span>
+                        </div>
                         <TowerGen3Preview userId={user.id} onClick={() => setIsTowerGen3Open(true)} />
                     </div>
 
-                    <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl p-4 border border-cyan-200">
-                        <h3 className="font-pixel text-lg mb-2">Gen3 目前開發重點</h3>
-                        <ul className="text-sm text-gray-700 space-y-1">
-                            <li>• 以現有怪獸收藏建立 3 隻編隊</li>
-                            <li>• 擲骰推進 + 里程碑事件骨架</li>
-                            <li>• 安全路 / 冒險路模式切換驗證</li>
-                            <li>• 後續接入羈絆、天賦、覺醒系統</li>
-                        </ul>
+                    {/* V3 核心改版特色與舊怪獸保存說明 */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-4 border border-amber-200 shadow-sm">
+                            <h4 className="font-pixel text-base text-amber-900 mb-2 flex items-center gap-1.5">
+                                🌟 2.5D 新視覺特色
+                            </h4>
+                            <ul className="text-xs text-amber-950 space-y-1.5 leading-relaxed">
+                                <li>• <strong>等角立體地塊</strong>：泥土/晶石厚度側面、接地陰影與頂部高光。</li>
+                                <li>• <strong>連續微光路徑</strong>：發光階梯與魔力導引線，爬塔路徑更清晰。</li>
+                                <li>• <strong>寵物隨行系統</strong>：出戰首席怪獸化身為浮空小跟班陪伴攀登。</li>
+                                <li>• <strong>關卡情報泡泡</strong>：點擊任意格子即可檢視地形與事件。</li>
+                            </ul>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-200 shadow-sm">
+                            <h4 className="font-pixel text-base text-emerald-900 mb-2 flex items-center gap-1.5">
+                                🎒 舊怪獸 100% 完整保存
+                            </h4>
+                            <p className="text-xs text-emerald-950 leading-relaxed mb-2">
+                                孩子在 V2/V1 收集的所有怪獸已自動直連繼承，展出於畫面底部常駐的「怪獸庇護所背包」：
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {(towerProgress?.monsters_collected || []).filter((m) => !m.startsWith('egg:')).length > 0 ? (
+                                    (towerProgress?.monsters_collected || [])
+                                        .filter((m) => !m.startsWith('egg:'))
+                                        .map((mId) => (
+                                            <span key={mId} className="px-2 py-0.5 rounded-lg bg-white/80 border border-emerald-300 text-xs font-bold text-emerald-800">
+                                                👾 {mId}
+                                            </span>
+                                        ))
+                                ) : (
+                                    <span className="text-xs text-emerald-700 italic">（目前尚無怪獸，進入 V3 將自動配置初號夥伴小綠球測試）</span>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                        <h3 className="font-pixel text-lg mb-3 flex items-center gap-2">
-                            <Dices size={20} /> Gen3 QA 快捷
+                    {/* QA Controls */}
+                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
+                        <h3 className="font-pixel text-base mb-3 flex items-center gap-2">
+                            <Dices size={18} /> V3 測試快捷控制
                         </h3>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2.5">
                             <button
                                 onClick={async () => {
-                                    await addDiceMutation.mutateAsync({ userId: user.id, amount: 10 });
+                                    await addDiceMutation.mutateAsync({ userId: user.id, amount: 5 });
                                     refetchTower();
                                 }}
-                                className="px-4 py-2 bg-green-100 text-green-700 rounded-lg border border-green-300 hover:bg-green-200 flex items-center gap-2"
+                                className="px-4 py-2 bg-emerald-100 text-emerald-800 rounded-xl border border-emerald-300 hover:bg-emerald-200 font-bold flex items-center gap-1.5 text-sm"
                             >
-                                <PlusCircle size={16} /> +10 骰子
+                                <PlusCircle size={15} /> +5 骰子
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    await addDiceMutation.mutateAsync({ userId: user.id, amount: 20 });
+                                    refetchTower();
+                                }}
+                                className="px-4 py-2 bg-emerald-100 text-emerald-800 rounded-xl border border-emerald-300 hover:bg-emerald-200 font-bold flex items-center gap-1.5 text-sm"
+                            >
+                                <PlusCircle size={15} /> +20 骰子
                             </button>
                             <button
                                 onClick={() => setIsTowerGen3Open(true)}
-                                className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-500 flex items-center gap-2"
+                                className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl shadow-md flex items-center gap-2 text-sm"
                             >
-                                🧪 開啟 Gen3
+                                🚀 開啟怪獸塔 V3 (2.5D)
+                            </button>
+                            <button
+                                onClick={() => refetchTower()}
+                                className="px-3.5 py-2 bg-gray-100 text-gray-700 rounded-xl border border-gray-300 hover:bg-gray-200 text-sm flex items-center gap-1.5"
+                            >
+                                <RefreshCw size={14} /> 重新讀取進度
                             </button>
                         </div>
                     </div>
