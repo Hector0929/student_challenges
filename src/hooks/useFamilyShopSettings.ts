@@ -5,6 +5,30 @@ import { createDefaultBankSettings } from '../lib/world/bank';
 import { createDefaultExchangePriceTable } from '../lib/world/exchangeShop';
 import type { FamilyBankSettings, FamilyExchangeRates } from '../types/database';
 
+type PostgrestLikeError = {
+    code?: string;
+    status?: number;
+    message?: string;
+    details?: string;
+};
+
+function isMissingRelationError(error: unknown): error is PostgrestLikeError {
+    if (!error || typeof error !== 'object') return false;
+
+    const pgError = error as PostgrestLikeError;
+    // PGRST205: relation is not in schema cache (table likely missing in DB)
+    if (pgError.code === 'PGRST205') return true;
+
+    const sourceText = `${pgError.message ?? ''} ${pgError.details ?? ''}`.toLowerCase();
+    return sourceText.includes('could not find the table') || sourceText.includes('schema cache');
+}
+
+function createMissingTableMigrationError(tableName: string): Error {
+    return new Error(
+        `資料庫缺少 ${tableName}，請先在 Supabase SQL Editor 執行 supabase/add_shop_street_settings.sql 後再儲存。`
+    );
+}
+
 function clampNonNegativeNumber(value: number): number {
     if (!Number.isFinite(value)) return 0;
     return Math.max(0, value);
@@ -58,6 +82,11 @@ export const useFamilyExchangeRates = (overrideFamilyId?: string) => {
                 if (status === 404 || (error as { code?: string }).code === 'PGRST116') {
                     return null;
                 }
+                if (isMissingRelationError(error)) {
+                    // Table is not deployed yet; allow UI to continue with defaults.
+                    console.warn('family_exchange_rates table is missing. Falling back to defaults.');
+                    return null;
+                }
                 console.error('Error fetching family exchange rates:', error);
                 throw error;
             }
@@ -105,6 +134,9 @@ export const useUpdateFamilyExchangeRates = () => {
                 .single();
 
             if (error) {
+                if (isMissingRelationError(error)) {
+                    throw createMissingTableMigrationError('family_exchange_rates');
+                }
                 console.error('Error updating family exchange rates:', error);
                 throw error;
             }
@@ -137,6 +169,11 @@ export const useFamilyBankSettings = (overrideFamilyId?: string) => {
                 .maybeSingle();
 
             if (error) {
+                if (isMissingRelationError(error)) {
+                    // Table is not deployed yet; allow UI to continue with defaults.
+                    console.warn('family_bank_settings table is missing. Falling back to defaults.');
+                    return null;
+                }
                 console.error('Error fetching family bank settings:', error);
                 throw error;
             }
@@ -187,6 +224,9 @@ export const useUpdateFamilyBankSettings = () => {
                 .single();
 
             if (error) {
+                if (isMissingRelationError(error)) {
+                    throw createMissingTableMigrationError('family_bank_settings');
+                }
                 console.error('Error updating family bank settings:', error);
                 throw error;
             }

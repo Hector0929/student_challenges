@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>怪獸塔 Gen3 · 立體棋盤原型</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background: #0b1020; color: #e2e8f0;
+    display: flex; justify-content: center; padding: 24px 12px;
+    min-height: 100vh;
+  }
+  .app {
+    width: 640px; max-width: 100%;
+    background: linear-gradient(180deg, #141b30 0%, #0d1326 100%);
+    border: 1px solid #243049; border-radius: 22px; overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,.6);
+  }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid #223049;
+    background: rgba(255,255,255,.02);
+  }
+  .topbar h1 { font-size: 16px; font-weight: 700; letter-spacing: .5px;
+    background: linear-gradient(90deg,#67e8f9,#a78bfa); -webkit-background-clip: text;
+    background-clip: text; color: transparent; }
+  .topbar .sub { font-size: 11px; color: #64748b; }
+  .progress { font-size: 12px; color: #94a3b8; text-align: right; }
+  .progress b { color: #67e8f9; }
+
+  .stage {
+    position: relative; height: 540px; overflow: hidden;
+    background:
+      radial-gradient(1200px 400px at 50% -120px, #1e2a4d 0%, transparent 70%),
+      linear-gradient(180deg,#0e1530 0%, #0a0f22 100%);
+  }
+  /* parallax layers */
+  .par { position: absolute; left: 0; right: 0; pointer-events: none; }
+  .par.stars { top: 0; height: 100%; opacity: .8; }
+  .par.mtn { bottom: 0; height: 220px; opacity: .55;
+    background:
+      radial-gradient(120px 80px at 18% 100%, #20305a 60%, transparent 62%),
+      radial-gradient(160px 110px at 45% 100%, #1a2750 60%, transparent 62%),
+      radial-gradient(140px 90px at 78% 100%, #243463 60%, transparent 62%);
+    filter: blur(1px); }
+  .par.clouds { top: 0; height: 100%; opacity: .35; }
+  .cloud { position: absolute; width: 120px; height: 34px; border-radius: 40px;
+    background: radial-gradient(closest-side,#5b6b9c,transparent); filter: blur(4px); }
+
+  .scroll { position: absolute; inset: 0; overflow-y: scroll; overflow-x: hidden; }
+  .scroll::-webkit-scrollbar { width: 6px; }
+  .scroll::-webkit-scrollbar-thumb { background: #2c3b5a; border-radius: 6px; }
+  .board { position: relative; margin: 0 auto; }
+
+  .tile { position: absolute; cursor: pointer; transition: transform .15s; }
+  .tile:hover { transform: translateY(-3px); }
+  .tile .top {
+    width: 100%; height: 100%; border-radius: 12px;
+    border-top: 2px solid rgba(255,255,255,.35);
+    position: relative; z-index: 2;
+  }
+  .tile .num {
+    position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; font-weight: 700; color: #cbd5e1; z-index: 3;
+    text-shadow: 0 1px 3px #000;
+  }
+  .tile .ev {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-58%); font-size: 22px; z-index: 4;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,.6));
+  }
+  .tile.current .top { animation: pulse 1.2s infinite; }
+  .tile.passed { filter: grayscale(.7) brightness(.62); }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(103,232,249,.0), 0 8px 0 0 var(--side), 0 14px 18px rgba(0,0,0,.55); }
+    50% { box-shadow: 0 0 18px 4px rgba(103,232,249,.55), 0 8px 0 0 var(--side), 0 14px 18px rgba(0,0,0,.55); }
+  }
+
+  svg.links { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 1; }
+
+  .player { position: absolute; z-index: 20; width: 52px; height: 64px;
+    transition: left .18s linear, top .18s linear; pointer-events: none; }
+  .player .shadow { position: absolute; bottom: -4px; left: 50%; width: 38px; height: 12px;
+    transform: translateX(-50%); background: radial-gradient(closest-side, rgba(0,0,0,.55), transparent);
+    border-radius: 50%; }
+  .player .sprite { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+    animation: bob 1.4s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{ transform: translateX(-50%) translateY(0);} 50%{ transform: translateX(-50%) translateY(-5px);} }
+
+  .float { position: absolute; z-index: 30; font-weight: 800; font-size: 15px;
+    pointer-events: none; animation: rise 1s ease-out forwards; text-shadow: 0 2px 4px #000; }
+  @keyframes rise { 0%{opacity:0; transform: translateY(6px);} 20%{opacity:1;} 100%{opacity:0; transform: translateY(-26px);} }
+
+  .dock {
+    display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+    border-top: 1px solid #223049; background: rgba(255,255,255,.02);
+  }
+  .roll {
+    display: flex; align-items: center; gap: 10px;
+    background: linear-gradient(180deg,#22d3ee,#0891b2); color: #06222b;
+    border: none; border-radius: 16px; padding: 12px 20px; font-size: 16px;
+    font-weight: 800; cursor: pointer; box-shadow: 0 4px 0 #075461, 0 8px 16px rgba(8,145,178,.4);
+    transition: transform .08s;
+  }
+  .roll:active { transform: translateY(3px); box-shadow: 0 1px 0 #075461; }
+  .roll:disabled { opacity: .5; cursor: default; }
+  .dice { width: 40px; height: 40px; background: #0f172a; border-radius: 10px;
+    border: 1px solid #334155; display: grid; grid-template: repeat(3,1fr)/repeat(3,1fr);
+    padding: 5px; gap: 1px; }
+  .dice.spin { animation: spin .5s linear; }
+  @keyframes spin { 0%{transform: rotate(0) scale(1);} 50%{transform: rotate(180deg) scale(1.15);} 100%{transform: rotate(360deg) scale(1);} }
+  .pip { width: 7px; height: 7px; border-radius: 50%; align-self: center; justify-self: center; }
+  .pip.on { background: #67e8f9; }
+  .note { flex: 1; font-size: 12px; color: #94a3b8; line-height: 1.4; }
+  .note b { color: #e2e8f0; }
+  .routes { display: flex; background: #0f172a; border: 1px solid #334155; border-radius: 12px; overflow: hidden; }
+  .routes button { background: transparent; color: #94a3b8; border: none; padding: 8px 12px; font-size: 12px; cursor: pointer; }
+  .routes button.on { background: #1e293b; color: #67e8f9; font-weight: 700; }
+
+  .infocard {
+    margin: 0 18px 16px; padding: 14px 16px; border-radius: 16px;
+    background: linear-gradient(180deg,#16203a,#101a30); border: 1px solid #2a3a5c;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .infocard .h { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .infocard .chip { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 700; }
+  .infocard h3 { font-size: 15px; }
+  .infocard p { font-size: 12px; color: #94a3b8; margin-top: 4px; line-height: 1.5; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; padding: 0 18px 16px; font-size: 11px; color: #64748b; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div>
+      <h1>怪獸塔 Gen3 · 立體棋盤原型</h1>
+      <div class="sub">延續 Gen2 視覺 ｜ 保留 Gen3 系統 ｜ 點任一格看說明</div>
+    </div>
+    <div class="progress">目前主題<br><b id="theme">晨霧草原</b> · F<b id="floor">1</b>/40</div>
+  </div>
+
+  <div class="stage">
+    <div class="par stars" id="stars"></div>
+    <div class="par clouds" id="clouds"></div>
+    <div class="par mtn" id="mtn"></div>
+    <div class="scroll" id="scroll">
+      <div class="board" id="board">
+        <svg class="links" id="links"></svg>
+        <div class="player" id="player">
+          <div class="shadow"></div>
+          <div class="sprite">
+            <svg width="46" height="50" viewBox="0 0 46 50">
+              <ellipse cx="23" cy="44" rx="15" ry="6" fill="#fef9f0"/>
+              <ellipse cx="23" cy="40" rx="14" ry="9" fill="#fde9c8"/>
+              <path d="M9 30 Q9 13 23 13 Q37 13 37 30 Q37 40 23 40 Q9 40 9 30Z" fill="#34d399"/>
+              <path d="M9 30 Q9 13 23 13 Q30 13 33 18 Q20 16 14 27 Q12 33 18 39 Q9 38 9 30Z" fill="#6ee7b7" opacity=".7"/>
+              <circle cx="18" cy="27" r="3.4" fill="#fff"/><circle cx="18.7" cy="27.6" r="1.7" fill="#0f172a"/>
+              <circle cx="29" cy="27" r="3.4" fill="#fff"/><circle cx="29.7" cy="27.6" r="1.7" fill="#0f172a"/>
+              <path d="M19 33 Q23 36 27 33" stroke="#0f172a" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <circle cx="13" cy="31" r="2" fill="#fca5a5" opacity=".7"/><circle cx="33" cy="31" r="2" fill="#fca5a5" opacity=".7"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span>🪜 升降梯 = 直接上樓</span>
+    <span>🐍 滑坡 = 滑落幾層</span>
+    <span>💎 寶箱</span>
+    <span>🥚 怪獸蛋</span>
+    <span>👾 精英怪</span>
+  </div>
+
+  <div class="infocard" id="infocard">
+    <div class="h">
+      <span class="chip" id="ic-chip" style="background:#064e3b;color:#6ee7b7;">草原</span>
+      <h3 id="ic-title">第 1 層 · 晨霧草原</h3>
+    </div>
+    <p id="ic-desc">起點。沿著發光路徑往上爬，遇到升降梯會直升、遇到滑坡會下滑。點任一格看詳情。</p>
+  </div>
+
+  <div class="dock">
+    <button class="roll" id="rollBtn"><span class="dice" id="dice"></span>擲骰子</button>
+    <div class="note" id="note">準備好了！點「擲骰子」開始爬塔。</div>
+    <div class="routes" id="routes">
+      <button data-r="safe" class="on">安全路</button>
+      <button data-r="risk">冒險路</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLS=5, TOTAL=40, CELLW=96, GAPX=12, PADX=22, CELLH=46, ROWPITCH=84, PADTOP=46, DEPTH=10;
+const BOARDW = PADX*2 + COLS*CELLW + (COLS-1)*GAPX;
+const ROWS = Math.ceil(TOTAL/COLS);
+const BOARDH = PADTOP + ROWS*ROWPITCH + 40;
+
+const THEMES = [
+  {max:20, name:'晨霧草原', top:'#34d399', topHi:'#6ee7b7', side:'#0f6e56', chip:'草原', chipBg:'#064e3b', chipFg:'#6ee7b7'},
+  {max:40, name:'冰晶斷崖', top:'#38bdf8', topHi:'#7dd3fc', side:'#0c4a6e', chip:'斷崖', chipBg:'#0c3a52', chipFg:'#7dd3fc'},
+];
+const themeOf = f => THEMES.find(t=>f<=t.max) || THEMES[THEMES.length-1];
+
+// events
+const EVENTS = {
+  8:{type:'ladder',to:13,icon:'🪜',title:'藤蔓升降梯',desc:'抓住藤蔓直升到第 13 層！'},
+  10:{type:'monster',icon:'👾',title:'精英守門怪',desc:'建議切成「守護 + 支援」防守編隊再過。'},
+  15:{type:'treasure',icon:'💎',title:'古代補給箱',desc:'獲得 30 顆星幣，可在商店格購物。'},
+  20:{type:'ladder',to:24,icon:'🪜',title:'浮空升降梯',desc:'直升 4 層到第 24 層。'},
+  25:{type:'egg',icon:'🥚',title:'里程碑怪獸蛋',desc:'孵化獲得新怪獸；已擁有則轉為碎片。'},
+  30:{type:'snake',to:25,icon:'🐍',title:'冰面滑坡',desc:'踩到冰面，滑落到第 25 層。'},
+  35:{type:'monster',icon:'👾',title:'斷崖精英',desc:'高攻擊，建議帶「破甲 + 爆發」。'},
+  38:{type:'snake',to:31,icon:'🐍',title:'碎冰裂縫',desc:'裂縫崩塌，下滑到第 31 層。'},
+};
+
+function pos(f){
+  const row = Math.floor((f-1)/COLS);
+  const raw = (f-1)%COLS;
+  const col = row%2===0 ? raw : COLS-1-raw;
+  const x = PADX + col*(CELLW+GAPX);
+  const top = PADTOP + (ROWS-1-row)*ROWPITCH;
+  return {x, top, cx:x+CELLW/2, cy:top+CELLH/2};
+}
+
+const board = document.getElementById('board');
+board.style.width = BOARDW+'px';
+board.style.height = BOARDH+'px';
+const scroll = document.getElementById('scroll');
+
+// build tiles
+for(let f=1; f<=TOTAL; f++){
+  const p = pos(f), th = themeOf(f), ev = EVENTS[f];
+  const t = document.createElement('div');
+  t.className = 'tile'; t.dataset.floor = f;
+  t.style.left = p.x+'px'; t.style.top = p.top+'px';
+  t.style.width = CELLW+'px'; t.style.height = CELLH+'px';
+  t.style.setProperty('--side', th.side);
+  t.innerHTML = `<div class="num">${f}</div>
+    <div class="top" style="background:linear-gradient(160deg,${th.topHi},${th.top});
+      box-shadow:0 ${DEPTH}px 0 0 ${th.side}, 0 ${DEPTH+5}px 16px rgba(0,0,0,.55);"></div>
+    ${ev?`<div class="ev">${ev.icon}</div>`:''}`;
+  t.addEventListener('click', ()=>showInfo(f));
+  board.appendChild(t);
+}
+
+// connectors svg
+const svg = document.getElementById('links');
+svg.setAttribute('width', BOARDW); svg.setAttribute('height', BOARDH);
+svg.setAttribute('viewBox', `0 0 ${BOARDW} ${BOARDH}`);
+function ladderPath(s,e){
+  const dx=e.cx-s.cx, dy=e.cy-s.cy, len=Math.hypot(dx,dy);
+  const px=-dy/len*7, py=dx/len*7; let g='';
+  g+=`<line x1="${s.cx+px}" y1="${s.cy+py}" x2="${e.cx+px}" y2="${e.cy+py}" stroke="#fbbf24" stroke-width="8" opacity=".18" stroke-linecap="round"/>`;
+  g+=`<line x1="${s.cx-px}" y1="${s.cy-py}" x2="${e.cx-px}" y2="${e.cy-py}" stroke="#fbbf24" stroke-width="8" opacity=".18" stroke-linecap="round"/>`;
+  g+=`<line x1="${s.cx+px}" y1="${s.cy+py}" x2="${e.cx+px}" y2="${e.cy+py}" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>`;
+  g+=`<line x1="${s.cx-px}" y1="${s.cy-py}" x2="${e.cx-px}" y2="${e.cy-py}" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>`;
+  const steps=Math.max(3,Math.round(len/26));
+  for(let i=1;i<steps;i++){const t=i/steps,rx=s.cx+dx*t,ry=s.cy+dy*t;
+    g+=`<line x1="${rx+px}" y1="${ry+py}" x2="${rx-px}" y2="${ry-py}" stroke="#fde68a" stroke-width="2.4" stroke-linecap="round"/>`;}
+  return g;
+}
+function snakePath(s,e){
+  const dx=e.cx-s.cx, dy=e.cy-s.cy, len=Math.hypot(dx,dy);
+  const px=-dy/len, py=dx/len, waves=Math.max(2,Math.round(len/46)), amp=13, seg=waves*8;
+  let d=`M ${s.cx} ${s.cy}`;
+  for(let i=1;i<=seg;i++){const t=i/seg,bx=s.cx+dx*t,by=s.cy+dy*t,o=Math.sin(t*waves*Math.PI*2)*amp;
+    d+=` L ${bx+px*o} ${by+py*o}`;}
+  return `<path d="${d}" stroke="#f87171" stroke-width="11" fill="none" opacity=".16" stroke-linecap="round"/>
+    <path d="${d}" stroke="#ef4444" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+    <path d="${d}" stroke="#fca5a5" stroke-width="1.5" fill="none" stroke-dasharray="3 6" opacity=".5"/>
+    <circle cx="${e.cx}" cy="${e.cy}" r="6" fill="#dc2626"/>
+    <circle cx="${e.cx-2}" cy="${e.cy-2}" r="1.5" fill="#fecaca"/><circle cx="${e.cx+2}" cy="${e.cy-2}" r="1.5" fill="#fecaca"/>`;
+}
+let svgHtml='';
+for(const f in EVENTS){const ev=EVENTS[f]; if(!ev.to) continue;
+  const s=pos(+f), e=pos(ev.to);
+  svgHtml += `<g filter="url(#gl)">${ev.type==='ladder'?ladderPath(s,e):snakePath(s,e)}</g>`;
+}
+svg.innerHTML = `<defs><filter id="gl"><feGaussianBlur stdDeviation="2.2" result="b"/>
+  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>` + svgHtml;
+
+// parallax bg
+const stars=document.getElementById('stars'); let sh='';
+for(let i=0;i<60;i++){sh+=`<div style="position:absolute;width:2px;height:2px;border-radius:50%;background:#cbd5e1;
+  opacity:${(Math.random()*.6+.2).toFixed(2)};left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*100).toFixed(1)}%"></div>`;}
+stars.innerHTML=sh;
+const clouds=document.getElementById('clouds'); let ch='';
+for(let i=0;i<6;i++){ch+=`<div class="cloud" style="left:${(Math.random()*80).toFixed(0)}%;top:${(Math.random()*90).toFixed(0)}%"></div>`;}
+clouds.innerHTML=ch;
+const mtn=document.getElementById('mtn');
+scroll.addEventListener('scroll',()=>{const y=scroll.scrollTop;
+  stars.style.transform=`translateY(${y*0.12}px)`;
+  clouds.style.transform=`translateY(${y*0.28}px)`;
+  mtn.style.transform=`translateY(${y*0.05}px)`;});
+
+// player + state
+let floor=1, busy=false, route='safe';
+const player=document.getElementById('player');
+function placePlayer(f,anim=true){
+  const p=pos(f);
+  player.style.transition = anim ? 'left .18s linear, top .18s linear' : 'none';
+  player.style.left=(p.cx-26)+'px';
+  player.style.top=(p.top-44)+'px';
+}
+function centerOn(f){const p=pos(f); scroll.scrollTo({top:Math.max(0,p.top-220),behavior:'smooth'});}
+function markTiles(){document.querySelectorAll('.tile').forEach(t=>{const f=+t.dataset.floor;
+  t.classList.toggle('current',f===floor); t.classList.toggle('passed',f<floor);});}
+function setTheme(f){const th=themeOf(f);
+  document.getElementById('theme').textContent=th.name;
+  document.getElementById('floor').textContent=f;}
+
+// dice
+const diceEl=document.getElementById('dice');
+const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function drawDice(v){let h='';for(let i=0;i<9;i++)h+=`<div class="pip ${PIPS[v].includes(i)?'on':''}"></div>`;diceEl.innerHTML=h;}
+drawDice(1);
+
+function floatText(f,txt,color){const p=pos(f);const el=document.createElement('div');
+  el.className='float';el.textContent=txt;el.style.color=color;
+  el.style.left=(p.cx-20)+'px';el.style.top=(p.top-20)+'px';board.appendChild(el);
+  setTimeout(()=>el.remove(),1000);}
+
+function showInfo(f){const th=themeOf(f),ev=EVENTS[f];
+  document.getElementById('ic-chip').textContent=th.chip;
+  document.getElementById('ic-chip').style.background=th.chipBg;
+  document.getElementById('ic-chip').style.color=th.chipFg;
+  document.getElementById('ic-title').textContent=`第 ${f} 層 · ${th.name}`;
+  document.getElementById('ic-desc').textContent= ev ? `${ev.icon} ${ev.title}：${ev.desc}` :
+    '一般戰鬥格。穩定收益，累積資源與技能優勢。';}
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function step(to){floor=to;markTiles();setTheme(floor);placePlayer(floor);centerOn(floor);await sleep(190);}
+
+document.getElementById('rollBtn').addEventListener('click',async()=>{
+  if(busy) return; busy=true; const btn=document.getElementById('rollBtn');btn.disabled=true;
+  diceEl.classList.add('spin');
+  const v=1+Math.floor(Math.random()*6);
+  await sleep(500); drawDice(v); diceEl.classList.remove('spin');
+  document.getElementById('note').innerHTML=`擲出 <b>${v}</b> 點${route==='risk'?'（冒險路）':'（安全路）'}`;
+  let target=Math.min(TOTAL,floor+v);
+  for(let f=floor+1;f<=target;f++){await step(f);}
+  const ev=EVENTS[floor];
+  if(ev&&ev.type==='ladder'){floatText(floor,'升梯！',' #fbbf24');await sleep(350);
+    document.getElementById('note').innerHTML=`🪜 <b>${ev.title}</b>：直升到 ${ev.to} 層！`;await step(ev.to);}
+  else if(ev&&ev.type==='snake'){floatText(floor,'滑落…','#f87171');await sleep(350);
+    document.getElementById('note').innerHTML=`🐍 <b>${ev.title}</b>：滑落到 ${ev.to} 層。`;await step(ev.to);}
+  else if(ev){floatText(floor,ev.icon,'#67e8f9');showInfo(floor);
+    document.getElementById('note').innerHTML=`${ev.icon} <b>${ev.title}</b>：${ev.desc}`;}
+  else { showInfo(floor); }
+  if(floor>=TOTAL) document.getElementById('note').innerHTML='🏆 抵達頂層！這只是原型，正式版有 100 層 5 大主題。';
+  busy=false; btn.disabled=false;
+});
+
+document.querySelectorAll('#routes button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#routes button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); route=b.dataset.r;
+  document.getElementById('note').textContent= route==='risk'
+    ? '冒險路：怪較強、獎勵高、事件多。' : '安全路：怪較弱、穩定推進。';
+}));
+
+// init
+markTiles(); setTheme(1);
+requestAnimationFrame(()=>{ placePlayer(1,false); scroll.scrollTop = BOARDH; });
+</script>
+</body>
+</html>

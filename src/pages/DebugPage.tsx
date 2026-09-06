@@ -6,6 +6,7 @@ import { WorldLabPanel } from '../components/WorldLabPanel';
 import { GameModal } from '../components/GameModal';
 import { MonsterTower, TowerPreview } from '../components/MonsterTower';
 import { MonsterTowerV2, TowerV2Preview } from '../components/MonsterTowerV2';
+import { MonsterTowerGen3, TowerGen3Preview } from '../components/MonsterTowerGen3';
 import { useWorldAdventure } from '../hooks/useWorldAdventure';
 import { useSaveWorldPersistence, useWorldPersistence } from '../hooks/useWorldPersistence';
 import { useWorldBanking } from '../hooks/useWorldBanking';
@@ -52,9 +53,10 @@ export const DebugPage: React.FC = () => {
 
     // QA State
     const [selectedGame, setSelectedGame] = useState<FunGame | null>(null);
-    const [activeTab, setActiveTab] = useState<'games' | 'logs' | 'tower' | 'towerV2' | 'worldLab'>('games');
+    const [activeTab, setActiveTab] = useState<'games' | 'logs' | 'tower' | 'towerV2' | 'towerV3' | 'worldLab'>('games');
     const [isTowerOpen, setIsTowerOpen] = useState(false);
     const [isTowerV2Open, setIsTowerV2Open] = useState(false);
+    const [isTowerGen3Open, setIsTowerGen3Open] = useState(false);
     const hasHydratedWorldRef = useRef(false);
 
     // Tower data
@@ -398,6 +400,12 @@ export const DebugPage: React.FC = () => {
                     🏰 怪獸塔 V2
                 </button>
                 <button
+                    onClick={() => setActiveTab('towerV3')}
+                    className={activeTab === 'towerV3' ? 'active' : ''}
+                >
+                    🧪 怪獸塔 Gen3
+                </button>
+                <button
                     onClick={() => setActiveTab('worldLab')}
                     className={activeTab === 'worldLab' ? 'active' : ''}
                 >
@@ -704,6 +712,51 @@ export const DebugPage: React.FC = () => {
                 </div>
             )}
 
+            {/* Tower Gen3 Tab Content */}
+            {activeTab === 'towerV3' && user && (
+                <div className="space-y-4">
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                        <h3 className="font-pixel text-lg mb-3 flex items-center gap-2">
+                            🧪 怪獸塔 Gen3 - 開發沙盒
+                        </h3>
+                        <TowerGen3Preview userId={user.id} onClick={() => setIsTowerGen3Open(true)} />
+                    </div>
+
+                    <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl p-4 border border-cyan-200">
+                        <h3 className="font-pixel text-lg mb-2">Gen3 目前開發重點</h3>
+                        <ul className="text-sm text-gray-700 space-y-1">
+                            <li>• 以現有怪獸收藏建立 3 隻編隊</li>
+                            <li>• 擲骰推進 + 里程碑事件骨架</li>
+                            <li>• 安全路 / 冒險路模式切換驗證</li>
+                            <li>• 後續接入羈絆、天賦、覺醒系統</li>
+                        </ul>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                        <h3 className="font-pixel text-lg mb-3 flex items-center gap-2">
+                            <Dices size={20} /> Gen3 QA 快捷
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                onClick={async () => {
+                                    await addDiceMutation.mutateAsync({ userId: user.id, amount: 10 });
+                                    refetchTower();
+                                }}
+                                className="px-4 py-2 bg-green-100 text-green-700 rounded-lg border border-green-300 hover:bg-green-200 flex items-center gap-2"
+                            >
+                                <PlusCircle size={16} /> +10 骰子
+                            </button>
+                            <button
+                                onClick={() => setIsTowerGen3Open(true)}
+                                className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-500 flex items-center gap-2"
+                            >
+                                🧪 開啟 Gen3
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Monster Tower Modal */}
             {user && (
                 <MonsterTower
@@ -719,6 +772,15 @@ export const DebugPage: React.FC = () => {
                     userId={user.id}
                     isOpen={isTowerV2Open}
                     onClose={() => setIsTowerV2Open(false)}
+                />
+            )}
+
+            {/* Monster Tower Gen3 Modal */}
+            {user && (
+                <MonsterTowerGen3
+                    userId={user.id}
+                    isOpen={isTowerGen3Open}
+                    onClose={() => setIsTowerGen3Open(false)}
                 />
             )}
         </div>

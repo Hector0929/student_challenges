@@ -124,6 +124,33 @@ SELECT get_child_star_balance('00000000-0000-0000-0000-000000000000'::uuid);
 目前 `fix_world_rls_for_family_parents.sql` 已改成會自動跳過不存在的資料表，
 但若你希望補給站、世界銀行、定存與兌換完整可用，仍需要先建立上述 world tables。
 
+---
+
+## 家庭商店街設定遷移（資源兌換/家庭銀行設定必跑）
+
+若你在家長設定頁更新以下項目時看到 `404`、`PGRST205`、
+`Could not find the table 'public.family_exchange_rates'` 或
+`Could not find the table 'public.family_bank_settings'`，
+代表資料庫尚未建立商店街設定資料表。
+
+請在 Supabase SQL Editor 執行：
+
+- [supabase/add_shop_street_settings.sql](add_shop_street_settings.sql)
+
+此腳本會建立：
+1. `family_exchange_rates`（木材/石材/晶礦兌換率）
+2. `family_bank_settings`（活存利率/定存利率/最短天數/違約金）
+3. 對應 RLS policy、索引、updated_at trigger 與 realtime publication
+
+### 驗證 SQL
+
+```sql
+SELECT to_regclass('public.family_exchange_rates') AS exchange_rates_table,
+       to_regclass('public.family_bank_settings') AS bank_settings_table;
+```
+
+兩欄都應回傳完整表名（非 `null`）。
+
 ### 驗證方式
 
 1. 重新整理孩子頁並打開世界商店街
