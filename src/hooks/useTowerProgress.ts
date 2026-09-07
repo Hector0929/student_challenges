@@ -59,7 +59,7 @@ export const useTowerEvents = () => {
 
 // ============ RANDOM EVENT GENERATION ============
 // Seeded pseudo-random number generator (mulberry32)
-function mulberry32(seed: number) {
+export function mulberry32(seed: number) {
     return () => {
         seed |= 0; seed = seed + 0x6D2B79F5 | 0;
         let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
@@ -305,12 +305,142 @@ export function generateRandomEvents(seed: number): TowerEvent[] {
     return events.sort((a, b) => a.floor_number - b.floor_number);
 }
 
+// Team roles that make a small, fixed, legible difference to a roll's outcome.
+// Deliberately flat numbers (not stacking percentages) so a child can see why
+// something happened: bring a guardian/support, trap slides hurt less; bring a
+// striker/breaker, monster tiles pay a bonus; bring a controller/support,
+// ladders carry you a little further.
+export const TEAM_TRAP_SHIELD_ROLES = ['guardian', 'support'];
+export const TEAM_MONSTER_BONUS_ROLES = ['striker', 'breaker'];
+export const TEAM_LADDER_BOOST_ROLES = ['controller', 'support'];
+export const TEAM_MONSTER_BONUS_STARS = 10;
+export const TEAM_LADDER_BOOST_FLOORS = 2;
+
+/** One monster currently deployed in the Gen3 team, as far as the roll rules care. */
+export interface ActiveTeamMember {
+    id: string;
+    name: string;
+    emoji: string;
+    role: string;
+}
+
+/** Everything the UI needs to show a child exactly which partner helped, and how much. */
+export interface TeamEffectDetail {
+    kind: 'trap_shield' | 'ladder_boost' | 'monster_bonus';
+    monsterId: string;
+    monsterName: string;
+    monsterEmoji: string;
+    role: string;
+    /** Short headline, e.g. 護盾展開！ */
+    title: string;
+    /** Full sentence naming the monster and the concrete difference it made. */
+    message: string;
+    /** Trap: floors the shield saved. Ladder: extra floors climbed. */
+    floorsChanged: number;
+    bonusStars: number;
+}
+
+export interface TeamRoleEffectResult {
+    /** Floor the player actually ends up on after the event resolves. */
+    newFloor: number;
+    /** Bonus star coins to award on top of the normal roll (0 = none). */
+    bonusStars: number;
+    /** Which partner helped and by how much, or null if nothing fired. */
+    teamEffect: TeamEffectDetail | null;
+}
+
+/**
+ * Applies the small, fixed team-role effects described in the Gen3 "隊伍功用說明"
+ * panel to a landed-on event. Pure function so the rules can be unit-tested
+ * without mocking Supabase — see src/__tests__/monsterTowerTeamEffects.test.ts.
+ *
+ * The result names the specific monster that helped, because a partial slide with
+ * no explanation reads as a bug to the player rather than as their team working.
+ */
+export function applyTeamRoleEffects(event: TowerEvent, activeTeam: ActiveTeamMember[] = []): TeamRoleEffectResult {
+    const findHero = (eligibleRoles: string[]) => activeTeam.find((member) => eligibleRoles.includes(member.role)) ?? null;
+
+    if (event.event_type === 'ladder' && event.target_floor) {
+        const hero = findHero(TEAM_LADDER_BOOST_ROLES);
+        if (hero) {
+            const boostedFloor = Math.min(100, event.target_floor + TEAM_LADDER_BOOST_FLOORS);
+            const gained = boostedFloor - event.target_floor;
+            return {
+                newFloor: boostedFloor,
+                bonusStars: 0,
+                teamEffect: {
+                    kind: 'ladder_boost',
+                    monsterId: hero.id,
+                    monsterName: hero.name,
+                    monsterEmoji: hero.emoji,
+                    role: hero.role,
+                    title: '氣流加速！',
+                    message: gained > 0
+                        ? `【${hero.name}】引導氣流推了你一把，多爬了 ${gained} 層，直接到第 ${boostedFloor} 層！`
+                        : `【${hero.name}】引導氣流推了你一把，一路衝到塔頂第 ${boostedFloor} 層！`,
+                    floorsChanged: gained,
+                    bonusStars: 0,
+                },
+            };
+        }
+        return { newFloor: event.target_floor, bonusStars: 0, teamEffect: null };
+    }
+
+    if (event.event_type === 'trap' && event.target_floor) {
+        const hero = findHero(TEAM_TRAP_SHIELD_ROLES);
+        if (hero) {
+            const drop = event.floor_number - event.target_floor;
+            const shieldedDrop = Math.ceil(drop / 2);
+            const savedFloors = drop - shieldedDrop;
+            return {
+                newFloor: event.floor_number - shieldedDrop,
+                bonusStars: 0,
+                teamEffect: {
+                    kind: 'trap_shield',
+                    monsterId: hero.id,
+                    monsterName: hero.name,
+                    monsterEmoji: hero.emoji,
+                    role: hero.role,
+                    title: '護盾展開！',
+                    message: `【${hero.name}】幫你擋下衝擊，本來要滑 ${drop} 層，只滑了 ${shieldedDrop} 層，少掉 ${savedFloors} 層！`,
+                    floorsChanged: savedFloors,
+                    bonusStars: 0,
+                },
+            };
+        }
+        return { newFloor: event.target_floor, bonusStars: 0, teamEffect: null };
+    }
+
+    if (event.event_type === 'monster') {
+        const hero = findHero(TEAM_MONSTER_BONUS_ROLES);
+        if (hero) {
+            return {
+                newFloor: event.floor_number,
+                bonusStars: TEAM_MONSTER_BONUS_STARS,
+                teamEffect: {
+                    kind: 'monster_bonus',
+                    monsterId: hero.id,
+                    monsterName: hero.name,
+                    monsterEmoji: hero.emoji,
+                    role: hero.role,
+                    title: '必殺強襲！',
+                    message: `【${hero.name}】擊破了守門怪獸，額外拿到 ${TEAM_MONSTER_BONUS_STARS} 星幣！`,
+                    floorsChanged: 0,
+                    bonusStars: TEAM_MONSTER_BONUS_STARS,
+                },
+            };
+        }
+    }
+
+    return { newFloor: event.floor_number, bonusStars: 0, teamEffect: null };
+}
+
 // Roll dice and move - uses RPC to bypass RLS
 export const useRollDice = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ userId, currentFloor, clientEvents }: { userId: string; currentFloor: number; clientEvents?: TowerEvent[] }) => {
+        mutationFn: async ({ userId, currentFloor, clientEvents, activeTeam }: { userId: string; currentFloor: number; clientEvents?: TowerEvent[]; activeTeam?: ActiveTeamMember[] }) => {
             // Generate random roll (1-6)
             const roll = Math.floor(Math.random() * 6) + 1;
             let newFloor = Math.min(currentFloor + roll, 100);
@@ -331,17 +461,20 @@ export const useRollDice = () => {
 
             let eventResult: TowerEvent | null = null;
             let monstersToAdd: string[] = [];
+            let teamEffect: TeamEffectDetail | null = null;
+            let bonusStarsAwarded = 0;
 
             if (event) {
                 eventResult = event as TowerEvent;
 
-                if (event.event_type === 'ladder' && event.target_floor) {
-                    newFloor = event.target_floor;
-                } else if (event.event_type === 'trap' && event.target_floor) {
-                    newFloor = event.target_floor;
-                } else if (event.event_type === 'egg' && event.monster_id) {
+                if (event.event_type === 'egg' && event.monster_id) {
                     // Store as unopened egg (prefix with 'egg:')
                     monstersToAdd = [`egg:${event.monster_id}`];
+                } else if (event.event_type === 'ladder' || event.event_type === 'trap' || event.event_type === 'monster') {
+                    const effect = applyTeamRoleEffects(event, activeTeam ?? []);
+                    newFloor = effect.newFloor;
+                    bonusStarsAwarded = effect.bonusStars;
+                    teamEffect = effect.teamEffect;
                 }
             }
 
@@ -382,6 +515,16 @@ export const useRollDice = () => {
                 throw new Error(updateResult.message || '更新失敗');
             }
 
+            if (bonusStarsAwarded > 0) {
+                const { error: bonusError } = await supabase.from('star_transactions').insert({
+                    user_id: userId,
+                    amount: bonusStarsAwarded,
+                    type: 'earn',
+                    description: `🏰 怪獸塔隊伍加成：擊破怪物額外獲得 ${bonusStarsAwarded} 星幣`,
+                });
+                if (bonusError) console.error('Team bonus star award failed:', bonusError);
+            }
+
             return {
                 progress: {
                     ...currentProgress,
@@ -397,10 +540,13 @@ export const useRollDice = () => {
                 roll,
                 event: eventResult,
                 reachedTop: newFloor >= 100,
+                teamEffect,
+                bonusStarsAwarded,
             };
         },
         onSuccess: (_, { userId }) => {
             queryClient.invalidateQueries({ queryKey: ['tower-progress', userId] });
+            queryClient.invalidateQueries({ queryKey: ['star_balance', userId] });
         },
         onError: (error) => {
             console.error('Roll failed:', error);

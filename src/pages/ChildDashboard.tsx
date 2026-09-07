@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ParentsMessageCard, ExchangeRateCard } from '../components/ChildDashboardWidgets';
 import { ExchangeRequestDialog } from '../components/ExchangeRequestDialog';
 import { MonsterTowerV2, TowerV2Preview } from '../components/MonsterTowerV2';
+import { MonsterTowerGen3, TowerGen3Preview } from '../components/MonsterTowerGen3';
 
 import { Star, X, Save, ChevronDown, ChevronUp, RefreshCw, Trash2, Check, Store } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
@@ -87,6 +88,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     });
     const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false);
     const [isTowerOpen, setIsTowerOpen] = useState(false);
+    const [isTowerGen3Open, setIsTowerGen3Open] = useState(false);
     const [isShopOpen, setIsShopOpen] = useState(false);
     const [isWorldOpen, setIsWorldOpen] = useState(false);
     const [shopInitialTab, setShopInitialTab] = useState<'monster' | 'world'>('monster');
@@ -325,9 +327,10 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                 </button>
             </div>
 
-            {/* Monster Tower Preview */}
-            <div className="mb-6">
+            {/* Monster Tower Preview — 經典版 (V2) 與 2.5D 新版 (V3) 並存，共用同一份爬塔進度 */}
+            <div className="mb-6 space-y-3">
                 <TowerV2Preview userId={userId} onClick={() => setIsTowerOpen(true)} />
+                <TowerGen3Preview userId={userId} onClick={() => setIsTowerGen3Open(true)} />
             </div>
 
             {/* 3D World Preview Card */}
@@ -594,11 +597,18 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                 onClose={() => setIsExchangeDialogOpen(false)}
             />
 
-            {/* Monster Tower Modal */}
+            {/* Monster Tower Modal (經典版) */}
             <MonsterTowerV2
                 userId={userId}
                 isOpen={isTowerOpen}
                 onClose={() => setIsTowerOpen(false)}
+            />
+
+            {/* Monster Tower Gen3 Modal (2.5D 新版) — 與經典版共用同一份爬塔進度 */}
+            <MonsterTowerGen3
+                userId={userId}
+                isOpen={isTowerGen3Open}
+                onClose={() => setIsTowerGen3Open(false)}
             />
 
             {/* Monster Shop Modal */}

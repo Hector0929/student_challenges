@@ -1,17 +1,32 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { X, Dices, PlusCircle, Shield, Zap, Sparkles, Heart, Crosshair, Hammer, Award, Compass, Star, Info } from 'lucide-react';
-import { MONSTERS, useAddDice, useRollDice, useTowerProgress, type MonsterId } from '../hooks/useTowerProgress';
+import { X, Dices, ShoppingCart, FolderOpen, Shield, Zap, Sparkles, Heart, Crosshair, Hammer, Award, Compass, Star, Info } from 'lucide-react';
+import {
+    MONSTERS,
+    useRollDice,
+    useTowerProgress,
+    generateRandomEvents,
+    type MonsterId,
+    type ActiveTeamMember,
+    type TeamEffectDetail,
+} from '../hooks/useTowerProgress';
+import {
+    GEN3_TOTAL_FLOORS,
+    applyRouteMode,
+    getMonsterRole,
+    withEncounterTiles,
+    type TeamRole,
+} from '../lib/towerGen3Rules';
 import { useStarBalance } from '../hooks/useQuests';
+import { DicePurchaseModal } from './tower/DicePurchaseModal';
+import { TowerCollectionPanel } from './tower/TowerCollectionPanel';
+import { TowerVictoryFlow } from './tower/TowerVictoryFlow';
 import type { TowerEvent } from '../types/database';
-
-type TeamRole = 'guardian' | 'striker' | 'controller' | 'support' | 'breaker';
 
 type TeamPreset = {
     label: string;
     slots: MonsterId[];
 };
 
-const GEN3_TOTAL_FLOORS = 100;
 const TEAM_PRESET_STORAGE_KEY = 'monster_tower_gen3_team_presets_v1';
 
 // ── 2.5D 等角棋盤幾何配置 ──
@@ -27,39 +42,6 @@ const BOARD_W = PAD_X * 2 + BOARD_COLS * TILE_CELL_W + (BOARD_COLS - 1) * TILE_G
 const TOTAL_ROWS = Math.ceil(GEN3_TOTAL_FLOORS / BOARD_COLS);
 const BOARD_H = PAD_BOTTOM + TOTAL_ROWS * ROW_H + 60;
 
-const GEN3_EVENTS: TowerEvent[] = [
-    { id: 'gen3-10', floor_number: 10, event_type: 'monster', description: '精英守門怪：建議切成防守編隊', is_active: true },
-    { id: 'gen3-15', floor_number: 15, event_type: 'treasure', reward_stars: 30, description: '古代補給箱：獲得額外資源', is_active: true },
-    { id: 'gen3-20', floor_number: 20, event_type: 'ladder', target_floor: 24, description: '浮空升降梯：直升 4 層', is_active: true },
-    { id: 'gen3-25', floor_number: 25, event_type: 'egg', monster_id: 'slime', description: '草原里程碑：小綠球怪獸蛋', is_active: true },
-    { id: 'gen3-30', floor_number: 30, event_type: 'trap', target_floor: 27, description: '熔岩裂縫：滑落 3 層', is_active: true },
-    { id: 'gen3-40', floor_number: 40, event_type: 'monster', description: '機關塔主：需要破甲角色', is_active: true },
-    { id: 'gen3-50', floor_number: 50, event_type: 'egg', monster_id: 'water_spirit', description: '晶洞里程碑：水晶精靈怪獸蛋', is_active: true },
-    { id: 'gen3-60', floor_number: 60, event_type: 'treasure', reward_stars: 80, description: '空島寶庫：戰備補強', is_active: true },
-    { id: 'gen3-75', floor_number: 75, event_type: 'egg', monster_id: 'flame_bird', description: '熔岩里程碑：火焰鳥怪獸蛋', is_active: true },
-    { id: 'gen3-90', floor_number: 90, event_type: 'monster', description: '最終前哨：壓力測試', is_active: true },
-    { id: 'gen3-100', floor_number: 100, event_type: 'egg', monster_id: 'thunder_cloud', description: '雲巔里程碑：雷雲君怪獸蛋', is_active: true },
-];
-
-const GEN3_RISK_ROUTE_EVENTS: TowerEvent[] = [
-    { id: 'gen3-risk-35', floor_number: 35, event_type: 'monster', description: '冒險路亂入：狂暴狩獵隊', is_active: true },
-    { id: 'gen3-risk-55', floor_number: 55, event_type: 'trap', target_floor: 51, description: '冒險路陷阱：能量過載回退', is_active: true },
-    { id: 'gen3-risk-85', floor_number: 85, event_type: 'treasure', reward_stars: 120, description: '冒險路獎勵：高壓寶庫', is_active: true },
-];
-
-const ROLE_BY_MONSTER: Partial<Record<MonsterId, TeamRole>> = {
-    slime: 'guardian',
-    mossy_golem: 'guardian',
-    water_spirit: 'support',
-    mystic_water: 'controller',
-    flame_bird: 'striker',
-    thunder_cloud: 'controller',
-    cactus_boy: 'breaker',
-    lucky_clover: 'support',
-    rainbow_dragon: 'striker',
-    nian_beast: 'striker',
-};
-
 const ROLE_META: Record<TeamRole, { label: string; icon: React.FC<{ size?: number; className?: string }>; color: string }> = {
     guardian: { label: '守護', icon: Shield, color: 'text-emerald-400' },
     striker: { label: '輸出', icon: Zap, color: 'text-amber-400' },
@@ -67,10 +49,6 @@ const ROLE_META: Record<TeamRole, { label: string; icon: React.FC<{ size?: numbe
     support: { label: '支援', icon: Heart, color: 'text-rose-400' },
     breaker: { label: '破甲', icon: Hammer, color: 'text-orange-400' },
 };
-
-function getMonsterRole(monsterId: MonsterId): TeamRole {
-    return ROLE_BY_MONSTER[monsterId] ?? 'striker';
-}
 
 function getFloorTheme(floor: number): { name: string; bg: string; color: string; desc: string } {
     if (floor <= 20) return { name: '晨霧草原', bg: 'from-emerald-900/40 to-teal-950/60', color: '#34d399', desc: '綠草如茵，微風徐徐的冒險起點' };
@@ -100,17 +78,6 @@ const ZONES = [
 ];
 type Zone = typeof ZONES[0];
 const getZone = (floor: number): Zone => ZONES.find((z) => floor >= z.from && floor <= z.to) || ZONES[0];
-
-function getFactionByZone(zoneName?: string): string {
-    if (!zoneName) return 'neutral';
-    if (zoneName.includes('森林')) return 'forest';
-    if (zoneName.includes('水晶')) return 'crystal';
-    if (zoneName.includes('熔岩')) return 'magma';
-    if (zoneName.includes('雲端')) return 'sky';
-    if (zoneName.includes('太空')) return 'cosmos';
-    if (zoneName.includes('塔頂')) return 'apex';
-    return 'neutral';
-}
 
 // ── 2.5D 等角立體積木塊 (IsoBrick 升級版) ──
 const IsoBrick: React.FC<{
@@ -350,6 +317,104 @@ const PathConnectors: React.FC<{ events: TowerEvent[]; totalFloors: number; curr
     );
 };
 
+// ── 隊伍出手演出：明確告訴玩家「是哪一隻怪獸幫了忙、幫了多少」 ──
+const TEAM_EFFECT_THEME: Record<TeamEffectDetail['kind'], { ring: string; glow: string; badge: string; badgeText: string; accent: string; icon: string }> = {
+    trap_shield: {
+        ring: 'border-emerald-400/70',
+        glow: 'rgba(52, 211, 153, 0.55)',
+        badge: 'bg-emerald-500/20 border-emerald-400/50',
+        badgeText: 'text-emerald-200',
+        accent: 'from-emerald-200 via-teal-100 to-emerald-300',
+        icon: '🛡️',
+    },
+    ladder_boost: {
+        ring: 'border-cyan-400/70',
+        glow: 'rgba(34, 211, 238, 0.55)',
+        badge: 'bg-cyan-500/20 border-cyan-400/50',
+        badgeText: 'text-cyan-200',
+        accent: 'from-cyan-200 via-sky-100 to-cyan-300',
+        icon: '🌀',
+    },
+    monster_bonus: {
+        ring: 'border-amber-400/70',
+        glow: 'rgba(251, 191, 36, 0.55)',
+        badge: 'bg-amber-500/20 border-amber-400/50',
+        badgeText: 'text-amber-200',
+        accent: 'from-amber-200 via-yellow-100 to-orange-300',
+        icon: '⚡',
+    },
+};
+
+const TeamEffectBurst: React.FC<{ effect: TeamEffectDetail }> = ({ effect }) => {
+    const theme = TEAM_EFFECT_THEME[effect.kind];
+    const roleMeta = ROLE_META[(effect.role as TeamRole)] ?? ROLE_META.striker;
+    const monsterImage = MONSTERS[effect.monsterId as MonsterId]?.image;
+
+    return (
+        <div className="absolute inset-0 z-[2500] flex items-center justify-center pointer-events-none px-4">
+            <div
+                className={`gen3-effect-burst relative w-full max-w-sm rounded-3xl border-2 ${theme.ring} bg-slate-950/95 backdrop-blur-md px-6 py-5 text-center shadow-2xl`}
+                style={{ boxShadow: `0 0 60px ${theme.glow}, 0 24px 60px rgba(0,0,0,0.65)` }}
+            >
+                {/* 光暈脈動 */}
+                <div
+                    className="absolute inset-0 rounded-3xl animate-ping opacity-20 pointer-events-none"
+                    style={{ border: `2px solid ${theme.glow}` }}
+                />
+
+                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold mb-3 ${theme.badge} ${theme.badgeText}`}>
+                    <span>{theme.icon}</span>
+                    <span>{roleMeta.label}夥伴出手！</span>
+                </div>
+
+                {/* 出手的怪獸 */}
+                <div className="gen3-effect-monster mx-auto mb-2 flex items-center justify-center">
+                    {monsterImage ? (
+                        <img
+                            src={monsterImage}
+                            alt={effect.monsterName}
+                            className="w-20 h-20 object-contain"
+                            style={{ filter: `drop-shadow(0 6px 18px ${theme.glow})` }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                    ) : (
+                        <span className="text-6xl" style={{ filter: `drop-shadow(0 6px 18px ${theme.glow})` }}>{effect.monsterEmoji}</span>
+                    )}
+                </div>
+
+                <h3 className={`text-2xl font-black mb-1 text-transparent bg-clip-text bg-gradient-to-r ${theme.accent}`}>
+                    {effect.title}
+                </h3>
+                <p className="text-lg font-black text-white mb-1.5">{effect.monsterName}</p>
+                <p className="text-sm text-slate-200 leading-relaxed">{effect.message}</p>
+
+                {/* 具體數字，讓「少滑了幾層」一眼看得到 */}
+                {effect.kind === 'trap_shield' && effect.floorsChanged > 0 && (
+                    <div className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 rounded-2xl bg-emerald-500/15 border border-emerald-400/40">
+                        <span className="text-xs text-emerald-200 font-bold">少滑落</span>
+                        <span className="text-2xl font-black text-emerald-300 tabular-nums leading-none">{effect.floorsChanged}</span>
+                        <span className="text-xs text-emerald-200 font-bold">層</span>
+                    </div>
+                )}
+                {effect.kind === 'ladder_boost' && effect.floorsChanged > 0 && (
+                    <div className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 rounded-2xl bg-cyan-500/15 border border-cyan-400/40">
+                        <span className="text-xs text-cyan-200 font-bold">額外爬升</span>
+                        <span className="text-2xl font-black text-cyan-300 tabular-nums leading-none">{effect.floorsChanged}</span>
+                        <span className="text-xs text-cyan-200 font-bold">層</span>
+                    </div>
+                )}
+                {effect.kind === 'monster_bonus' && effect.bonusStars > 0 && (
+                    <div className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 rounded-2xl bg-amber-500/15 border border-amber-400/40">
+                        <span className="text-xs text-amber-200 font-bold">額外獲得</span>
+                        <span className="text-2xl font-black text-amber-300 tabular-nums leading-none">{effect.bonusStars}</span>
+                        <span className="text-xs text-amber-200 font-bold">星幣 ⭐</span>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 interface MonsterTowerGen3Props {
     userId: string;
     isOpen: boolean;
@@ -359,7 +424,9 @@ interface MonsterTowerGen3Props {
 export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOpen, onClose }) => {
     const { data: progress, refetch } = useTowerProgress(userId);
     const rollDiceMutation = useRollDice();
-    const addDiceMutation = useAddDice();
+
+    // 每局重新種一次亂數種子，梯子/陷阱位置每次破頂重玩都會洗牌，避免玩家把棋盤背下來
+    const [eventSeed, setEventSeed] = useState(() => Date.now());
 
     const [isRolling, setIsRolling] = useState(false);
     const [isMoving, setIsMoving] = useState(false);
@@ -370,6 +437,10 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
     const [teamSlots, setTeamSlots] = useState<MonsterId[]>([]);
     const [animatedFloor, setAnimatedFloor] = useState<number | null>(null);
     const [selectedTileFloor, setSelectedTileFloor] = useState<number | null>(null);
+    const [showPurchase, setShowPurchase] = useState(false);
+    const [showCollection, setShowCollection] = useState(false);
+    const [showVictory, setShowVictory] = useState(false);
+    const [teamEffectPopup, setTeamEffectPopup] = useState<TeamEffectDetail | null>(null);
     const [teamPresets, setTeamPresets] = useState<TeamPreset[]>([
         { label: '小隊 A', slots: [] },
         { label: '小隊 B', slots: [] },
@@ -395,6 +466,14 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
         return list;
     }, [ownedMonsterIds]);
 
+    // 未孵化的怪獸蛋，餵給共用的收藏／孵蛋面板
+    const eggs = useMemo(() => {
+        const raw = progress?.monsters_collected ?? [];
+        return raw
+            .filter((id) => id.startsWith('egg:'))
+            .map((id, index) => ({ eggIndex: index, monsterId: id.replace('egg:', '') }));
+    }, [progress?.monsters_collected]);
+
     // 預設將前 3 隻怪獸自動入隊
     useEffect(() => {
         if (teamSlots.length === 0 && uniqueOwnedMonsters.length > 0) {
@@ -402,12 +481,26 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
         }
     }, [uniqueOwnedMonsters, teamSlots.length]);
 
-    const activeEvents = useMemo(() => {
-        if (routeMode === 'safe') {
-            return GEN3_EVENTS.filter((event) => event.event_type !== 'trap').sort((a, b) => a.floor_number - b.floor_number);
-        }
-        return [...GEN3_EVENTS, ...GEN3_RISK_ROUTE_EVENTS].sort((a, b) => a.floor_number - b.floor_number);
-    }, [routeMode]);
+    // 梯子/陷阱每局隨機（沿用 V1/V2 既有的 generateRandomEvents），
+    // 里程碑怪獸蛋固定在 25/50/75/100 層——這是 generateRandomEvents 本身就會保證的安排。
+    const baseEvents = useMemo(() => withEncounterTiles(generateRandomEvents(eventSeed), eventSeed), [eventSeed]);
+    const activeEvents = useMemo(() => applyRouteMode(baseEvents, routeMode), [baseEvents, routeMode]);
+
+    // 出戰隊伍（含名字與圖示），讓擲骰規則知道「是哪一隻怪獸幫了忙」
+    const activeTeam = useMemo<ActiveTeamMember[]>(() => {
+        const members: ActiveTeamMember[] = [];
+        teamSlots.forEach((monsterId) => {
+            const monster = MONSTERS[monsterId];
+            if (!monster) return;
+            members.push({
+                id: monster.id,
+                name: monster.name,
+                emoji: monster.emoji,
+                role: getMonsterRole(monsterId),
+            });
+        });
+        return members;
+    }, [teamSlots]);
 
     const eventMap = useMemo(() => new Map(activeEvents.map((event) => [event.floor_number, event])), [activeEvents]);
 
@@ -440,6 +533,9 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
         }
     };
 
+    // 純粹的收藏／展示數字，不影響擲骰或事件結果——真正會影響結果的是隊伍角色
+    // （見 useRollDice 裡的 TEAM_TRAP_SHIELD_ROLES 等規則），這裡刻意不做任何
+    // 百分比疊加，避免暗示「戰力越高越容易通關」。
     const teamPower = useMemo(() => {
         return teamSlots.reduce((acc, monsterId) => {
             const monster = MONSTERS[monsterId];
@@ -448,54 +544,6 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
             return acc + tierPower * 15;
         }, 0);
     }, [teamSlots]);
-
-    const roleSummary = useMemo(() => {
-        const countMap: Partial<Record<TeamRole, number>> = {};
-        teamSlots.forEach((monsterId) => {
-            const role = getMonsterRole(monsterId);
-            countMap[role] = (countMap[role] ?? 0) + 1;
-        });
-        return countMap;
-    }, [teamSlots]);
-
-    const factionSummary = useMemo(() => {
-        const countMap: Record<string, number> = {};
-        teamSlots.forEach((monsterId) => {
-            const faction = getFactionByZone(MONSTERS[monsterId]?.zone);
-            countMap[faction] = (countMap[faction] ?? 0) + 1;
-        });
-        return countMap;
-    }, [teamSlots]);
-
-    const synergyBonuses = useMemo(() => {
-        let bonusPercent = 0;
-        const tags: string[] = [];
-
-        if ((roleSummary.guardian ?? 0) >= 1 && (roleSummary.support ?? 0) >= 1) {
-            bonusPercent += 10;
-            tags.push('🛡️ 守護 + 支援：全隊生存 +10%');
-        }
-
-        if ((roleSummary.controller ?? 0) >= 1 && (roleSummary.striker ?? 0) >= 1) {
-            bonusPercent += 15;
-            tags.push('⚡ 控場 + 輸出：爆發連擊 +15%');
-        }
-
-        const hasDoubleFaction = Object.values(factionSummary).some((count) => count >= 2);
-        if (hasDoubleFaction) {
-            bonusPercent += 12;
-            tags.push('🌟 同系羈絆：戰力加成 +12%');
-        }
-
-        return {
-            bonusPercent,
-            tags,
-        };
-    }, [factionSummary, roleSummary]);
-
-    const finalTeamPower = useMemo(() => {
-        return Math.round(teamPower * (1 + synergyBonuses.bonusPercent / 100));
-    }, [synergyBonuses.bonusPercent, teamPower]);
 
     const displayFloor = animatedFloor ?? currentFloor;
 
@@ -546,44 +594,6 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
         setLastDevNote(`已載入 ${target.label} 編隊！`);
     };
 
-    // 隊伍技能觸發判定輔助函式
-    const evaluateTeamSkillImpact = (eventType: string): string => {
-        const activeMonsters = teamSlots.map((id) => MONSTERS[id]).filter(Boolean);
-        if (activeMonsters.length === 0) return '';
-
-        if (eventType === 'monster') {
-            const striker = activeMonsters.find((m) => getMonsterRole(m.id as MonsterId) === 'striker' || getMonsterRole(m.id as MonsterId) === 'breaker');
-            if (striker) {
-                return `【${striker.name}】發動必殺強襲！⚡ 全隊總戰力 ${finalTeamPower} 壓制過關！`;
-            }
-            return `全隊集結戰力 ${finalTeamPower} 協同迎戰！`;
-        }
-
-        if (eventType === 'trap') {
-            const guardian = activeMonsters.find((m) => getMonsterRole(m.id as MonsterId) === 'guardian' || getMonsterRole(m.id as MonsterId) === 'support');
-            if (guardian) {
-                return `【${guardian.name}】展開神聖護盾 🛡️，全隊吸收衝擊穩定身形！`;
-            }
-            return '小心腳下熔岩！';
-        }
-
-        if (eventType === 'ladder') {
-            const controller = activeMonsters.find((m) => getMonsterRole(m.id as MonsterId) === 'controller' || getMonsterRole(m.id as MonsterId) === 'support');
-            if (controller) {
-                return `【${controller.name}】引導氣流加速 🌀，迅速登梯攀升！`;
-            }
-            return '金色梯子直通上層！';
-        }
-
-        if (eventType === 'treasure' || eventType === 'egg') {
-            if (synergyBonuses.bonusPercent > 0) {
-                return `羈絆加成生效（+${synergyBonuses.bonusPercent}%），收穫更豐厚！✨`;
-            }
-        }
-
-        return '';
-    };
-
     const handleRoll = async () => {
         if (isRolling || isMoving || diceCount <= 0) return;
         setIsRolling(true);
@@ -596,6 +606,7 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
                 userId,
                 currentFloor: startFloor,
                 clientEvents: activeEvents,
+                activeTeam,
             });
 
             setIsMoving(true);
@@ -612,24 +623,42 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
             if (reachedFloor !== intermediateFloor) {
                 const direction = reachedFloor > intermediateFloor ? 1 : -1;
                 const event = eventMap.get(intermediateFloor);
-                const skillNote = event ? evaluateTeamSkillImpact(event.event_type) : '';
                 const eventDesc = event?.description ?? (direction > 0 ? '搭乘升降梯上升！' : '不小心掉入陷阱！');
-                setLastDevNote(`擲出 🎲 ${result.roll} 點！到達 ${intermediateFloor} 層，${eventDesc} ${skillNote}`);
+                setLastDevNote(`擲出 🎲 ${result.roll} 點！到達 ${intermediateFloor} 層，${eventDesc}`);
                 await wait(280);
+
+                // 隊伍出手時，先把「是誰幫了忙、少滑幾層」演出來，玩家才看得懂
+                // 為什麼這次沒有滑到蛇的另一端。
+                if (result.teamEffect) {
+                    setTeamEffectPopup(result.teamEffect);
+                    await wait(900);
+                }
 
                 for (let step = intermediateFloor + direction; direction > 0 ? step <= reachedFloor : step >= reachedFloor; step += direction) {
                     setAnimatedFloor(step);
                     scrollToFloor(step);
                     await wait(120);
                 }
+
+                if (result.teamEffect) {
+                    await wait(700);
+                    setTeamEffectPopup(null);
+                }
+            } else if (result.teamEffect) {
+                // 守門怪獸格不會移動，落地後直接演出擊破畫面
+                setTeamEffectPopup(result.teamEffect);
+                await wait(1600);
+                setTeamEffectPopup(null);
             }
 
             const finalEvent = eventMap.get(reachedFloor);
-            const finalSkillNote = finalEvent ? evaluateTeamSkillImpact(finalEvent.event_type) : '';
             const eventText = finalEvent ? `，觸發事件：${finalEvent.description ?? finalEvent.event_type}` : '';
-            setLastDevNote(`抵達第 ${reachedFloor} 層（${routeTag}）${eventText} ${finalSkillNote ? `✨ ${finalSkillNote}` : '🎉'}`);
+            setLastDevNote(`抵達第 ${reachedFloor} 層（${routeTag}）${eventText} ${result.teamEffect ? `✨ ${result.teamEffect.message}` : '🎉'}`);
             await refetch();
             setAnimatedFloor(null);
+            if (result.reachedTop) {
+                setTimeout(() => setShowVictory(true), 400);
+            }
         } catch (error) {
             console.error('Gen3 roll failed', error);
             setLastDevNote('擲骰失敗，請稍候重試。');
@@ -640,10 +669,12 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
         }
     };
 
-    const handleAddDice = async (amount: number) => {
-        await addDiceMutation.mutateAsync({ userId, amount });
-        await refetch();
-    };
+    const handleRestart = useCallback(() => {
+        setShowVictory(false);
+        setEventSeed(Date.now()); // 破頂重玩：梯子/陷阱重新洗牌
+        setSelectedTileFloor(null);
+        setTimeout(() => scrollToFloor(1), 300);
+    }, [scrollToFloor]);
 
     if (!isOpen) return null;
 
@@ -874,16 +905,23 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
 
                             <div className="flex items-center gap-1.5">
                                 <button
-                                    onClick={() => handleAddDice(1)}
+                                    onClick={() => setShowPurchase(true)}
                                     className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 flex items-center gap-1 border border-slate-700"
+                                    data-testid="purchase-dice-btn"
                                 >
-                                    <PlusCircle size={13} className="text-emerald-400" /> +1
+                                    <ShoppingCart size={13} className="text-cyan-400" /> 購買骰子
                                 </button>
                                 <button
-                                    onClick={() => handleAddDice(5)}
-                                    className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 flex items-center gap-1 border border-slate-700"
+                                    onClick={() => setShowCollection(true)}
+                                    className="relative px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 flex items-center gap-1 border border-slate-700"
+                                    data-testid="collection-btn"
                                 >
-                                    <PlusCircle size={13} className="text-emerald-400" /> +5
+                                    <FolderOpen size={13} className="text-amber-400" /> 收藏
+                                    {eggs.length > 0 && (
+                                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-amber-500 text-[9px] font-bold text-slate-950 flex items-center justify-center">
+                                            {eggs.length}
+                                        </span>
+                                    )}
                                 </button>
                             </div>
 
@@ -932,8 +970,8 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
                                         <p className="text-[11px] text-slate-400">路上遇敵或陷阱自動觸發技能</p>
                                     </div>
                                     <div className="text-right">
-                                        <span className="text-[10px] text-slate-400">隊伍總戰力</span>
-                                        <p className="text-base font-black text-amber-300 leading-none">{finalTeamPower}</p>
+                                        <span className="text-[10px] text-slate-400">隊伍收藏戰力</span>
+                                        <p className="text-base font-black text-amber-300 leading-none">{teamPower}</p>
                                     </div>
                                 </div>
 
@@ -981,18 +1019,6 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
                                         );
                                     })}
                                 </div>
-
-                                {/* 羈絆光環狀態 */}
-                                {synergyBonuses.tags.length > 0 && (
-                                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-400/20 text-[11px] text-amber-200 space-y-1">
-                                        <div className="font-bold flex items-center gap-1 text-amber-300">
-                                            <Sparkles size={12} /> 觸發隊伍羈絆加成：
-                                        </div>
-                                        {synergyBonuses.tags.map((tag) => (
-                                            <div key={tag}>{tag}</div>
-                                        ))}
-                                    </div>
-                                )}
 
                                 {/* 快速預設隊伍切換與存檔 */}
                                 <div className="mt-3 pt-3 border-t border-slate-800 text-xs">
@@ -1147,6 +1173,23 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
                         </div>
                     </footer>
                 )}
+
+                {/* ── 隊伍出手演出（護盾／加速／擊破） ── */}
+                {teamEffectPopup && <TeamEffectBurst effect={teamEffectPopup} />}
+
+                {/* ── 破頂 → 抽獎輪盤流程 ── */}
+                <TowerVictoryFlow userId={userId} open={showVictory} onRestart={handleRestart} />
+
+                {showPurchase && <DicePurchaseModal userId={userId} onClose={() => setShowPurchase(false)} />}
+
+                {/* ── 收藏／孵蛋／進化 ── */}
+                <TowerCollectionPanel
+                    userId={userId}
+                    isOpen={showCollection}
+                    onClose={() => setShowCollection(false)}
+                    eggs={eggs}
+                    monsters={ownedMonsterIds}
+                />
             </div>
         </div>
     );

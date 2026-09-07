@@ -59,6 +59,15 @@ export const DebugPage: React.FC = () => {
     const [isTowerGen3Open, setIsTowerGen3Open] = useState(false);
     const hasHydratedWorldRef = useRef(false);
 
+    // Debug 分頁操作的是孩子「真實」的爬塔進度（V1/V2/V3 共用同一筆 tower_progress），
+    // 開啟前先提醒家長，避免測試時的擲骰/加骰子誤動到孩子的正式紀錄。
+    const openLiveTowerModal = (version: 'V2' | 'V3', open: () => void) => {
+        const confirmed = window.confirm(
+            `這會直接開啟孩子在怪獸塔 ${version} 的「正式進度」（樓層、骰子、怪獸收藏），在這裡的任何操作都會真的改動孩子的存檔，且與其他版本共用同一份資料。確定要繼續嗎？`
+        );
+        if (confirmed) open();
+    };
+
     // Tower data
     const { data: towerProgress, refetch: refetchTower } = useTowerProgress(user?.id || '');
     const addDiceMutation = useAddDice();
@@ -672,7 +681,7 @@ export const DebugPage: React.FC = () => {
                         <h3 className="font-pixel text-lg mb-3 flex items-center gap-2">
                             🏰 怪獸塔 V2 - Snakes & Ladders Style
                         </h3>
-                        <TowerV2Preview userId={user.id} onClick={() => setIsTowerV2Open(true)} />
+                        <TowerV2Preview userId={user.id} onClick={() => openLiveTowerModal('V2', () => setIsTowerV2Open(true))} />
                     </div>
 
                     {/* V2 Info */}
@@ -702,7 +711,7 @@ export const DebugPage: React.FC = () => {
                                 <PlusCircle size={16} /> +10 骰子
                             </button>
                             <button
-                                onClick={() => setIsTowerV2Open(true)}
+                                onClick={() => openLiveTowerModal('V2', () => setIsTowerV2Open(true))}
                                 className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 flex items-center gap-2"
                             >
                                 🏰 開啟怪獸塔 V2
@@ -725,7 +734,7 @@ export const DebugPage: React.FC = () => {
                                 2.5D Isometric Engine
                             </span>
                         </div>
-                        <TowerGen3Preview userId={user.id} onClick={() => setIsTowerGen3Open(true)} />
+                        <TowerGen3Preview userId={user.id} onClick={() => openLiveTowerModal('V3', () => setIsTowerGen3Open(true))} />
                     </div>
 
                     {/* V3 核心改版特色與舊怪獸保存說明 */}
@@ -790,7 +799,7 @@ export const DebugPage: React.FC = () => {
                                 <PlusCircle size={15} /> +20 骰子
                             </button>
                             <button
-                                onClick={() => setIsTowerGen3Open(true)}
+                                onClick={() => openLiveTowerModal('V3', () => setIsTowerGen3Open(true))}
                                 className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl shadow-md flex items-center gap-2 text-sm"
                             >
                                 🚀 開啟怪獸塔 V3 (2.5D)
