@@ -411,27 +411,8 @@ export function applyTeamRoleEffects(event: TowerEvent, activeTeam: ActiveTeamMe
         return { newFloor: event.target_floor, bonusStars: 0, teamEffect: null };
     }
 
-    if (event.event_type === 'monster') {
-        const hero = findHero(TEAM_MONSTER_BONUS_ROLES);
-        if (hero) {
-            return {
-                newFloor: event.floor_number,
-                bonusStars: TEAM_MONSTER_BONUS_STARS,
-                teamEffect: {
-                    kind: 'monster_bonus',
-                    monsterId: hero.id,
-                    monsterName: hero.name,
-                    monsterEmoji: hero.emoji,
-                    role: hero.role,
-                    title: '必殺強襲！',
-                    message: `【${hero.name}】擊破了守門怪獸，額外拿到 ${TEAM_MONSTER_BONUS_STARS} 星幣！`,
-                    floorsChanged: 0,
-                    bonusStars: TEAM_MONSTER_BONUS_STARS,
-                },
-            };
-        }
-    }
-
+    // 守門怪獸格不在這裡結算：踩到就會跳出塔內挑戰關卡（TowerChallengeOverlay），
+    // 星幣由挑戰過關發放。輸出／破甲夥伴改成在挑戰裡多給一次重試機會。
     return { newFloor: event.floor_number, bonusStars: 0, teamEffect: null };
 }
 

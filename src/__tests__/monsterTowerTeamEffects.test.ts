@@ -13,7 +13,6 @@
 import { describe, it, expect } from 'vitest';
 import {
     applyTeamRoleEffects,
-    TEAM_MONSTER_BONUS_STARS,
     TEAM_LADDER_BOOST_FLOORS,
     MONSTERS,
     type ActiveTeamMember,
@@ -112,26 +111,20 @@ describe('applyTeamRoleEffects — ladder tiles', () => {
     });
 });
 
-describe('applyTeamRoleEffects — monster encounter tiles', () => {
+describe('applyTeamRoleEffects — 守門怪獸格', () => {
     const monsterEvent = makeEvent({ floor_number: 40, event_type: 'monster', target_floor: undefined });
 
-    it('awards the fixed bonus when a striker is on the team', () => {
+    // 守門怪獸格改成跳出塔內挑戰關卡，星幣由挑戰過關發放，
+    // 所以這裡不再自動結算任何獎勵，也不移動樓層。
+    it('不自動給星幣，交給挑戰關卡處理', () => {
         const result = applyTeamRoleEffects(monsterEvent, [member('striker', '火焰鳥')]);
-        expect(result.bonusStars).toBe(TEAM_MONSTER_BONUS_STARS);
-        expect(result.newFloor).toBe(40);
-        expect(result.teamEffect?.kind).toBe('monster_bonus');
-        expect(result.teamEffect?.monsterName).toBe('火焰鳥');
-    });
-
-    it('awards the fixed bonus when a breaker is on the team', () => {
-        const result = applyTeamRoleEffects(monsterEvent, [member('breaker')]);
-        expect(result.bonusStars).toBe(TEAM_MONSTER_BONUS_STARS);
-    });
-
-    it('awards nothing without an eligible role', () => {
-        const result = applyTeamRoleEffects(monsterEvent, [member('guardian'), member('controller')]);
         expect(result.bonusStars).toBe(0);
         expect(result.teamEffect).toBeNull();
+    });
+
+    it('停在原本落點，不因守門怪而移動', () => {
+        const result = applyTeamRoleEffects(monsterEvent, [member('breaker')]);
+        expect(result.newFloor).toBe(40);
     });
 });
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { X, Dices, ShoppingCart, FolderOpen, Shield, Zap, Sparkles, Heart, Crosshair, Hammer, Award, Compass, Star, Info } from 'lucide-react';
+import { X, Dices, ShoppingCart, FolderOpen, Shield, Zap, Sparkles, Heart, Crosshair, Hammer, Compass } from 'lucide-react';
 import {
     MONSTERS,
     useRollDice,
@@ -16,31 +16,21 @@ import {
     withEncounterTiles,
     type TeamRole,
 } from '../lib/towerGen3Rules';
+import { TILE_W, TILE_H, getBoardSize, getTilePlacement } from '../lib/towerIsoLayout';
 import { useStarBalance } from '../hooks/useQuests';
 import { DicePurchaseModal } from './tower/DicePurchaseModal';
 import { TowerCollectionPanel } from './tower/TowerCollectionPanel';
 import { TowerVictoryFlow } from './tower/TowerVictoryFlow';
+import { TowerChallengeOverlay } from './tower/TowerChallengeOverlay';
+import { RETRIES_PER_MONSTERS } from './tower/challenges/types';
 import type { TowerEvent } from '../types/database';
 
-type TeamPreset = {
-    label: string;
-    slots: MonsterId[];
-};
+const COMPANION_STORAGE_KEY = 'monster_tower_gen3_companion_v1';
 
-const TEAM_PRESET_STORAGE_KEY = 'monster_tower_gen3_team_presets_v1';
-
-// ── 2.5D 等角棋盤幾何配置 ──
-const BOARD_COLS = 5;
-const TILE_CELL_W = 74;       // 格子寬度
-const TILE_CELL_H = 78;       // 格子高度（保留立體厚度空間）
-const TILE_GAP = 8;           // 列間距
-const ROW_GAP = 20;           // 行間垂直間距
-const ROW_H = TILE_CELL_H + ROW_GAP;
-const PAD_X = 24;
-const PAD_BOTTOM = 60;
-const BOARD_W = PAD_X * 2 + BOARD_COLS * TILE_CELL_W + (BOARD_COLS - 1) * TILE_GAP;
-const TOTAL_ROWS = Math.ceil(GEN3_TOTAL_FLOORS / BOARD_COLS);
-const BOARD_H = PAD_BOTTOM + TOTAL_ROWS * ROW_H + 60;
+// ── 2.5D 等角棋盤幾何配置（投影數學在 lib/towerIsoLayout.ts） ──
+const TILE_CELL_W = TILE_W;
+const TILE_CELL_H = TILE_H;
+const { width: BOARD_W, height: BOARD_H } = getBoardSize(GEN3_TOTAL_FLOORS);
 
 const ROLE_META: Record<TeamRole, { label: string; icon: React.FC<{ size?: number; className?: string }>; color: string }> = {
     guardian: { label: '守護', icon: Shield, color: 'text-emerald-400' },
@@ -58,23 +48,33 @@ function getFloorTheme(floor: number): { name: string; bg: string; color: string
     return { name: '星穹神殿', bg: 'from-purple-900/40 to-rose-950/60', color: '#fb7185', desc: '群星璀璨的終極聖域' };
 }
 
-// 樓層座標計算（自下而上蛇行攀登）
-function getTilePosition(floor: number): { x: number; y: number; row: number; col: number } {
-    const row = Math.floor((floor - 1) / BOARD_COLS);
-    const rawCol = (floor - 1) % BOARD_COLS;
-    const col = row % 2 === 0 ? rawCol : BOARD_COLS - 1 - rawCol;
-    const x = PAD_X + col * (TILE_CELL_W + TILE_GAP) + TILE_CELL_W / 2;
-    const y = PAD_BOTTOM + row * ROW_H + TILE_CELL_H / 2;
-    return { x, y, row, col };
+// 樓層座標：等角折返坡道投影（自下而上蛇行攀登）
+function getTilePosition(floor: number) {
+    return getTilePlacement(floor, GEN3_TOTAL_FLOORS);
 }
 
-// 五大區域的主題樣式與厚度色彩
+function prefersReducedMotion(): boolean {
+    if (typeof window === 'undefined' || !window.matchMedia) return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/** 一步的節奏；開啟減少動態時縮短，避免長時間晃動 */
+const STEP_MS = 190;
+const SLIDE_STEP_MS = 130;
+
+/** 盤面最大放大倍率（寬螢幕用），超過會讓一次看到的樓層太少 */
+const MAX_BOARD_SCALE = 1.5;
+
+// 五大區域的主題樣式與厚度色彩。
+// Gen3 專屬地塊放在 /images/tower-gen3/，由 scripts/generate_tower_gen3_tiles.py 產生，
+// 五張共用同一組底座幾何所以能無縫接成坡道，且原生就是去背 PNG。
+// （V2 仍然用自己的 /images/tower-v2/ 那組，兩版互不影響）
 const ZONES = [
-    { from: 1, to: 20, name: '晨霧草原', glow: '#34d399', topColor: '#10b981', sideColor: '#064e3b', img: '/images/tower-v2/tile_grass.png' },
-    { from: 21, to: 40, name: '冰晶斷崖', glow: '#22d3ee', topColor: '#06b6d4', sideColor: '#164e63', img: '/images/tower-v2/tile_mountain.png' },
-    { from: 41, to: 60, name: '熔岩工坊', glow: '#f59e0b', topColor: '#d97706', sideColor: '#78350f', img: '/images/tower-v2/tile_cloud.png' },
-    { from: 61, to: 80, name: '機械雲城', glow: '#818cf8', topColor: '#6366f1', sideColor: '#312e81', img: '/images/tower-v2/tile_starry.png' },
-    { from: 81, to: 100, name: '星穹神殿', glow: '#fb7185', topColor: '#f43f5e', sideColor: '#881337', img: '/images/tower-v2/tile_castle.png' },
+    { from: 1, to: 20, name: '晨霧草原', glow: '#34d399', topColor: '#10b981', sideColor: '#064e3b', img: '/images/tower-gen3/tile_grass.png' },
+    { from: 21, to: 40, name: '冰晶斷崖', glow: '#22d3ee', topColor: '#06b6d4', sideColor: '#164e63', img: '/images/tower-gen3/tile_ice.png' },
+    { from: 41, to: 60, name: '熔岩工坊', glow: '#f59e0b', topColor: '#d97706', sideColor: '#78350f', img: '/images/tower-gen3/tile_lava.png' },
+    { from: 61, to: 80, name: '機械雲城', glow: '#818cf8', topColor: '#6366f1', sideColor: '#312e81', img: '/images/tower-gen3/tile_tech.png' },
+    { from: 81, to: 100, name: '星穹神殿', glow: '#c084fc', topColor: '#a855f7', sideColor: '#4c1d95', img: '/images/tower-gen3/tile_temple.png' },
 ];
 type Zone = typeof ZONES[0];
 const getZone = (floor: number): Zone => ZONES.find((z) => floor >= z.from && floor <= z.to) || ZONES[0];
@@ -95,18 +95,24 @@ const IsoBrick: React.FC<{
             className="group cursor-pointer transition-transform duration-200 active:scale-95"
             style={{ width: TILE_CELL_W, height: TILE_CELL_H, position: 'relative' }}
         >
-            {/* 樓層編號 */}
+            {/* 樓層編號：磚塊彼此重疊成坡道後，加一顆深色小底讓數字不被鄰塊吃掉 */}
             <span
                 style={{
-                    color: isPast ? '#94a3b8' : isCurrent ? '#fef08a' : 'rgba(255,255,255,0.95)',
+                    color: isPast ? '#cbd5e1' : isCurrent ? '#fef08a' : '#ffffff',
                     zIndex: 12,
                     position: 'absolute',
-                    top: -12,
+                    top: -8,
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    fontSize: '11px',
+                    fontSize: '10px',
                     fontWeight: 800,
-                    textShadow: '0 2px 4px rgba(0,0,0,0.9)',
+                    lineHeight: 1,
+                    padding: '2px 5px',
+                    borderRadius: 999,
+                    background: isCurrent ? 'rgba(120, 53, 15, 0.85)' : 'rgba(2, 6, 23, 0.72)',
+                    border: isCurrent ? '1px solid rgba(254, 240, 138, 0.7)' : '1px solid rgba(148, 163, 184, 0.25)',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.9)',
+                    pointerEvents: 'none',
                 }}
             >
                 {n}
@@ -430,23 +436,29 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
 
     const [isRolling, setIsRolling] = useState(false);
     const [isMoving, setIsMoving] = useState(false);
-    const [isBagCollapsed, setIsBagCollapsed] = useState(false);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [lastDevNote, setLastDevNote] = useState('準備好了！點擊「擲骰子」開始攀登怪獸塔。');
     const [routeMode, setRouteMode] = useState<'safe' | 'risk'>('safe');
-    const [teamSlots, setTeamSlots] = useState<MonsterId[]>([]);
     const [animatedFloor, setAnimatedFloor] = useState<number | null>(null);
     const [selectedTileFloor, setSelectedTileFloor] = useState<number | null>(null);
     const [showPurchase, setShowPurchase] = useState(false);
     const [showCollection, setShowCollection] = useState(false);
     const [showVictory, setShowVictory] = useState(false);
     const [teamEffectPopup, setTeamEffectPopup] = useState<TeamEffectDetail | null>(null);
-    const [teamPresets, setTeamPresets] = useState<TeamPreset[]>([
-        { label: '小隊 A', slots: [] },
-        { label: '小隊 B', slots: [] },
-        { label: '小隊 C', slots: [] },
-    ]);
+    // 踩到守門怪獸格時要打的挑戰關卡樓層（null = 沒有挑戰進行中）
+    const [challengeFloor, setChallengeFloor] = useState<number | null>(null);
+    // 每開一場挑戰 +1，用來強制重新掛載挑戰元件（同一層再次觸發也要是全新一場）
+    const [challengeRunId, setChallengeRunId] = useState(0);
+    // 撿到怪獸蛋時要演出的怪獸 id
+    const [eggReveal, setEggReveal] = useState<string | null>(null);
+    // 玩家自己挑的隨行夥伴（null = 交給系統自動挑最稀有的那隻）
+    const [chosenCompanionId, setChosenCompanionId] = useState<MonsterId | null>(null);
+    const [showCompanionPicker, setShowCompanionPicker] = useState(false);
     const boardRef = useRef<HTMLDivElement | null>(null);
+    const cameraTargetRef = useRef(0);
+    // 等角盤面比舊的矩形盤面寬，手機上等比縮到容器寬度，避免被裁切
+    const [boardScale, setBoardScale] = useState(1);
+    // 每跳一格 +1，用來重新觸發跳躍動畫（重新掛載才會重播 CSS animation）
+    const [hopTick, setHopTick] = useState(0);
 
     const { data: starBalance = 0 } = useStarBalance(userId);
 
@@ -459,13 +471,6 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
         return raw.filter((id) => !id.startsWith('egg:')) as MonsterId[];
     }, [progress?.monsters_collected]);
 
-    const uniqueOwnedMonsters = useMemo(() => {
-        const list = Array.from(new Set(ownedMonsterIds)).filter((monsterId) => !!MONSTERS[monsterId]);
-        // 若孩子剛開始玩尚未獲得怪獸，默認提供初號夥伴小綠球，確保背包有東西展示
-        if (list.length === 0) return ['slime' as MonsterId];
-        return list;
-    }, [ownedMonsterIds]);
-
     // 未孵化的怪獸蛋，餵給共用的收藏／孵蛋面板
     const eggs = useMemo(() => {
         const raw = progress?.monsters_collected ?? [];
@@ -474,86 +479,132 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
             .map((id, index) => ({ eggIndex: index, monsterId: id.replace('egg:', '') }));
     }, [progress?.monsters_collected]);
 
-    // 預設將前 3 隻怪獸自動入隊
-    useEffect(() => {
-        if (teamSlots.length === 0 && uniqueOwnedMonsters.length > 0) {
-            setTeamSlots(uniqueOwnedMonsters.slice(0, 3));
-        }
-    }, [uniqueOwnedMonsters, teamSlots.length]);
-
     // 梯子/陷阱每局隨機（沿用 V1/V2 既有的 generateRandomEvents），
     // 里程碑怪獸蛋固定在 25/50/75/100 層——這是 generateRandomEvents 本身就會保證的安排。
     const baseEvents = useMemo(() => withEncounterTiles(generateRandomEvents(eventSeed), eventSeed), [eventSeed]);
     const activeEvents = useMemo(() => applyRouteMode(baseEvents, routeMode), [baseEvents, routeMode]);
 
-    // 出戰隊伍（含名字與圖示），讓擲骰規則知道「是哪一隻怪獸幫了忙」
-    const activeTeam = useMemo<ActiveTeamMember[]>(() => {
-        const members: ActiveTeamMember[] = [];
-        teamSlots.forEach((monsterId) => {
-            const monster = MONSTERS[monsterId];
-            if (!monster) return;
-            members.push({
-                id: monster.id,
-                name: monster.name,
-                emoji: monster.emoji,
-                role: getMonsterRole(monsterId),
-            });
+    // 隨行夥伴：自動挑收藏中最稀有的一隻（進化形態優先，其次解鎖樓層高者）。
+    // 刻意不做編隊介面——孩子不需要在開局前設定任何東西。
+    const ownedUniqueMonsters = useMemo(
+        () => Array.from(new Set(ownedMonsterIds)).filter((monsterId) => !!MONSTERS[monsterId]),
+        [ownedMonsterIds],
+    );
+
+    const companion = useMemo(() => {
+        const owned = ownedUniqueMonsters;
+        if (owned.length === 0) return null;
+        // 玩家自己挑過就用他挑的（前提是還在收藏裡）
+        if (chosenCompanionId && owned.includes(chosenCompanionId)) return MONSTERS[chosenCompanionId];
+        const ranked = [...owned].sort((a, b) => {
+            const monsterA = MONSTERS[a];
+            const monsterB = MONSTERS[b];
+            const evolvedA = 'isEvolved' in monsterA && monsterA.isEvolved ? 1 : 0;
+            const evolvedB = 'isEvolved' in monsterB && monsterB.isEvolved ? 1 : 0;
+            if (evolvedA !== evolvedB) return evolvedB - evolvedA;
+            return monsterB.unlockFloor - monsterA.unlockFloor;
         });
-        return members;
-    }, [teamSlots]);
+        return MONSTERS[ranked[0]];
+    }, [chosenCompanionId, ownedUniqueMonsters]);
+
+    // 擲骰規則只需要知道「隨行夥伴是誰、會什麼」
+    const activeTeam = useMemo<ActiveTeamMember[]>(() => {
+        if (!companion) return [];
+        return [{
+            id: companion.id,
+            name: companion.name,
+            emoji: companion.emoji,
+            role: getMonsterRole(companion.id as MonsterId),
+        }];
+    }, [companion]);
 
     const eventMap = useMemo(() => new Map(activeEvents.map((event) => [event.floor_number, event])), [activeEvents]);
 
+    // 挑戰重試次數的來源：收藏怪獸數，帶「輸出／破甲」夥伴再多一次。
+    // （這是輸出定位在新玩法裡的用途——守門怪獸格已改成挑戰關卡，不再自動給星幣）
+    const challengeRetryCredit = useMemo(() => {
+        const companionRoleId = companion ? getMonsterRole(companion.id as MonsterId) : null;
+        const strikerBonus = companionRoleId === 'striker' || companionRoleId === 'breaker' ? RETRIES_PER_MONSTERS : 0;
+        return ownedMonsterIds.length + strikerBonus;
+    }, [companion, ownedMonsterIds.length]);
+
+    // 讀回玩家上次挑的隨行夥伴
     useEffect(() => {
         if (typeof window === 'undefined') return;
         try {
-            const raw = window.localStorage.getItem(TEAM_PRESET_STORAGE_KEY);
-            if (!raw) return;
-            const parsed = JSON.parse(raw) as TeamPreset[];
-            if (!Array.isArray(parsed) || parsed.length !== 3) return;
-            const sanitized = parsed.map((preset, index) => ({
-                label: typeof preset.label === 'string' && preset.label.trim() ? preset.label : `小隊 ${String.fromCharCode(65 + index)}`,
-                slots: Array.isArray(preset.slots)
-                    ? preset.slots.filter((id): id is MonsterId => typeof id === 'string' && !!MONSTERS[id as MonsterId]).slice(0, 3)
-                    : [],
-            }));
-            setTeamPresets(sanitized);
+            const saved = window.localStorage.getItem(`${COMPANION_STORAGE_KEY}:${userId}`);
+            if (saved && MONSTERS[saved as MonsterId]) setChosenCompanionId(saved as MonsterId);
         } catch {
-            // 保留預設值
+            // 忽略讀取異常，改用自動挑選
         }
-    }, []);
+    }, [userId]);
 
-    const persistPresets = (nextPresets: TeamPreset[]) => {
-        setTeamPresets(nextPresets);
+    const handleChooseCompanion = useCallback((monsterId: MonsterId) => {
+        setChosenCompanionId(monsterId);
+        setShowCompanionPicker(false);
+        setLastDevNote(`${MONSTERS[monsterId]?.name} 開始跟著你一起爬塔！`);
         if (typeof window === 'undefined') return;
         try {
-            window.localStorage.setItem(TEAM_PRESET_STORAGE_KEY, JSON.stringify(nextPresets));
+            window.localStorage.setItem(`${COMPANION_STORAGE_KEY}:${userId}`, monsterId);
         } catch {
             // 忽略儲存異常
         }
-    };
+    }, [userId]);
 
-    // 純粹的收藏／展示數字，不影響擲骰或事件結果——真正會影響結果的是隊伍角色
-    // （見 useRollDice 裡的 TEAM_TRAP_SHIELD_ROLES 等規則），這裡刻意不做任何
-    // 百分比疊加，避免暗示「戰力越高越容易通關」。
-    const teamPower = useMemo(() => {
-        return teamSlots.reduce((acc, monsterId) => {
-            const monster = MONSTERS[monsterId];
-            if (!monster) return acc;
-            const tierPower = Math.max(1, Math.ceil(monster.unlockFloor / 25));
-            return acc + tierPower * 15;
-        }, 0);
-    }, [teamSlots]);
+    // 盤面等比縮放，讓等角坡道在窄螢幕也完整看得到
+    useEffect(() => {
+        if (!isOpen) return;
+        const element = boardRef.current;
+        if (!element || typeof ResizeObserver === 'undefined') return;
+
+        const fit = () => {
+            const available = element.clientWidth - 32; // 扣掉容器的 p-4 內距
+            if (available <= 0) return;
+            // 寬螢幕時放大到最多 1.5 倍填滿版面（移除側欄後左右本來會空一大片），
+            // 窄螢幕則照舊等比縮小以免被裁掉。地塊原圖 200px，放大到 1.5 倍仍然不會糊。
+            setBoardScale(Math.min(MAX_BOARD_SCALE, available / BOARD_W));
+        };
+
+        fit();
+        const observer = new ResizeObserver(fit);
+        observer.observe(element);
+        return () => observer.disconnect();
+    }, [isOpen]);
 
     const displayFloor = animatedFloor ?? currentFloor;
 
+    // 相機：只設定目標，實際位移交給下面的 rAF 迴圈平滑跟隨。
+    // （舊版每一步都呼叫一次 smooth scrollTo，前一次還沒到就被下一次打斷，所以會一頓一頓的）
     const scrollToFloor = useCallback((floor: number) => {
-        if (!boardRef.current) return;
+        const element = boardRef.current;
+        if (!element) return;
         const tile = getTilePosition(floor);
-        const viewportHeight = boardRef.current.clientHeight;
-        const target = BOARD_H - tile.y - viewportHeight / 2;
-        boardRef.current.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
-    }, []);
+        // 盤面有等比縮放，換算成實際捲動距離；主角維持在畫面偏下 40% 處
+        const target = Math.max(0, (BOARD_H - tile.y) * boardScale - element.clientHeight * 0.6);
+        cameraTargetRef.current = target;
+        if (prefersReducedMotion()) element.scrollTop = target;
+    }, [boardScale]);
+
+    // 相機平滑跟隨（阻尼追蹤，不用 smooth scroll 以免連續呼叫互相打斷）
+    useEffect(() => {
+        if (!isOpen || prefersReducedMotion()) return;
+        let alive = true;
+        let frame = 0;
+        const follow = () => {
+            if (!alive) return;
+            const element = boardRef.current;
+            if (element) {
+                const diff = cameraTargetRef.current - element.scrollTop;
+                if (Math.abs(diff) > 0.5) element.scrollTop += diff * 0.16;
+            }
+            frame = requestAnimationFrame(follow);
+        };
+        frame = requestAnimationFrame(follow);
+        return () => {
+            alive = false;
+            cancelAnimationFrame(frame);
+        };
+    }, [isOpen]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -563,39 +614,8 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
         return () => window.clearTimeout(id);
     }, [displayFloor, isOpen, scrollToFloor]);
 
-    const handleToggleTeam = (monsterId: MonsterId) => {
-        setTeamSlots((prev) => {
-            if (prev.includes(monsterId)) return prev.filter((id) => id !== monsterId);
-            if (prev.length >= 3) {
-                // 已滿 3 隻則替換最後一隻
-                return [prev[0], prev[1], monsterId];
-            }
-            return [...prev, monsterId];
-        });
-    };
-
-    const handleSavePreset = (index: number) => {
-        if (index < 0 || index >= teamPresets.length) return;
-        const next = teamPresets.map((preset, presetIndex) => {
-            if (presetIndex !== index) return preset;
-            return {
-                ...preset,
-                slots: teamSlots,
-            };
-        });
-        persistPresets(next);
-        setLastDevNote(`已儲存隊伍陣容到 ${next[index].label}！`);
-    };
-
-    const handleLoadPreset = (index: number) => {
-        if (index < 0 || index >= teamPresets.length) return;
-        const target = teamPresets[index];
-        setTeamSlots(target.slots.slice(0, 3));
-        setLastDevNote(`已載入 ${target.label} 編隊！`);
-    };
-
     const handleRoll = async () => {
-        if (isRolling || isMoving || diceCount <= 0) return;
+        if (isRolling || isMoving || diceCount <= 0 || challengeFloor !== null) return;
         setIsRolling(true);
         try {
             const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -613,11 +633,15 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
             const reachedFloor = result.progress.current_floor;
             const routeTag = routeMode === 'risk' ? '冒險路' : '安全路';
 
+            const stepMs = prefersReducedMotion() ? 60 : STEP_MS;
+            const slideMs = prefersReducedMotion() ? 50 : SLIDE_STEP_MS;
+
             const intermediateFloor = Math.min(startFloor + result.roll, GEN3_TOTAL_FLOORS);
             for (let floor = startFloor + 1; floor <= intermediateFloor; floor += 1) {
                 setAnimatedFloor(floor);
+                setHopTick((tick) => tick + 1);
                 scrollToFloor(floor);
-                await wait(160);
+                await wait(stepMs);
             }
 
             if (reachedFloor !== intermediateFloor) {
@@ -636,8 +660,9 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
 
                 for (let step = intermediateFloor + direction; direction > 0 ? step <= reachedFloor : step >= reachedFloor; step += direction) {
                     setAnimatedFloor(step);
+                    setHopTick((tick) => tick + 1);
                     scrollToFloor(step);
-                    await wait(120);
+                    await wait(slideMs);
                 }
 
                 if (result.teamEffect) {
@@ -656,7 +681,17 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
             setLastDevNote(`抵達第 ${reachedFloor} 層（${routeTag}）${eventText} ${result.teamEffect ? `✨ ${result.teamEffect.message}` : '🎉'}`);
             await refetch();
             setAnimatedFloor(null);
-            if (result.reachedTop) {
+
+            // 撿到怪獸蛋 → 先演出拿到蛋的畫面，讓孩子知道有東西可以去孵
+            if (finalEvent?.event_type === 'egg' && finalEvent.monster_id) {
+                setEggReveal(finalEvent.monster_id);
+            }
+
+            // 踩到守門怪獸格 → 跳出塔內挑戰關卡
+            if (finalEvent?.event_type === 'monster') {
+                setChallengeRunId((id) => id + 1);
+                setChallengeFloor(reachedFloor);
+            } else if (result.reachedTop) {
                 setTimeout(() => setShowVictory(true), 400);
             }
         } catch (error) {
@@ -683,8 +718,7 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
     const selectedFloorInfo = selectedTileFloor ? eventMap.get(selectedTileFloor) : null;
     const selectedFloorTheme = selectedTileFloor ? getFloorTheme(selectedTileFloor) : null;
 
-    // 首席出戰怪獸（身旁的寵物跟班）
-    const leaderMonster = teamSlots.length > 0 ? MONSTERS[teamSlots[0]] : null;
+    const companionRole = companion ? getMonsterRole(companion.id as MonsterId) : null;
 
     return (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md p-2 sm:p-4 flex items-center justify-center animate-fadeIn">
@@ -733,12 +767,9 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
                     </div>
                 </header>
 
-                {/* ── 主內容區域：立體棋盤 + 右側編隊與情報 ── */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 flex-1 overflow-hidden">
-                    
-                    {/* 左側：2.5D 立體棋盤攀登區（支援寬螢幕全展） */}
-                    <section className={`${isSidebarOpen ? 'lg:col-span-8' : 'lg:col-span-12'} flex flex-col border-r border-slate-800/80 overflow-hidden relative transition-all duration-300`}>
-                        
+                {/* ── 主內容：全幅等角棋盤 ── */}
+                <div className="flex-1 flex flex-col overflow-hidden relative">
+
                         {/* 狀態快捷列 */}
                         <div className="px-4 py-2 bg-slate-950/60 border-b border-slate-800/60 flex items-center justify-between text-xs">
                             <div className="flex items-center gap-2">
@@ -776,19 +807,6 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
                                         冒險路 🔥
                                     </button>
                                 </div>
-
-                                {/* 右側隊伍面板展開/收合按鈕 */}
-                                <button
-                                    onClick={() => setIsSidebarOpen((prev) => !prev)}
-                                    className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-colors flex items-center gap-1 ${
-                                        isSidebarOpen
-                                            ? 'bg-amber-500/15 text-amber-300 border-amber-500/40 hover:bg-amber-500/25'
-                                            : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
-                                    }`}
-                                    title={isSidebarOpen ? '收合側邊欄，擴大棋盤視野' : '展開側邊隊伍與情報欄'}
-                                >
-                                    {isSidebarOpen ? '收合隊伍欄 ❯' : '展開隊伍欄 ❮'}
-                                </button>
                             </div>
                         </div>
 
@@ -801,7 +819,17 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
                             <div className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(circle_at_50%_20%,rgba(56,189,248,0.15),transparent_60%)]" />
                             <div className="absolute inset-0 pointer-events-none opacity-30 bg-[radial-gradient(circle_at_80%_80%,rgba(244,63,94,0.15),transparent_60%)]" />
 
-                            <div className="relative mx-auto my-4" style={{ width: BOARD_W, height: BOARD_H }}>
+                            <div
+                                className="relative mx-auto my-4"
+                                data-testid="tower-gen3-board"
+                                style={{
+                                    width: BOARD_W,
+                                    height: BOARD_H,
+                                    transform: `scale(${boardScale})`,
+                                    transformOrigin: 'top center',
+                                    marginBottom: BOARD_H * (boardScale - 1),
+                                }}
+                            >
                                 
                                 {/* 連續路徑與發光軌道 */}
                                 <PathConnectors
@@ -823,13 +851,18 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
                                     return (
                                         <div
                                             key={floor}
+                                            data-event-type={event?.event_type}
+                                            data-testid={`tile-${floor}`}
                                             style={{
                                                 position: 'absolute',
                                                 left: tile.x - TILE_CELL_W / 2,
                                                 bottom: tile.y - TILE_CELL_H / 2,
                                                 width: TILE_CELL_W,
                                                 height: TILE_CELL_H,
-                                                zIndex: tile.row + 3,
+                                                zIndex: tile.depth,
+                                                transform: `scale(${tile.scale})`,
+                                                transformOrigin: 'bottom center',
+                                                filter: `brightness(${(0.72 + tile.scale * 0.28).toFixed(3)})`,
                                             }}
                                         >
                                             <IsoBrick
@@ -850,21 +883,28 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
                                     const playerPos = getTilePosition(displayFloor);
                                     return (
                                         <div
-                                            className={`absolute pointer-events-none transition-all duration-300 ${isMoving ? 'animate-bounce' : ''}`}
+                                            className="absolute pointer-events-none gen3-player"
                                             style={{
                                                 left: playerPos.x - 28,
                                                 bottom: playerPos.y + 4,
-                                                zIndex: playerPos.row + 20,
+                                                zIndex: playerPos.depth + 50,
                                             }}
+                                            data-testid="player-token"
                                         >
-                                            {/* 角色腳下接地柔邊陰影 */}
+                                            {/* 落地塵土：每跳一格重播一次 */}
+                                            <div key={`dust-${hopTick}`} className="gen3-dust absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-3 rounded-full bg-white/25 blur-[3px]" />
+
+                                            {/* 角色腳下接地柔邊陰影（跳起時縮小） */}
                                             <div
-                                                className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-3 bg-black/60 rounded-full blur-[2px] transition-transform"
-                                                style={{ transform: isMoving ? 'translateX(-50%) scale(0.7)' : 'translateX(-50%) scale(1)' }}
+                                                key={`shadow-${hopTick}`}
+                                                className="gen3-player-shadow absolute -bottom-1 left-1/2 w-10 h-3 bg-black/60 rounded-full blur-[2px]"
                                             />
 
-                                            {/* 主角立繪 */}
-                                            <div className="relative w-14 h-14 flex items-center justify-center filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]">
+                                            {/* 主角立繪：拋物線跳躍＋擠壓拉伸 */}
+                                            <div
+                                                key={`hop-${hopTick}`}
+                                                className={`gen3-player-hop relative w-14 h-14 flex items-center justify-center filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)] ${isMoving ? '' : 'gen3-player-idle'}`}
+                                            >
                                                 <img
                                                     src="/images/tower-v2/player.png"
                                                     alt="player"
@@ -874,71 +914,25 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
                                                         e.currentTarget.style.display = 'none';
                                                     }}
                                                 />
-                                            </div>
 
-                                            {/* 首席怪獸小跟班（浮動在身旁） */}
-                                            {leaderMonster && (
-                                                <div
-                                                    className="absolute -top-3 -right-2 w-8 h-8 rounded-full bg-slate-900/80 border border-amber-400/80 shadow-lg flex items-center justify-center animate-bounce"
-                                                    style={{ animationDuration: '2.5s' }}
-                                                    title={`首發跟隨夥伴：${leaderMonster.name}`}
-                                                >
-                                                    <span className="text-base">{leaderMonster.emoji}</span>
-                                                </div>
-                                            )}
+                                                {/* 隨行夥伴（浮動在身旁，自動挑選，不需編隊） */}
+                                                {companion && (
+                                                    <div
+                                                        className="gen3-companion absolute -top-3 -right-3 w-8 h-8 rounded-full bg-slate-900/85 border border-amber-400/80 shadow-lg flex items-center justify-center"
+                                                        title={`隨行夥伴：${companion.name}`}
+                                                    >
+                                                        <span className="text-base">{companion.emoji}</span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     );
                                 })()}
                             </div>
-                        </div>
 
-                        {/* 回合操作快捷 Dock（擲骰按鈕與回饋說明） */}
-                        <div className="p-3 sm:p-4 bg-slate-950/90 border-t border-slate-800 flex flex-wrap items-center gap-3">
-                            <button
-                                onClick={handleRoll}
-                                disabled={diceCount <= 0 || isRolling || isMoving}
-                                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed font-black text-slate-950 shadow-lg flex items-center gap-2 text-base transition-all"
-                            >
-                                <Dices size={20} className={isRolling ? 'animate-spin' : ''} />
-                                {isRolling || isMoving ? '前進中...' : `擲骰子 (${diceCount} 顆)`}
-                            </button>
-
-                            <div className="flex items-center gap-1.5">
-                                <button
-                                    onClick={() => setShowPurchase(true)}
-                                    className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 flex items-center gap-1 border border-slate-700"
-                                    data-testid="purchase-dice-btn"
-                                >
-                                    <ShoppingCart size={13} className="text-cyan-400" /> 購買骰子
-                                </button>
-                                <button
-                                    onClick={() => setShowCollection(true)}
-                                    className="relative px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 flex items-center gap-1 border border-slate-700"
-                                    data-testid="collection-btn"
-                                >
-                                    <FolderOpen size={13} className="text-amber-400" /> 收藏
-                                    {eggs.length > 0 && (
-                                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-amber-500 text-[9px] font-bold text-slate-950 flex items-center justify-center">
-                                            {eggs.length}
-                                        </span>
-                                    )}
-                                </button>
-                            </div>
-
-                            <div className="flex-1 min-w-[200px] text-xs text-slate-300 bg-slate-900/80 px-3 py-2 rounded-xl border border-slate-800 flex items-center gap-2">
-                                <Sparkles size={14} className="text-amber-400 shrink-0" />
-                                <span className="truncate">{lastDevNote}</span>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* 右側：出戰編隊、陣營連攜與關卡情報（可折疊） */}
-                    {isSidebarOpen && (
-                        <aside className="lg:col-span-4 p-4 overflow-y-auto bg-slate-950/70 flex flex-col gap-4 border-l border-slate-800/80 animate-fadeIn">
-                            
-                            {/* 關卡選中情報卡片 */}
+                            {/* 關卡情報泡泡：點任一格浮出，貼在棋盤上方不佔版面 */}
                             {selectedTileFloor && (
-                                <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-br from-slate-900 to-indigo-950/80 p-3.5 shadow-lg animate-fadeIn">
+                                <div className="sticky bottom-3 left-0 right-0 mx-auto w-[min(92%,340px)] z-30 rounded-2xl border border-amber-500/40 bg-slate-950/95 backdrop-blur-md p-3.5 shadow-2xl animate-fadeIn">
                                     <div className="flex items-center justify-between mb-1.5">
                                         <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300">
                                             {selectedFloorTheme?.name}
@@ -959,222 +953,201 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
                                     </p>
                                 </div>
                             )}
+                        </div>
 
-                            {/* 出戰陣容面板 (最多 3 隻主力) */}
-                            <div className="rounded-2xl border border-cyan-800/40 bg-slate-900/90 p-4 shadow-md">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div>
-                                        <h3 className="font-black text-sm flex items-center gap-1.5 text-cyan-300">
-                                            <Award size={16} /> 出戰冒險隊伍
-                                        </h3>
-                                        <p className="text-[11px] text-slate-400">路上遇敵或陷阱自動觸發技能</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="text-[10px] text-slate-400">隊伍收藏戰力</span>
-                                        <p className="text-base font-black text-amber-300 leading-none">{teamPower}</p>
-                                    </div>
-                                </div>
+                        {/* 底部操作列：擲骰、商店、收藏、隨行夥伴 */}
+                        <div className="p-3 sm:p-4 bg-slate-950/90 border-t border-slate-800 flex items-center gap-3">
+                            <button
+                                onClick={handleRoll}
+                                disabled={diceCount <= 0 || isRolling || isMoving}
+                                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed font-black text-slate-950 shadow-lg flex items-center gap-2 text-base transition-all shrink-0"
+                                data-testid="roll-dice-btn"
+                            >
+                                <Dices size={22} className={isRolling ? 'animate-spin' : ''} />
+                                {isRolling || isMoving ? '前進中...' : `擲骰子 (${diceCount})`}
+                            </button>
 
-                                {/* 3 個出戰槽位 */}
-                                <div className="grid grid-cols-3 gap-2 mb-3">
-                                    {[0, 1, 2].map((slotIdx) => {
-                                        const monsterId = teamSlots[slotIdx];
-                                        const monster = monsterId ? MONSTERS[monsterId] : null;
-                                        const role = monsterId ? getMonsterRole(monsterId) : null;
-                                        const RoleIcon = role ? ROLE_META[role].icon : null;
+                            <button
+                                onClick={() => setShowPurchase(true)}
+                                className="w-11 h-11 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-400 flex items-center justify-center shrink-0 transition-colors"
+                                title="購買骰子"
+                                data-testid="purchase-dice-btn"
+                            >
+                                <ShoppingCart size={18} />
+                            </button>
 
-                                        return (
-                                            <div
-                                                key={slotIdx}
-                                                className={`h-24 rounded-2xl border-2 flex flex-col items-center justify-center p-2 text-center relative transition-all ${
-                                                    monster
-                                                        ? 'border-cyan-500/60 bg-gradient-to-b from-cyan-950/40 to-slate-900 shadow'
-                                                        : 'border-dashed border-slate-700 bg-slate-950/40'
-                                                }`}
-                                            >
-                                                {monster ? (
-                                                    <>
-                                                        <span className="text-2xl mb-1">{monster.emoji}</span>
-                                                        <p className="text-xs font-bold text-slate-200 truncate w-full">{monster.name}</p>
-                                                        {RoleIcon && role && (
-                                                            <span className={`text-[10px] flex items-center gap-0.5 mt-0.5 font-bold ${ROLE_META[role].color}`}>
-                                                                <RoleIcon size={10} /> {ROLE_META[role].label}
-                                                            </span>
-                                                        )}
-                                                        <button
-                                                            onClick={() => handleToggleTeam(monsterId)}
-                                                            className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-[10px] flex items-center justify-center"
-                                                            title="卸下隊員"
-                                                        >
-                                                            ✕
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <div className="text-slate-500 text-xs flex flex-col items-center">
-                                                        <span className="text-lg opacity-40">➕</span>
-                                                        <span>空位</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                            <button
+                                onClick={() => setShowCollection(true)}
+                                className="relative w-11 h-11 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 flex items-center justify-center shrink-0 transition-colors"
+                                title="怪獸收藏"
+                                data-testid="collection-btn"
+                            >
+                                <FolderOpen size={18} />
+                                {eggs.length > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-500 text-[10px] font-bold text-slate-950 flex items-center justify-center animate-pulse">
+                                        {eggs.length}
+                                    </span>
+                                )}
+                            </button>
 
-                                {/* 快速預設隊伍切換與存檔 */}
-                                <div className="mt-3 pt-3 border-t border-slate-800 text-xs">
-                                    <div className="flex items-center justify-between mb-1.5">
-                                        <span className="text-slate-400">隊伍預設:</span>
-                                        <span className="text-[10px] text-slate-500">點名稱載入 / 點💾存檔</span>
+                            {/* 隨行夥伴：點一下就能換人（不是編隊，只挑一隻） */}
+                            {companion && companionRole && (
+                                <button
+                                    onClick={() => setShowCompanionPicker(true)}
+                                    data-testid="companion-btn"
+                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-2xl bg-slate-900/80 border border-slate-700 hover:border-amber-500/60 shrink-0 transition-colors active:scale-95"
+                                    title={`隨行夥伴：${companion.name}（點擊更換）`}
+                                >
+                                    <span className="text-xl">{companion.emoji}</span>
+                                    <div className="leading-tight text-left hidden sm:block">
+                                        <p className="text-[11px] font-bold text-slate-200">{companion.name}</p>
+                                        <span className={`text-[10px] flex items-center gap-0.5 font-bold ${ROLE_META[companionRole].color}`}>
+                                            {React.createElement(ROLE_META[companionRole].icon, { size: 10 })}
+                                            {ROLE_META[companionRole].label}
+                                        </span>
                                     </div>
-                                    <div className="grid grid-cols-3 gap-1.5">
-                                        {teamPresets.map((preset, idx) => (
-                                            <div key={preset.label} className="flex items-center rounded-lg bg-slate-800 border border-slate-700 overflow-hidden">
-                                                <button
-                                                    onClick={() => handleLoadPreset(idx)}
-                                                    className="flex-1 px-1.5 py-1 text-slate-300 hover:text-white hover:bg-slate-700 text-[11px] font-bold truncate text-center"
-                                                    title={`載入 ${preset.label}`}
-                                                >
-                                                    {preset.label}
-                                                </button>
-                                                <button
-                                                    onClick={() => handleSavePreset(idx)}
-                                                    className="px-1.5 py-1 text-slate-400 hover:text-amber-300 hover:bg-slate-700 text-[10px] border-l border-slate-700"
-                                                    title={`將目前隊伍儲存至 ${preset.label}`}
-                                                >
-                                                    💾
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                                    <span className="text-[10px] text-amber-300 font-bold">更換</span>
+                                </button>
+                            )}
+
+                            <div className="flex-1 min-w-0 text-xs text-slate-300 bg-slate-900/80 px-3 py-2 rounded-xl border border-slate-800 flex items-center gap-2">
+                                <Sparkles size={14} className="text-amber-400 shrink-0" />
+                                <span className="truncate">{lastDevNote}</span>
                             </div>
-
-                            {/* 冒險百科指南 */}
-                            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-3.5 text-xs text-slate-400">
-                                <h4 className="font-bold text-slate-300 flex items-center gap-1.5 mb-1.5">
-                                    <Info size={14} className="text-amber-400" />
-                                    隊伍功用說明
-                                </h4>
-                                <p className="leading-relaxed">
-                                    • <strong>輸出/破甲</strong>：遭遇守門怪時發動攻擊，壓制通關並額外獲得星幣。<br />
-                                    • <strong>守護/支援</strong>：踩到陷阱滑落時展開護盾，減免回退風險。<br />
-                                    • <strong>控場/支援</strong>：遇升降梯直升，提升移動速度。
-                                </p>
-                            </div>
-                        </aside>
-                    )}
+                        </div>
                 </div>
 
-                {/* ── 底部：怪獸背包 / 庇護所常駐 Dock (支援縮小/展開) ── */}
-                {isBagCollapsed ? (
-                    /* 縮小模式：極簡狀態列 */
-                    <footer className="px-4 py-2 bg-gradient-to-r from-amber-950/40 via-slate-900 to-amber-950/40 border-t border-amber-500/30 flex items-center justify-between transition-all">
-                        <div className="flex items-center gap-2 overflow-hidden text-xs">
-                            <span className="text-base">🎒</span>
-                            <span className="font-bold text-amber-300">怪獸庇護所 ({uniqueOwnedMonsters.length} 隻夥伴已保存)</span>
-                            <span className="text-slate-600 hidden sm:inline">|</span>
-                            <span className="text-slate-400 text-[11px] hidden sm:inline">出戰中:</span>
-                            <div className="flex items-center gap-1.5">
-                                {teamSlots.map((mId, idx) => {
-                                    const m = MONSTERS[mId];
-                                    return (
-                                        <span key={mId} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-800 border border-slate-700 text-[10px] text-slate-200">
-                                            #{idx + 1} {m?.emoji} {m?.name}
-                                        </span>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => setIsBagCollapsed(false)}
-                            className="px-3 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1 transition-colors shrink-0"
-                        >
-                            <span>展開背包</span>
-                            <span>▴</span>
-                        </button>
-                    </footer>
-                ) : (
-                    /* 展開模式：完整典藏卡片 */
-                    <footer className="px-4 py-3 bg-gradient-to-r from-amber-950/40 via-slate-900 to-amber-950/40 border-t-2 border-amber-500/30 transition-all">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                                <span className="text-base">🎒</span>
-                                <h3 className="text-xs font-black tracking-wider uppercase text-amber-300 flex items-center gap-1.5">
-                                    怪獸庇護所 · 典藏背包 ({uniqueOwnedMonsters.length} 隻夥伴已保存)
-                                </h3>
-                                <span className="hidden sm:inline-block text-[11px] text-slate-400">
-                                    — 點擊怪獸可指派加入出戰小隊
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => setIsBagCollapsed(true)}
-                                    className="px-2.5 py-0.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-amber-300 text-xs font-bold border border-slate-700 flex items-center gap-1"
-                                    title="縮小背包以放大棋盤可視範圍"
-                                >
-                                    <span>收合背包</span>
-                                    <span>▾</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* 橫向滑動怪獸卡片列表（與概念圖呼應） */}
-                        <div className="flex items-center gap-3 overflow-x-auto pb-1 pt-0.5 scrollbar-thin scrollbar-thumb-amber-500/20">
-                            {uniqueOwnedMonsters.map((monsterId) => {
-                                const monster = MONSTERS[monsterId];
-                                if (!monster) return null;
-                                const isSelected = teamSlots.includes(monsterId);
-                                const slotNumber = teamSlots.indexOf(monsterId) + 1;
-                                const role = getMonsterRole(monsterId);
-                                const roleInfo = ROLE_META[role];
-                                const RoleIcon = roleInfo.icon;
-                                const stars = Math.min(3, Math.max(1, Math.ceil(monster.unlockFloor / 35)));
-
-                                return (
-                                    <button
-                                        key={monsterId}
-                                        onClick={() => handleToggleTeam(monsterId)}
-                                        className={`relative shrink-0 w-24 sm:w-28 p-2.5 rounded-2xl border-2 text-left transition-all duration-200 active:scale-95 group ${
-                                            isSelected
-                                                ? 'border-amber-400 bg-gradient-to-b from-amber-500/20 to-slate-900 shadow-[0_0_12px_rgba(251,191,36,0.35)] -translate-y-1'
-                                                : 'border-slate-700/80 bg-slate-900/90 hover:border-slate-500 hover:-translate-y-0.5'
-                                        }`}
-                                    >
-                                        {/* 出戰順位徽章 */}
-                                        {isSelected && (
-                                            <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-md border border-amber-200">
-                                                #{slotNumber}
-                                            </div>
-                                        )}
-
-                                        {/* 怪獸頭像 / Emoji */}
-                                        <div className="h-10 flex items-center justify-center text-3xl mb-1 group-hover:scale-110 transition-transform">
-                                            {monster.emoji}
-                                        </div>
-
-                                        {/* 怪獸名稱 */}
-                                        <p className="text-xs font-bold text-slate-100 truncate text-center">{monster.name}</p>
-
-                                        {/* 星級與戰鬥定位 */}
-                                        <div className="flex items-center justify-center gap-0.5 text-[10px] text-amber-300 mt-0.5">
-                                            {Array.from({ length: stars }).map((_, i) => (
-                                                <Star key={i} size={10} className="fill-amber-400 text-amber-400" />
-                                            ))}
-                                        </div>
-
-                                        <div className="flex items-center justify-center gap-1 mt-1">
-                                            <span className={`text-[10px] flex items-center gap-0.5 font-bold ${roleInfo.color}`}>
-                                                <RoleIcon size={10} /> {roleInfo.label}
-                                            </span>
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </footer>
+                {/* ── 塔內挑戰關卡（踩到守門怪獸格） ── */}
+                {/* 只有真的有挑戰時才掛載，並用 runId 當 key：
+                    否則元件會一直活著，上一場的 phase='result' 會被下一場沿用，
+                    變成一遇到守門怪就直接跳出「挑戰成功」而沒有真的玩到。 */}
+                {challengeFloor !== null && (
+                    <TowerChallengeOverlay
+                        key={challengeRunId}
+                        userId={userId}
+                        floor={challengeFloor}
+                        collectionCount={challengeRetryCredit}
+                        companionName={companion?.name}
+                        onFinish={() => setChallengeFloor(null)}
+                    />
                 )}
 
-                {/* ── 隊伍出手演出（護盾／加速／擊破） ── */}
+                {/* ── 換隨行夥伴：只挑一隻，不是編隊 ── */}
+                {showCompanionPicker && (
+                    <div
+                        className="absolute inset-0 z-[2350] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+                        onClick={() => setShowCompanionPicker(false)}
+                    >
+                        <div
+                            className="w-full max-w-sm max-h-[80%] flex flex-col rounded-3xl border-2 border-amber-500/40 bg-slate-950 shadow-2xl overflow-hidden gen3-effect-burst"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-slate-900 to-indigo-950">
+                                <div>
+                                    <h3 className="font-black text-sm text-amber-200">挑一隻夥伴一起爬塔</h3>
+                                    <p className="text-[11px] text-slate-400">夥伴的定位會決定路上幫你做什麼</p>
+                                </div>
+                                <button
+                                    onClick={() => setShowCompanionPicker(false)}
+                                    className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 flex items-center justify-center shrink-0"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+
+                            {/* 定位說明：讓孩子知道挑不同定位差在哪 */}
+                            <div className="px-4 py-2 bg-slate-900/60 border-b border-slate-800 text-[11px] text-slate-400 leading-relaxed">
+                                🛡️ 守護／支援：踩到陷阱少滑一半
+                                🌀 控場／支援：搭電梯多爬 2 層
+                                ⚡ 輸出／破甲：挑戰多一次重試
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-3">
+                                {ownedUniqueMonsters.length === 0 ? (
+                                    <p className="text-center text-sm text-slate-500 py-8">
+                                        還沒有夥伴，先去孵一顆怪獸蛋吧！
+                                    </p>
+                                ) : (
+                                    <div className="grid grid-cols-3 gap-2.5">
+                                        {ownedUniqueMonsters.map((monsterId) => {
+                                            const monster = MONSTERS[monsterId];
+                                            const role = getMonsterRole(monsterId);
+                                            const roleInfo = ROLE_META[role];
+                                            const RoleIcon = roleInfo.icon;
+                                            const isCurrent = companion?.id === monsterId;
+
+                                            return (
+                                                <button
+                                                    key={monsterId}
+                                                    onClick={() => handleChooseCompanion(monsterId)}
+                                                    data-testid={`companion-option-${monsterId}`}
+                                                    className={`p-2.5 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all active:scale-95 ${
+                                                        isCurrent
+                                                            ? 'border-amber-400 bg-gradient-to-b from-amber-500/20 to-slate-900 shadow-[0_0_12px_rgba(251,191,36,0.35)]'
+                                                            : 'border-slate-700 bg-slate-900/80 hover:border-slate-500'
+                                                    }`}
+                                                >
+                                                    {monster.image ? (
+                                                        <img src={monster.image} alt={monster.name} className="w-10 h-10 object-contain" />
+                                                    ) : (
+                                                        <span className="text-3xl">{monster.emoji}</span>
+                                                    )}
+                                                    <span className="text-[11px] font-bold text-slate-100 text-center leading-tight">{monster.name}</span>
+                                                    <span className={`text-[10px] flex items-center gap-0.5 font-bold ${roleInfo.color}`}>
+                                                        <RoleIcon size={10} /> {roleInfo.label}
+                                                    </span>
+                                                    {isCurrent && <span className="text-[9px] text-amber-300 font-black">出戰中</span>}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── 撿到怪獸蛋 ── */}
+                {eggReveal && (
+                    <div
+                        className="absolute inset-0 z-[2450] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+                        onClick={() => setEggReveal(null)}
+                    >
+                        <div
+                            className="gen3-effect-burst w-full max-w-xs rounded-3xl border-2 border-amber-400/70 bg-slate-950/95 px-6 py-6 text-center shadow-2xl"
+                            style={{ boxShadow: '0 0 60px rgba(251,191,36,0.45), 0 24px 60px rgba(0,0,0,0.65)' }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="gen3-effect-monster text-6xl mb-2">🥚</div>
+                            <h3 className="text-2xl font-black mb-1 text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-orange-300">
+                                撿到怪獸蛋！
+                            </h3>
+                            <p className="text-lg font-black text-white mb-1">
+                                {MONSTERS[eggReveal as MonsterId]?.name ?? '神秘怪獸'}
+                            </p>
+                            <p className="text-xs text-slate-300 leading-relaxed mb-4">
+                                蛋已經放進「收藏」裡了，點右下角的 🗂 就可以孵化牠。
+                            </p>
+                            <button
+                                onClick={() => {
+                                    setEggReveal(null);
+                                    setShowCollection(true);
+                                }}
+                                className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black shadow-lg active:scale-95 transition-transform mb-2"
+                            >
+                                去孵蛋！
+                            </button>
+                            <button
+                                onClick={() => setEggReveal(null)}
+                                className="w-full py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm transition-colors active:scale-95"
+                            >
+                                繼續爬塔
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── 隨行夥伴出手演出（護盾／加速） ── */}
                 {teamEffectPopup && <TeamEffectBurst effect={teamEffectPopup} />}
 
                 {/* ── 破頂 → 抽獎輪盤流程 ── */}

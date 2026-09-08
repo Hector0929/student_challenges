@@ -4,8 +4,6 @@ import { RefreshCw, Play, PlusCircle, Dices, Bug } from 'lucide-react';
 import { FUN_GAMES, type FunGame } from '../lib/gameConfig';
 import { WorldLabPanel } from '../components/WorldLabPanel';
 import { GameModal } from '../components/GameModal';
-import { MonsterTower, TowerPreview } from '../components/MonsterTower';
-import { MonsterTowerV2, TowerV2Preview } from '../components/MonsterTowerV2';
 import { MonsterTowerGen3, TowerGen3Preview } from '../components/MonsterTowerGen3';
 import { useWorldAdventure } from '../hooks/useWorldAdventure';
 import { useSaveWorldPersistence, useWorldPersistence } from '../hooks/useWorldPersistence';
@@ -53,17 +51,15 @@ export const DebugPage: React.FC = () => {
 
     // QA State
     const [selectedGame, setSelectedGame] = useState<FunGame | null>(null);
-    const [activeTab, setActiveTab] = useState<'games' | 'logs' | 'tower' | 'towerV2' | 'towerV3' | 'worldLab'>('games');
-    const [isTowerOpen, setIsTowerOpen] = useState(false);
-    const [isTowerV2Open, setIsTowerV2Open] = useState(false);
+    const [activeTab, setActiveTab] = useState<'games' | 'logs' | 'towerV3' | 'worldLab'>('games');
     const [isTowerGen3Open, setIsTowerGen3Open] = useState(false);
     const hasHydratedWorldRef = useRef(false);
 
     // Debug 分頁操作的是孩子「真實」的爬塔進度（V1/V2/V3 共用同一筆 tower_progress），
     // 開啟前先提醒家長，避免測試時的擲骰/加骰子誤動到孩子的正式紀錄。
-    const openLiveTowerModal = (version: 'V2' | 'V3', open: () => void) => {
+    const openLiveTowerModal = (open: () => void) => {
         const confirmed = window.confirm(
-            `這會直接開啟孩子在怪獸塔 ${version} 的「正式進度」（樓層、骰子、怪獸收藏），在這裡的任何操作都會真的改動孩子的存檔，且與其他版本共用同一份資料。確定要繼續嗎？`
+            '這會直接開啟孩子在怪獸塔的「正式進度」（樓層、骰子、怪獸收藏），在這裡的任何操作都會真的改動孩子的存檔。確定要繼續嗎？'
         );
         if (confirmed) open();
     };
@@ -397,18 +393,6 @@ export const DebugPage: React.FC = () => {
                     📋 每日任務紀錄
                 </button>
                 <button
-                    onClick={() => setActiveTab('tower')}
-                    className={activeTab === 'tower' ? 'active' : ''}
-                >
-                    🏰 怪獸塔 V1
-                </button>
-                <button
-                    onClick={() => setActiveTab('towerV2')}
-                    className={activeTab === 'towerV2' ? 'active' : ''}
-                >
-                    🏰 怪獸塔 V2
-                </button>
-                <button
                     onClick={() => setActiveTab('towerV3')}
                     className={activeTab === 'towerV3' ? 'active' : ''}
                 >
@@ -598,129 +582,6 @@ export const DebugPage: React.FC = () => {
                 />
             )}
 
-            {/* Tower Tab Content */}
-            {activeTab === 'tower' && user && (
-                <div className="space-y-4">
-                    {/* Tower Preview Card */}
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                        <h3 className="font-pixel text-lg mb-3 flex items-center gap-2">
-                            🏰 怪獸塔預覽
-                        </h3>
-                        <TowerPreview userId={user.id} onClick={() => setIsTowerOpen(true)} />
-                    </div>
-
-                    {/* Tower Stats */}
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                        <h3 className="font-pixel text-lg mb-3">📊 塔樓狀態</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
-                                <p className="text-xs text-amber-600">目前樓層</p>
-                                <p className="font-pixel text-2xl text-amber-800">{towerProgress?.current_floor || 1}</p>
-                            </div>
-                            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                                <p className="text-xs text-yellow-600">可用骰子</p>
-                                <p className="font-pixel text-2xl text-yellow-800">{towerProgress?.dice_count || 0} 🎲</p>
-                            </div>
-                            <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-                                <p className="text-xs text-purple-600">怪獸收集</p>
-                                <p className="font-pixel text-2xl text-purple-800">{towerProgress?.monsters_collected?.length || 0}/4</p>
-                            </div>
-                            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                                <p className="text-xs text-green-600">最高紀錄</p>
-                                <p className="font-pixel text-2xl text-green-800">{towerProgress?.highest_floor || 1} 層</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* QA Controls */}
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                        <h3 className="font-pixel text-lg mb-3 flex items-center gap-2">
-                            <Dices size={20} /> QA 工具 - 骰子控制
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
-                            <button
-                                onClick={async () => {
-                                    await addDiceMutation.mutateAsync({ userId: user.id, amount: 1 });
-                                    refetchTower();
-                                }}
-                                className="px-4 py-2 bg-green-100 text-green-700 rounded-lg border border-green-300 hover:bg-green-200 flex items-center gap-2"
-                            >
-                                <PlusCircle size={16} /> +1 骰子
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    await addDiceMutation.mutateAsync({ userId: user.id, amount: 10 });
-                                    refetchTower();
-                                }}
-                                className="px-4 py-2 bg-green-100 text-green-700 rounded-lg border border-green-300 hover:bg-green-200 flex items-center gap-2"
-                            >
-                                <PlusCircle size={16} /> +10 骰子
-                            </button>
-                            <button
-                                onClick={() => setIsTowerOpen(true)}
-                                className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 flex items-center gap-2"
-                            >
-                                🏰 開啟怪獸塔
-                            </button>
-                            <button
-                                onClick={() => refetchTower()}
-                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-200 flex items-center gap-2"
-                            >
-                                <RefreshCw size={16} /> 重新整理
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Tower V2 Tab Content */}
-            {activeTab === 'towerV2' && user && (
-                <div className="space-y-4">
-                    {/* V2 Preview Card */}
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                        <h3 className="font-pixel text-lg mb-3 flex items-center gap-2">
-                            🏰 怪獸塔 V2 - Snakes & Ladders Style
-                        </h3>
-                        <TowerV2Preview userId={user.id} onClick={() => openLiveTowerModal('V2', () => setIsTowerV2Open(true))} />
-                    </div>
-
-                    {/* V2 Info */}
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
-                        <h3 className="font-pixel text-lg mb-2">✨ V2 新功能</h3>
-                        <ul className="text-sm text-gray-700 space-y-1">
-                            <li>• 10x10 經典蛇梯棋盤佈局</li>
-                            <li>• 🪜 梯子可以往上爬</li>
-                            <li>• 🐍 蛇會讓你滑下去</li>
-                            <li>• 保留原有：骰子、轉盤、購買功能</li>
-                        </ul>
-                    </div>
-
-                    {/* QA Controls */}
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                        <h3 className="font-pixel text-lg mb-3 flex items-center gap-2">
-                            <Dices size={20} /> QA 工具
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
-                            <button
-                                onClick={async () => {
-                                    await addDiceMutation.mutateAsync({ userId: user.id, amount: 10 });
-                                    refetchTower();
-                                }}
-                                className="px-4 py-2 bg-green-100 text-green-700 rounded-lg border border-green-300 hover:bg-green-200 flex items-center gap-2"
-                            >
-                                <PlusCircle size={16} /> +10 骰子
-                            </button>
-                            <button
-                                onClick={() => openLiveTowerModal('V2', () => setIsTowerV2Open(true))}
-                                className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 flex items-center gap-2"
-                            >
-                                🏰 開啟怪獸塔 V2
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Tower V3 (2.5D) Tab Content */}
             {activeTab === 'towerV3' && user && (
                 <div className="space-y-4">
@@ -734,7 +595,7 @@ export const DebugPage: React.FC = () => {
                                 2.5D Isometric Engine
                             </span>
                         </div>
-                        <TowerGen3Preview userId={user.id} onClick={() => openLiveTowerModal('V3', () => setIsTowerGen3Open(true))} />
+                        <TowerGen3Preview userId={user.id} onClick={() => openLiveTowerModal(() => setIsTowerGen3Open(true))} />
                     </div>
 
                     {/* V3 核心改版特色與舊怪獸保存說明 */}
@@ -799,7 +660,7 @@ export const DebugPage: React.FC = () => {
                                 <PlusCircle size={15} /> +20 骰子
                             </button>
                             <button
-                                onClick={() => openLiveTowerModal('V3', () => setIsTowerGen3Open(true))}
+                                onClick={() => openLiveTowerModal(() => setIsTowerGen3Open(true))}
                                 className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl shadow-md flex items-center gap-2 text-sm"
                             >
                                 🚀 開啟怪獸塔 V3 (2.5D)
@@ -813,24 +674,6 @@ export const DebugPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            )}
-
-            {/* Monster Tower Modal */}
-            {user && (
-                <MonsterTower
-                    userId={user.id}
-                    isOpen={isTowerOpen}
-                    onClose={() => setIsTowerOpen(false)}
-                />
-            )}
-
-            {/* Monster Tower V2 Modal */}
-            {user && (
-                <MonsterTowerV2
-                    userId={user.id}
-                    isOpen={isTowerV2Open}
-                    onClose={() => setIsTowerV2Open(false)}
-                />
             )}
 
             {/* Monster Tower Gen3 Modal */}

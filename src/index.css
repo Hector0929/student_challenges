@@ -1493,3 +1493,152 @@ textarea {
     animation: none;
   }
 }
+
+/* ── Gen3 玩家移動：拋物線跳躍、擠壓拉伸、落地塵土 ── */
+.gen3-player {
+  transition: left 190ms cubic-bezier(0.33, 0, 0.35, 1), bottom 190ms cubic-bezier(0.33, 0, 0.35, 1);
+}
+
+.gen3-player-hop {
+  animation: gen3-hop 190ms ease-out;
+  transform-origin: bottom center;
+}
+
+@keyframes gen3-hop {
+  0% {
+    transform: translateY(0) scale(1.1, 0.9);
+  }
+
+  45% {
+    transform: translateY(-22px) scale(0.92, 1.12);
+  }
+
+  80% {
+    transform: translateY(0) scale(1.12, 0.88);
+  }
+
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+}
+
+.gen3-player-idle {
+  animation: gen3-idle-bob 2.4s ease-in-out infinite;
+}
+
+@keyframes gen3-idle-bob {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.gen3-player-shadow {
+  animation: gen3-shadow-squash 190ms ease-out;
+  transform: translateX(-50%) scale(1);
+}
+
+@keyframes gen3-shadow-squash {
+  0% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.6;
+  }
+
+  45% {
+    transform: translateX(-50%) scale(0.55);
+    opacity: 0.3;
+  }
+
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.6;
+  }
+}
+
+.gen3-dust {
+  animation: gen3-dust-puff 420ms ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes gen3-dust-puff {
+  0% {
+    transform: translateX(-50%) scale(0.3);
+    opacity: 0;
+  }
+
+  55% {
+    opacity: 0;
+  }
+
+  70% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.55;
+  }
+
+  100% {
+    transform: translateX(-50%) scale(1.6);
+    opacity: 0;
+  }
+}
+
+.gen3-companion {
+  animation: gen3-companion-float 2.6s ease-in-out infinite;
+}
+
+@keyframes gen3-companion-float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .gen3-player,
+  .gen3-player-hop,
+  .gen3-player-idle,
+  .gen3-player-shadow,
+  .gen3-dust,
+  .gen3-companion {
+    animation: none;
+    transition: none;
+  }
+
+  .gen3-dust {
+    opacity: 0;
+  }
+}
+
+/* ── Gen3 塔內挑戰：怪獸冒出／卡片翻開的彈跳 ── */
+.gen3-whack-pop {
+  animation: gen3-whack-pop 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: inline-block;
+}
+
+@keyframes gen3-whack-pop {
+  0% {
+    transform: scale(0.3) translateY(8px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gen3-whack-pop {
+    animation: none;
+  }
+}
