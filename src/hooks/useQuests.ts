@@ -492,51 +492,57 @@ export const useUpdateQuestAssignments = () => {
 // 星幣系統 Hooks
 // ============================================
 
+// Shared balance resolver used by both the display hook and the spend mutation,
+// so both sides always agree on the same number (see DEVELOPMENT_GUIDELINES.md).
+// IMPORTANT: must check the `error` field from supabase.rpc() — it does not throw
+// on RPC failure, it just returns { data: null, error }. Ignoring `error` here
+// previously caused currentBalance to silently default to 0, making every
+// game purchase report "星幣不足" regardless of the real balance.
+const fetchStarBalance = async (childId: string): Promise<number> => {
+    const { data, error } = await supabase
+        .rpc('get_child_star_balance', { child_id: childId });
+
+    if (!error && data !== null) {
+        return data as number;
+    }
+
+    if (error) {
+        console.warn('⚠️ get_child_star_balance RPC failed, calculating manually...', error);
+    }
+
+    // Fallback: Calculate manually
+    // 1. Get total earned from verified quests
+    const { data: totalPoints } = await supabase
+        .rpc('get_child_total_points', { child_id: childId });
+
+    const earned = totalPoints || 0;
+
+    // 2. Get total net transactions (spend is negative, manual adjustment can be pos/neg)
+    let netTransactions = 0;
+    try {
+        const { data: transactions } = await supabase
+            .from('star_transactions')
+            .select('amount')
+            .eq('user_id', childId);
+
+        if (transactions) {
+            netTransactions = transactions.reduce((sum, t) => sum + t.amount, 0);
+        }
+    } catch (e) {
+        console.log('⚠️ star_transactions error', e);
+    }
+
+    return earned + netTransactions;
+};
+
 // Fetch star balance for a child (earned - spent)
 export const useStarBalance = (childId: string) => {
     return useQuery({
         queryKey: ['star_balance', childId],
         queryFn: async () => {
             console.log('💰 Fetching star balance for:', childId.substring(0, 8) + '...');
-
-            // Try RPC function first (if database migration is done)
-            try {
-                const { data, error } = await supabase
-                    .rpc('get_child_star_balance', { child_id: childId });
-
-                if (!error && data !== null) {
-                    console.log('✅ Star balance from RPC:', data);
-                    return data as number;
-                }
-            } catch {
-                console.log('⚠️ RPC not available, calculating manually...');
-            }
-
-            // Fallback: Calculate manually
-            // 1. Get total earned from verified quests
-            const { data: totalPoints } = await supabase
-                .rpc('get_child_total_points', { child_id: childId });
-
-            const earned = totalPoints || 0;
-
-            // 2. Get total net transactions (spend is negative, manual adjustment can be pos/neg)
-            let netTransactions = 0;
-            try {
-                const { data: transactions } = await supabase
-                    .from('star_transactions')
-                    .select('amount')
-                    .eq('user_id', childId);
-
-                if (transactions) {
-                    // Sum up all transactions (spend is negative, earn/adjustment can be pos/neg)
-                    netTransactions = transactions.reduce((sum, t) => sum + t.amount, 0);
-                }
-            } catch (e) {
-                console.log('⚠️ star_transactions error', e);
-            }
-
-            const balance = earned + netTransactions;
-            console.log('💰 Star balance calculated:', { earned, netTransactions, balance });
+            const balance = await fetchStarBalance(childId);
+            console.log('💰 Star balance resolved:', balance);
             return balance;
         },
         enabled: !!childId,
@@ -561,22 +567,8 @@ export const useSpendStars = () => {
         }) => {
             console.log('💸 Spending stars:', { userId: userId.substring(0, 8) + '...', amount, gameId });
 
-            // First verify balance is sufficient
-            let currentBalance = 0;
-
-            // Try RPC first
-            try {
-                const { data } = await supabase
-                    .rpc('get_child_star_balance', { child_id: userId });
-                if (data !== null) {
-                    currentBalance = data;
-                }
-            } catch {
-                // Fallback
-                const { data: totalPoints } = await supabase
-                    .rpc('get_child_total_points', { child_id: userId });
-                currentBalance = totalPoints || 0;
-            }
+            // First verify balance is sufficient (uses the same resolver as the display balance)
+            const currentBalance = await fetchStarBalance(userId);
 
             if (currentBalance < amount) {
                 throw new Error(`星幣不足！需要 ${amount} 顆，目前只有 ${currentBalance} 顆`);

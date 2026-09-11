@@ -129,20 +129,20 @@ export const FUN_GAMES: FunGame[] = [
         color: 'bg-sky-500 hover:bg-sky-600'
     },
     {
-        id: 'galaxy_defender',
-        name: '三角戰機：銀河守衛',
-        icon: '🚀',
-        description: '銀河系守衛戰',
-        url: '/games/galaxy_defender.html',
-        color: 'bg-blue-600 hover:bg-blue-700'
-    },
-    {
         id: 'monster_survivor',
         name: '怪獸生存戰',
         icon: '🧛',
         description: 'Vampire Survivors 風格生存挑戰',
         url: '/games/monster_survivor.html',
         color: 'bg-violet-600 hover:bg-violet-700'
+    },
+    {
+        id: 'ember_corridor',
+        name: '銀河守衛',
+        icon: '🛩️',
+        description: '6 關卡街機 STG，挑戰怪獸魔王',
+        url: '/games/ember_corridor.html',
+        color: 'bg-amber-600 hover:bg-amber-700'
     }
 ];
 
@@ -157,8 +157,8 @@ export const FUN_COLORS: Record<string, { bg: string; border: string; text: stri
     'neon_slicer': { bg: 'var(--pastel-orange-bg)', border: 'var(--pastel-orange-border)', text: 'var(--pastel-orange-text)' },
     'bubble_shooter': { bg: 'var(--pastel-pink-bg)', border: 'var(--pastel-pink-border)', text: 'var(--pastel-pink-text)' },
     'monster_bomber': { bg: 'var(--pastel-cyan-bg)', border: 'var(--pastel-cyan-border)', text: 'var(--pastel-cyan-text)' },
-    'galaxy_defender': { bg: 'var(--pastel-blue-bg)', border: 'var(--pastel-blue-border)', text: 'var(--pastel-blue-text)' },
     'monster_survivor': { bg: 'var(--pastel-purple-bg)', border: 'var(--pastel-purple-border)', text: 'var(--pastel-purple-text)' },
+    'ember_corridor': { bg: 'var(--pastel-orange-bg)', border: 'var(--pastel-orange-border)', text: 'var(--pastel-orange-text)' },
 };
 
 export const getFunGameColors = (gameId: string) => {
