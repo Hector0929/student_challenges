@@ -105,16 +105,16 @@ const buildAdditionQuestion = (): FractionQuestion => {
     const rightNumerator = randomInt(1, denominator - leftNumerator - 1);
     const answerNumerator = leftNumerator + rightNumerator;
     const correctAnswer = formatFraction(answerNumerator, denominator);
-    const wrongAnswers = new Set<string>();
-
-    while (wrongAnswers.size < 3) {
-        const offset = randomInt(-2, 2);
-        const candidateNumerator = Math.min(Math.max(1, answerNumerator + (offset === 0 ? 1 : offset)), denominator - 1);
-        const candidate = formatFraction(candidateNumerator, denominator);
-        if (candidate !== correctAnswer) {
-            wrongAnswers.add(candidate);
-        }
-    }
+    // 錯誤選項從固定候選裡挑：分子差 1、2，加上「分母也相加」這個常見錯誤。
+    // 以前只在 1..分母-1 之間找，分母很小時（如 2/3、3/4）湊不到 3 個不同選項，while 會無窮迴圈卡死頁面。
+    const candidates = new Set(
+        [answerNumerator - 1, answerNumerator + 1, answerNumerator - 2, answerNumerator + 2]
+            .filter((n) => n >= 1)
+            .map((n) => formatFraction(n, denominator)),
+    );
+    candidates.add(formatFraction(answerNumerator, denominator * 2));
+    candidates.delete(correctAnswer);
+    const wrongAnswers = shuffle([...candidates]).slice(0, 3);
 
     return {
         id: `addition-${leftNumerator}-${rightNumerator}-${denominator}-${Date.now()}`,

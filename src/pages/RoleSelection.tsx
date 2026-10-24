@@ -6,9 +6,20 @@ import type { Profile } from '../types/database';
 import { useUser } from '../contexts/UserContext';
 
 interface RoleSelectionProps {
-    onChildSelected: (child: Profile) => void;
+    /** 點頭像 → 儀表板；點「進入我的群島」→ 群島 */
+    onChildSelected: (child: Profile, destination: 'dashboard' | 'island') => void;
     onParentAuthenticated: () => void;
 }
+
+// 每個小孩的小島配色：[地面, 海]
+const ISLAND_COLORS: Array<[string, string]> = [
+    ['#a6d96a', '#d6f0fa'],
+    ['#f5b860', '#fde9d2'],
+    ['#b9bdf6', '#e4e6fc'],
+    ['#ebc9f7', '#f7e9fc'],
+    ['#8fd3ea', '#dff3fa'],
+    ['#f2a7a7', '#fbe3e3'],
+];
 
 export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, onParentAuthenticated }) => {
     const { loginAsParent, familyName, logout } = useUser();
@@ -123,39 +134,65 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                     style={{ borderRadius: '32px' }}
                 >
                     <div className="text-center mb-8">
-                        <div className="text-6xl mb-4 animate-float">👋</div>
+                        <div className="text-6xl mb-4 animate-float">🏝️</div>
                         <h1 className="font-heading text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-                            選擇你的角色
+                            選擇你的群島
                         </h1>
                         <p className="font-body" style={{ color: 'var(--color-text-light)' }}>
-                            點擊你的名字開始今天的任務
+                            點頭像看個人頁面，點「進入我的群島」直接到你的學習挑戰群島！
                         </p>
                     </div>
 
                     {/* Children Grid */}
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                         {children && children.length > 0 ? (
-                            children.map((child) => (
-                                <button
-                                    key={child.id}
-                                    onClick={() => onChildSelected(child)}
-                                    className="clay-card hover:scale-105 transition-transform cursor-pointer p-4 sm:p-5 flex items-center gap-3 sm:gap-4 min-w-0"
-                                    style={{ borderRadius: '16px' }}
-                                >
-                                    <div className="text-4xl flex-shrink-0">
-                                        {child.avatar_url || '👦'}
-                                    </div>
-                                    <div className="text-left min-w-0 flex-1">
-                                        <div
-                                            className="font-heading font-bold text-base sm:text-lg leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
-                                            style={{ color: 'var(--color-text)' }}
-                                            title={child.name}
+                            children.map((child, i) => {
+                                const [ground, sea] = ISLAND_COLORS[i % ISLAND_COLORS.length];
+                                return (
+                                    <div
+                                        key={child.id}
+                                        className="clay-card p-4 flex flex-col items-center gap-2 min-w-0"
+                                        style={{ borderRadius: '20px', background: `linear-gradient(180deg, #ffffff 0%, ${sea} 100%)` }}
+                                    >
+                                        {/* 點頭像／名字 → 原本的儀表板 */}
+                                        <button
+                                            type="button"
+                                            onClick={() => onChildSelected(child, 'dashboard')}
+                                            className="group flex flex-col items-center gap-2 min-w-0 max-w-full cursor-pointer hover:-translate-y-1 transition-transform"
+                                            title={`${child.name} 的個人頁面`}
+                                            data-testid={`child-dashboard-${child.id}`}
                                         >
-                                            {child.name}
-                                        </div>
+                                            {/* 小島：六角形地面 + 頭像 */}
+                                            <div className="relative w-24 h-24 flex items-center justify-center">
+                                                <div
+                                                    className="absolute inset-0 shadow-lg group-hover:scale-105 transition-transform"
+                                                    style={{ background: ground, clipPath: 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)' }}
+                                                />
+                                                <div
+                                                    className="absolute inset-2"
+                                                    style={{ background: 'rgba(255,255,255,0.35)', clipPath: 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)' }}
+                                                />
+                                                <span className="relative text-5xl drop-shadow">{child.avatar_url || '👦'}</span>
+                                            </div>
+                                            <span
+                                                className="font-heading font-bold text-base sm:text-lg leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
+                                                style={{ color: 'var(--color-text)' }}
+                                            >
+                                                {child.name}
+                                            </span>
+                                        </button>
+                                        {/* 直接進群島 */}
+                                        <button
+                                            type="button"
+                                            onClick={() => onChildSelected(child, 'island')}
+                                            className="text-xs font-bold text-sky-700 hover:text-sky-900 hover:underline underline-offset-2 px-2 py-1 rounded-lg hover:bg-white/60 cursor-pointer"
+                                            data-testid={`child-island-${child.id}`}
+                                        >
+                                            進入我的群島 →
+                                        </button>
                                     </div>
-                                </button>
-                            ))
+                                );
+                            })
                         ) : (
                             <div className="col-span-full text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
                                 <p className="font-heading text-lg">尚無註冊的孩子</p>

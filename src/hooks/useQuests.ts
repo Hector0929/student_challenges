@@ -134,27 +134,28 @@ export const useChildTotalPoints = (childId: string) => {
     });
 };
 
+// Show if (Global/No assignments) OR (Assigned to current user)
+export const isQuestVisibleToChild = (quest: Quest, userId: string): boolean => {
+    // If undefined or empty array, it's global
+    if (!quest.quest_assignments || quest.quest_assignments.length === 0) {
+        return true;
+    }
+    // Check if assigned to this user
+    if (quest.quest_assignments.some(qa => qa.child_id === userId)) {
+        return true;
+    }
+
+    // Backward compatibility for legacy wishes that were assigned to created_by only.
+    return !!quest.created_by
+        && quest.quest_assignments.every((qa) => qa.child_id === quest.created_by);
+};
+
 // Calculate daily progress
 export const useDailyProgress = (userId: string, date: string = getTodayDate()) => {
     const { data: allQuests } = useQuests();
     const { data: logs } = useDailyLogs(userId, date);
 
-    // Filter quests: Show if (Global/No assignments) OR (Assigned to current user)
-    const quests = allQuests?.filter(quest => {
-        // If undefined or empty array, it's global
-        if (!quest.quest_assignments || quest.quest_assignments.length === 0) {
-            return true;
-        }
-        // Check if assigned to this user
-        if (quest.quest_assignments.some(qa => qa.child_id === userId)) {
-            return true;
-        }
-
-        // Backward compatibility for legacy wishes that were assigned to created_by only.
-        const assignedOnlyToCreator = !!quest.created_by
-            && quest.quest_assignments.every((qa) => qa.child_id === quest.created_by);
-        return assignedOnlyToCreator;
-    });
+    const quests = allQuests?.filter(quest => isQuestVisibleToChild(quest, userId));
 
     const progress: DailyProgress = {
         total_quests: quests?.length || 0,

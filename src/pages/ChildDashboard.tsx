@@ -1,26 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { ParentsMessageCard, ExchangeRateCard } from '../components/ChildDashboardWidgets';
 import { ExchangeRequestDialog } from '../components/ExchangeRequestDialog';
-import { MonsterTowerGen3, TowerGen3Preview } from '../components/MonsterTowerGen3';
+import { MonsterTowerV4, TowerV4Preview } from '../components/MonsterTowerV4';
 
-import { Star, X, Save, ChevronDown, ChevronUp, RefreshCw, Trash2, Check, Store } from 'lucide-react';
+import { Star, ChevronDown, ChevronUp, RefreshCw, Trash2, Check, Store } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { RPGDialog } from '../components/RPGDialog';
 import { RPGButton } from '../components/RPGButton';
 import { RewardTime } from '../components/RewardTime';
+import { WishQuestDialog } from '../components/WishQuestDialog';
 import { LearningArea } from '../components/LearningArea';
 import { ShopModal } from '../components/ShopModal';
-import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useCreateQuest, useUpdateQuestAssignments, useStarBalance } from '../hooks/useQuests';
+import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings } from '../hooks/useFamilySettings';
 import { WorldPreviewCard } from '../components/WorldPreviewCard';
 import { WorldFullScreen } from '../components/WorldFullScreen';
 import { useWorldPersistence } from '../hooks/useWorldPersistence';
+import { ChallengeIslandPreviewCard } from '../features/challengeIsland/ChallengeIslandPreviewCard';
 import type { WorldTheme } from '../hooks/useWorldState';
 
-import { COMMON_EMOJIS, DAILY_QUEST_TARGET } from '../lib/constants';
+import { DAILY_QUEST_TARGET } from '../lib/constants';
 
-import { useUser } from '../contexts/UserContext';
+
+// 3D 群島第一次打開時才下載
+const ChallengeIslandFullScreen = lazy(() =>
+    import('../features/challengeIsland/ChallengeIslandFullScreen').then((m) => ({ default: m.ChallengeIslandFullScreen })),
+);
 
 interface ChildDashboardProps {
     userId: string;
@@ -59,8 +65,6 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     const progress = useDailyProgress(userId);
     const { data: starBalance } = useStarBalance(userId);
     const completeQuestMutation = useCompleteQuest();
-    const createQuestMutation = useCreateQuest();
-    const updateAssignmentsMutation = useUpdateQuestAssignments();
     const { data: familySettings } = useFamilySettings();
     const { data: persistedWorld } = useWorldPersistence(userId);
 
@@ -81,14 +85,12 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     const [isQuestSectionCollapsed, setIsQuestSectionCollapsed] = useState(false);
     const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
     const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
-    const [formData, setFormData] = useState({
-        title: '',
-        icon: '👾',
-    });
     const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false);
-    const [isTowerGen3Open, setIsTowerGen3Open] = useState(false);
+    const [isTowerOpen, setIsTowerOpen] = useState(false);
     const [isShopOpen, setIsShopOpen] = useState(false);
     const [isWorldOpen, setIsWorldOpen] = useState(false);
+    const [isIslandOpen, setIsIslandOpen] = useState(false);
+    const [islandRequested, setIslandRequested] = useState(false);
     const [shopInitialTab, setShopInitialTab] = useState<'monster' | 'world'>('monster');
 
     const questTarget = Math.max(0, progress.total_quests > 0 ? Math.min(progress.total_quests, DAILY_QUEST_TARGET) : DAILY_QUEST_TARGET);
@@ -139,55 +141,10 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
         }
     };
 
-    const handleOpenDialog = () => {
-        setFormData({ title: '', icon: '👾' });
-        setIsDialogOpen(true);
-    };
+    const handleOpenDialog = () => setIsDialogOpen(true);
 
     const handleCloseDialog = () => setIsDialogOpen(false);
 
-    const { user, session } = useUser();
-
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        console.log('📝 handleSubmit triggered!', formData);
-
-        try {
-            console.log('🚀 Sending quest mutation...');
-
-            // Critical Fix: Use session.user.id (Parent Auth ID) to satisfy RLS
-            // Logic: The "Quest" is technically created by the Account Owner (Parent)
-            // but we note the Child's name in the description.
-            const creatorId = session?.user?.id || userId;
-            const childName = user?.name || '孩子';
-
-            const newQuest = await createQuestMutation.mutateAsync({
-                title: formData.title,
-                description: `由 ${childName} 建立的願望任務`,
-                icon: formData.icon,
-                reward_points: 10,
-                is_active: true, // Required by TS
-                status: 'pending',
-                created_by: creatorId,
-            });
-            // Pre-assign to the wishing child so approval can find the correct child_id.
-            // (created_by stores the parent's auth ID for RLS, not the child's profile ID)
-            if (newQuest?.id) {
-                await updateAssignmentsMutation.mutateAsync({
-                    questId: newQuest.id,
-                    childIds: [userId],
-                });
-            }
-            console.log('✅ Quest created successfully');
-            alert('✅ 任務已送出審核！\n\n請等待爸爸媽媽核准。');
-            handleCloseDialog();
-        } catch (error) {
-            console.error('Failed to create quest', error);
-            const msg = error instanceof Error ? error.message : String(error);
-            alert(`❌ 建立失敗\n\n錯誤：${msg}\n\n請告訴爸爸媽媽這個錯誤訊息`);
-        }
-    };
 
     const handleCompleteQuest = async (questId: string) => {
         // Prevent double submission - check if already completed
@@ -325,9 +282,21 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                 </button>
             </div>
 
-            {/* Monster Tower Preview — 2.5D 怪獸塔 V3 */}
+            {/* 學習挑戰群島 — 每日任務與學習進度的 3D 地圖 */}
             <div className="mb-6">
-                <TowerGen3Preview userId={userId} onClick={() => setIsTowerGen3Open(true)} />
+                <ChallengeIslandPreviewCard
+                    completedQuests={progress.completed_quests}
+                    totalQuests={progress.total_quests}
+                    onClick={() => {
+                        setIslandRequested(true);
+                        setIsIslandOpen(true);
+                    }}
+                />
+            </div>
+
+            {/* Monster Tower Preview — 3D 螺旋怪獸塔 V4（V3 仍可從 DebugPage 開啟） */}
+            <div className="mb-6">
+                <TowerV4Preview userId={userId} onClick={() => setIsTowerOpen(true)} />
             </div>
 
             {/* 3D World Preview Card */}
@@ -491,69 +460,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                 )
             }
             {/* Create Quest Dialog */}
-            <RPGDialog
-                isOpen={isDialogOpen}
-                onClose={handleCloseDialog}
-                title="許願新任務 For Parents"
-                footer={
-                    <div className="flex gap-3 justify-end">
-                        <RPGButton variant="secondary" onClick={handleCloseDialog}>
-                            <div className="flex items-center gap-2">
-                                <X size={16} />
-                                <span>取消</span>
-                            </div>
-                        </RPGButton>
-                        <RPGButton
-                            type="button"
-                            onClick={() => {
-                                console.log('🖱️ Button clicked, attempting to submit form...');
-                                const form = document.getElementById('create-quest-form') as HTMLFormElement;
-                                if (form) {
-                                    form.requestSubmit();
-                                } else {
-                                    console.error('❌ Form element not found!');
-                                    alert('程式錯誤：找不到表單，請重新整理網頁');
-                                }
-                            }}
-                        >
-                            <div className="flex items-center gap-2">
-                                <Save size={16} />
-                                <span>送出許願</span>
-                            </div>
-                        </RPGButton>
-                    </div>
-                }
-            >
-                <form id="create-quest-form" onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block font-pixel text-xs mb-2">我想做什麼...</label>
-                        <input
-                            type="text"
-                            value={formData.title}
-                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                            className="w-full px-3 py-2 border-2 border-deep-black text-sm"
-                            placeholder="例：幫忙摺衣服"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block font-pixel text-xs mb-2">選個圖案</label>
-                        <div className="grid grid-cols-6 gap-2">
-                            {COMMON_EMOJIS.map((emoji) => (
-                                <button
-                                    key={emoji}
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, icon: emoji })}
-                                    className={`text-xl p-2 border-2 border-deep-black hover:bg-gray-100 transition-colors ${formData.icon === emoji ? 'bg-yellow-200' : 'bg-white'
-                                        }`}
-                                >
-                                    {emoji}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </form>
-            </RPGDialog>
+            <WishQuestDialog isOpen={isDialogOpen} onClose={handleCloseDialog} userId={userId} />
 
             {/* Confirmation Dialog */}
             <RPGDialog
@@ -595,10 +502,10 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
             />
 
             {/* Monster Tower Gen3 Modal (2.5D 新版) */}
-            <MonsterTowerGen3
+            <MonsterTowerV4
                 userId={userId}
-                isOpen={isTowerGen3Open}
-                onClose={() => setIsTowerGen3Open(false)}
+                isOpen={isTowerOpen}
+                onClose={() => setIsTowerOpen(false)}
             />
 
             {/* Monster Shop Modal */}
@@ -610,6 +517,19 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                 starBalance={starBalance || 0}
                 initialTab={shopInitialTab}
             />
+
+            {/* 學習挑戰群島 Full Screen */}
+            {islandRequested && (
+                <Suspense fallback={null}>
+                    <ChallengeIslandFullScreen
+                        isOpen={isIslandOpen}
+                        onClose={() => setIsIslandOpen(false)}
+                        onGoHome={onGoHome}
+                        userId={userId}
+                        starBalance={starBalance || 0}
+                    />
+                </Suspense>
+            )}
 
             {/* World Full Screen Modal */}
             <WorldFullScreen

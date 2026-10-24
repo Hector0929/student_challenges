@@ -32,6 +32,15 @@ describe('fractions question generator', () => {
         expect(question.choices).toContain(question.correctAnswer);
     });
 
+    it('hard addition always finishes with 4 distinct choices, even for tiny denominators', () => {
+        // 以前分母 3、4 時錯誤選項湊不滿 3 個，會無窮迴圈；跑很多次確保每種亂數組合都會結束
+        for (let i = 0; i < 2000; i += 1) {
+            const question = generateFractionQuestion('hard');
+            expect(new Set(question.choices).size).toBe(4);
+            expect(question.choices).toContain(question.correctAnswer);
+        }
+    });
+
     it('simplifies fractions correctly', () => {
         expect(simplifyFraction(6, 8)).toEqual({ numerator: 3, denominator: 4 });
     });

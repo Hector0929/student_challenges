@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Gamepad2, Lock, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { GameModal } from './GameModal';
-import { useEarnStars, useStarBalance, useSpendStars } from '../hooks/useQuests';
+import { useRewardGamePlay } from '../hooks/useRewardGamePlay';
 import { GAME_COST } from '../lib/constants';
 import { useFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
 import { FUN_GAMES, getFunGameColors, type FunGame } from '../lib/gameConfig';
@@ -24,10 +24,8 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
     const [selectedGame, setSelectedGame] = useState<FunGame | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
 
-    // Fetch star balance
-    const { data: starBalance = 0, refetch: refetchBalance } = useStarBalance(userId);
-    const spendStarsMutation = useSpendStars();
-    const earnStarsMutation = useEarnStars();
+    // 付費開玩與結算（與學習挑戰群島的遊戲島共用）
+    const { starBalance, refetchBalance, spendStars: handleSpendStars, earnStars: handleEarnStars } = useRewardGamePlay(userId, selectedGame);
 
     // Fetch family settings for game permissions
     const { data: familySettings } = useFamilySettings();
@@ -38,39 +36,6 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
     const availableFunGames = FUN_GAMES.filter((game) => !disabledGames.includes(game.id));
 
     const progressPercentage = totalQuests > 0 ? ((totalQuests - remainingQuests) / totalQuests) * 100 : 0;
-
-    // Handle spending stars for a game
-    const handleSpendStars = async (): Promise<boolean> => {
-        if (!selectedGame) return false;
-
-        try {
-            await spendStarsMutation.mutateAsync({
-                userId,
-                amount: GAME_COST,
-                gameId: selectedGame.id,
-                gameName: selectedGame.name
-            });
-            return true;
-        } catch (error) {
-            console.error('Failed to spend stars:', error);
-            const message = error instanceof Error ? error.message : String(error);
-            // Only map true balance issues to "insufficient" flow.
-            // Other failures (RLS/network/duplicate click/etc.) should be surfaced as errors.
-            if (message.includes('星幣不足')) {
-                return false;
-            }
-            throw error;
-        }
-    };
-
-    const handleEarnStars = async (amount: number, description?: string, gameId?: string): Promise<void> => {
-        await earnStarsMutation.mutateAsync({
-            userId,
-            amount,
-            gameId: gameId ?? selectedGame?.id ?? 'game_settlement',
-            description: description ?? `遊戲結算獎勵: ${selectedGame?.name ?? '未知遊戲'}`,
-        });
-    };
 
     // If fun games are disabled by parent, don't show reward section at all
     if (!funGamesEnabled) {

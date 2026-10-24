@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import { BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { GameModal } from './GameModal';
 import { useFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
-import { supabase } from '../lib/supabase';
-import { useQueryClient } from '@tanstack/react-query';
 import type { LearningItem } from '../features/learning/types/learning';
 import { LEARNING_ITEMS } from '../features/learning/config/learningItems';
 import { getVisibleLearningItems } from '../features/learning/utils/learningFilters';
 import { toLearningModalPayload } from '../features/learning/utils/learningAdapters';
 import { LearningHub } from '../features/learning/components/LearningHub';
 import { getLearningEmbeddedContent } from '../features/learning/components/reactLearningRegistry';
+import { usePracticeReward } from '../features/learning/hooks/usePracticeReward';
 
 interface LearningAreaProps {
     userId: string;
@@ -19,7 +18,7 @@ interface LearningAreaProps {
 export const LearningArea: React.FC<LearningAreaProps> = ({ userId, onGoHome }) => {
     const [selectedItem, setSelectedItem] = useState<LearningItem | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
-    const queryClient = useQueryClient();
+    const grantPracticeReward = usePracticeReward(userId);
 
     // Fetch family settings for learning area permissions
     const { data: familySettings } = useFamilySettings();
@@ -35,25 +34,7 @@ export const LearningArea: React.FC<LearningAreaProps> = ({ userId, onGoHome }) 
         return null;
     }
 
-    const handlePracticeComplete = async (stars: number) => {
-        if (!selectedItem || stars <= 0) return;
-
-        const { error } = await supabase.from('star_transactions').insert({
-            user_id: userId,
-            amount: stars,
-            type: 'earn',
-            description: `學習完成獎勵: ${selectedItem.name} (3分鐘)`,
-            game_id: selectedItem.id,
-        });
-
-        if (error) {
-            console.error('Failed to grant learning reward:', error);
-            return;
-        }
-
-        queryClient.invalidateQueries({ queryKey: ['star_balance', userId] });
-        queryClient.invalidateQueries({ queryKey: ['star_transactions'] });
-    };
+    const handlePracticeComplete = (stars: number) => grantPracticeReward(selectedItem, stars);
 
     return (
         <div className="clay-card mb-6 p-5 animate-bounce-in" style={{ borderRadius: '20px' }}>

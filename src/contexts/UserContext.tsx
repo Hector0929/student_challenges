@@ -4,6 +4,9 @@ import { supabase } from '../lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 import { UserContext } from './UserContextDefinition';
 
+/** 這個分頁目前選的小孩；分頁關掉就消失，所以重新打開網站會回到使用者清單 */
+const CHILD_TAB_KEY = 'questmon-child-tab';
+
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUserState] = useState<Profile | null>(null);
@@ -82,6 +85,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         .maybeSingle();
 
                     if (data && !error) {
+                        // 小孩：只在同一個分頁重新整理時接回；重新打開網站一律先看使用者清單
+                        if (data.role === 'child' && sessionStorage.getItem(CHILD_TAB_KEY) !== data.id) {
+                            localStorage.removeItem('questmon-current-profile-id');
+                            setUserState(null);
+                            return;
+                        }
+
                         // Security Check: If restoring a Parent profile, require active session auth
                         if (data.role === 'parent') {
                             const isParentAuth = sessionStorage.getItem('parent-auth') === 'verified';
@@ -116,6 +126,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
             localStorage.removeItem('questmon-current-profile-id');
         }
+        if (newUser?.role === 'child') sessionStorage.setItem(CHILD_TAB_KEY, newUser.id);
+        else sessionStorage.removeItem(CHILD_TAB_KEY);
     };
 
     const registerUser = async (userData: Omit<Profile, 'id' | 'created_at' | 'family_id'>) => {

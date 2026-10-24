@@ -4,6 +4,7 @@ import { UserProvider, useUser } from './contexts/UserContext';
 import { FamilyOnboarding } from './pages/FamilyOnboarding';
 import { RoleSelection } from './pages/RoleSelection';
 import { ChildDashboard } from './pages/ChildDashboard';
+import { ChildHome } from './pages/ChildHome';
 import { ParentControl } from './pages/ParentControl';
 import { ParentApproval } from './pages/ParentApproval';
 import { ChildManagement } from './pages/ChildManagement';
@@ -11,10 +12,22 @@ import { ParentSettings } from './pages/ParentSettings';
 import { DebugPage } from './pages/DebugPage';
 import { HomeButton } from './components/HomeButton';
 import { useRealtimeSubscription } from './hooks/useRealtime';
-import { LogOut, ArrowLeft, Lock, LayoutDashboard, Briefcase, Users, Settings, Bug } from 'lucide-react';
+import { LogOut, ArrowLeft, Lock, LayoutDashboard, Briefcase, Users, Settings, Bug, Map } from 'lucide-react';
 import type { Profile } from './types/database';
 import { FloatingEncouragement } from './components/FloatingEncouragement';
 import './index.css';
+
+// 小孩進來後看哪一頁：使用者清單上點頭像 → 儀表板；點「進入我的群島」→ 群島。
+// 記在 sessionStorage，同一個分頁重新整理會停在原本那頁。
+type ChildView = 'dashboard' | 'island';
+const CHILD_VIEW_KEY = 'questmon-child-view';
+const readChildView = (): ChildView => {
+  try {
+    return sessionStorage.getItem(CHILD_VIEW_KEY) === 'island' ? 'island' : 'dashboard';
+  } catch {
+    return 'dashboard';
+  }
+};
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,9 +45,19 @@ function AppContent() {
   useRealtimeSubscription(user?.id);
 
   const [view, setView] = useState<'dashboard' | 'control' | 'children' | 'settings' | 'debug'>('dashboard');
+  const [childView, setChildViewState] = useState<ChildView>(readChildView);
+  const setChildView = (next: ChildView) => {
+    setChildViewState(next);
+    try {
+      sessionStorage.setItem(CHILD_VIEW_KEY, next);
+    } catch {
+      /* 無法儲存就只在這次有效 */
+    }
+  };
 
   // Handler for child selection
-  const handleChildSelected = async (child: Profile) => {
+  const handleChildSelected = async (child: Profile, destination: ChildView) => {
+    setChildView(destination);
     await loginAsChild(child.id);
   };
 
@@ -101,7 +124,12 @@ function AppContent() {
     );
   }
 
-  // 3. Authenticated and Role Selected -> Show Dashboard
+  // 3. Child -> 自己的學習挑戰群島（整頁）
+  if (user.role === 'child' && childView === 'island') {
+    return <ChildHome userId={user.id} onSwitchProfile={exitProfile} onClassic={() => setChildView('dashboard')} />;
+  }
+
+  // 4. Parent, or child who chose the classic dashboard
   return (
     <div className="min-h-screen py-8 px-4 relative overflow-hidden"
       style={{ background: 'linear-gradient(180deg, #B8E0F6 0%, #E8F4FC 100%)' }}>
@@ -134,6 +162,17 @@ function AppContent() {
             >
               <Lock size={14} />
               <span>登出家長</span>
+            </button>
+          )}
+
+          {user.role === 'child' && (
+            <button
+              onClick={() => setChildView('island')}
+              className="flex items-center gap-2 px-3 py-1 bg-sky-100 border-2 border-deep-black hover:bg-sky-200 transition-colors font-pixel text-xs"
+              title="回到學習挑戰群島"
+            >
+              <Map size={14} />
+              <span>回到群島</span>
             </button>
           )}
 

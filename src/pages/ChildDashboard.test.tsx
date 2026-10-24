@@ -23,9 +23,9 @@ vi.mock('../components/ExchangeRequestDialog', () => ({
     ExchangeRequestDialog: ({ isOpen }: { isOpen: boolean }) => isOpen ? <div>Exchange Request Dialog</div> : null,
 }));
 
-vi.mock('../components/MonsterTowerGen3', () => ({
-    MonsterTowerGen3: ({ isOpen }: { isOpen: boolean }) => isOpen ? <div>Monster Tower Modal</div> : null,
-    TowerGen3Preview: ({ onClick }: { onClick: () => void }) => <button onClick={onClick}>Open Tower Preview</button>,
+vi.mock('../components/MonsterTowerV4', () => ({
+    MonsterTowerV4: ({ isOpen }: { isOpen: boolean }) => isOpen ? <div>Monster Tower Modal</div> : null,
+    TowerV4Preview: ({ onClick }: { onClick: () => void }) => <button onClick={onClick}>Open Tower Preview</button>,
 }));
 
 vi.mock('../components/QuestCard', () => ({
