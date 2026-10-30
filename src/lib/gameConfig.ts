@@ -140,7 +140,7 @@ export const FUN_GAMES: FunGame[] = [
         id: 'ember_corridor',
         name: '銀河守衛',
         icon: '🛩️',
-        description: '6 關卡街機 STG，挑戰怪獸魔王',
+        description: '三機編隊射擊・6 大星域打怪獸魔王',
         url: '/games/ember_corridor.html',
         color: 'bg-amber-600 hover:bg-amber-700'
     }
