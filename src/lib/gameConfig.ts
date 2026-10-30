@@ -44,8 +44,8 @@ export const FUN_GAMES: FunGame[] = [
         id: 'parkour',
         name: '方塊衝刺',
         icon: '🔲',
-        description: '節奏跑酷挑戰',
-        url: '/games/parkour_game_v2.html',
+        description: '怪獸塔大冒險・五大區域 15 關',
+        url: '/games/parkour_game_v3.html',
         color: 'bg-violet-500 hover:bg-violet-600'
     },
     {
