@@ -1,599 +1,1575 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-
+<!doctype html>
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Shaft</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Orbitron', sans-serif;
-            background-color: #0f0f15;
-            overflow-x: hidden;
-            overflow-y: auto;
-            touch-action: manipulation;
-            min-height: 100vh;
-            min-height: 100dvh;
-        }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<title>怪獸下樓梯 · 地底大冒險</title>
+<style>
+  :root {
+    --ink: #211d1d;
+    --muted: #6e645d;
+    --paper: rgba(255, 255, 255, 0.95);
+    --line: rgba(33, 29, 29, 0.12);
+    --grass: #5ba328;
+    --grass-soft: #eaf5de;
+    --coral: #db3a34;
+    --coral-soft: #fde8e7;
+    --gold: #f4c542;
+    --gold-soft: #fef7dc;
+    --blue: #3b82f6;
+    --shadow: 0 8px 24px rgba(33, 29, 29, 0.14);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #1e1b2e;
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  #game-wrap {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #181524;
+  }
+  canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: 9 / 16;
+    background: #242038;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+  }
+  button {
+    font: inherit;
+    color: inherit;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+  button:focus-visible { outline: 3px solid var(--coral); outline-offset: 2px; }
+  .hidden { display: none !important; }
 
-        .neon-text {
-            text-shadow: 0 0 10px #e879f9, 0 0 20px #e879f9;
-        }
+  /* ---------- HUD ---------- */
+  #hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .hud-pill {
+    position: absolute;
+    background: var(--paper);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-weight: 800;
+    pointer-events: auto;
+  }
+  .hud-tl { top: 12px; left: 12px; }
+  .hud-tl b { display: block; font-size: 15px; color: var(--ink); }
+  .hud-tl small { font-size: 11px; color: var(--muted); font-weight: 700; }
+  .zone-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    background: var(--grass-soft);
+    color: var(--grass);
+    margin-bottom: 2px;
+  }
 
-        .neon-border {
-            box-shadow: 0 0 10px #e879f9, inset 0 0 10px #e879f9;
-            border: 2px solid #e879f9;
-        }
+  .hud-tr {
+    top: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hp-pill {
+    background: var(--paper);
+    padding: 8px 12px;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 900;
+    font-size: 14px;
+  }
+  .hp-bar-bg {
+    width: 64px;
+    height: 10px;
+    background: #e2dcd5;
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+  }
+  .hp-bar-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #db3a34, #10b981);
+    border-radius: 999px;
+    transition: width 0.2s ease-out;
+  }
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: var(--paper);
+    box-shadow: var(--shadow);
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    pointer-events: auto;
+  }
 
-        canvas {
-            image-rendering: pixelated;
-        }
+  /* Quiz Question Banner */
+  #quiz-banner {
+    position: absolute;
+    top: 68px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff8db;
+    border: 3px solid #f4c542;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px;
+    font-weight: 900;
+    color: #795200;
+    pointer-events: none;
+    animation: bounce 0.6s ease;
+    z-index: 15;
+    white-space: nowrap;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.08); }
+  }
 
-        /* Touch Zones */
-        .touch-zone {
-            position: absolute;
-            bottom: 0;
-            height: 50%;
-            width: 50%;
-            z-index: 20;
-            /* background: rgba(255,0,0,0.1); Debug */
-        }
-    </style>
+  /* Combo / Flow notice */
+  #flow-pill {
+    position: absolute;
+    top: 70px;
+    right: 14px;
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 14px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #4f46e5;
+    box-shadow: var(--shadow);
+    pointer-events: none;
+  }
+
+  /* Virtual Buttons (when enabled) */
+  #btn-controls {
+    position: absolute;
+    inset: auto 0 16px 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    pointer-events: none;
+    z-index: 20;
+  }
+  .ctrl-btn {
+    width: 76px;
+    height: 76px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    font-size: 32px;
+    display: grid;
+    place-items: center;
+    pointer-events: auto;
+    user-select: none;
+    -webkit-user-select: none;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+  }
+  .ctrl-btn:active {
+    background: var(--coral-soft);
+    transform: scale(0.92);
+  }
+
+  /* Overlay Panels (Menu, Game Over, Win, Pause) */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgba(24, 21, 36, 0.7);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 30;
+  }
+  .panel {
+    width: min(400px, 92vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #fffdf9;
+    border-radius: 28px;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+    padding: 24px 20px;
+    text-align: center;
+  }
+  .panel-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 900;
+    background: var(--grass-soft);
+    color: var(--grass);
+    margin-bottom: 8px;
+  }
+  .panel h2 {
+    margin: 4px 0 8px;
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--ink);
+  }
+  .panel p {
+    margin: 0 0 16px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .panel-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    background: #f7f4ed;
+    border-radius: 16px;
+    padding: 10px;
+  }
+  .stat-card small { display: block; font-size: 11px; color: var(--muted); font-weight: 700; }
+  .stat-card b { font-size: 18px; color: var(--ink); font-weight: 900; }
+
+  .btns {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .btn {
+    min-height: 48px;
+    padding: 0 24px;
+    border-radius: 16px;
+    font-weight: 900;
+    font-size: 16px;
+    background: #f1ece6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.1s;
+  }
+  .btn:active { transform: translateY(2px); }
+  .btn.primary {
+    background: linear-gradient(180deg, #ef5a52, #c62e28);
+    color: #fff;
+    box-shadow: 0 5px 0 #8f1f1b;
+  }
+  .btn.primary:active {
+    box-shadow: 0 2px 0 #8f1f1b;
+  }
+  .btn.secondary {
+    background: #e8e2d9;
+    color: var(--ink);
+  }
+  .opt-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f5f0e6;
+    border-radius: 14px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .toggle-btn {
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: var(--paper);
+    font-weight: 900;
+    font-size: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+</style>
 </head>
+<body>
+<div id="game-wrap">
+  <canvas id="canvas" width="360" height="640"></canvas>
 
-<body class="min-h-screen h-[100dvh] flex flex-col items-center justify-start py-3 sm:py-5">
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-pill hud-tl">
+      <div>
+        <span class="zone-tag" id="zone-name">草原微風</span>
+        <b id="floor-display">第 1 層</b>
+        <small id="depth-target">目標：100 層</small>
+      </div>
+    </div>
 
-    <!-- UI Overlay -->
-    <div id="ui-layer"
-        class="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-10 w-full max-w-lg mx-auto">
-        <!-- Stats -->
-        <div class="flex justify-between items-start">
-            <div class=" rounded-xl px-4 py-2 bg-black/50 border border-purple-500/50">
-                <div class="text-purple-400 text-xs">DEPTH</div>
-                <div id="score" class="text-2xl text-white font-bold">0 m</div>
-            </div>
-            <div class="rounded-xl px-3 py-2 bg-black/60 border border-fuchsia-400/40 text-center max-w-[180px]">
-                <div id="flow-display" class="text-cyan-300 text-xs font-bold">FLOW x0</div>
-                <div id="mission-display" class="text-fuchsia-300 text-[11px]">🎯 任務準備中</div>
-                <div id="phase-display" class="text-purple-200 text-[10px]">✨ 開場驚喜</div>
-            </div>
-            <!-- Health Bar -->
-            <div class="w-32 h-6 bg-gray-900 border border-white/20 rounded-full overflow-hidden mt-2">
-                <div id="hp-bar"
-                    class="h-full bg-gradient-to-r from-red-500 to-green-500 w-full transition-all duration-200"></div>
-            </div>
+    <div id="flow-pill" class="hidden">連環落台 x<span id="flow-count">0</span></div>
+
+    <div class="hud-tr">
+      <div class="hp-pill">
+        <span>❤️</span>
+        <div class="hp-bar-bg">
+          <div class="hp-bar-fill" id="hp-fill"></div>
         </div>
+        <span id="hp-num">12</span>
+      </div>
+      <button class="icon-btn" id="btn-pause" aria-label="暫停">⏸️</button>
     </div>
 
-    <!-- Start / Game Over Screen -->
-    <div id="menu-screen" class="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div class="bg-gray-900 rounded-2xl p-8 text-center max-w-md mx-4 border-2 border-purple-500 shadow-2xl">
-            <div class="text-6xl mb-4 animate-bounce">🧗</div>
-            <h1
-                class="text-4xl text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 font-bold mb-2 neon-text">
-                NEON SHAFT
-            </h1>
-            <p id="menu-message" class="text-purple-200/70 mb-8 tracking-wider">
-                DESCEND OR DIE<br>
-                <span class="text-xs">Avoid Spikes (Top) • Don't Fall (Bottom)</span>
-            </p>
-            <div id="summary-flow" class="text-cyan-300 text-sm mb-2">最高 FLOW：0</div>
-            <div id="summary-mission" class="text-fuchsia-300 text-sm mb-4">任務：未開始</div>
+    <!-- Math Question Banner -->
+    <div id="quiz-banner" class="hidden">
+      <span>✏️ 算算看：</span>
+      <b id="quiz-question">7 × 8 = ?</b>
+      <span style="font-size:12px; color:#854d0e;">(跳上正確數字！)</span>
+    </div>
+  </div>
 
-            <button onclick="startGame()"
-                class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-purple-500/50">
-                DESCEND
-            </button>
+  <!-- On-Screen Control Buttons (Optional) -->
+  <div id="btn-controls" class="hidden">
+    <button class="ctrl-btn" id="ctrl-left">⬅️</button>
+    <button class="ctrl-btn" id="ctrl-right">➡️</button>
+  </div>
+
+  <!-- Menu Modal -->
+  <div class="overlay" id="menu-modal">
+    <div class="panel">
+      <span class="panel-badge">怪獸塔第 4 代</span>
+      <h2>🧗 怪獸下樓梯</h2>
+      <p>控制可愛小怪獸不斷往下跳！踩普通平台可回血，避開天花板與尖刺，挑戰 100 層地底魔王！</p>
+      
+      <div class="opt-row">
+        <span>🎮 控制方式</span>
+        <button class="toggle-btn" id="btn-toggle-ctrl">單指滑動 👆</button>
+      </div>
+
+      <div class="panel-grid">
+        <div class="stat-card">
+          <small>最佳成績</small>
+          <b id="menu-best">0 層</b>
         </div>
+        <div class="stat-card">
+          <small>累積獲得</small>
+          <b id="menu-stars">⭐ 0</b>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="btn primary" id="btn-start">🚀 開始挑戰 100 層</button>
+        <button class="btn secondary" id="btn-endless">♾️ 無盡挑戰模式</button>
+      </div>
     </div>
+  </div>
 
-    <!-- Ceiling Spikes Visual -->
-    <div class="absolute top-0 w-full h-8 z-10 bg-repeat-x pointer-events-none opacity-80"
-        style="background-image: linear-gradient(135deg, transparent 50%, #ef4444 50%), linear-gradient(-135deg, transparent 50%, #ef4444 50%); background-size: 20px 20px;">
+  <!-- Pause Modal -->
+  <div class="overlay hidden" id="pause-modal">
+    <div class="panel">
+      <h2>⏸️ 遊戲暫停</h2>
+      <p>深呼吸一下，準備好了就繼續往下冒險！</p>
+      <div class="btns">
+        <button class="btn primary" id="btn-resume">▶️ 繼續遊戲</button>
+        <button class="btn secondary" id="btn-restart">🔄 重新開始</button>
+      </div>
     </div>
+  </div>
 
-    <!-- Warning Overlay for Top Spikes -->
-    <div id="spike-warning"
-        class="absolute top-0 w-full h-32 bg-gradient-to-b from-red-600/50 to-transparent pointer-events-none hidden z-0">
+  <!-- Game Over Modal -->
+  <div class="overlay hidden" id="over-modal">
+    <div class="panel">
+      <span class="panel-badge" style="background:var(--coral-soft); color:var(--coral);">冒險結束</span>
+      <h2 id="over-title">再接再厲！</h2>
+      <p id="over-desc">掉進無底深淵或血量歸零了，但每次挑戰都能讓你更熟悉走位！</p>
+
+      <div class="panel-grid">
+        <div class="stat-card">
+          <small>本次抵達</small>
+          <b id="over-floor">第 0 層</b>
+        </div>
+        <div class="stat-card">
+          <small>獲得星幣</small>
+          <b id="over-stars">⭐ 0</b>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="btn primary" id="btn-over-retry">🔄 再次挑戰</button>
+        <button class="btn secondary" id="btn-over-menu">🏠 回到主選單</button>
+      </div>
     </div>
+  </div>
 
-    <!-- Game Canvas -->
-    <div class="relative w-full max-w-lg aspect-square max-h-[calc(100dvh-8rem)] bg-gray-900/90 overflow-hidden shadow-2xl border-x-2 border-gray-800">
-        <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+  <!-- Victory Modal -->
+  <div class="overlay hidden" id="win-modal">
+    <div class="panel">
+      <span class="panel-badge" style="background:#fef3c7; color:#b45309;">🏆 恭喜通關</span>
+      <h2>🎉 成功征服 100 層！</h2>
+      <p>你擊敗了地底大魔王，成為怪獸塔第一名下樓梯大師！</p>
+
+      <div class="panel-grid">
+        <div class="stat-card">
+          <small>通關層數</small>
+          <b>100 層 🏁</b>
+        </div>
+        <div class="stat-card">
+          <small>總星幣獎勵</small>
+          <b id="win-stars">⭐ +5</b>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button class="btn primary" id="btn-win-endless">♾️ 挑戰無盡模式</button>
+        <button class="btn secondary" id="btn-win-menu">🏠 回主選單</button>
+      </div>
     </div>
+  </div>
+</div>
 
-    <!-- Touch Controls -->
-    <div id="left-zone" class="touch-zone left-0" ontouchstart="handleTouch('left', true)"
-        ontouchend="handleTouch('left', false)"></div>
-    <div id="right-zone" class="touch-zone right-0" ontouchstart="handleTouch('right', true)"
-        ontouchend="handleTouch('right', false)"></div>
+<script>
+(() => {
+  'use strict';
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreDisplay = document.getElementById('score');
-        const hpBar = document.getElementById('hp-bar');
-        const menuScreen = document.getElementById('menu-screen');
-        const spikeWarning = document.getElementById('spike-warning');
-        const flowDisplay = document.getElementById('flow-display');
-        const missionDisplay = document.getElementById('mission-display');
-        const phaseDisplay = document.getElementById('phase-display');
+  /* ============================================================
+     1. 常數與設定
+     ============================================================ */
+  const LOGICAL_W = 360;
+  const LOGICAL_H = 640;
+  const DT = 1 / 60; // 60Hz 固定時間步長
+  const MAX_SUB_STEPS = 5;
 
-        // Config
-        const CONFIG = {
-            gravity: 0.5,
-            jumpForce: -8, // Small bounce when hitting standard platform? Or just stop? Standard NS-SHAFT usually just lands.
-            moveSpeed: 5,
-            scrollSpeedBase: 1.5,
-            scrollSpeedMax: 5,
-            platformW: 100,
-            platformH: 16,
-            playerSize: 24,
-            maxHP: 12,
-        };
+  const CONFIG = {
+    gravity: 980,          // 重力加速度 (px/s^2)
+    moveSpeed: 240,        // 角色移動速度 (px/s)
+    friction: 0.82,        // 地面摩擦力
+    airFriction: 0.94,     // 空中阻力
+    terminalVy: 540,       // 終端墜落速度
+    jumpVy: -320,          // 彈簧彈跳力
+    baseScrollSpeed: 70,   // 起始捲動速度 (px/s)
+    maxScrollSpeed: 170,   // 最大捲動速度 (px/s)
+    maxHP: 12,             // 最大血量
+    platformW: 90,
+    platformH: 16,
+    playerRadius: 13
+  };
 
-        let state = {
-            isPlaying: false,
-            score: 0, // Depth
-            hp: 12,
-            player: { x: 0, y: 0, vx: 0, vy: 0, grounded: false, onPlatform: null },
-            platforms: [], // {x, y, type, id}
-            scrollSpeed: CONFIG.scrollSpeedBase,
-            time: 0,
-            lastTime: 0,
-            keys: { left: false, right: false },
-            distanceTraveled: 0,
-            flow: 0,
-            maxFlow: 0,
-            platformLands: 0,
-            mission: null,
-            gameStartAt: 0
-        };
+  // 5 大主題區域 (每 20 層一區)
+  const ZONES = [
+    { id: 1, name: '草原微風', bg: '#2b3a4a', groundColor: '#5ba328', ceilingColor: '#477520' },
+    { id: 2, name: '冰晶雪原', bg: '#243b55', groundColor: '#67e8f9', ceilingColor: '#38bdf8' },
+    { id: 3, name: '熾熱熔岩', bg: '#3a2024', groundColor: '#f97316', ceilingColor: '#dc2626' },
+    { id: 4, name: '齒輪工坊', bg: '#2e2a36', groundColor: '#ca8a04', ceilingColor: '#854d0e' },
+    { id: 5, name: '璀璨星穹', bg: '#1e1b4b', groundColor: '#a855f7', ceilingColor: '#7c3aed' }
+  ];
 
-        const PLATFORM_TYPES = ['normal', 'normal', 'normal', 'normal', 'conveyor_left', 'conveyor_right', 'spring', 'fake', 'spike'];
+  /* ============================================================
+     2. 狀態管理與存檔
+     ============================================================ */
+  const urlParams = new URLSearchParams(window.location.search);
+  const userId = urlParams.get('userId') || 'guest';
+  const gradeParam = parseInt(urlParams.get('grade') || '3', 10);
+  const timeScale = parseFloat(urlParams.get('ts') || '1.0');
 
-        // Resize
-        function resize() {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
+  const SAVE_KEY = `ns_shaft_save_${userId}`;
+
+  function loadSavedData() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return { bestFloor: 0, totalStars: 0, ctrlMode: 'drag' };
+  }
+
+  function saveGameData(data) {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    } catch (e) {}
+  }
+
+  let userSaved = loadSavedData();
+
+  // 遊戲即時狀態
+  const S = {
+    mode: 'campaign', // 'campaign' (100層) 或 'endless' (無盡)
+    running: false,
+    paused: false,
+    settled: false,
+    floor: 1,
+    generatedFloor: 1,
+    targetFloor: 100,
+    scrollSpeed: CONFIG.baseScrollSpeed,
+    scrollOffset: 0,
+    ctrlMode: userSaved.ctrlMode || 'drag', // 'drag' or 'buttons'
+    hp: CONFIG.maxHP,
+    invincibleTimer: 0, // 無敵秒數
+    flow: 0,
+    maxFlow: 0,
+    starsEarnedThisGame: 0,
+    nextPlatformY: 180,
+    activeQuiz: null, // 當前題庫資訊
+    lastQuizFloor: 0
+  };
+
+  // 角色物理物件
+  const P = {
+    x: LOGICAL_W / 2,
+    y: 120,
+    vx: 0,
+    vy: 0,
+    onPlatform: null,
+    squashX: 1,
+    squashY: 1,
+    faceDir: 1, // 1: 右, -1: 左
+    blinkTimer: 0
+  };
+
+  let platforms = [];
+  let particles = [];
+  let nextPlatformId = 1;
+
+  /* ============================================================
+     3. DOM 元素
+     ============================================================ */
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const hudEl = document.getElementById('hud');
+  const floorDisp = document.getElementById('floor-display');
+  const zoneNameDisp = document.getElementById('zone-name');
+  const depthTargetDisp = document.getElementById('depth-target');
+  const hpFillEl = document.getElementById('hp-fill');
+  const hpNumEl = document.getElementById('hp-num');
+  const flowPillEl = document.getElementById('flow-pill');
+  const flowCountEl = document.getElementById('flow-count');
+  const quizBannerEl = document.getElementById('quiz-banner');
+  const quizQuestionEl = document.getElementById('quiz-question');
+  const btnControlsEl = document.getElementById('btn-controls');
+
+  const menuModal = document.getElementById('menu-modal');
+  const pauseModal = document.getElementById('pause-modal');
+  const overModal = document.getElementById('over-modal');
+  const winModal = document.getElementById('win-modal');
+
+  const menuBestEl = document.getElementById('menu-best');
+  const menuStarsEl = document.getElementById('menu-stars');
+  const btnToggleCtrl = document.getElementById('btn-toggle-ctrl');
+
+  menuBestEl.textContent = `${userSaved.bestFloor || 0} 層`;
+  menuStarsEl.textContent = `⭐ ${userSaved.totalStars || 0}`;
+
+  /* ============================================================
+     4. 音效與星幣回報 (QUESTMON_EARN_STARS)
+     ============================================================ */
+  function reportStars(stars, reason) {
+    if (stars <= 0 || window.parent === window) return;
+    try {
+      window.parent.postMessage({
+        type: 'QUESTMON_EARN_STARS',
+        txId: `shaft-${userId}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`,
+        amount: stars,
+        gameId: 'ns_shaft',
+        description: `怪獸下樓梯：${reason} 獎勵（+${stars} ⭐）`
+      }, window.location.origin);
+    } catch (e) {}
+  }
+
+  // 簡易 Web Audio 合成音效 (免外部音訊檔)
+  let audioCtx = null;
+  function playTone(freq, type, duration, vol = 0.1) {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {}
+  }
+
+  const sfx = {
+    jump: () => playTone(580, 'sine', 0.15, 0.12),
+    heal: () => { playTone(440, 'triangle', 0.1, 0.1); setTimeout(() => playTone(660, 'triangle', 0.15, 0.1), 80); },
+    hurt: () => playTone(160, 'sawtooth', 0.25, 0.15),
+    spring: () => { playTone(300, 'sine', 0.1, 0.12); setTimeout(() => playTone(720, 'sine', 0.2, 0.12), 60); },
+    break: () => playTone(120, 'square', 0.2, 0.1),
+    correct: () => {
+      playTone(523, 'sine', 0.1, 0.15);
+      setTimeout(() => playTone(659, 'sine', 0.1, 0.15), 100);
+      setTimeout(() => playTone(784, 'sine', 0.2, 0.15), 200);
+    }
+  };
+
+  /* ============================================================
+     5. 題庫生成器 (支援年級客製)
+     ============================================================ */
+  function generateMathQuiz(grade) {
+    let a, b, op, ans, qText;
+    if (grade <= 2) {
+      // 1-2年級: 100以內加減法
+      if (Math.random() < 0.5) {
+        a = Math.floor(Math.random() * 40) + 10;
+        b = Math.floor(Math.random() * 40) + 5;
+        ans = a + b;
+        qText = `${a} + ${b} = ?`;
+      } else {
+        a = Math.floor(Math.random() * 50) + 20;
+        b = Math.floor(Math.random() * (a - 5)) + 5;
+        ans = a - b;
+        qText = `${a} - ${b} = ?`;
+      }
+    } else {
+      // 3年級以上: 九九乘法與簡易運算
+      a = Math.floor(Math.random() * 8) + 2;
+      b = Math.floor(Math.random() * 8) + 2;
+      ans = a * b;
+      qText = `${a} × ${b} = ?`;
+    }
+
+    // 生成兩個干擾項
+    const wrong1 = ans + (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 4) + 1);
+    const wrong2 = ans + (Math.random() < 0.5 ? 10 : -10);
+    const options = [ans, wrong1, wrong2].sort(() => Math.random() - 0.5);
+
+    return { question: qText, answer: ans, options: options, resolved: false };
+  }
+
+  /* ============================================================
+     6. 平台生成與公平性
+     ============================================================ */
+  function getCurrentZone() {
+    const idx = Math.min(Math.floor((S.floor - 1) / 20), ZONES.length - 1);
+    return ZONES[idx];
+  }
+
+  function spawnPlatform(yPos, forceType = null) {
+    let type = forceType;
+    let quizData = null;
+
+    if (!type) {
+      // 檢查是否為休息層 (第 20, 40, 60, 80 層)
+      if (S.floor % 20 === 0 && S.floor < 100) {
+        type = 'rest';
+      } else {
+        // 依層數與區域權重決定
+        const roll = Math.random();
+        if (S.floor <= 10) {
+          type = roll < 0.8 ? 'normal' : 'conveyor_right';
+        } else if (S.floor <= 25) {
+          if (roll < 0.55) type = 'normal';
+          else if (roll < 0.75) type = (Math.random() < 0.5 ? 'conveyor_left' : 'conveyor_right');
+          else if (roll < 0.90) type = 'spring';
+          else type = 'fake';
+        } else {
+          // 26層以上加入冰塊、雲朵與尖刺（危險平台上限 35%）
+          if (roll < 0.45) type = 'normal';
+          else if (roll < 0.60) type = (Math.random() < 0.5 ? 'conveyor_left' : 'conveyor_right');
+          else if (roll < 0.72) type = 'spring';
+          else if (roll < 0.82) type = (Math.random() < 0.5 ? 'cloud' : 'ice');
+          else if (roll < 0.92) type = 'fake';
+          else type = 'spike';
         }
-        window.addEventListener('resize', resize);
-        resize();
+      }
+    }
 
-        function createMission() {
-            const pool = [
-                { key: 'depth', label: '下潛 260m', target: 260, progress: 0, reward: 90 },
-                { key: 'land', label: '穩定落台 18 次', target: 18, progress: 0, reward: 110 },
-                { key: 'flow', label: 'FLOW 達到 6', target: 6, progress: 0, reward: 140 }
-            ];
-            return { ...pool[Math.floor(Math.random() * pool.length)], completed: false };
+    // 寬度與 X 座標 (保證玩家能跳達)
+    const w = type === 'rest' ? LOGICAL_W - 40 : CONFIG.platformW;
+    let x = type === 'rest' ? 20 : Math.random() * (LOGICAL_W - w - 24) + 12;
+
+    // 與上一塊平台避免過遠死局
+    if (platforms.length > 0 && type !== 'rest') {
+      const lastP = platforms[platforms.length - 1];
+      const maxDeltaX = 140; // 角色水平能飛躍的合理範圍
+      x = Math.max(12, Math.min(LOGICAL_W - w - 12, lastP.x + (Math.random() * maxDeltaX * 2 - maxDeltaX)));
+    }
+
+    const plat = {
+      id: nextPlatformId++,
+      x: x,
+      y: yPos,
+      w: w,
+      h: CONFIG.platformH,
+      type: type,
+      floor: S.generatedFloor,
+      shakeTimer: 0,
+      broken: false,
+      fadeAlpha: 1.0,
+      quizValue: null
+    };
+
+    platforms.push(plat);
+    return plat;
+  }
+
+  // 生成數學題目平台組 (3 塊並排或交錯)
+  function spawnMathTier(yPos, quiz) {
+    const w = 70;
+    const gap = (LOGICAL_W - (w * 3)) / 4;
+    quiz.options.forEach((val, idx) => {
+      const px = gap + idx * (w + gap);
+      platforms.push({
+        id: nextPlatformId++,
+        x: px,
+        y: yPos,
+        w: w,
+        h: CONFIG.platformH,
+        type: 'math',
+        floor: S.generatedFloor,
+        shakeTimer: 0,
+        broken: false,
+        fadeAlpha: 1.0,
+        quizValue: val,
+        isCorrect: (val === quiz.answer)
+      });
+    });
+  }
+
+  /* ============================================================
+     7. 粒子效果
+     ============================================================ */
+  function addSparks(x, y, color, count = 8) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const spd = Math.random() * 120 + 40;
+      particles.push({
+        x: x,
+        y: y,
+        vx: Math.cos(angle) * spd,
+        vy: Math.sin(angle) * spd,
+        life: 0.4 + Math.random() * 0.3,
+        maxLife: 0.7,
+        color: color,
+        size: Math.random() * 3 + 2
+      });
+    }
+  }
+
+  /* ============================================================
+     8. 核心物理更新 (Fixed Timestep 60Hz)
+     ============================================================ */
+  let keys = { left: false, right: false };
+  let touchDragDelta = 0;
+
+  function updatePhysics(dt) {
+    const curZone = getCurrentZone();
+
+    // 1. 畫面捲動速度 (隨層數微幅加速)
+    S.scrollSpeed = Math.min(CONFIG.maxScrollSpeed, CONFIG.baseScrollSpeed + (S.floor * 0.9));
+    const scrollDy = S.scrollSpeed * dt;
+    S.scrollOffset += scrollDy;
+
+    // 2. 玩家水平移動
+    let moveDir = 0;
+    if (keys.left) moveDir -= 1;
+    if (keys.right) moveDir += 1;
+
+    if (S.ctrlMode === 'drag' && Math.abs(touchDragDelta) > 0.1) {
+      P.vx = touchDragDelta * CONFIG.moveSpeed * 1.35;
+      touchDragDelta = 0;
+    } else {
+      if (moveDir !== 0) {
+        P.vx = moveDir * CONFIG.moveSpeed;
+        P.faceDir = moveDir;
+      } else {
+        // 地面摩擦 (冰塊平台滑溜)
+        const fric = (P.onPlatform && P.onPlatform.type === 'ice') ? 0.96 : (P.onPlatform ? CONFIG.friction : CONFIG.airFriction);
+        P.vx *= fric;
+        if (Math.abs(P.vx) < 5) P.vx = 0;
+      }
+    }
+
+    // 輸送帶平台影響
+    if (P.onPlatform) {
+      if (P.onPlatform.type === 'conveyor_left') P.vx -= 110;
+      if (P.onPlatform.type === 'conveyor_right') P.vx += 110;
+    }
+
+    P.x += P.vx * dt;
+
+    // 左右邊界反彈/限制
+    if (P.x - CONFIG.playerRadius < 6) {
+      P.x = 6 + CONFIG.playerRadius;
+      P.vx = 0;
+    } else if (P.x + CONFIG.playerRadius > LOGICAL_W - 6) {
+      P.x = LOGICAL_W - 6 - CONFIG.playerRadius;
+      P.vx = 0;
+    }
+
+    // 3. 玩家垂直運動
+    if (P.onPlatform) {
+      // 站在平台上隨平台往上捲動
+      P.y -= scrollDy;
+      P.vy = 0;
+
+      // 檢查是否走出平台範圍
+      if (P.x < P.onPlatform.x - 4 || P.x > P.onPlatform.x + P.onPlatform.w + 4 || P.onPlatform.broken) {
+        P.onPlatform = null;
+      }
+    } else {
+      // 空中自由落體
+      P.vy += CONFIG.gravity * dt;
+      if (P.vy > CONFIG.terminalVy) P.vy = CONFIG.terminalVy;
+      P.y += P.vy * dt;
+    }
+
+    // 4. 天花板尖刺碰撞檢測 (安全機制：不直接秒殺，推下並扣血加無敵)
+    const ceilingY = 28;
+    if (P.y - CONFIG.playerRadius <= ceilingY) {
+      P.y = ceilingY + CONFIG.playerRadius + 6;
+      P.vy = 160; // 往下彈推
+      P.onPlatform = null;
+
+      if (S.invincibleTimer <= 0) {
+        S.hp = Math.max(0, S.hp - 3);
+        S.invincibleTimer = 1.0; // 1秒無敵
+        S.flow = 0;
+        updateHP();
+        sfx.hurt();
+        addSparks(P.x, P.y, '#ef4444', 12);
+        if (S.hp <= 0) {
+          triggerGameOver('被天花板尖刺扎到了！');
+          return;
         }
+      }
+    }
 
-        function updateFlowUI() {
-            flowDisplay.textContent = `FLOW x${state.flow}`;
+    // 5. 掉入深淵 Game Over
+    if (P.y - CONFIG.playerRadius > LOGICAL_H + 20) {
+      triggerGameOver('掉進無底深淵！');
+      return;
+    }
+
+    // 6. 平台移動與碰撞
+    for (let i = platforms.length - 1; i >= 0; i--) {
+      const p = platforms[i];
+      p.y -= scrollDy;
+
+      // 假平台 (餅乾) 搖晃碎裂倒數
+      if (p.type === 'fake' && p.shakeTimer > 0) {
+        p.shakeTimer -= dt;
+        if (p.shakeTimer <= 0) {
+          p.broken = true;
+          sfx.break();
+          addSparks(p.x + p.w / 2, p.y + p.h / 2, '#d97706', 10);
         }
+      }
 
-        function updateMissionUI() {
-            if (!state.mission) return;
-            const icon = state.mission.completed ? '✅' : '🎯';
-            missionDisplay.textContent = `${icon} ${state.mission.label} ${state.mission.progress}/${state.mission.target}`;
+      // 雲朵淡出
+      if (p.type === 'cloud' && p.shakeTimer > 0) {
+        p.shakeTimer -= dt;
+        p.fadeAlpha = Math.max(0, p.shakeTimer / 1.5);
+        if (p.shakeTimer <= 0) {
+          p.broken = true;
+          addSparks(p.x + p.w / 2, p.y, '#ffffff', 8);
         }
+      }
 
-        function updatePhaseLabel() {
-            if (!state.isPlaying) return;
-            const elapsed = (Date.now() - state.gameStartAt) / 1000;
-            let text = '✨ 開場驚喜';
-            if (elapsed >= 120) text = '🏁 結尾獎勵';
-            else if (elapsed >= 30) text = '🚀 精彩時刻';
-            else if (elapsed >= 10) text = '🎯 任務暖身';
-            phaseDisplay.textContent = text;
+      // 玩家踩上平台碰撞判定 (只有在往下墜落且腳底掠過頂部時觸發)
+      if (!p.broken && P.vy >= 0 && !P.onPlatform) {
+        const footPrev = P.y - P.vy * dt + CONFIG.playerRadius;
+        const footCurr = P.y + CONFIG.playerRadius;
+
+        if (footPrev <= p.y + 4 && footCurr >= p.y - 2 &&
+            P.x + CONFIG.playerRadius * 0.7 > p.x &&
+            P.x - CONFIG.playerRadius * 0.7 < p.x + p.w) {
+          
+          // 成功著陸！
+          P.y = p.y - CONFIG.playerRadius;
+          P.vy = 0;
+          P.onPlatform = p;
+          P.squashX = 1.35;
+          P.squashY = 0.7;
+
+          // 更新玩家抵達的層數
+          if (p.floor > S.floor) {
+            S.floor = p.floor;
+            updateFloorUI();
+          }
+
+          // 處理平台特殊效果
+          handlePlatformLanding(p);
         }
+      }
 
-        function markMission(type, value) {
-            if (!state.mission || state.mission.completed) return;
-            if (state.mission.key === type) {
-                state.mission.progress = Math.max(state.mission.progress, Math.floor(value));
-                if (state.mission.progress >= state.mission.target) {
-                    state.mission.completed = true;
-                    state.hp = Math.min(CONFIG.maxHP, state.hp + 2);
-                    updateHP();
-                }
-            }
-            updateMissionUI();
+      // 移除超出頂部的平台
+      if (p.y + p.h < -20) {
+        platforms.splice(i, 1);
+      }
+    }
+
+    // 7. 新平台生成
+    const lowestPlatY = platforms.length > 0 ? Math.max(...platforms.map(pl => pl.y)) : 0;
+    if (lowestPlatY < LOGICAL_H + 40) {
+      S.generatedFloor++;
+
+      const nextY = Math.max(LOGICAL_H + 10, lowestPlatY + 76 + Math.random() * 20);
+
+      // 每 20 層為一區，中段第 15, 35, 55, 75, 95 層觸發數學題目
+      if (S.generatedFloor % 20 === 15 && S.generatedFloor - S.lastQuizFloor >= 15) {
+        S.lastQuizFloor = S.generatedFloor;
+        S.activeQuiz = generateMathQuiz(gradeParam);
+        showQuizPrompt(S.activeQuiz.question);
+        spawnMathTier(nextY, S.activeQuiz);
+      } else {
+        spawnPlatform(nextY);
+      }
+
+      // 闖關模式第 100 層勝利
+      if (S.mode === 'campaign' && S.floor >= S.targetFloor) {
+        triggerVictory();
+        return;
+      }
+    }
+
+    // 8. 無敵時間與角色擠壓恢復
+    if (S.invincibleTimer > 0) S.invincibleTimer -= dt;
+    P.squashX += (1 - P.squashX) * 0.15;
+    P.squashY += (1 - P.squashY) * 0.15;
+
+    // 9. 更新粒子
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const pt = particles[i];
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+      pt.life -= dt;
+      if (pt.life <= 0) particles.splice(i, 1);
+    }
+  }
+
+  /* ============================================================
+     9. 著陸互動處理
+     ============================================================ */
+  function handlePlatformLanding(p) {
+    // 增加連環落台 Flow
+    S.flow++;
+    if (S.flow > S.maxFlow) S.maxFlow = S.flow;
+    if (S.flow >= 3) {
+      flowPillEl.classList.remove('hidden');
+      flowCountEl.textContent = S.flow;
+    }
+
+    // 平台類型回饋
+    switch (p.type) {
+      case 'normal':
+        // 普通平台回 1 HP
+        if (S.hp < CONFIG.maxHP) {
+          S.hp = Math.min(CONFIG.maxHP, S.hp + 1);
+          updateHP();
+          sfx.heal();
+          addSparks(P.x, P.y, '#86efac', 5);
+        } else {
+          sfx.jump();
         }
+        break;
 
-        function applyDamage(amount) {
-            state.hp -= amount;
-            if (state.flow > 0) {
-                state.flow = 0;
-                updateFlowUI();
-            }
-            updateHP();
+      case 'rest':
+        // 休息關卡平台：大量回血 + 階段星幣結算
+        S.hp = CONFIG.maxHP;
+        updateHP();
+        sfx.heal();
+        addSparks(LOGICAL_W / 2, p.y, '#f4c542', 20);
+        const stageStars = 1;
+        S.starsEarnedThisGame += stageStars;
+        reportStars(stageStars, `通過第 ${p.floor} 層休息站`);
+        break;
+
+      case 'spring':
+        // 蘑菇彈簧
+        sfx.spring();
+        P.vy = CONFIG.jumpVy;
+        P.onPlatform = null;
+        P.squashX = 0.7;
+        P.squashY = 1.4;
+        addSparks(p.x + p.w / 2, p.y, '#f472b6', 10);
+        break;
+
+      case 'fake':
+        // 餅乾假平台：震動 0.3 秒後崩塌
+        if (p.shakeTimer === 0) {
+          p.shakeTimer = 0.32;
         }
+        sfx.jump();
+        break;
 
-        function startGame() {
-            menuScreen.classList.add('hidden');
-
-            // Reset State
-            state.hp = CONFIG.maxHP;
-            state.score = 0;
-            state.scrollSpeed = CONFIG.scrollSpeedBase;
-            state.distanceTraveled = 0;
-            state.flow = 0;
-            state.maxFlow = 0;
-            state.platformLands = 0;
-            state.mission = createMission();
-            state.gameStartAt = Date.now();
-            updateFlowUI();
-            updateMissionUI();
-            phaseDisplay.textContent = '✨ 開場驚喜';
-
-            // Player Start
-            state.player = {
-                x: canvas.width / 2 - CONFIG.playerSize / 2,
-                y: 100, // Start near top
-                vx: 0,
-                vy: 0,
-                grounded: false
-            };
-
-            updateHP();
-
-            // Generate Initial Platforms
-            state.platforms = [];
-            let y = 300;
-            while (y < canvas.height + 200) {
-                spawnPlatform(y);
-                y += 80 + Math.random() * 40; // Gap
-            }
-
-            // Ensure first platform is SAFE and under player
-            state.platforms.unshift({
-                x: canvas.width / 2 - 50,
-                y: 200,
-                w: 100,
-                h: CONFIG.platformH,
-                type: 'normal',
-                active: true
-            });
-
-            state.isPlaying = true;
-            state.lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
+      case 'cloud':
+        // 雲朵：1.5 秒後消失
+        if (p.shakeTimer === 0) {
+          p.shakeTimer = 1.5;
         }
+        sfx.jump();
+        break;
 
-        function spawnPlatform(y) {
-            // Difficulty scaling
-            const difficulty = Math.min(1.0, state.score / 2000);
-
-            // Random type based on difficulty
-            // Start simple, add spikes/fakes later
-            let type = 'normal';
-            if (state.score > 100) {
-                const rand = Math.random();
-                if (rand < 0.2 + difficulty * 0.1) type = 'spike';
-                else if (rand < 0.4) type = 'fake';
-                else if (rand < 0.6) type = 'spring';
-                else if (rand < 0.8) type = Math.random() > 0.5 ? 'conveyor_left' : 'conveyor_right';
-            }
-
-            const w = CONFIG.platformW;
-            const x = Math.random() * (canvas.width - w);
-
-            state.platforms.push({
-                x, y, w, h: CONFIG.platformH,
-                type,
-                active: true
-            });
+      case 'spike':
+        // 刺蝟尖刺：-4 HP + 1秒無敵
+        if (S.invincibleTimer <= 0) {
+          S.hp = Math.max(0, S.hp - 4);
+          S.invincibleTimer = 1.0;
+          S.flow = 0;
+          updateHP();
+          sfx.hurt();
+          addSparks(P.x, P.y, '#ef4444', 14);
+          if (S.hp <= 0) {
+            triggerGameOver('踩到尖刺怪獸受重傷！');
+          }
         }
+        break;
 
-        function gameOver() {
-            state.isPlaying = false;
-            menuScreen.classList.remove('hidden');
-            const missionText = state.mission && state.mission.completed
-                ? '✅ 任務完成'
-                : `🎯 任務 ${state.mission ? `${state.mission.progress}/${state.mission.target}` : '0/0'}`;
-            document.getElementById('menu-message').innerHTML = `DEPTH REACHED<br><span class="text-3xl text-white font-bold">${Math.floor(state.score)}m</span><br><span class="text-sm text-purple-200">${missionText}</span>`;
-            document.querySelector('#menu-screen h1').innerText = "GAME OVER";
-            document.getElementById('summary-flow').textContent = `最高 FLOW：${state.maxFlow}`;
-            document.getElementById('summary-mission').textContent = state.mission
-                ? `任務：${state.mission.label}（${state.mission.completed ? '完成' : '未完成'}）`
-                : '任務：未開始';
+      case 'math':
+        // 數學答案平台
+        if (p.isCorrect) {
+          sfx.correct();
+          addSparks(p.x + p.w / 2, p.y, '#f59e0b', 24);
+          S.hp = Math.min(CONFIG.maxHP, S.hp + 3);
+          S.flow += 3;
+          updateHP();
+          hideQuizPrompt('答對了！+3 ❤️ 氣勢大增！');
+        } else {
+          sfx.jump();
+          hideQuizPrompt(`正解是：${S.activeQuiz ? S.activeQuiz.answer : ''}，繼續前進！`);
         }
+        break;
 
-        function updateHP() {
-            if (state.hp <= 0) {
-                gameOver();
-                return;
-            }
-            const pct = (state.hp / CONFIG.maxHP) * 100;
-            hpBar.style.width = `${pct}%`;
+      default:
+        sfx.jump();
+        break;
+    }
+  }
 
-            // Color change
-            if (pct < 30) hpBar.className = "h-full bg-red-600 transition-all duration-200 animate-pulse";
-            else hpBar.className = "h-full bg-gradient-to-r from-red-500 to-green-500 transition-all duration-200";
+  function showQuizPrompt(text) {
+    quizQuestionEl.textContent = text;
+    quizBannerEl.classList.remove('hidden');
+  }
+
+  function hideQuizPrompt(feedbackMsg) {
+    quizQuestionEl.textContent = feedbackMsg;
+    setTimeout(() => {
+      quizBannerEl.classList.add('hidden');
+    }, 1800);
+  }
+
+  /* ============================================================
+     10. UI 與畫面繪製
+     ============================================================ */
+  function updateFloorUI() {
+    floorDisp.textContent = `第 ${S.floor} 層`;
+    const curZone = getCurrentZone();
+    zoneNameDisp.textContent = curZone.name;
+    depthTargetDisp.textContent = S.mode === 'campaign' ? '目標：100 層' : '無盡模式';
+  }
+
+  function updateHP() {
+    hpNumEl.textContent = S.hp;
+    const pct = Math.max(0, Math.min(100, (S.hp / CONFIG.maxHP) * 100));
+    hpFillEl.style.width = `${pct}%`;
+  }
+
+  function drawCeilingSpikes() {
+    const curZone = getCurrentZone();
+    ctx.fillStyle = curZone.ceilingColor;
+    const spikeW = 18;
+    const spikeH = 22;
+    const count = Math.ceil(LOGICAL_W / spikeW);
+    ctx.beginPath();
+    for (let i = 0; i < count; i++) {
+      const sx = i * spikeW;
+      ctx.moveTo(sx, 0);
+      ctx.lineTo(sx + spikeW / 2, spikeH);
+      ctx.lineTo(sx + spikeW, 0);
+    }
+    ctx.fill();
+
+    // 頂部陰影警示
+    const grad = ctx.createLinearGradient(0, 0, 0, 48);
+    grad.addColorStop(0, 'rgba(239, 68, 68, 0.45)');
+    grad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, LOGICAL_W, 48);
+  }
+
+  function drawPlatform(p) {
+    ctx.save();
+    if (p.fadeAlpha < 1.0) ctx.globalAlpha = p.fadeAlpha;
+
+    let shakeOffset = 0;
+    if (p.shakeTimer > 0 && p.type === 'fake') {
+      shakeOffset = (Math.random() - 0.5) * 4;
+    }
+
+    const rx = p.x + shakeOffset;
+    const ry = p.y;
+
+    switch (p.type) {
+      case 'normal':
+      case 'rest':
+        // 草地石磚平台
+        ctx.fillStyle = p.type === 'rest' ? '#f59e0b' : '#15803d';
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, p.w, p.h, 6);
+        ctx.fill();
+        // 頂層青草高光
+        ctx.fillStyle = p.type === 'rest' ? '#fde047' : '#4ade80';
+        ctx.fillRect(rx + 2, ry, p.w - 4, 4);
+        if (p.type === 'rest') {
+          ctx.fillStyle = '#78350f';
+          ctx.font = 'bold 11px system-ui';
+          ctx.textAlign = 'center';
+          ctx.fillText('⭐ 休息補給站 ⭐', rx + p.w / 2, ry + 12);
         }
+        break;
 
-        function handleTouch(side, active) {
-            if (!state.isPlaying) return;
-            if (side === 'left') state.keys.left = active;
-            if (side === 'right') state.keys.right = active;
+      case 'conveyor_left':
+      case 'conveyor_right':
+        // 滾動輸送帶木板
+        ctx.fillStyle = '#854d0e';
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, p.w, p.h, 6);
+        ctx.fill();
+        // 動態箭頭
+        ctx.fillStyle = '#fef08a';
+        ctx.font = 'bold 10px system-ui';
+        ctx.textAlign = 'center';
+        const arrowStr = p.type === 'conveyor_left' ? '◀ ◀ ◀' : '▶ ▶ ▶';
+        ctx.fillText(arrowStr, rx + p.w / 2, ry + 12);
+        break;
+
+      case 'spring':
+        // 蘑菇彈簧
+        ctx.fillStyle = '#ec4899';
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, p.w, p.h, 6);
+        ctx.fill();
+        // 圓點花紋
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(rx + p.w * 0.3, ry + p.h / 2, 3, 0, Math.PI * 2);
+        ctx.arc(rx + p.w * 0.5, ry + p.h / 2, 4, 0, Math.PI * 2);
+        ctx.arc(rx + p.w * 0.7, ry + p.h / 2, 3, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+
+      case 'fake':
+        // 裂紋餅乾平台
+        ctx.fillStyle = '#d97706';
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, p.w, p.h, 6);
+        ctx.fill();
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(rx + p.w * 0.3, ry);
+        ctx.lineTo(rx + p.w * 0.45, ry + p.h);
+        ctx.moveTo(rx + p.w * 0.6, ry);
+        ctx.lineTo(rx + p.w * 0.7, ry + p.h);
+        ctx.stroke();
+        break;
+
+      case 'cloud':
+        // 白雲平台
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, p.w, p.h, 8);
+        ctx.fill();
+        ctx.fillStyle = '#e0f2fe';
+        ctx.fillRect(rx + 4, ry + 2, p.w - 8, 3);
+        break;
+
+      case 'ice':
+        // 冰晶滑溜平台
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, p.w, p.h, 6);
+        ctx.fill();
+        ctx.fillStyle = '#e0f2fe';
+        ctx.fillRect(rx + 2, ry, p.w - 4, 3);
+        break;
+
+      case 'spike':
+        // 刺蝟尖刺怪獸
+        ctx.fillStyle = '#475569';
+        ctx.fillRect(rx, ry + 6, p.w, p.h - 6);
+        ctx.fillStyle = '#ef4444';
+        const numSpikes = Math.floor(p.w / 10);
+        ctx.beginPath();
+        for (let j = 0; j < numSpikes; j++) {
+          ctx.moveTo(rx + j * 10, ry + 6);
+          ctx.lineTo(rx + j * 10 + 5, ry);
+          ctx.lineTo(rx + j * 10 + 10, ry + 6);
         }
+        ctx.fill();
+        break;
 
-        document.addEventListener('keydown', e => {
-            if (e.key === 'ArrowLeft') state.keys.left = true;
-            if (e.key === 'ArrowRight') state.keys.right = true;
-            if (e.key === ' ' && !state.isPlaying) startGame();
-        });
+      case 'math':
+        // 數學題庫平台
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, p.w, p.h, 6);
+        ctx.fill();
+        ctx.fillStyle = '#78350f';
+        ctx.font = 'bold 12px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(`【 ${p.quizValue} 】`, rx + p.w / 2, ry + 12);
+        break;
+    }
 
-        document.addEventListener('keyup', e => {
-            if (e.key === 'ArrowLeft') state.keys.left = false;
-            if (e.key === 'ArrowRight') state.keys.right = false;
-        });
+    ctx.restore();
+  }
 
-        function update(dt) {
-            const p = state.player;
-            const wasGrounded = p.grounded;
+  function drawPlayer() {
+    ctx.save();
+    ctx.translate(P.x, P.y);
+    ctx.scale(P.squashX * P.faceDir, P.squashY);
 
-            updatePhaseLabel();
+    // 無敵閃爍
+    if (S.invincibleTimer > 0 && Math.floor(Date.now() / 80) % 2 === 0) {
+      ctx.globalAlpha = 0.45;
+    }
 
-            // 1. Movement
-            if (state.keys.left) p.vx = -CONFIG.moveSpeed;
-            else if (state.keys.right) p.vx = CONFIG.moveSpeed;
-            else p.vx = 0;
+    // 怪獸塔主角：圓潤有彈性的小怪獸
+    const r = CONFIG.playerRadius;
 
-            p.x += p.vx; // No time delta for movement in this simple logic or use dt? Let's use simple frame logic if dt ~ 1
-            // Use dt for consistency
-            // Actually, let's just stick to frame-paced if possible or robust dt
-            // dt is roughly 1.0 on 60fps
+    // 身體
+    ctx.fillStyle = '#3b82f6';
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
 
-            // 2. Physics - Gravity & Scroll
-            // Everything moves UP (visualized as player falling relative to world, but actually world scrolls up)
-            // In NS-SHAFT, player coordinates usually relative to screen.
-            // Platforms move UP. Player falls DOWN (Gravity).
+    // 肚子淺色弧形
+    ctx.fillStyle = '#93c5fd';
+    ctx.beginPath();
+    ctx.arc(0, 2, r * 0.65, 0, Math.PI);
+    ctx.fill();
 
-            p.y += p.vy * dt;
-            p.vy += CONFIG.gravity * dt;
+    // 大眼睛與表情
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(4, -3, 4.5, 0, Math.PI * 2);
+    ctx.fill();
 
-            // Scroll Speed Up
-            state.scrollSpeed = CONFIG.scrollSpeedBase + (state.score / 5000);
-            if (state.scrollSpeed > CONFIG.scrollSpeedMax) state.scrollSpeed = CONFIG.scrollSpeedMax;
+    ctx.fillStyle = '#1e1b4b';
+    ctx.beginPath();
+    ctx.arc(5.5, -3, 2.2, 0, Math.PI * 2);
+    ctx.fill();
 
-            // Move Platforms Up
-            state.platforms.forEach(plat => {
-                plat.y -= state.scrollSpeed * dt;
-            });
+    // 眼神高光
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(6.5, -4.2, 1, 0, Math.PI * 2);
+    ctx.fill();
 
-            // Move Player Up (if on platform)
-            if (p.grounded && p.onPlatform) {
-                p.y -= state.scrollSpeed * dt;
+    // 微笑腮紅
+    ctx.fillStyle = '#f472b6';
+    ctx.beginPath();
+    ctx.arc(6, 3, 2, 0, Math.PI * 2);
+    ctx.fill();
 
-                // Conveyor effect
-                if (p.onPlatform.type === 'conveyor_left') p.x -= 2 * dt;
-                if (p.onPlatform.type === 'conveyor_right') p.x += 2 * dt;
-            }
+    ctx.restore();
+  }
 
-            // Cleanup & Spawn Platforms
-            state.platforms = state.platforms.filter(plat => plat.y > -50);
-            const lastPlat = state.platforms[state.platforms.length - 1];
-            if (lastPlat && lastPlat.y < canvas.height - 80) { // Keep spawning ahead
-                spawnPlatform(canvas.height + 50);
-            }
-            if (state.platforms.length < 5) spawnPlatform(canvas.height + 50); // Fallback
+  function drawParticles() {
+    for (const pt of particles) {
+      ctx.fillStyle = pt.color;
+      ctx.globalAlpha = Math.max(0, pt.life / pt.maxLife);
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1.0;
+  }
 
-            // Wall Collisions
-            if (p.x < 0) p.x = 0;
-            if (p.x > canvas.width - CONFIG.playerSize) p.x = canvas.width - CONFIG.playerSize;
+  function render() {
+    const curZone = getCurrentZone();
 
-            // Platform Collisions (Only when falling)
-            p.grounded = false;
-            p.onPlatform = null;
+    // 背景漸層
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, LOGICAL_H);
+    bgGrad.addColorStop(0, '#111827');
+    bgGrad.addColorStop(1, curZone.bg);
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
 
-            if (p.vy > 0) { // Falling
-                for (let plat of state.platforms) {
-                    if (!plat.active) continue;
+    // 繪製平台
+    for (const p of platforms) {
+      drawPlatform(p);
+    }
 
-                    // Simple AABB
-                    if (p.x + CONFIG.playerSize > plat.x &&
-                        p.x < plat.x + plat.w &&
-                        p.y + CONFIG.playerSize >= plat.y &&
-                        p.y + CONFIG.playerSize <= plat.y + 20 // Tolerence
-                    ) {
-                        // Landed
-                        p.y = plat.y - CONFIG.playerSize;
-                        p.vy = 0;
-                        p.grounded = true;
-                        p.onPlatform = plat;
+    // 繪製粒子
+    drawParticles();
 
-                        // Effects
-                        if (plat.type === 'spring') {
-                            p.vy = -15; // Bounce
-                            p.grounded = false;
-                        }
-                        else if (plat.type === 'fake') {
-                            plat.active = false; // Break immediately
-                            // p.grounded = false; // Player continues falling next frame
-                        }
-                        else if (plat.type === 'spike') {
-                            if (state.time % 20 < 1) { // Damage tick
-                                applyDamage(1);
-                            }
-                            // Visual feedback?
-                            p.vy = 0; // Stand on spikes but get hurt
-                        }
-                        else {
-                            // Normal / Conveyor: Heal?
-                            // In classic, landing on normal platform stops score drop (if health drops over time?)
-                            // Let's do: Recover 1 HP if touched? No, that's too easy.
-                        }
+    // 繪製角色
+    drawPlayer();
 
-                        break; // Only land on one
-                    }
-                }
-            }
+    // 天花板尖刺
+    drawCeilingSpikes();
+  }
 
-            if (p.grounded && !wasGrounded && p.onPlatform && p.onPlatform.type !== 'spike') {
-                state.platformLands++;
-                state.flow++;
-                if (state.flow > state.maxFlow) state.maxFlow = state.flow;
-                updateFlowUI();
-                markMission('land', state.platformLands);
-                markMission('flow', state.maxFlow);
-            }
+  /* ============================================================
+     11. 遊戲主循環 (固定時間步長 60Hz)
+     ============================================================ */
+  let lastTimestamp = 0;
+  let accumulator = 0;
 
-            // Ceiling Spikes (Top of screen)
-            if (p.y < 20) {
-                // Warning
-                spikeWarning.classList.remove('hidden');
-                // Damage
-                applyDamage(0.2 * dt); // Fast drain
-                // Push down ?? No, just hurt
-                // p.y = 20; 
-            } else {
-                spikeWarning.classList.add('hidden');
-            }
+  function gameLoop(timestamp) {
+    if (!lastTimestamp) lastTimestamp = timestamp;
+    let elapsed = (timestamp - lastTimestamp) / 1000;
+    lastTimestamp = timestamp;
 
-            // Bottom Death
-            if (p.y > canvas.height) {
-                state.hp = 0;
-                updateHP();
-            }
+    if (elapsed > 0.25) elapsed = 0.25; // 避免切換視窗時暴衝
+    accumulator += elapsed * timeScale;
 
-            // Score Logic (Depth)
-            if (state.isPlaying) {
-                state.distanceTraveled += state.scrollSpeed * dt;
-                state.score = Math.floor(state.distanceTraveled / 10);
-                scoreDisplay.innerText = state.score + ' m';
-                markMission('depth', state.score);
-            }
-        }
+    if (S.running && !S.paused) {
+      let subSteps = 0;
+      while (accumulator >= DT && subSteps < MAX_SUB_STEPS) {
+        updatePhysics(DT);
+        accumulator -= DT;
+        subSteps++;
+      }
+    }
 
-        function draw() {
-            // Background
-            ctx.fillStyle = '#0f0f15';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+    render();
+    requestAnimationFrame(gameLoop);
+  }
 
-            // Platforms
-            state.platforms.forEach(p => {
-                if (!p.active && p.type === 'fake') return; // Don't draw broken fake
+  /* ============================================================
+     12. 流程控制 (開始、暫停、通關、死亡)
+     ============================================================ */
+  function startNewGame(mode) {
+    S.mode = mode;
+    S.running = true;
+    S.paused = false;
+    S.settled = false;
+    S.floor = 1;
+    S.generatedFloor = 1;
+    S.scrollSpeed = CONFIG.baseScrollSpeed;
+    S.scrollOffset = 0;
+    S.hp = CONFIG.maxHP;
+    S.invincibleTimer = 0;
+    S.flow = 0;
+    S.maxFlow = 0;
+    S.starsEarnedThisGame = 0;
+    S.activeQuiz = null;
+    S.lastQuizFloor = 0;
 
-                ctx.save();
+    P.x = LOGICAL_W / 2;
+    P.y = 80;
+    P.vx = 0;
+    P.vy = 0;
+    P.onPlatform = null;
 
-                // Style based on type
-                switch (p.type) {
-                    case 'normal':
-                        ctx.fillStyle = '#6b7280'; // Gray
-                        ctx.strokeStyle = '#e5e7eb';
-                        break;
-                    case 'conveyor_left':
-                        ctx.fillStyle = '#1e3a8a'; // Blue
-                        ctx.strokeStyle = '#60a5fa';
-                        // Arrows <<
-                        break;
-                    case 'conveyor_right':
-                        ctx.fillStyle = '#1e3a8a';
-                        ctx.strokeStyle = '#60a5fa';
-                        break;
-                    case 'spring':
-                        ctx.fillStyle = '#065f46'; // Green
-                        ctx.strokeStyle = '#34d399';
-                        break;
-                    case 'spike':
-                        ctx.fillStyle = '#7f1d1d'; // Red
-                        ctx.strokeStyle = '#f87171';
-                        break;
-                    case 'fake':
-                        ctx.fillStyle = '#9ca3af';
-                        ctx.strokeStyle = '#d1d5db';
-                        ctx.globalAlpha = 0.5;
-                        break;
-                }
+    platforms = [];
+    particles = [];
+    nextPlatformId = 1;
 
-                ctx.lineWidth = 2;
-                ctx.fillRect(p.x, p.y, p.w, p.h);
-                ctx.strokeRect(p.x, p.y, p.w, p.h);
+    // 起始普通平台
+    platforms.push({
+      id: nextPlatformId++,
+      x: LOGICAL_W / 2 - CONFIG.platformW / 2,
+      y: 160,
+      w: CONFIG.platformW,
+      h: CONFIG.platformH,
+      type: 'normal',
+      floor: 1,
+      shakeTimer: 0,
+      broken: false,
+      fadeAlpha: 1.0,
+      quizValue: null
+    });
 
-                // Details
-                if (p.type === 'spike') {
-                    // Draw spikes on top
-                    ctx.fillStyle = '#ef4444';
-                    ctx.beginPath();
-                    for (let i = 0; i < p.w; i += 10) {
-                        ctx.lineTo(p.x + i + 5, p.y - 10);
-                        ctx.lineTo(p.x + i + 10, p.y);
-                    }
-                    ctx.lineTo(p.x, p.y);
-                    ctx.fill();
-                } else if (p.type.includes('conveyor')) {
-                    ctx.fillStyle = '#fff';
-                    // Arrows
-                    const dir = p.type === 'conveyor_left' ? -1 : 1;
-                    const offset = (state.time * 2) % 20;
-                    for (let i = 0; i < p.w; i += 20) {
-                        const ax = p.x + i + (dir === 1 ? offset : -offset);
-                        // Wrap
-                        if (ax > p.x && ax < p.x + p.w) {
-                            ctx.fillText(dir === 1 ? '>>' : '<<', ax, p.y + 12);
-                        }
-                    }
-                }
+    // 預先鋪設前 5 個安全平台
+    for (let i = 1; i <= 5; i++) {
+      S.generatedFloor = i + 1;
+      spawnPlatform(160 + i * 85, 'normal');
+    }
 
-                ctx.restore();
-            });
+    updateFloorUI();
+    updateHP();
+    flowPillEl.classList.add('hidden');
+    quizBannerEl.classList.add('hidden');
 
-            // Player - 方塊風格 (Geometry Dash 風格)
-            const p = state.player;
-            const size = CONFIG.playerSize;
+    menuModal.classList.add('hidden');
+    pauseModal.classList.add('hidden');
+    overModal.classList.add('hidden');
+    winModal.classList.add('hidden');
+    hudEl.classList.remove('hidden');
 
-            // 發光效果
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = p.grounded ? '#22d3ee' : '#e879f9';
+    if (S.ctrlMode === 'buttons') {
+      btnControlsEl.classList.remove('hidden');
+    } else {
+      btnControlsEl.classList.add('hidden');
+    }
+  }
 
-            // 主體方塊
-            ctx.fillStyle = p.grounded ? '#22d3ee' : '#e879f9';
-            ctx.fillRect(p.x, p.y, size, size);
+  function triggerGameOver(reason) {
+    S.running = false;
+    sfx.hurt();
 
-            // 邊框
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(p.x, p.y, size, size);
+    // 更新個人最佳紀錄
+    if (S.floor > userSaved.bestFloor) {
+      userSaved.bestFloor = S.floor;
+    }
+    userSaved.totalStars = (userSaved.totalStars || 0) + S.starsEarnedThisGame;
+    saveGameData(userSaved);
 
-            // 像素風格眼睛
-            ctx.fillStyle = '#000';
-            const lookDir = state.keys.left ? -2 : (state.keys.right ? 2 : 0);
-            // 左眼
-            ctx.fillRect(p.x + 5 + lookDir, p.y + 7, 4, 5);
-            // 右眼
-            ctx.fillRect(p.x + 15 + lookDir, p.y + 7, 4, 5);
+    document.getElementById('over-title').textContent = S.floor >= 50 ? '太厲害了！' : '再接再厲！';
+    document.getElementById('over-desc').textContent = `${reason} 本次深入到第 ${S.floor} 層。`;
+    document.getElementById('over-floor').textContent = `第 ${S.floor} 層`;
+    document.getElementById('over-stars').textContent = `⭐ +${S.starsEarnedThisGame}`;
 
-            // 眼睛高光
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(p.x + 6 + lookDir, p.y + 8, 2, 2);
-            ctx.fillRect(p.x + 16 + lookDir, p.y + 8, 2, 2);
+    overModal.classList.remove('hidden');
+  }
 
-            ctx.shadowBlur = 0;
-        }
+  function triggerVictory() {
+    S.running = false;
+    sfx.correct();
 
-        function gameLoop(time) {
-            if (!state.isPlaying) return;
-            const deltaTime = time - state.lastTime;
-            state.lastTime = time;
-            state.time += 1; // Frames
+    const bonusStars = 3;
+    S.starsEarnedThisGame += bonusStars;
+    reportStars(bonusStars, '成功通關第 100 層大魔王');
 
-            // Normalize delta (target 60fps)
-            const dt = Math.min(deltaTime / 16.67, 4);
+    if (S.floor > userSaved.bestFloor) userSaved.bestFloor = S.floor;
+    userSaved.totalStars = (userSaved.totalStars || 0) + S.starsEarnedThisGame;
+    saveGameData(userSaved);
 
-            update(dt);
-            draw();
+    document.getElementById('win-stars').textContent = `⭐ +${S.starsEarnedThisGame}`;
+    winModal.classList.remove('hidden');
+  }
 
-            requestAnimationFrame(gameLoop);
-        }
+  /* ============================================================
+     13. 輸入控制與事件綁定
+     ============================================================ */
+  // 鍵盤控制
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+    if (e.code === 'KeyP' || e.code === 'Escape') togglePause();
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+  });
 
-        draw(); // Title bg
+  // 單指滑動控制 (相對拖曳，不遮擋小怪獸)
+  let lastTouchX = null;
+  canvas.addEventListener('pointerdown', (e) => {
+    if (S.ctrlMode === 'drag') {
+      lastTouchX = e.clientX;
+    }
+  });
+  window.addEventListener('pointermove', (e) => {
+    if (S.ctrlMode === 'drag' && lastTouchX !== null) {
+      const dx = e.clientX - lastTouchX;
+      lastTouchX = e.clientX;
+      touchDragDelta = dx / (canvas.clientWidth / LOGICAL_W);
+    }
+  });
+  window.addEventListener('pointerup', () => { lastTouchX = null; touchDragDelta = 0; });
+  window.addEventListener('pointercancel', () => { lastTouchX = null; touchDragDelta = 0; });
 
-    </script>
+  // 螢幕實體按鍵 (可選切換)
+  const ctrlLeft = document.getElementById('ctrl-left');
+  const ctrlRight = document.getElementById('ctrl-right');
+
+  function bindTouchBtn(btn, keyProp) {
+    const press = (e) => { e.preventDefault(); keys[keyProp] = true; };
+    const release = (e) => { e.preventDefault(); keys[keyProp] = false; };
+    btn.addEventListener('pointerdown', press);
+    btn.addEventListener('pointerup', release);
+    btn.addEventListener('pointercancel', release);
+    btn.addEventListener('pointerleave', release);
+  }
+  bindTouchBtn(ctrlLeft, 'left');
+  bindTouchBtn(ctrlRight, 'right');
+
+  // 控制模式切換
+  btnToggleCtrl.addEventListener('click', () => {
+    S.ctrlMode = S.ctrlMode === 'drag' ? 'buttons' : 'drag';
+    userSaved.ctrlMode = S.ctrlMode;
+    saveGameData(userSaved);
+    btnToggleCtrl.textContent = S.ctrlMode === 'drag' ? '單指滑動 👆' : '左右按鈕 ↔️';
+  });
+  btnToggleCtrl.textContent = S.ctrlMode === 'drag' ? '單指滑動 👆' : '左右按鈕 ↔️';
+
+  // 暫停控制
+  function togglePause() {
+    if (!S.running) return;
+    S.paused = !S.paused;
+    pauseModal.classList.toggle('hidden', !S.paused);
+  }
+  document.getElementById('btn-pause').addEventListener('click', togglePause);
+  document.getElementById('btn-resume').addEventListener('click', togglePause);
+  document.getElementById('btn-restart').addEventListener('click', () => startNewGame(S.mode));
+
+  // 背景切換自動暫停
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && S.running && !S.paused) {
+      togglePause();
+    }
+  });
+
+  // 按鈕點擊綁定
+  document.getElementById('btn-start').addEventListener('click', () => startNewGame('campaign'));
+  document.getElementById('btn-endless').addEventListener('click', () => startNewGame('endless'));
+  document.getElementById('btn-over-retry').addEventListener('click', () => startNewGame(S.mode));
+  document.getElementById('btn-over-menu').addEventListener('click', () => {
+    overModal.classList.add('hidden');
+    hudEl.classList.add('hidden');
+    menuModal.classList.remove('hidden');
+    menuBestEl.textContent = `${userSaved.bestFloor || 0} 層`;
+    menuStarsEl.textContent = `⭐ ${userSaved.totalStars || 0}`;
+  });
+  document.getElementById('btn-win-endless').addEventListener('click', () => startNewGame('endless'));
+  document.getElementById('btn-win-menu').addEventListener('click', () => {
+    winModal.classList.add('hidden');
+    hudEl.classList.add('hidden');
+    menuModal.classList.remove('hidden');
+  });
+
+  /* ============================================================
+     14. 測試掛勾 (window.__shaft)
+     ============================================================ */
+  window.__shaft = {
+    state: S,
+    player: P,
+    start: (mode = 'campaign') => startNewGame(mode),
+    pause: () => { S.paused = true; pauseModal.classList.remove('hidden'); },
+    resume: () => { S.paused = false; pauseModal.classList.add('hidden'); },
+    teleport: (fl) => { S.floor = fl; updateFloorUI(); },
+    setGod: (on) => { S.invincibleTimer = on ? 999999 : 0; },
+    getScore: () => S.floor
+  };
+
+  // 啟動主循環
+  requestAnimationFrame(gameLoop);
+
+})();
+</script>
 </body>
-
 </html>
