@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, ArrowRight, Globe, Home, LayoutGrid, Link2, Megaphone, Pause, Play, RotateCcw, ScrollText, Search, Star, Tag, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronsDownUp, ChevronsUpDown, Globe, Home, LayoutGrid, Link2, Megaphone, Pause, Play, RotateCcw, ScrollText, Search, Star, Tag, X } from 'lucide-react';
 import { useGameWindowController } from '../../hooks/useGameWindowController';
 import { useCompleteQuest } from '../../hooks/useQuests';
 import { GameModal } from '../../components/GameModal';
@@ -127,6 +127,22 @@ const writeIntroSeen = () => {
         /* 無法儲存就下次再顯示 */
     }
 };
+const COLLAPSED_KEY = 'ci-collapsed-islands';
+const readCollapsed = (): string[] => {
+    try {
+        const v: unknown = JSON.parse(localStorage.getItem(COLLAPSED_KEY) || '[]');
+        return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+    } catch {
+        return [];
+    }
+};
+const writeCollapsed = (ids: string[]) => {
+    try {
+        localStorage.setItem(COLLAPSED_KEY, JSON.stringify(ids));
+    } catch {
+        /* 無法儲存就只在這次有效 */
+    }
+};
 const isNarrow = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 860px)').matches;
 const prefersReduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const pickQuality = () => (isNarrow() || /Mobi|Android/i.test(navigator.userAgent) ? 'medium' : 'high');
@@ -178,6 +194,7 @@ const IslandView: React.FC<IslandViewProps> = ({ mode: viewMode, userId, starBal
     const [panelOpen, setPanelOpen] = useState(() => !isNarrow());
     const [tab, setTab] = useState<'list' | 'log'>('list');
     const [query, setQuery] = useState('');
+    const [collapsed, setCollapsed] = useState<string[]>(readCollapsed);
     const [names, setNames] = useState(true);
     const [flowsOn, setFlowsOn] = useState(true);
     const [paused, setPaused] = useState(false);
@@ -731,6 +748,15 @@ const IslandView: React.FC<IslandViewProps> = ({ mode: viewMode, userId, starBal
             return { isl, i, chs, show: chs.length > 0 || (islandHit && !q) };
         })
         .filter((x) => x.show);
+    // 搜尋時、或地圖上選到該島的建築時，一律展開
+    const selectedIslandId = selected?.type === 'building' ? challenges.get(selected.id)?.island.id : undefined;
+    const isOpen = (id: string) => !!q || id === selectedIslandId || !collapsed.includes(id);
+    const allOpen = list.every(({ isl }) => isOpen(isl.id));
+    const updateCollapsed = (next: string[]) => {
+        setCollapsed(next);
+        writeCollapsed(next);
+    };
+    const toggleIsland = (id: string) => updateCollapsed(collapsed.includes(id) ? collapsed.filter((x) => x !== id) : [...collapsed, id]);
 
     const stats = model.stats;
     const rootClass = ['ci-root', panelOpen ? 'panel-open' : '', tour ? 'touring' : '', viewMode === 'home' ? 'is-home' : ''].join(' ');
@@ -920,27 +946,50 @@ const IslandView: React.FC<IslandViewProps> = ({ mode: viewMode, userId, starBal
                     {tab === 'list' && (
                         <div role="tabpanel">
                             {list.length === 0 && <p className="ci-empty">找不到「{query}」相關的挑戰。</p>}
+                            {list.length > 0 && !q && (
+                                <div className="ci-list-tools">
+                                    <button type="button" onClick={() => updateCollapsed(allOpen ? list.map(({ isl }) => isl.id) : [])}>
+                                        {allOpen ? <ChevronsDownUp size={14} /> : <ChevronsUpDown size={14} />}
+                                        {allOpen ? '全部收合' : '全部展開'}
+                                    </button>
+                                </div>
+                            )}
                             {list.map(({ isl, i, chs }) => {
                                 const k = isl.challenges.filter((c) => c.status !== 'todo').length;
+                                const open = isOpen(isl.id);
                                 return (
-                                    <div key={isl.id} className="ci-isl">
-                                        <button
-                                            type="button"
-                                            className={`ci-isl-head ${selected?.type === 'island' && selected.id === isl.id ? 'is-sel' : ''}`}
-                                            onClick={() => select({ type: 'island', id: isl.id })}
-                                        >
-                                            <span className="ci-isl-no">{String(i + 1).padStart(2, '0')}</span>
-                                            <span className="ci-dot" style={{ background: isl.accent }} />
-                                            <span className="ci-isl-name">
-                                                {isl.icon} {highlight(isl.name, q)}
-                                            </span>
-                                            {!isl.hub && (
-                                                <span className="ci-isl-prog">
-                                                    {isl.locked ? `🔒 ${Math.min(stats.questsDone, stats.questTarget)}/${stats.questTarget}` : `${k}/${isl.challenges.length}`}
+                                    <div key={isl.id} className={`ci-isl ${open ? '' : 'is-collapsed'}`}>
+                                        <div className="ci-isl-row">
+                                            <button
+                                                type="button"
+                                                className={`ci-isl-head ${selected?.type === 'island' && selected.id === isl.id ? 'is-sel' : ''}`}
+                                                onClick={() => select({ type: 'island', id: isl.id })}
+                                            >
+                                                <span className="ci-isl-no">{String(i + 1).padStart(2, '0')}</span>
+                                                <span className="ci-dot" style={{ background: isl.accent }} />
+                                                <span className="ci-isl-name">
+                                                    {isl.icon} {highlight(isl.name, q)}
                                                 </span>
+                                                {!isl.hub && (
+                                                    <span className="ci-isl-prog">
+                                                        {isl.locked ? `🔒 ${Math.min(stats.questsDone, stats.questTarget)}/${stats.questTarget}` : `${k}/${isl.challenges.length}`}
+                                                    </span>
+                                                )}
+                                            </button>
+                                            {chs.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    className="ci-isl-fold"
+                                                    aria-expanded={open}
+                                                    aria-label={`${open ? '收合' : '展開'}${isl.name}`}
+                                                    disabled={!!q}
+                                                    onClick={() => toggleIsland(isl.id)}
+                                                >
+                                                    <ChevronDown size={18} />
+                                                </button>
                                             )}
-                                        </button>
-                                        <div className="ci-chs">
+                                        </div>
+                                        <div className="ci-chs" hidden={!open}>
                                             {chs.map((c) => (
                                                 <button
                                                     key={c.id}

@@ -184,7 +184,7 @@ let player = null;
 let wingmen = [], enemies = [], ebullets = [], pbullets = [], items = [], parts = [];
 let groups = {}, groupSeq = 0, queue = [], delayed = [];
 let shipIndex = 0, mode = 'standard', startStage = 0;
-let settlementReported = false, godMode = false;
+let starsPaid = 0, godMode = false;   // 這一場已經發出去的星星（每過一關先發一次）
 let bgCanvas = null, bgStars = [], decos = [], decoClock = 0;
 let moveDX = 0, moveDY = 0;
 
@@ -216,17 +216,17 @@ const STAT_LABELS = ['速度', '火力', '範圍'];
    ========================================================= */
 const THEMES = [
   { top: '#0b1030', mid: '#1a1f5c', bot: '#2b1d5e', neb: ['120,80,220', '60,160,230', '230,90,160'], planet: ['#6c5ce7', '#8e7cf0'],
-    enemy: [['#6fbf4a', '#3f8f2e'], ['#4fb3e8', '#2b6fa0'], ['#f472b6', '#b83280']], bullet: '255,150,50', deco: 'station' },
+    enemy: [['#6fbf4a', '#3f8f2e'], ['#4fb3e8', '#2b6fa0'], ['#f472b6', '#b83280']], bullet: '255,70,80', deco: 'station' },
   { top: '#121838', mid: '#272d68', bot: '#3d3672', neb: ['250,210,90', '120,140,255', '200,200,255'], planet: ['#f4c542', '#ffe08a'],
-    enemy: [['#facc15', '#a16207'], ['#a78bfa', '#6d28d9'], ['#60a5fa', '#1d4ed8']], bullet: '255,210,70', deco: 'cloud' },
+    enemy: [['#facc15', '#a16207'], ['#a78bfa', '#6d28d9'], ['#60a5fa', '#1d4ed8']], bullet: '185,105,255', deco: 'cloud' },
   { top: '#2a0f1f', mid: '#5a1a2a', bot: '#7a2c1a', neb: ['255,110,50', '255,60,90', '255,180,80'], planet: ['#ef4444', '#fb923c'],
     enemy: [['#fb923c', '#c2410c'], ['#f87171', '#b91c1c'], ['#facc15', '#b45309']], bullet: '200,130,255', deco: 'rock' },
   { top: '#0a2038', mid: '#14406b', bot: '#2a6e9a', neb: ['120,220,255', '180,200,255', '255,255,255'], planet: ['#7dd3fc', '#e0f2fe'],
-    enemy: [['#67e8f9', '#0e7490'], ['#c4b5fd', '#6d28d9'], ['#f0f9ff', '#64748b']], bullet: '255,120,90', deco: 'ice' },
+    enemy: [['#67e8f9', '#0e7490'], ['#c4b5fd', '#6d28d9'], ['#f0f9ff', '#64748b']], bullet: '255,60,110', deco: 'ice' },
   { top: '#04213a', mid: '#0a3d5c', bot: '#0f5a6e', neb: ['40,200,200', '60,120,255', '120,255,200'], planet: ['#14b8a6', '#5eead4'],
-    enemy: [['#2dd4bf', '#0f766e'], ['#38bdf8', '#0369a1'], ['#fb7185', '#be123c']], bullet: '255,170,60', deco: 'bubble' },
+    enemy: [['#2dd4bf', '#0f766e'], ['#38bdf8', '#0369a1'], ['#fb7185', '#be123c']], bullet: '255,70,80', deco: 'bubble' },
   { top: '#1a0b30', mid: '#3b1460', bot: '#5a1a6e', neb: ['255,90,200', '120,90,255', '255,200,90'], planet: ['#e879f9', '#f0abfc'],
-    enemy: [['#f472b6', '#9d174d'], ['#a78bfa', '#5b21b6'], ['#fbbf24', '#b45309']], bullet: '255,205,60', deco: 'rainbow' }
+    enemy: [['#f472b6', '#9d174d'], ['#a78bfa', '#5b21b6'], ['#fbbf24', '#b45309']], bullet: '255,80,70', deco: 'rainbow' }
 ];
 const theme = () => THEMES[game.stage] || THEMES[0];
 
@@ -478,13 +478,15 @@ function bulletSprite(kind, rgb) {
   if (kind === 'rice') {
     c.width = 24; c.height = 40;
     g.drawImage(glowSprite(rgb), -8, -4, 40, 48);
+    g.fillStyle = 'rgba(40,0,30,.85)'; g.beginPath(); g.ellipse(12, 20, 7, 12.5, 0, 0, TAU); g.fill();
     g.fillStyle = `rgb(${rgb})`; g.beginPath(); g.ellipse(12, 20, 5.5, 11, 0, 0, TAU); g.fill();
     g.fillStyle = '#fff'; g.beginPath(); g.ellipse(12, 20, 2.8, 7, 0, 0, TAU); g.fill();
   } else {
     c.width = c.height = 40;
     g.drawImage(glowSprite(rgb), 0, 0, 40, 40);
+    circle(g, 20, 20, 11.5, 'rgba(40,0,30,.85)');   // 深色外框：一眼分得出是敵彈
     circle(g, 20, 20, 10, `rgb(${rgb})`);
-    circle(g, 20, 20, 6.5, '#fff8e1');
+    circle(g, 20, 20, 6.5, '#fff');
   }
   bulletCache.set(key, c);
   return c;
@@ -638,7 +640,7 @@ function resetRun() {
     power: 1, fireT: 0, missileT: 0.3, bank: 0, vx: 0 };
   wingmen = []; enemies = []; ebullets = []; pbullets = []; items = []; parts = []; groups = {}; queue = []; delayed = [];
   moveDX = moveDY = 0;
-  settlementReported = false;
+  starsPaid = 0;
   Object.assign(game, { t: 0, score: 0, kills: 0, coins: 0, shake: 0, flash: 0, banner: null, toast: null, bombCd: 0, hintT: 4.5, boss: null });
   game.stage = clamp(startStage, 0, STAGES.length - 1);
   // 從中段關卡出擊時給一點補償火力，不然打不動後段魔王
@@ -676,6 +678,9 @@ function startBossPhase() {
 function clearStage() {
   const last = game.stage >= STAGES.length - 1;
   saveProgress(Math.min(STAGES.length - 1, game.stage + 1));
+  // 每過一關就先發星星，3 分鐘時間到也不會白打
+  const got = payStars(game.stage + 1, last, `銀河守衛：突破第 ${game.stage + 1} 關「${STAGES[game.stage].name}」`);
+  if (got > 0) toast(`+${got} ⭐ 星星已入帳`, '#ffd166');
   if (last) { game.phase = 'win'; game.phaseT = 2.6; banner('全部破關！', '銀河恢復和平了！', 2.6, '#ffd166'); return; }
   game.phase = 'clear';
   game.phaseT = 3.2;
@@ -1720,19 +1725,25 @@ function saveProgress(v) {
   try { localStorage.setItem(PROG_KEY, String(clamp(v, 0, STAGES.length - 1))); } catch {}
 }
 
-function reportSettlement(stars, score, kills) {
-  if (settlementReported || stars <= 0) return;
-  settlementReported = true;
-  const txId = `ember-corridor-${Date.now()}-${Math.floor(Math.random() * 999999)}`;
+// 星星總數算法維持原版；每次只補發「目前總數 − 已發」的差額
+function starTotal(cleared, win) {
+  return Math.max(1, Math.min(60,
+    Math.floor(game.score / 1600) + cleared * 4 + (win ? 12 : 0) + Math.floor(game.kills / 12)));
+}
+function payStars(cleared, win, description) {
+  const amount = starTotal(cleared, win) - starsPaid;
+  if (amount <= 0) return 0;
+  starsPaid += amount;
   const payload = {
     type: 'QUESTMON_EARN_STARS',
-    txId,
-    amount: stars,
+    txId: `ember-corridor-${Date.now()}-${Math.floor(Math.random() * 999999)}`,
+    amount,
     gameId: 'ember_corridor',
-    description: `銀河守衛結算：得分 ${score.toLocaleString()}，擊墜 ${kills} 架`,
+    description: `${description}（得分 ${game.score.toLocaleString()}，擊墜 ${game.kills} 架）`,
   };
   try { localStorage.setItem('ember_corridor_last_settlement', JSON.stringify(payload)); } catch {}
   try { window.parent?.postMessage(payload, '*'); } catch {}
+  return amount;
 }
 
 /* =========================================================
@@ -1815,10 +1826,8 @@ function endRun(win) {
   el('resKills').textContent = game.kills;
   el('resWeap').textContent = `${player.ship.name} Lv.${player.power}`;
   el('resReach').textContent = win ? '全破！' : `第 ${game.stage + 1} 關`;
-  const starsEarned = Math.max(1, Math.min(60,
-    Math.floor(game.score / 1600) + cleared * 4 + (win ? 12 : 0) + Math.floor(game.kills / 12)));
-  el('resStars').textContent = `+${starsEarned} ⭐`;
-  reportSettlement(starsEarned, game.score, game.kills);
+  payStars(cleared, win, win ? '銀河守衛：全部破關' : `銀河守衛：在第 ${game.stage + 1} 關被擊落`);
+  el('resStars').textContent = `+${starsPaid} ⭐`;   // 這一場合計（含過關時已發的）
   el('ovResult').classList.add('on');
 }
 

@@ -402,7 +402,53 @@
 .ci-isl {
   border-bottom: 1px solid var(--line);
 }
+.ci-list-tools {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 14px 0;
+}
+.ci-list-tools button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.ci-list-tools button:hover {
+  background: rgba(219, 106, 65, 0.08);
+  color: var(--coral);
+}
+.ci-isl-row {
+  display: flex;
+  align-items: stretch;
+}
+.ci-isl-fold {
+  flex: none;
+  width: 44px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+.ci-isl-fold:hover {
+  background: rgba(219, 106, 65, 0.06);
+  color: var(--coral);
+}
+.ci-isl-fold svg {
+  transition: transform 0.2s;
+}
+.ci-isl.is-collapsed .ci-isl-fold svg {
+  transform: rotate(-90deg);
+}
+.ci-isl-fold:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
 .ci-isl-head {
+  flex: 1;
+  min-width: 0;
   width: 100%;
   display: flex;
   align-items: center;
@@ -1015,4 +1061,7 @@
     animation: none !important;
     transition: none !important;
   }
+}
+.ci-isl-head:not(:last-child) {
+  padding-right: 4px;
 }
