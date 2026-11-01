@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, ArrowRight, ChevronDown, ChevronsDownUp, ChevronsUpDown, Globe, Home, LayoutGrid, Link2, Megaphone, Pause, Play, RotateCcw, ScrollText, Search, Star, Tag, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronLeft, ChevronRight, ChevronsDownUp, ChevronsUpDown, Globe, Home, LayoutGrid, Link2, Megaphone, Pause, Play, RotateCcw, ScrollText, Search, Star, Tag, X } from 'lucide-react';
 import { useGameWindowController } from '../../hooks/useGameWindowController';
 import { useCompleteQuest } from '../../hooks/useQuests';
 import { GameModal } from '../../components/GameModal';
@@ -888,6 +888,17 @@ const IslandView: React.FC<IslandViewProps> = ({ mode: viewMode, userId, starBal
 
             <aside className="ci-panel" aria-label="挑戰清單">
                 <button type="button" className="ci-sheet-handle" aria-label="展開或收合清單" onClick={() => setPanelOpen((v) => !v)} />
+                <button
+                    type="button"
+                    className="ci-panel-tab"
+                    aria-expanded={panelOpen}
+                    aria-label={panelOpen ? '收合右側清單' : '展開右側清單'}
+                    title={panelOpen ? '收合清單，看大地圖' : '展開清單'}
+                    onClick={() => setPanelOpen((v) => !v)}
+                >
+                    {panelOpen ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+                    <span>{panelOpen ? '收合' : '清單'}</span>
+                </button>
                 <div className="ci-panel-head">
                     <p className="ci-kicker">CHALLENGE ARCHIPELAGO</p>
                     <h1>一格挑戰，一座相連的群島</h1>
