@@ -25,10 +25,10 @@ describe('LearningHub', () => {
 
         render(<LearningHub items={items} onSelectItem={onSelectItem} />);
 
-        fireEvent.click(screen.getByRole('button', { name: /單字召喚術/i }));
+        fireEvent.click(screen.getByRole('button', { name: /英文書港/i }));
 
         expect(onSelectItem).toHaveBeenCalledTimes(1);
-        expect(onSelectItem.mock.calls[0][0].id).toBe('spelling');
+        expect(onSelectItem.mock.calls[0][0].id).toBe('english_harbour');
     });
 
     it('renders empty state when no items are available', () => {

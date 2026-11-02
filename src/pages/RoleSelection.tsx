@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../types/database';
 import { useUser } from '../contexts/UserContext';
+import { feedText, useFamilyWordFeed } from '../features/englishHarbour/useWordProgress';
 
 interface RoleSelectionProps {
     /** 點頭像 → 儀表板；點「進入我的群島」→ 群島 */
@@ -27,6 +28,7 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
     const [parentPassword, setParentPassword] = useState('');
     const [error, setError] = useState('');
 
+    const { data: wordFeed } = useFamilyWordFeed();
     const { data: children, isLoading } = useQuery({
         queryKey: ['children'],
         queryFn: async () => {
@@ -200,6 +202,23 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                             </div>
                         )}
                     </div>
+
+                    {/* 家人動態：今天在英文書港新熟悉的單字 */}
+                    {wordFeed && wordFeed.length > 0 && (
+                        <div className="mt-6 flex flex-col gap-2" data-testid="family-word-feed">
+                            {wordFeed.map((e) => (
+                                <div key={e.userId} className="flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: '#dfeccf' }}>
+                                    <span className="text-2xl">{e.avatar}</span>
+                                    <span className="font-body text-sm min-w-0" style={{ color: 'var(--color-text)' }}>
+                                        <b>{feedText(e)}</b> 📣
+                                        <span className="block text-xs truncate" style={{ color: 'var(--color-text-light)' }}>
+                                            {e.words.slice(-5).join('、')}
+                                        </span>
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 

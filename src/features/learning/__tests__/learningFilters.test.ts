@@ -15,7 +15,9 @@ describe('learningFilters', () => {
         const visibleItems = getVisibleLearningItems(LEARNING_ITEMS, ['sentence']);
 
         expect(visibleItems.some((item) => item.id === 'sentence')).toBe(false);
-        expect(visibleItems.some((item) => item.id === 'spelling')).toBe(true);
+        expect(visibleItems.some((item) => item.id === 'english_harbour')).toBe(true);
+        // 已併入英文書港的舊項目不再顯示
+        expect(visibleItems.some((item) => item.id === 'spelling')).toBe(false);
     });
 
     it('hides planned items by default', () => {
@@ -38,7 +40,7 @@ describe('learningFilters', () => {
         const manageableItems = getManageableLearningItems(LEARNING_ITEMS, [...visibleStatuses]);
         const firstFourIds = manageableItems.slice(0, 4).map((item) => item.id);
 
-        expect(firstFourIds).toEqual(['spelling', 'pronunciation', 'sentence', 'idiom']);
+        expect(firstFourIds).toEqual(['english_harbour', 'sentence', 'idiom', 'othello']);
     });
 
     it('groups items by subject in configured order', () => {

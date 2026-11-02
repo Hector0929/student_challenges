@@ -1154,7 +1154,7 @@ const IslandView: React.FC<IslandViewProps> = ({ mode: viewMode, userId, starBal
                     mode="practice"
                     practiceRewardStars={10}
                     onPracticeComplete={(stars) => grantPracticeReward(practiceItem, stars)}
-                    embeddedContent={getLearningEmbeddedContent(practiceItem)}
+                    embeddedContent={getLearningEmbeddedContent(practiceItem, userId)}
                 />
             )}
         </div>

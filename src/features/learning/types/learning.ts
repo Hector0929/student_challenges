@@ -4,7 +4,8 @@ export type LearningStageId = 'general' | 'elementary' | 'junior_high';
 
 export type LearningLauncherType = 'html' | 'react';
 
-export type LearningItemStatus = 'active' | 'planned';
+// retired：已被新版取代，檔案先留著備用，不再顯示
+export type LearningItemStatus = 'active' | 'planned' | 'retired';
 
 export interface LearningSubject {
     id: LearningSubjectId;

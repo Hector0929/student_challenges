@@ -128,6 +128,8 @@ export interface IslandModelInput {
     funGames: FunGame[];
     /** 台北時間 YYYY-MM-DD */
     today: string;
+    /** 今天在英文書港靠作答升到「熟悉」的單字（依時間排序） */
+    familiarWords?: Array<{ word: string; at: string }>;
     /** 冒險港功能建築；沒給就不畫冒險港 */
     features?: FeatureDef[];
 }
@@ -172,7 +174,7 @@ const ISLAND_LAYOUT: IslandLayout[] = [
         id: 'english', name: '英文書港', en: 'English Harbour', icon: '🔤',
         axial: [-1, 0], style: 'library', ground: '#bcd39a', accent: '#3f8f8a',
         summary: '單字、發音與句子，三座書塔圍出英文港口。',
-        learning: ['spelling', 'pronunciation', 'sentence'], subject: 'english',
+        learning: ['english_harbour', 'sentence'], subject: 'english',
     },
     {
         id: 'chinese', name: '成語古城', en: 'Idiom Old Town', icon: '📚',
@@ -229,23 +231,22 @@ const FLOWS: FlowDef[] = [
     { id: 'f8', from: 'area', to: 'volume', label: '面積 × 高', note: '把面積往上疊，就變成體積。' },
     { id: 'f9', from: 'fractions', to: 'linear_equation', label: '移項與通分', note: '解方程式常常會遇到分數係數。' },
     { id: 'f10', from: 'linear_equation', to: 'polynomials', label: '同類項', note: '合併同類項是解方程式的第一步。' },
-    { id: 'f11', from: 'spelling', to: 'pronunciation', label: '拼音對應', note: '會唸就比較會拼。' },
-    { id: 'f12', from: 'pronunciation', to: 'sentence', label: '從字到句', note: '認得單字後，練習把它們排成句子。' },
+    { id: 'f12', from: 'english_harbour', to: 'sentence', label: '從字到句', note: '認得單字後，練習把它們排成句子。' },
     { id: 'f13', from: 'idiom', to: 'sentence', label: '語感', note: '中英文的語序練習互相幫忙。' },
     { id: 'f14', from: 'othello', to: '2048_cyber', label: '策略思考', note: '都要先想好下一步。' },
     { id: 'f15', from: 'shooting', to: 'akila', label: '心算速度', note: '射擊遊戲考的是心算反應。' },
-    { id: 'f16', from: 'memory_matrix', to: 'spelling', label: '記憶力', note: '記住格子位置，也幫助記住字母順序。' },
+    { id: 'f16', from: 'memory_matrix', to: 'english_harbour', label: '記憶力', note: '記住格子位置，也幫助記住字母順序。' },
 ];
 
 // 今天沒有紀錄時的示範行程（只放學習項目，任務每家不同）
 const SUGGESTED: Array<[number, string, string]> = [
-    [390, 'pronunciation', '晨間聽力：起床先聽幾個英文單字。'],
+    [390, 'english_harbour', '晨間聽力：起床先複習幾個英文單字。'],
     [450, 'akila', '早餐前暖身，十題加法。'],
     [510, 'multiplication', '上學路上默背九九乘法。'],
     [600, 'area', '把長方形切成方格數面積。'],
     [690, 'fractions', '午餐切披薩，正好練分數。'],
     [780, 'idiom', '午休後的成語接龍。'],
-    [870, 'spelling', '英文課：單字召喚術。'],
+    [870, 'english_harbour', '英文課：到書港學新單字。'],
     [960, 'factors_multiples', '放學作業：找最大公因數。'],
     [1020, 'linear_equation', '挑戰一題國中方程式。'],
     [1080, 'othello', '晚餐前跟電腦下一盤黑白棋。'],
@@ -285,7 +286,7 @@ function questStatus(log: DailyLog | undefined): ChallengeStatus {
 }
 
 export function buildIslandModel(input: IslandModelInput): IslandModel {
-    const { quests, logs, transactions, learningItems, funGames, today, features } = input;
+    const { quests, logs, transactions, learningItems, funGames, today, features, familiarWords = [] } = input;
 
     // 交易依 game_id 彙整：學習看 earn（練習滿 3 分鐘才會發），遊戲看 spend（付費開玩）
     const counts = new Map<string, { today: number; total: number; minutes: number[] }>();
@@ -433,6 +434,16 @@ export function buildIslandModel(input: IslandModelInput): IslandModel {
             challengeId: tx.game_id.startsWith('monster_tower') ? towerId : '',
             kind: 'feature',
             text: `${tx.description.replace(/^🏰\s*/, '')}（+${tx.amount} 星幣）`,
+        });
+    }
+    // 英文書港：今天新熟悉的單字合成一則（時間記在最後一個字）
+    if (familiarWords.length && ids.has('english_harbour')) {
+        const sample = familiarWords.slice(-3).map((w) => w.word).join('、');
+        events.push({
+            minute: toTaipei(familiarWords[familiarWords.length - 1].at).minute,
+            challengeId: 'english_harbour',
+            kind: 'learning',
+            text: `今天又熟悉了 ${familiarWords.length} 個新單字（${sample}${familiarWords.length > 3 ? '…' : ''}），好棒！`,
         });
     }
     events.sort((a, b) => a.minute - b.minute);

@@ -27,7 +27,7 @@ export const LearningArea: React.FC<LearningAreaProps> = ({ userId, onGoHome }) 
 
     const learningItems = getVisibleLearningItems(LEARNING_ITEMS, disabledGames);
     const modalPayload = selectedItem ? toLearningModalPayload(selectedItem) : null;
-    const embeddedContent = selectedItem ? getLearningEmbeddedContent(selectedItem) : null;
+    const embeddedContent = selectedItem ? getLearningEmbeddedContent(selectedItem, userId) : null;
 
     // If learning area is disabled by parent, don't show at all
     if (!learningAreaEnabled) {

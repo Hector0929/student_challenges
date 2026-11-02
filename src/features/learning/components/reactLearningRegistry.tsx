@@ -8,13 +8,16 @@ import { VolumePractice } from './VolumePractice';
 import { LinearEquationPractice } from './LinearEquationPractice';
 import { PolynomialsPractice } from './PolynomialsPractice';
 import { OthelloPractice } from './OthelloPractice';
+import { EnglishHarbour } from '../../englishHarbour/EnglishHarbour';
 
-export const getLearningEmbeddedContent = (item: LearningItem): React.ReactNode | null => {
+export const getLearningEmbeddedContent = (item: LearningItem, userId = ''): React.ReactNode | null => {
     if (item.launcher.type !== 'react') {
         return null;
     }
 
     switch (item.launcher.target) {
+        case 'english_harbour':
+            return <EnglishHarbour userId={userId} />;
         case 'othello':
             return <OthelloPractice />;
         case 'fractions':

@@ -3,6 +3,24 @@ import type { LearningItem } from '../types/learning';
 
 export const LANGUAGE_LEARNING_ITEMS: LearningItem[] = [
     {
+        id: 'english_harbour',
+        name: '英文書港',
+        icon: '⚓',
+        description: '國小 1200 單字・依熟悉度複習',
+        subjectId: 'english',
+        stageId: 'general',
+        order: 0,
+        enabledByDefault: true,
+        status: 'active',
+        launcher: {
+            type: 'react',
+            target: 'english_harbour',
+        },
+        accentColorToken: 'teal',
+        tags: ['英文', '單字', '聽力', '拼字'],
+    },
+    {
+        // 已併入英文書港，檔案先留著
         id: 'spelling',
         name: '單字召喚術',
         icon: '🅰️',
@@ -11,7 +29,7 @@ export const LANGUAGE_LEARNING_ITEMS: LearningItem[] = [
         stageId: 'general',
         order: 1,
         enabledByDefault: true,
-        status: 'active',
+        status: 'retired',
         launcher: {
             type: 'html',
             target: '/games/spelling_game.html',
@@ -21,6 +39,7 @@ export const LANGUAGE_LEARNING_ITEMS: LearningItem[] = [
         tags: ['英文', '拼字'],
     },
     {
+        // 已併入英文書港，檔案先留著
         id: 'pronunciation',
         name: '發音選單字',
         icon: '👂',
@@ -29,7 +48,7 @@ export const LANGUAGE_LEARNING_ITEMS: LearningItem[] = [
         stageId: 'general',
         order: 2,
         enabledByDefault: true,
-        status: 'active',
+        status: 'retired',
         launcher: {
             type: 'html',
             target: '/games/pronunciation_game.html',
