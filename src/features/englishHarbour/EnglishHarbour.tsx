@@ -18,25 +18,8 @@ import {
     type WordProgress,
 } from './srs';
 import { feedText, taipeiDate, useFamilyWordFeed, useWordProgress, type FamilyFeedEntry } from './useWordProgress';
+import { speak, unlockSpeech } from './speech';
 import './englishHarbour.css';
-
-/* ---------- 發音 ---------- */
-const speak = (text: string, rate = 0.9) => {
-    const synth = typeof window !== 'undefined' ? window.speechSynthesis : undefined;
-    if (!synth) return;
-    synth.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    const voices = synth.getVoices();
-    const voice =
-        voices.find((v) => v.name.includes('Samantha') || v.name.includes('Siri')) ||
-        voices.find((v) => v.name.includes('Google US English')) ||
-        voices.find((v) => v.lang.startsWith('en-US')) ||
-        voices.find((v) => v.lang.startsWith('en'));
-    if (voice) u.voice = voice;
-    u.lang = 'en-US';
-    u.rate = rate;
-    synth.speak(u);
-};
 
 const shuffle = <T,>(list: T[]) => {
     const a = [...list];
@@ -158,7 +141,7 @@ export const EnglishHarbour: React.FC<{ userId: string }> = ({ userId }) => {
     }
 
     return (
-        <div className="eh-root" ref={rootRef}>
+        <div className="eh-root" ref={rootRef} onPointerDownCapture={unlockSpeech}>
             <div className="eh-wrap">{body}</div>
         </div>
     );
