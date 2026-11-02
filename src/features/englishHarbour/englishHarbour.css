@@ -558,3 +558,61 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* 聲音檢查 */
+.eh-check-link {
+  align-self: center;
+  background: none !important;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--eh-ink-soft, #8a7a68);
+  text-decoration: underline;
+  padding: 4px 8px;
+}
+.eh-check {
+  background: #fff;
+  border: 1px solid var(--eh-line);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+}
+.eh-check-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+}
+.eh-check-tip {
+  margin: 0;
+}
+.eh-check-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.eh-check-info {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  margin: 0;
+}
+.eh-check-info dt {
+  font-weight: 800;
+}
+.eh-check-info dd {
+  margin: 0;
+  word-break: break-word;
+}
+.eh-check-log {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  background: var(--eh-paper-2);
+  border-radius: 10px;
+  padding: 8px;
+  font-size: 12px;
+  white-space: pre-wrap;
+}

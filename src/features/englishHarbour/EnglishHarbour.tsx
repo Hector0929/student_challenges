@@ -18,7 +18,8 @@ import {
     type WordProgress,
 } from './srs';
 import { feedText, taipeiDate, useFamilyWordFeed, useWordProgress, type FamilyFeedEntry } from './useWordProgress';
-import { speak, unlockSpeech } from './speech';
+import { speak, stopAudioKeepAlive, unlockSpeech } from './speech';
+import { SpeechCheck } from './SpeechCheck';
 import './englishHarbour.css';
 
 const shuffle = <T,>(list: T[]) => {
@@ -62,6 +63,8 @@ export const EnglishHarbour: React.FC<{ userId: string }> = ({ userId }) => {
     });
     const [screen, setScreen] = useState<Screen>({ kind: 'home' });
     const rootRef = useRef<HTMLDivElement>(null);
+    // 離開書港就停掉藍牙耳機的保持喚醒
+    useEffect(() => stopAudioKeepAlive, []);
 
     useEffect(() => {
         rootRef.current?.scrollTo({ top: 0 });
@@ -175,6 +178,7 @@ const Home: React.FC<HomeProps> = ({ map, rows, today, newLeft, feed, missing, o
     const familiar = rows.filter((r) => r.level >= 3).length;
     const due = rows.filter((r) => r.level >= 1 && r.level <= 3 && r.due_on <= today).length;
     const practiced = rows.filter((r) => r.last_seen_at && taipeiDate(r.last_seen_at) === today).length;
+    const [checking, setChecking] = useState(false);
     const plan = due || newLeft ? `今天要複習 ${due} 個字、學 ${newLeft} 個新字，大約 3 分鐘。` : '今天的份量完成了！想多練可以再來一輪。';
 
     return (
@@ -202,6 +206,13 @@ const Home: React.FC<HomeProps> = ({ map, rows, today, newLeft, feed, missing, o
             <button type="button" className="eh-btn eh-pri eh-start" onClick={onStart} data-testid="eh-start">
                 ⚓ 開始今天的航行
             </button>
+            {checking ? (
+                <SpeechCheck onClose={() => setChecking(false)} />
+            ) : (
+                <button type="button" className="eh-check-link" onClick={() => setChecking(true)}>
+                    🔈 聽不到聲音？點這裡檢查
+                </button>
+            )}
             {feed.length > 0 && (
                 <div className="eh-feed">
                     {feed.map((e) => (
