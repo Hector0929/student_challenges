@@ -381,6 +381,15 @@ export const GameModal: React.FC<GameModalProps> = ({
         }
     }, [phase]);
 
+    // 2.2 Tell the iframe game to pause/resume: paused or time-up freezes the game until the player continues
+    useEffect(() => {
+        if (!isImmersivePhase) return;
+        const target = iframeRef.current?.contentWindow;
+        if (!target) return;
+        const type = phase === 'playing' ? 'QUESTMON_RESUME' : 'QUESTMON_PAUSE';
+        target.postMessage({ type, reason: phase }, window.location.origin);
+    }, [phase, isImmersivePhase]);
+
     // 2.5 Receive in-game settlement rewards from iframe games
     useEffect(() => {
         if (!isOpen || mode !== 'play' || !onEarnStars) return;

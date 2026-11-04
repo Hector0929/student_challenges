@@ -60,6 +60,39 @@ window.parent.postMessage({
 - **換 key 或換存檔格式時，第一次載入要讀舊 key 做遷移**，不能讓小孩掉關卡。
 - 所有 `localStorage` 存取都包 `try/catch`（無痕模式會丟例外）。
 
+### 1.4 暫停與時間到（必須遵守）
+
+**規則：3 分鐘時間到、或家長按暫停時，遊戲必須完全停住，不能在背景繼續跑。** 等玩家決定：
+- 按「繼續玩」（再付 5 星幣）→ 遊戲從停住的地方接著玩（iframe 不會重新載入，狀態都還在）。
+- 按「結束」或離開 → 關閉遊戲。
+
+以前 GameModal 只把 iframe 設成不能點（`pointerEvents: none`），遊戲其實還在跑：怪物照樣攻擊、計時照樣增加，玩家回來時可能已經死掉。**無盡模式尤其要注意**，時間到之後不能讓角色在背景被打死。
+
+GameModal 會在狀態改變時通知 iframe（`GameModal.tsx` 的「2.2」effect）：
+
+```js
+// GameModal → 遊戲
+{ type: 'QUESTMON_PAUSE',  reason: 'paused' | 'timeup' }  // 暫停或時間到
+{ type: 'QUESTMON_RESUME', reason: 'playing' }             // 繼續玩
+```
+
+遊戲端要這樣接：
+
+```js
+let hostPaused = false;
+window.addEventListener('message', (e) => {
+  if (e.origin !== window.location.origin || e.source !== window.parent) return;
+  if (e.data?.type === 'QUESTMON_PAUSE') { hostPaused = true; /* 停止更新、停止計時、停音效 */ }
+  if (e.data?.type === 'QUESTMON_RESUME') { hostPaused = false; lastFrame = performance.now(); /* 避免一次跳很大的 dt */ }
+});
+```
+
+- 遊戲迴圈在 `hostPaused` 時不更新（可以繼續畫面，但不前進）。
+- **遊戲內計時要用「累計遊玩秒數」**（每幀加 `dt`），不要用 `performance.now() - startAt`，否則暫停期間的時間會被算進去。升級選單、遊戲自己的暫停也一樣。
+- 恢復時重設 `lastFrame`，避免第一幀 `dt` 是暫停的整段時間。
+- 同時處理 `visibilitychange`（切走分頁自動暫停）。
+- 時間到之前已經賺的星星要先發掉（分段結算，見 §1.2、§6.1），不要等「遊戲結束」才發。
+
 ---
 
 ## 2. 這兩天做了什麼（總覽）
@@ -200,6 +233,7 @@ window.parent.postMessage({
 - [ ] 監聽 `pageerror` 與 4xx 回應，必須為 0。
 - [ ] 加測試掛勾 `window.__<game>` 與 `?ts=` 加速，寫自動遊玩機器人跑完所有關卡。
 - [ ] 再做一個「小孩程度」機器人（移動較慢、只看 0.3 秒內、忽略 30% 子彈），觀察死在哪裡、拿到多少星星，用來調難度。
+- [ ] 模擬 GameModal 送 `QUESTMON_PAUSE`：遊戲完全停住（計時、怪物、血量都不變），送 `QUESTMON_RESUME` 後接著玩（§1.4）。
 - [ ] 確認 `QUESTMON_EARN_STARS` 內容（在頁面 `addEventListener('message')` 收集）與星數合理（拿 5 星幣的入場費比較）。
 - [ ] 進度：不同 `userId` 互不影響、舊進度會遷移。寫成 `tests/<game>-progress.spec.ts`（參考 `tests/parkour-user-progress.spec.ts`、`tests/ember-corridor-progress.spec.ts`）。
 - [ ] `npx tsc -b --noEmit`、`npx eslint <改過的 ts/tsx>`。
@@ -210,7 +244,7 @@ window.parent.postMessage({
 
 1. ~~銀河守衛只在整場結束時結算~~ → 已改成每過一關發一次（見 §4.4）。其他遊戲新增結算時也請照這個模式，別只在整場結束才發。
 2. 銀河守衛的 `postMessage` 目標是 `'*'`（沿用舊版），方塊衝刺用 `window.location.origin`。新遊戲請用 `window.location.origin`。
-3. GameModal 不會傳訊息給 iframe（沒有暫停/時間到通知），遊戲無法得知 3 分鐘到了。
+3. ~~GameModal 不會傳訊息給 iframe~~ → 已加上 `QUESTMON_PAUSE` / `QUESTMON_RESUME`（見 §1.4）。**舊遊戲還沒有接**，改版時要一起加上。
 4. Vitest 有 6 個在這次修改前就失敗的測試（useWorldState、ChildWorldBankPanel、ChildWorldShopStreet、learningFilters ×2、LearningHub），不是遊戲改版造成的。跑 vitest 時排除 `.claude/**` 與 `tests/**`，並把輸出寫到檔案（用 pipe 容易卡住）。
 5. 本機 Playwright 用系統 Chrome：`executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'`；臨時腳本放在專案根目錄才找得到 `playwright` 套件（跑完刪掉）。`playwright.config.ts` 的 baseURL 是 `http://localhost:5173`，會自動 `npm run dev`。
 6. Vite dev 下 `/challenge-island/` 這種資料夾路徑會被 SPA 吃掉，要寫完整的 `.../index.html`。

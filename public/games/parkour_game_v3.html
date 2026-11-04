@@ -744,6 +744,8 @@ let cam = { x: 0, top: 0 };
 const cv = document.getElementById('game');
 const ctx = cv.getContext('2d');
 let W = 0, H = 0, T = 40, DPR = 1;
+// 直向手機的「轉橫」提示：第一次開始關卡後只顯示 2 秒，之後不再出現
+let rotateTipState = 'pending'; // pending | showing | done
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   W = innerWidth; H = innerHeight;
@@ -752,7 +754,7 @@ function resize() {
   // 橫向螢幕看約 12.5 列；矮螢幕（手機橫放）看約 8.2 列；直向手機以寬度為準
   const rowsVisible = H < 500 ? 8.2 : 12.5;
   T = Math.max(18, Math.min(H / rowsVisible, W / 15));
-  document.getElementById('rotate-tip').classList.toggle('hidden', !(H > W && W < 600 && S.mode !== 'menu'));
+  document.getElementById('rotate-tip').classList.toggle('hidden', !(H > W && W < 600 && S.mode !== 'menu' && rotateTipState !== 'done'));
 }
 addEventListener('resize', resize);
 resize();
@@ -1760,6 +1762,10 @@ function startStage(idx, fromCheckpoint = false) {
     if (S.stage.chase) banner(`⚠️ ${zoneOf(S.stage).chaser.name}追來了！一路往右逃！`, 'warn', 2.6);
     setTimeout(() => (document.getElementById('touch-hint').style.opacity = '0'), 5000);
   });
+  if (rotateTipState === 'pending') {
+    rotateTipState = 'showing';
+    setTimeout(() => { rotateTipState = 'done'; resize(); }, 2000);
+  }
   resize();
 }
 
