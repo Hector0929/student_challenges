@@ -132,7 +132,7 @@ export const FUN_GAMES: FunGame[] = [
         id: 'monster_survivor',
         name: '怪獸生存戰',
         icon: '🧛',
-        description: 'Vampire Survivors 風格生存挑戰',
+        description: '6 張地圖・3 位夥伴・關卡＋無盡模式',
         url: '/games/monster_survivor.html',
         color: 'bg-violet-600 hover:bg-violet-700'
     },
