@@ -499,7 +499,7 @@ export const useUpdateQuestAssignments = () => {
 // on RPC failure, it just returns { data: null, error }. Ignoring `error` here
 // previously caused currentBalance to silently default to 0, making every
 // game purchase report "星幣不足" regardless of the real balance.
-const fetchStarBalance = async (childId: string): Promise<number> => {
+export const fetchStarBalance = async (childId: string): Promise<number> => {
     const { data, error } = await supabase
         .rpc('get_child_star_balance', { child_id: childId });
 

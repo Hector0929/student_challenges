@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { MONSTERS, type MonsterId } from './useTowerProgress';
+import { fetchStarBalance } from './useQuests';
 
 export interface MonsterShopItem {
     id?: string;
@@ -163,18 +164,9 @@ export const usePurchaseMonster = () => {
 
             const price = item.price as number;
 
-            // Verify balance
-            let currentBalance = 0;
-            try {
-                const { data } = await supabase.rpc('get_child_star_balance', { child_id: userId });
-                currentBalance = Number(data || 0);
-            } catch {
-                const { data: tx } = await supabase
-                    .from('star_transactions')
-                    .select('amount')
-                    .eq('user_id', userId);
-                currentBalance = (tx || []).reduce((sum, t) => sum + (t.amount || 0), 0);
-            }
+            // Verify balance — 用和畫面顯示同一個計算方式（fetchStarBalance），
+            // 否則 RPC 失敗時這裡會把餘額當成 0，永遠顯示「星幣不足」
+            const currentBalance = await fetchStarBalance(userId);
 
             if (currentBalance < price) {
                 throw new Error(`星幣不足，需要 ${price} 星幣`);
