@@ -1,0 +1,77 @@
+{
+  "note": "句子重組題庫（原創）。每個世界一組；句子的第一個字大寫、句尾標點黏在最後一個字上，答案只有一種排法。",
+  "worlds": {
+    "meadow": [
+      { "en": "I have two cats.", "zh": "我有兩隻貓。" },
+      { "en": "The dog is brown.", "zh": "那隻狗是咖啡色的。" },
+      { "en": "I see three birds.", "zh": "我看到三隻鳥。" },
+      { "en": "My bag is blue.", "zh": "我的書包是藍色的。" },
+      { "en": "The frog is green.", "zh": "青蛙是綠色的。" },
+      { "en": "How many pigs are there?", "zh": "那裡有幾隻豬？" },
+      { "en": "Ducks can swim.", "zh": "鴨子會游泳。" },
+      { "en": "The elephant is very big.", "zh": "大象非常大。" },
+      { "en": "My favorite color is pink.", "zh": "我最喜歡的顏色是粉紅色。" },
+      { "en": "There are ten fish.", "zh": "有十條魚。" }
+    ],
+    "lake": [
+      { "en": "I want some milk.", "zh": "我想要一些牛奶。" },
+      { "en": "She likes apples.", "zh": "她喜歡蘋果。" },
+      { "en": "Wash your hands.", "zh": "洗你的手。" },
+      { "en": "My head hurts.", "zh": "我的頭好痛。" },
+      { "en": "Your coat is warm.", "zh": "你的外套很溫暖。" },
+      { "en": "These shoes are new.", "zh": "這雙鞋子是新的。" },
+      { "en": "He has big eyes.", "zh": "他有大大的眼睛。" },
+      { "en": "Do you like noodles?", "zh": "你喜歡麵條嗎？" },
+      { "en": "I eat bread for breakfast.", "zh": "我早餐吃麵包。" },
+      { "en": "Her hat is red.", "zh": "她的帽子是紅色的。" }
+    ],
+    "lava": [
+      { "en": "The book is on the desk.", "zh": "書在書桌上。" },
+      { "en": "Open the window, please.", "zh": "請打開窗戶。" },
+      { "en": "It is sunny today.", "zh": "今天天氣晴朗。" },
+      { "en": "I sleep in my bed.", "zh": "我睡在我的床上。" },
+      { "en": "May I use your pencil?", "zh": "我可以用你的鉛筆嗎？" },
+      { "en": "The flowers are beautiful.", "zh": "這些花很漂亮。" },
+      { "en": "It is raining outside.", "zh": "外面正在下雨。" },
+      { "en": "We read in the classroom.", "zh": "我們在教室裡讀書。" },
+      { "en": "The moon is bright tonight.", "zh": "今晚的月亮很亮。" },
+      { "en": "Clean your room.", "zh": "打掃你的房間。" }
+    ],
+    "storm": [
+      { "en": "What time is it?", "zh": "現在幾點？" },
+      { "en": "It is seven o'clock.", "zh": "現在七點整。" },
+      { "en": "I take the bus to school.", "zh": "我搭公車去上學。" },
+      { "en": "Today is Monday.", "zh": "今天是星期一。" },
+      { "en": "The park is near my home.", "zh": "公園在我家附近。" },
+      { "en": "He rides a bike.", "zh": "他騎腳踏車。" },
+      { "en": "Let's go to the zoo.", "zh": "我們去動物園吧。" },
+      { "en": "My birthday is in May.", "zh": "我的生日在五月。" },
+      { "en": "The train is fast.", "zh": "火車很快。" },
+      { "en": "Where is the hospital?", "zh": "醫院在哪裡？" }
+    ],
+    "temple": [
+      { "en": "I like to play basketball.", "zh": "我喜歡打籃球。" },
+      { "en": "She is a doctor.", "zh": "她是醫生。" },
+      { "en": "We like to sing.", "zh": "我們喜歡唱歌。" },
+      { "en": "My father is a cook.", "zh": "我爸爸是廚師。" },
+      { "en": "I am very happy.", "zh": "我非常開心。" },
+      { "en": "The game is fun.", "zh": "這個遊戲很好玩。" },
+      { "en": "He wants to be a pilot.", "zh": "他想當飛行員。" },
+      { "en": "Can you swim?", "zh": "你會游泳嗎？" },
+      { "en": "The soup is too hot.", "zh": "湯太燙了。" },
+      { "en": "They play soccer after school.", "zh": "他們放學後踢足球。" }
+    ],
+    "star": [
+      { "en": "This is my mother.", "zh": "這是我的媽媽。" },
+      { "en": "Who is that boy?", "zh": "那個男孩是誰？" },
+      { "en": "We are good friends.", "zh": "我們是好朋友。" },
+      { "en": "Please sit down.", "zh": "請坐下。" },
+      { "en": "She is reading a book.", "zh": "她正在看書。" },
+      { "en": "What are you doing?", "zh": "你正在做什麼？" },
+      { "en": "Tom can run fast.", "zh": "Tom 跑得很快。" },
+      { "en": "How old are you?", "zh": "你幾歲？" },
+      { "en": "Thank you very much.", "zh": "非常謝謝你。" },
+      { "en": "I help my grandma at home.", "zh": "我在家幫奶奶的忙。" }
+    ]
+  }
+}

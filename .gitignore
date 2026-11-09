@@ -29,3 +29,6 @@ dist-ssr
 # Raw 3D model source packs (selected models are in public/models/)
 3Dmodles/
 .claude/
+
+# 產圖原始檔（去背前），不部署
+public/images/monsters/*/_raw/

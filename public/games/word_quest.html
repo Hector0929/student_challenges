@@ -1,0 +1,1323 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<title>怪獸單字闖關</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --ink: #2a2230;
+  --muted: #7a6f80;
+  --paper: #fffaf2;
+  --paper-2: #f3e9da;
+  --line: #2a2230;
+  --gold: #f5b83d;
+  --good: #3fa35b;
+  --bad: #e2513f;
+  --hp: #4cc46a;
+  --acc: #5b8def;
+  --sky1: #bfe7ff;
+  --sky2: #eaf8d8;
+  --ground: #8acb6b;
+  --round: "Fredoka", "Noto Sans TC", system-ui, sans-serif;
+  --sans: "Noto Sans TC", system-ui, -apple-system, "PingFang TC", sans-serif;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--acc) 35%, #1d1a2b), #16131f 70%);
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+button:disabled { cursor: default; }
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+img { -webkit-user-drag: none; }
+#app {
+  max-width: 520px; height: 100dvh; margin: 0 auto; display: flex; flex-direction: column;
+  background: var(--paper); position: relative; overflow: hidden;
+  padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ---------- top bar ---------- */
+.topbar { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: var(--paper); border-bottom: 3px solid var(--line); z-index: 3; }
+.pill { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 10px; border-radius: 12px; border: 2.5px solid var(--line); background: #fff; font: 700 15px var(--round); white-space: nowrap; box-shadow: 0 3px 0 var(--line); }
+.pill:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.pill.icon { width: 36px; justify-content: center; padding: 0; font-size: 17px; }
+.world-pick { flex: 1; min-width: 0; justify-content: center; background: color-mix(in srgb, var(--acc) 18%, #fff); }
+.world-pick span { overflow: hidden; text-overflow: ellipsis; }
+.mini-av { width: 26px; height: 26px; object-fit: contain; }
+
+/* ---------- screens ---------- */
+.screen { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 8px 10px; border-top: 3px solid var(--line); background: var(--paper); }
+.tab { display: grid; justify-items: center; gap: 2px; padding: 6px 0 5px; border-radius: 14px; border: 2.5px solid var(--line); background: #fff; font-weight: 900; font-size: 14px; box-shadow: 0 3px 0 var(--line); }
+.tab b { font-size: 22px; line-height: 1; }
+.tab[aria-pressed="true"] { background: var(--gold); }
+
+/* ---------- map ---------- */
+.map { position: relative; min-height: 100%; background: linear-gradient(180deg, var(--sky1), var(--sky2) 70%, var(--ground)); overflow: hidden; }
+.map-head { position: relative; z-index: 2; margin: 12px; padding: 10px 14px; border-radius: 16px; border: 2.5px solid var(--line); background: rgba(255, 250, 242, 0.92); box-shadow: 0 4px 0 var(--line); }
+.map-head b { font: 700 20px var(--round); display: block; }
+.map-head small { color: var(--muted); font-size: 13px; line-height: 1.5; display: block; }
+.map-field { position: relative; height: 560px; margin: 0 8px 16px; }
+.map-field svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.node { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; width: 92px; }
+.node .tile { width: 84px; height: 84px; object-fit: contain; filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.18)); transition: transform 0.15s; }
+.node:not(:disabled):hover .tile { transform: translateY(-4px); }
+.node .num { position: absolute; top: 8px; font: 700 26px var(--round); color: #fff; -webkit-text-stroke: 2px var(--line); paint-order: stroke; }
+.node .boss-face { position: absolute; top: -26px; width: 78px; height: 78px; object-fit: contain; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.3)); animation: bob 2.4s ease-in-out infinite; }
+.node .lbl { margin-top: -6px; padding: 2px 8px; border-radius: 10px; background: rgba(255, 250, 242, 0.95); border: 2px solid var(--line); font-size: 12px; font-weight: 900; white-space: nowrap; }
+.node .st { font-size: 13px; letter-spacing: 1px; margin-top: 2px; }
+.node .st i { font-style: normal; color: #d8cfc2; -webkit-text-stroke: 1px var(--line); }
+.node .st i.on { color: var(--gold); }
+.node:disabled { filter: grayscale(1) opacity(0.55); }
+.node.next .tile { animation: bob 1.6s ease-in-out infinite; }
+.decor { position: absolute; font-size: 28px; opacity: 0.55; pointer-events: none; }
+@keyframes bob { 50% { transform: translateY(-6px); } }
+
+/* ---------- partner / book ---------- */
+.page { padding: 14px; display: grid; gap: 12px; align-content: start; }
+.card { border: 2.5px solid var(--line); border-radius: 16px; background: #fff; box-shadow: 0 4px 0 var(--line); padding: 14px; }
+.card h3 { margin: 0 0 8px; font: 700 18px var(--round); }
+.lvbar { height: 12px; border-radius: 99px; border: 2px solid var(--line); background: var(--paper-2); overflow: hidden; }
+.lvbar i { display: block; height: 100%; background: var(--acc); }
+.stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; }
+.stats dt { color: var(--muted); }
+.stats dd { margin: 0; font-weight: 700; }
+.wlist { display: grid; gap: 6px; }
+.wrow { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: var(--paper-2); }
+.wrow b { font: 600 18px var(--round); }
+.wrow span { flex: 1; color: var(--muted); font-size: 14px; }
+.wrow em { font-style: normal; font-size: 12px; color: var(--bad); font-weight: 900; }
+.big-btn { display: block; width: 100%; padding: 13px; border-radius: 14px; border: 2.5px solid var(--line); background: var(--gold); font-weight: 900; font-size: 17px; box-shadow: 0 4px 0 var(--line); }
+.big-btn:disabled { background: #e6ddd0; color: var(--muted); }
+.big-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.topic-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.topic-grid div { font-size: 13px; padding: 6px 8px; border-radius: 10px; background: var(--paper-2); display: flex; justify-content: space-between; gap: 6px; }
+
+/* ---------- battle ---------- */
+.battle { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.scene { position: relative; height: min(46dvh, 360px); flex: none; overflow: hidden; background: linear-gradient(180deg, var(--sky1), var(--sky2) 62%, var(--ground) 62%); border-bottom: 3px solid var(--line); }
+.scene .stage-tag { position: absolute; left: 10px; top: 10px; z-index: 4; padding: 4px 10px; border-radius: 10px; background: rgba(42, 34, 48, 0.78); color: #fff; font-size: 12px; font-weight: 700; }
+.scene .flee { position: absolute; right: 10px; top: 8px; z-index: 4; }
+.fighter { position: absolute; display: grid; justify-items: center; }
+.fighter .body { position: relative; display: grid; justify-items: center; }
+.fighter .mon { position: relative; z-index: 2; object-fit: contain; filter: drop-shadow(0 6px 4px rgba(0, 0, 0, 0.25)); transition: filter 0.2s; }
+/* 平台圖的方塊頂面大約在圖高 38% 的位置，怪獸往下壓到頂面上 */
+.fighter .plat { width: 100%; margin-top: -54%; z-index: 1; object-fit: contain; }
+.enemy { right: 3%; top: 4%; width: 40%; }
+.enemy .mon { width: 80%; animation: idle 2.2s ease-in-out infinite; }
+.enemy.boss { width: 44%; right: 2%; top: 3%; }
+.enemy.boss .mon { width: 92%; }
+.ally { left: 3%; bottom: -8%; width: 40%; }
+.ally .mon { width: 78%; animation: idle 2s ease-in-out infinite reverse; }
+@keyframes idle { 50% { transform: translateY(-5px); } }
+.plate { position: absolute; z-index: 3; min-width: 150px; padding: 6px 10px 7px; border-radius: 12px; border: 2.5px solid var(--line); background: rgba(255, 250, 242, 0.95); box-shadow: 0 3px 0 var(--line); }
+.plate .nm { display: flex; justify-content: space-between; gap: 8px; font-weight: 900; font-size: 13px; }
+.plate .nm small { font: 600 12px var(--round); color: var(--muted); }
+.hpbar { margin-top: 4px; height: 10px; border-radius: 99px; border: 2px solid var(--line); background: #3a3240; overflow: hidden; }
+.hpbar i { display: block; height: 100%; background: var(--hp); transition: width 0.45s ease, background 0.3s; }
+.plate.e { left: 10px; top: 42px; }
+.plate.a { right: 10px; bottom: 12px; }
+.gauge { display: flex; gap: 4px; margin-top: 5px; align-items: center; font-size: 11px; font-weight: 900; color: var(--muted); }
+.gauge i { width: 16px; height: 8px; border-radius: 4px; border: 1.5px solid var(--line); background: #e9e0d3; }
+.gauge i.on { background: var(--gold); }
+.gauge.full i { background: #ff7a3d; animation: glow 0.8s ease-in-out infinite alternate; }
+@keyframes glow { to { filter: brightness(1.4); } }
+.lunge-a .mon { animation: lungeA 0.45s ease; }
+.lunge-e .mon { animation: lungeE 0.45s ease; }
+.hit .mon { animation: hit 0.45s ease; filter: drop-shadow(0 0 0 #fff) brightness(1.8) saturate(0.4); }
+.faint .mon { animation: faint 0.8s ease forwards; }
+@keyframes lungeA { 40% { transform: translate(28%, -22%) scale(1.08); } }
+@keyframes lungeE { 40% { transform: translate(-26%, 22%) scale(1.08); } }
+@keyframes hit { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+@keyframes faint { to { transform: translateY(30%) scale(0.6); opacity: 0; } }
+.dmg { position: absolute; z-index: 6; font: 700 30px var(--round); color: #fff; -webkit-text-stroke: 3px var(--line); paint-order: stroke; pointer-events: none; animation: rise 0.9s ease forwards; }
+.dmg.crit { color: var(--gold); font-size: 36px; }
+.dmg.heal { color: #7dfc9a; }
+@keyframes rise { from { transform: translate(-50%, 0) scale(0.7); opacity: 0; } 20% { opacity: 1; transform: translate(-50%, -10px) scale(1.1); } to { transform: translate(-50%, -54px) scale(1); opacity: 0; } }
+.fx { position: absolute; z-index: 5; font-size: 54px; pointer-events: none; animation: fx 0.5s ease forwards; transform: translate(-50%, -50%); }
+@keyframes fx { from { transform: translate(-50%, -50%) scale(0.3) rotate(-20deg); opacity: 0; } 40% { opacity: 1; } to { transform: translate(-50%, -50%) scale(1.5) rotate(10deg); opacity: 0; } }
+.banner { position: absolute; left: 50%; top: 46%; z-index: 7; transform: translate(-50%, -50%); padding: 8px 18px; border-radius: 14px; border: 3px solid var(--line); background: var(--gold); font: 700 22px var(--round); white-space: nowrap; animation: pop 1.2s ease forwards; pointer-events: none; }
+@keyframes pop { 0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; } 15% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -60%) scale(1); } }
+
+.panel { flex: 1; min-height: 0; overflow-y: auto; margin: 10px; padding: 12px 14px; border-radius: 16px; border: 3px solid var(--line); background: #fff; box-shadow: 0 4px 0 var(--line); display: flex; flex-direction: column; gap: 10px; }
+.say-line { font-weight: 900; font-size: 16px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.say-line .who { color: var(--acc); }
+.say-line .sp { flex: 1; }
+.cmds { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cmd { text-align: left; padding: 10px 12px; border-radius: 14px; border: 2.5px solid var(--line); background: #fff; box-shadow: 0 3px 0 var(--line); display: grid; gap: 2px; }
+.cmd b { font-size: 17px; }
+.cmd small { font-size: 12px; color: var(--muted); line-height: 1.35; }
+.cmd:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.cmd:disabled { opacity: 0.45; }
+.cmd.atk { background: #ffe9e3; }
+.cmd.atk.ready { background: #ffd36b; animation: glow 0.8s ease-in-out infinite alternate; }
+.cmd.def { background: #e3efff; }
+.cmd.pot { background: #e5f7e3; }
+.cmd.run { background: #f1ebf4; }
+.prompt { text-align: center; display: grid; gap: 4px; justify-items: center; }
+.prompt .zh { font-size: 26px; font-weight: 900; line-height: 1.3; }
+.prompt .emo { font-size: 34px; line-height: 1; }
+.prompt .peek { font: 600 22px var(--round); color: #4a7fe0; letter-spacing: 2px; background: #eaf2ff; padding: 2px 12px; border-radius: 10px; }
+.prompt .peek.s { font-size: 17px; letter-spacing: 0; }
+.slots { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
+.slot { width: 40px; height: 46px; border-radius: 10px; border: 2.5px solid #c9bfb2; background: var(--paper-2); display: grid; place-items: center; font: 700 26px var(--round); }
+.slot.cur { border-color: var(--gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 40%, transparent); }
+.slot.done { border-color: var(--line); background: #fff; }
+.slot.gap { width: 14px; border: 0; background: none; }
+.tiles { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+.tl { min-width: 48px; height: 52px; padding: 0 10px; border-radius: 12px; border: 2.5px solid var(--line); background: #fff; box-shadow: 0 4px 0 var(--line); font: 700 26px var(--round); }
+.tl:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.tl.used { visibility: hidden; }
+.tl.bad { background: #ffd9d2; border-color: var(--bad); animation: hit 0.35s; }
+.tl.word { font-size: 19px; min-width: 0; }
+.built { min-height: 52px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; padding: 6px; border-radius: 12px; border: 2.5px dashed #c9bfb2; background: var(--paper-2); font: 600 20px var(--round); }
+.built span { padding: 4px 8px; border-radius: 8px; background: #fff; border: 2px solid var(--line); }
+.built:empty::before { content: "依序點下面的字，排出句子"; font: 500 14px var(--sans); color: var(--muted); }
+.qtools { display: flex; justify-content: center; gap: 8px; }
+.small-btn { padding: 6px 12px; border-radius: 10px; border: 2px solid var(--line); background: #fff; font-weight: 700; font-size: 14px; box-shadow: 0 2px 0 var(--line); }
+.log { font-size: 14px; color: var(--muted); text-align: center; min-height: 20px; }
+
+/* ---------- overlays ---------- */
+.overlay { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgba(22, 19, 31, 0.6); animation: fade 0.25s; }
+@keyframes fade { from { opacity: 0; } }
+.dialog { width: 100%; max-width: 400px; border-radius: 20px; border: 3px solid var(--line); background: var(--paper); box-shadow: 0 6px 0 var(--line); padding: 20px; display: grid; gap: 12px; justify-items: center; text-align: center; }
+.dialog h2 { margin: 0; font: 700 26px var(--round); }
+.dialog p { margin: 0; color: var(--muted); line-height: 1.6; }
+.dialog .big-stars { font-size: 46px; letter-spacing: 4px; }
+.dialog .big-stars i { font-style: normal; display: inline-block; color: #d8cfc2; -webkit-text-stroke: 2px var(--line); animation: starpop 0.4s both; }
+.dialog .big-stars i.on { color: var(--gold); }
+.dialog .big-stars i:nth-child(2) { animation-delay: 0.15s; }
+.dialog .big-stars i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes starpop { from { transform: scale(0); } 70% { transform: scale(1.25); } }
+.dialog .row { display: grid; gap: 8px; width: 100%; }
+.dialog .row.two { grid-template-columns: 1fr 1fr; }
+.ghost-btn { padding: 12px; border-radius: 14px; border: 2.5px solid var(--line); background: #fff; font-weight: 900; font-size: 16px; box-shadow: 0 4px 0 var(--line); }
+.reward { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.reward span { padding: 4px 10px; border-radius: 10px; background: #fff; border: 2px solid var(--line); font-weight: 700; font-size: 14px; }
+.intro-mons { display: flex; gap: 6px; justify-content: center; }
+.intro-mons button { border: 2.5px solid var(--line); border-radius: 14px; background: #fff; padding: 6px; display: grid; justify-items: center; gap: 2px; width: 31%; box-shadow: 0 3px 0 var(--line); }
+.intro-mons img { width: 100%; aspect-ratio: 1; object-fit: contain; }
+.intro-mons b { font-size: 13px; }
+.intro-mons small { font-size: 11px; color: var(--muted); line-height: 1.3; }
+.err { margin: auto; padding: 30px; text-align: center; }
+
+/* ---------- 挑戰等級 / 精英 / 圖鑑 ---------- */
+.tiers { display: grid; gap: 8px; width: 100%; }
+.tier { text-align: left; padding: 10px 12px; border-radius: 14px; border: 2.5px solid var(--line); background: #fff; box-shadow: 0 3px 0 var(--line); display: grid; gap: 2px; position: relative; }
+.tier b { font-size: 16px; }
+.tier b i { font-style: normal; color: var(--gold); -webkit-text-stroke: 1px var(--line); letter-spacing: 1px; }
+.tier small { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.tier em { position: absolute; right: 10px; top: 10px; font-style: normal; font-size: 12px; font-weight: 900; color: var(--good); }
+.tier.rec { background: color-mix(in srgb, var(--gold) 35%, #fff); }
+.tier:disabled { opacity: 0.45; }
+.tier:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.node.elite .tile { filter: drop-shadow(0 0 8px #ffcf3d) drop-shadow(0 6px 0 rgba(0, 0, 0, 0.18)); }
+.node.elite .boss-face { top: -18px; width: 66px; height: 66px; }
+.node.elite .alert { position: absolute; top: -34px; right: 8px; font-size: 24px; animation: bob 1s ease-in-out infinite; }
+.fighter .crown { position: absolute; z-index: 3; top: -6%; left: 50%; transform: translateX(-50%); font-size: 26px; }
+.enemy.rage .mon { animation: rage 0.5s ease-in-out infinite alternate; }
+@keyframes rage { to { transform: scale(1.06) translateY(-4px); } }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.choice { padding: 14px 8px; border-radius: 14px; border: 2.5px solid var(--line); background: #fff; box-shadow: 0 4px 0 var(--line); font: 700 22px var(--round); }
+.choice.bad { background: #ffd9d2; border-color: var(--bad); opacity: 0.5; }
+.choice.hint { background: #eaf2ff; border-color: #4a7fe0; box-shadow: 0 4px 0 #4a7fe0; }
+.choice.ok { background: #d8f5dc; border-color: var(--good); }
+.kb { display: grid; gap: 6px; }
+.kb div { display: flex; justify-content: center; gap: 5px; }
+.kb .tl { min-width: 0; width: 9%; max-width: 40px; height: 46px; padding: 0; font-size: 21px; box-shadow: 0 3px 0 var(--line); }
+.dex { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.dex button { border-radius: 12px; background: var(--paper-2); padding: 6px 4px; display: grid; justify-items: center; align-content: start; gap: 2px; border: 2.5px solid transparent; }
+.dex button.own { background: #fff; border-color: var(--line); box-shadow: 0 3px 0 var(--line); }
+.dex button[aria-pressed="true"] { background: color-mix(in srgb, var(--gold) 40%, #fff); }
+.dex em { font-style: normal; font-size: 10px; color: var(--muted); text-align: center; line-height: 1.25; }
+.dex .shard { width: 80%; height: 6px; border-radius: 99px; background: #e3d9cb; overflow: hidden; }
+.dex .shard i { display: block; height: 100%; background: #9b6be0; }
+.stars-badge { font: 600 15px var(--round); color: var(--gold); -webkit-text-stroke: 0.8px var(--line); }
+.evo-pop { animation: evopop 0.7s ease both; }
+.evo-tease { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 6px 10px; border-radius: 14px; background: rgba(255,207,61,.15); border: 2px dashed #ffcf3d; font-size: 13px; font-weight: 700; }
+.evo-tease img { width: 52px; height: 52px; object-fit: contain; filter: brightness(0) opacity(.55); }
+@keyframes evopop { 0% { transform: scale(0.3) rotate(-15deg); filter: brightness(3); } 60% { transform: scale(1.15); } }
+.dex img { width: 56px; height: 56px; object-fit: contain; }
+.dex .no img { filter: brightness(0) opacity(0.25) !important; }
+.dex button:disabled { cursor: default; }
+.dex b { font-size: 11px; text-align: center; line-height: 1.2; }
+.dex small { font-size: 11px; color: var(--gold); -webkit-text-stroke: 0.6px var(--line); letter-spacing: 1px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="app"><p class="err">載入中…</p></div>
+<script type="module">
+/* 怪獸單字闖關：帶著夥伴怪獸，用拼字和句子重組打倒各世界的怪獸。
+   單字：./word_quest/words.json（由 scripts/build-word-quest-data.mjs 從英文書港字庫產生）
+   句子：./word_quest/sentences.json（原創），另外會讀取家長在 QuestMon 設定的 customSentences。 */
+const IMG = (p) => `/images/${p}`;
+const KEY = "wq-progress-v1";
+
+/* ---------- 怪獸目錄 ----------
+   所有怪獸都能收集：打倒牠會掉碎片，集滿 5 片就收服成夥伴。
+   定位（role）和怪獸塔一致：守護／輸出／治癒／充能／破甲。
+   之後有新圖（見 monster_generator.md），只要改 img 和名字，id 不變，玩家的收集紀錄就會保留。 */
+const ROLES = {
+  guardian: { label: "守護", icon: "🛡️", hp: 1.25, atk: 0.9, def: 0.25 },
+  striker: { label: "輸出", icon: "⚔️", hp: 0.9, atk: 1.25, crit: 2.5 },
+  support: { label: "治癒", icon: "💚", hp: 1.05, atk: 1, regen: 0.08 },
+  controller: { label: "充能", icon: "⚡", hp: 1, atk: 1.1, gauge: 2 },
+  breaker: { label: "破甲", icon: "💥", hp: 1.05, atk: 1.1, bossDmg: 1.4 },
+};
+const CATALOG = [];
+const MON = {};
+function addMon(m) { CATALOG.push(m); MON[m.id] = m; return m.id; }
+const P_ = (id, name, img, role, extra = {}) => addMon({ id, name, img, role, partnerOnly: true, ...ROLES[role], ...extra });
+const E_ = (id, name, file, role, hue = 0) => addMon({ id, name, img: `monsters/new/${file}.png`, hue, role, ...ROLES[role] });
+const B_ = (id, name, role, file = id) => addMon({ id, name, img: `monsters/cutout/${file}.png`, role, boss: true, ...ROLES[role], hp: ROLES[role].hp + 0.1, atk: ROLES[role].atk + 0.1 });
+
+/* 夥伴型：只能用選擇或打倒魔王取得 */
+P_("penguin_knight", "企鵝騎士", "monsters/new/penguin_knight.png", "guardian");
+P_("phoenix_chick", "火鳳雛", "monsters/new/phoenix_chick.png", "striker");
+P_("moon_bunny", "月光兔", "monsters/new/moon_bunny.png", "support");
+P_("star_bit", "星星方塊", "monsters/new/star_bit.png", "controller", { unlock: "打倒泡泡湖魔王" });
+P_("valentine_diamond", "愛心鑽石", "monsters/new/valentine_diamond.png", "support", { hp: 1.15, atk: 1.05, regen: 0, potion: 1, unlock: "打倒雷雲小鎮魔王" });
+P_("ufo_king", "飛碟騎士王", "monsters/evolved/evolved_ufo_rider.png", "guardian", { hp: 1.2, atk: 1.2, crit: 2.5, unlock: "打倒星空要塞魔王" });
+const W_ = (...ids) => ids;
+const WORLD_MONS = {
+  meadow: W_(E_("mushroom_kin", "蘑菇仔", "mushroom_kin", "support"), E_("cactus_boy", "仙人掌牛仔", "cactus_boy", "breaker"), E_("wind_slime", "旋風史萊姆", "wind_slime", "controller"), E_("mossy_golem", "青苔石像", "mossy_golem", "guardian"), B_("boss_slime", "翡翠巨岩獸", "guardian")),
+  lake: W_(E_("ice_cube_slime", "冰塊史萊姆", "ice_cube_slime", "guardian"), E_("mystic_water", "水晶小妖", "mystic_water", "controller"), E_("sand_castle_crab", "沙堡蟹", "sand_castle_crab", "guardian"), E_("cloud_puff", "棉花雲", "cloud_puff", "support"), B_("boss_water", "珊瑚海龍王", "support")),
+  lava: W_(E_("magma_blob", "岩漿球", "magma_blob", "guardian"), E_("demon_imp", "小惡魔", "demon_imp", "controller"), E_("nian_beast", "年獸", "nian_beast", "striker"), E_("gold_mimic", "寶箱怪", "gold_mimic", "support"), B_("boss_flame", "烈焰火鳳", "striker")),
+  storm: W_(E_("storm_lord", "烏雲怪", "storm_lord", "breaker"), E_("ufo_rider", "外星飛碟", "ufo_rider", "breaker"), E_("thunder_mouse", "閃電鼠", "thunder_mouse", "striker"), E_("clock_owl", "時鐘貓頭鷹", "clock_owl", "controller"), B_("boss_storm", "雷霆烏雲王", "breaker", "boss_thunder_king")),
+  temple: W_(E_("rainbow_snail", "彩虹蝸牛", "rainbow_snail", "guardian"), E_("balloon_pup", "氣球小狗", "balloon_pup", "support"), E_("temple_cat", "黃金神殿貓", "temple_cat", "guardian"), E_("lantern_spirit", "燈籠精靈", "lantern_spirit", "support"), B_("boss_dragon", "彩虹飛龍", "striker")),
+  star: W_(E_("comet_fox", "彗星狐", "comet_fox", "striker"), E_("space_jelly", "太空水母", "space_jelly", "controller"), E_("astro_turtle", "小行星龜", "astro_turtle", "guardian"), E_("robo_scout", "機器人偵察兵", "robo_scout", "breaker"), B_("boss_ufo", "星際指揮官", "breaker")),
+};
+/* 進化後的名字；圖片固定放在 monsters/evo/<id>.png。
+   沒列在這裡的（魔王、飛碟騎士王）進化後用金色光環＋皇冠表示 */
+const EVO_NAMES = {
+  penguin_knight: "聖盾企鵝", phoenix_chick: "烈焰鳳凰", moon_bunny: "新月兔仙", star_bit: "閃耀星星", valentine_diamond: "天使愛心鑽",
+  mushroom_kin: "蘑菇長老", cactus_boy: "仙人掌警長", wind_slime: "龍捲風史萊姆", mossy_golem: "森林巨像",
+  ice_cube_slime: "冰晶王", mystic_water: "水晶法師", sand_castle_crab: "城堡蟹將軍", cloud_puff: "彩虹雲",
+  magma_blob: "黑曜岩漿獸", demon_imp: "火焰小魔王", nian_beast: "金鬃年獸", gold_mimic: "黃金寶藏龍",
+  storm_lord: "雷暴魔方", ufo_rider: "雙層飛碟", thunder_mouse: "發電鼠", clock_owl: "懷錶博士鴞",
+  rainbow_snail: "水晶彩虹蝸牛", balloon_pup: "嘉年華氣球犬", temple_cat: "神殿貓戰士", lantern_spirit: "寶塔燈籠",
+  comet_fox: "星座天狐", space_jelly: "太空站水母", astro_turtle: "小行星基地龜", robo_scout: "噴射機甲",
+};
+const EVO_ART = Object.fromEntries(Object.entries(EVO_NAMES).map(([id, name]) => [id, { name, img: `monsters/evo/${id}.png` }]));
+const STARTERS = ["penguin_knight", "phoenix_chick", "moon_bunny"];
+const UNLOCK_BY_BOSS = { lake: "star_bit", storm: "valentine_diamond", star: "ufo_king" };
+const SHARDS_TO_RECRUIT = 5;
+const UPGRADE_COST = { 2: 40, 3: 100, evo: 200 }; // 星塵
+const SHARD_DUST = 5; // 收服後多的碎片換成星塵
+
+const WORLDS = [
+  { id: "meadow", name: "晨露草原", icon: "🌱", topics: ["numbers", "colors", "animals"], tile: "grass", acc: "#5fb85a", sky: ["#bfe7ff", "#eaf8d8"], ground: "#8acb6b", decor: ["🌼", "🌳", "🦋", "🍀"] },
+  { id: "lake", name: "泡泡湖", icon: "💧", topics: ["food", "body", "clothes"], tile: "ice", acc: "#3aa6d8", sky: ["#b8e4ff", "#e8f7ff"], ground: "#8fd0e8", decor: ["🫧", "🐚", "💧", "🫧"] },
+  { id: "lava", name: "熔岩山谷", icon: "🔥", topics: ["home", "school", "nature"], tile: "lava", acc: "#e0623a", sky: ["#ffb98a", "#ffe3c4"], ground: "#a8553a", decor: ["🌋", "🔥", "🪨", "✨"] },
+  { id: "storm", name: "雷雲小鎮", icon: "⚡", topics: ["time", "transport", "places"], tile: "tech", acc: "#7a6fd6", sky: ["#8e95b8", "#d3d8ea"], ground: "#7a8299", decor: ["⚡", "☁️", "🌧️", "⚡"] },
+  { id: "temple", name: "彩虹神殿", icon: "🌈", topics: ["fun", "jobs", "describe"], tile: "temple", acc: "#e06fb0", sky: ["#ffd6ef", "#fff3d1"], ground: "#e9c98f", decor: ["🌈", "⭐", "🎈", "🌸"] },
+  { id: "star", name: "星空要塞", icon: "🛸", topics: ["people", "actions", "little"], tile: "tech", acc: "#5b4fc4", sky: ["#2b2566", "#6a5aa8"], ground: "#3a3270", decor: ["✨", "🌙", "⭐", "🪐"], dark: true },
+];
+for (const w of WORLDS) { const ids = WORLD_MONS[w.id]; w.enemies = ids.slice(0, 4).map((id) => MON[id]); w.boss = MON[ids[4]]; }
+const MAX_LEN = [6, 7, 8, 9, 12, 12];
+const NODE_POS = [[22, 88], [62, 78], [82, 60], [44, 50], [16, 32], [60, 13]];
+const STAGE_KIND = ["word", "word", "word", "sentence", "mix", "boss"];
+const KIND_LABEL = { word: "單字", sentence: "句子", mix: "綜合", boss: "魔王", train: "特訓", custom: "老師出題", elite: "精英" };
+const ENEMY_HP = { word: 100, sentence: 100, mix: 130, boss: 220, train: 100, custom: 110, elite: 140 };
+const XP_BASE = { word: 30, sentence: 35, mix: 40, boss: 90, train: 20, custom: 30, elite: 50 };
+/* 每一關有三個挑戰等級，打過前一級才能挑戰下一級；地圖上的星星就是打過的等級 */
+const TIERS = [
+  { name: "見習", icon: "🌱", hp: 0.8, atk: 0.8, xp: 0.7 },
+  { name: "騎士", icon: "⚔️", hp: 1, atk: 1, xp: 1 },
+  { name: "勇者", icon: "👑", hp: 1.3, atk: 1.25, xp: 1.5 },
+];
+const BOSS_GATE = 2; // 魔王要用騎士以上打倒，才能前往下一個世界
+const ELITE_MIN = 3; // 這個世界有幾個易錯單字時出現精英怪
+const ELITE_POS = [84, 38];
+const ENEMY_PREFIX = ["", "", "強化·"];
+function tierDesc(kind, lv) {
+  const w = ["看中文，選出英文單字", "用字母方塊拼出單字", "用整排鍵盤拼字，沒有字母提示"][lv - 1];
+  const s = ["第一個字已經幫你排好", "排出整句", "多了 2 個干擾字"][lv - 1];
+  const parts = [];
+  if (kind !== "sentence" && kind !== "custom") parts.push(`單字：${w}`);
+  if (kind === "sentence" || kind === "mix" || kind === "boss" || kind === "custom") parts.push(`句子：${s}`);
+  parts.push(["怪獸比較弱", "一般怪獸", kind === "boss" ? "強化怪獸，魔王剩一半血會狂暴化" : "強化怪獸，經驗 ×1.5"][lv - 1]);
+  return parts.join("・");
+}
+
+const app = document.getElementById("app");
+const $ = (s, r = app) => r.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const rnd = (n) => Math.floor(Math.random() * n);
+const pick = (a) => a[rnd(a.length)];
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* ---------- 存檔 ---------- */
+function loadP() {
+  let p = null;
+  try { p = JSON.parse(localStorage.getItem(KEY) || "null"); } catch { p = null; }
+  const obj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
+  p = obj(p);
+  /* v1 的 stages 是「表現星數」，當時的玩法就是騎士等級：打過的關卡換算成騎士通過 */
+  let stages = obj(p.stages);
+  if (p.v !== 2) stages = Object.fromEntries(Object.entries(stages).filter(([, v]) => Number(v) > 0).map(([k]) => [k, 2]));
+  /* 怪獸收集：{ id: { star: 0–3（0 = 還沒收服）, evo: 是否進化, shards: 碎片 } } */
+  const mons = {};
+  for (const [id, v] of Object.entries(obj(p.mons))) {
+    if (!MON[id]) continue;
+    const o = obj(v);
+    mons[id] = { star: clamp(Number(o.star) || 0, 0, 3), evo: o.evo === true, shards: Math.max(0, Number(o.shards) || 0) };
+  }
+  const own = (id) => { if (MON[id]) { mons[id] = mons[id] || { star: 0, evo: false, shards: 0 }; mons[id].star = Math.max(1, mons[id].star); } };
+  /* 三隻初始夥伴一開始就擁有；舊存檔解鎖過的夥伴也算收服 */
+  [...STARTERS, ...(Array.isArray(p.unlocked) ? p.unlocked : [])].forEach(own);
+  if (typeof p.partner === "string") own(p.partner);
+  /* 舊圖鑑以名字記錄，換成 id */
+  const dex = {};
+  for (const k of Object.keys(obj(p.dex))) { const m = MON[k] || CATALOG.find((x) => x.name === k); if (m) dex[m.id] = 1; }
+  return {
+    v: 3,
+    mons,
+    dust: Number.isFinite(p.dust) ? Math.max(0, p.dust) : 0,
+    dex,
+    eliteDay: obj(p.eliteDay),
+    partner: typeof p.partner === "string" && MON[p.partner] ? p.partner : null,
+    lv: Number.isFinite(p.lv) ? clamp(p.lv, 1, 30) : 1,
+    xp: Number.isFinite(p.xp) ? Math.max(0, p.xp) : 0,
+    potions: Number.isFinite(p.potions) ? clamp(p.potions, 0, 9) : 3,
+    stages,
+    wrong: obj(p.wrong),
+    known: obj(p.known),
+    world: Number.isFinite(p.world) ? clamp(p.world, 0, WORLDS.length) : 0,
+    sound: p.sound !== false,
+  };
+}
+const P = loadP();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch { /* 無法存檔時只保留這次的進度 */ } };
+const col = (id) => (P.mons[id] = P.mons[id] || { star: 0, evo: false, shards: 0 });
+const owned = (id) => (P.mons[id]?.star || 0) >= 1;
+function recruit(id) { const c = col(id); c.star = Math.max(1, c.star); P.dex[id] = 1; }
+/* 星級和進化後的實際能力 */
+function stats(id) {
+  const m = MON[id] || MON.penguin_knight;
+  const c = P.mons[id] || { star: 1, evo: false };
+  const mult = (1 + 0.1 * (Math.max(1, c.star) - 1)) * (c.evo ? 1.1 : 1);
+  const s = { ...m, hp: m.hp * mult, atk: m.atk * mult, star: Math.max(1, c.star), evo: c.evo };
+  if (c.evo) {
+    if (s.def) s.def = 0.15;
+    if (s.crit) s.crit = 3;
+    if (s.regen) s.regen += 0.04;
+    if (s.gauge) s.startGauge = 1;
+    if (s.bossDmg) s.bossDmg = 1.7;
+    if (s.potion) s.regen = 0.05;
+    const art = EVO_ART[id];
+    s.name = art?.name || `進化·${m.name}`;
+    if (art) { s.img = art.img; s.hue = 0; }
+    s.evoNoArt = !art;
+  }
+  return s;
+}
+function skillText(s) {
+  const t = [];
+  if (s.def) t.push(`防禦時只受 ${s.def === 0.25 ? "1/4" : Math.round(s.def * 100) + "%"} 傷害`);
+  if (s.crit) t.push(`必殺 ×${s.crit}`);
+  if (s.regen) t.push(`完美作答回復 ${Math.round(s.regen * 100)}% 體力`);
+  if (s.gauge) t.push(`${s.gauge} 次完美就能放必殺${s.startGauge ? "，開場先充 1 格" : ""}`);
+  if (s.bossDmg) t.push(`打魔王傷害 ×${s.bossDmg}`);
+  if (s.potion) t.push("藥水回復全部體力");
+  return t.join("・");
+}
+const partner = () => stats(owned(P.partner) ? P.partner : STARTERS.find(owned) || "penguin_knight");
+const xpNeed = (lv) => 60 + lv * 40;
+const maxHp = () => Math.round((40 + 6 * (P.lv - 1)) * partner().hp);
+const stageKey = (wid, n) => `${wid}-${n}`;
+const starsOf = (wid, n) => P.stages[stageKey(wid, n)] || 0;
+const worldCleared = (wi) => starsOf(WORLDS[wi].id, 6) >= BOSS_GATE;
+const worldOpen = (wi) => wi === 0 || worldCleared(wi - 1);
+const today = () => new Date().toLocaleDateString("sv");
+/* 這個世界主題裡拼錯過的單字 */
+function eliteWords(wi) {
+  const w = WORLDS[wi];
+  if (!w) return [];
+  return w.topics.flatMap((t) => TOPICS[t]?.words || []).filter((x) => P.wrong[x.en] > 0);
+}
+const monFilter = (m, extra = "") => [m.hue ? `hue-rotate(${m.hue}deg)` : "", m.evoNoArt ? "drop-shadow(0 0 6px #ffcf3d)" : "", extra || "drop-shadow(0 6px 4px rgba(0,0,0,.25))"].filter(Boolean).join(" ");
+/* 怪獸圖：含換色、進化光環 */
+const monImg = (m, cls = "", extra = "") => `<img class="${cls}" src="${IMG(m.img)}" alt="" style="filter:${monFilter(m, extra)}">`;
+/* 通用對話框：點按鈕先關閉，再執行動作 */
+function showOverlay(html, actions) {
+  const o = document.createElement("div");
+  o.className = "overlay";
+  o.innerHTML = `<div class="dialog">${html}</div>`;
+  app.append(o);
+  o.querySelectorAll("[data-o]").forEach((b) => b.addEventListener("click", () => { SFX.tap(); o.remove(); actions[b.dataset.o]?.(); }));
+  o.addEventListener("click", (e) => { if (e.target === o && actions.close) { o.remove(); actions.close(); } });
+  o.querySelector("[data-o]:not(:disabled)")?.focus();
+  return o;
+}
+const stageOpen = (wi, n) => worldOpen(wi) && (n === 1 || starsOf(WORLDS[wi].id, n - 1) > 0);
+const totalStars = () => Object.values(P.stages).reduce((s, v) => s + (Number(v) || 0), 0);
+
+/* ---------- 聲音 ---------- */
+let actx = null;
+function beep(freqs, dur = 0.09, type = "square", vol = 0.05) {
+  if (!P.sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = actx.currentTime;
+    freqs.forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type; o.frequency.value = f;
+      g.gain.setValueAtTime(vol, t0 + i * dur);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + (i + 1) * dur);
+      o.connect(g).connect(actx.destination);
+      o.start(t0 + i * dur); o.stop(t0 + (i + 1) * dur + 0.02);
+    });
+  } catch { /* 沒有音效也能玩 */ }
+}
+const SFX = {
+  tap: () => beep([880], 0.05, "triangle", 0.04),
+  bad: () => beep([180, 140], 0.1, "sawtooth", 0.05),
+  hit: () => beep([300, 220, 160], 0.06, "square", 0.06),
+  crit: () => beep([523, 784, 1046], 0.07, "square", 0.06),
+  heal: () => beep([660, 880, 990], 0.08, "sine", 0.06),
+  win: () => beep([523, 659, 784, 1046], 0.12, "triangle", 0.07),
+  lose: () => beep([392, 330, 262], 0.18, "triangle", 0.06),
+};
+const tts = "speechSynthesis" in window;
+let enVoice = null;
+function pickVoice() {
+  if (!tts) return;
+  const vs = speechSynthesis.getVoices().filter((v) => /^en[-_]/i.test(v.lang));
+  enVoice = vs.find((v) => /en[-_]US/i.test(v.lang) && v.localService) || vs.find((v) => /en[-_]US/i.test(v.lang)) || vs[0] || null;
+}
+if (tts) { pickVoice(); speechSynthesis.addEventListener?.("voiceschanged", pickVoice); }
+function speak(text, force = false) {
+  if (!tts || !text || (!P.sound && !force)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-US"; u.rate = 0.85;
+  if (enVoice) u.voice = enVoice;
+  speechSynthesis.speak(u);
+}
+
+/* ---------- 資料 ---------- */
+let TOPICS = {}, WORD_MAP = new Map(), SENTENCES = {}, CUSTOM = [];
+async function loadData() {
+  const [w, s] = await Promise.all([
+    fetch("./word_quest/words.json").then((r) => { if (!r.ok) throw Error("words.json " + r.status); return r.json(); }),
+    fetch("./word_quest/sentences.json").then((r) => { if (!r.ok) throw Error("sentences.json " + r.status); return r.json(); }),
+  ]);
+  for (const t of w.topics) {
+    TOPICS[t.id] = { ...t, words: t.words.map(([en, zh, emoji = ""]) => ({ en, zh, emoji, topic: t.id })) };
+    TOPICS[t.id].words.forEach((x) => WORD_MAP.set(x.en, x));
+  }
+  SENTENCES = s.worlds;
+  try {
+    const c = JSON.parse(localStorage.getItem("customSentences") || "null");
+    if (Array.isArray(c)) CUSTOM = c.filter((x) => x && typeof x.en === "string" && x.en.trim().split(/\s+/).length >= 2).map((x) => ({ en: x.en.trim(), zh: String(x.zh || "") }));
+  } catch { CUSTOM = []; }
+}
+const hasCustom = () => CUSTOM.length >= 3;
+
+/* ---------- 共用畫面 ---------- */
+let tab = "map";
+let keyHandler = null;
+document.addEventListener("keydown", (e) => { if (e.metaKey || e.ctrlKey || e.altKey) return; keyHandler?.(e); });
+function setTheme(w) {
+  const r = document.documentElement.style;
+  r.setProperty("--acc", w?.acc || "#5b8def");
+  r.setProperty("--sky1", w?.sky[0] || "#bfe7ff");
+  r.setProperty("--sky2", w?.sky[1] || "#eaf8d8");
+  r.setProperty("--ground", w?.ground || "#8acb6b");
+}
+function worldList() { return hasCustom() ? [...WORLDS, CUSTOM_WORLD] : WORLDS; }
+const CUSTOM_WORLD = { id: "custom", name: "老師的句子塔", icon: "🏫", tile: "temple", acc: "#d9822b", sky: ["#fde7c8", "#fff7e8"], ground: "#e7c48f", decor: ["📝", "✏️", "📚", "⭐"], custom: true };
+
+function shell(inner, { showTabs = true } = {}) {
+  const w = worldList()[P.world] || WORLDS[0];
+  const p = partner();
+  app.innerHTML = `
+    <div class="topbar">
+      <button class="pill icon" data-act="prevw" aria-label="上一個世界" ${tab !== "map" ? "hidden" : ""}>◀</button>
+      <button class="pill world-pick" data-act="${tab === "map" ? "nextw" : "tabmap"}"><span>${w.icon} ${esc(w.name)}</span></button>
+      <button class="pill icon" data-act="nextw" aria-label="下一個世界" ${tab !== "map" ? "hidden" : ""}>▶</button>
+      <button class="pill" data-act="tabpartner" aria-label="夥伴">${monImg(p, "mini-av", "none")}Lv${P.lv}</button>
+      <span class="pill">⭐${totalStars()}</span>
+      <button class="pill icon" data-act="sound" aria-label="音效">${P.sound ? "🔊" : "🔇"}</button>
+    </div>
+    <div class="screen">${inner}</div>
+    ${showTabs ? `<nav class="tabs">
+      <button class="tab" data-act="tabmap" aria-pressed="${tab === "map"}"><b>⚔️</b>冒險</button>
+      <button class="tab" data-act="tabpartner" aria-pressed="${tab === "partner"}"><b>🐾</b>夥伴</button>
+      <button class="tab" data-act="tabbook" aria-pressed="${tab === "book"}"><b>📕</b>單字本</button>
+    </nav>` : ""}`;
+  app.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => {
+    const a = b.dataset.act;
+    SFX.tap();
+    if (a === "prevw" || a === "nextw") {
+      const n = worldList().length;
+      P.world = (P.world + (a === "nextw" ? 1 : -1) + n) % n;
+      save(); render();
+    } else if (a === "sound") { P.sound = !P.sound; save(); if (!P.sound && tts) speechSynthesis.cancel(); render(); }
+    else if (a.startsWith("tab")) { tab = a.slice(3); render(); }
+  }));
+}
+function render() {
+  keyHandler = null;
+  if (!P.partner) return showIntro();
+  if (tab === "partner") return renderPartners();
+  if (tab === "book") return renderBook();
+  return renderMap();
+}
+
+/* ---------- 第一次：選夥伴 ---------- */
+function showIntro() {
+  setTheme(WORLDS[0]);
+  app.innerHTML = `<div class="screen map" style="display:grid;place-items:center">
+    <div class="dialog" style="margin:20px">
+      <h2>怪獸單字闖關</h2>
+      <p>選一隻夥伴怪獸，一起用英文單字和句子打倒各世界的怪獸！<br>打倒怪獸會掉碎片，集滿 5 片就能收服牠。</p>
+      <div class="intro-mons">${STARTERS.map((id) => {
+        const x = stats(id);
+        return `<button data-pick="${id}"><img src="${IMG(x.img)}" alt=""><b>${x.name}</b><small>${ROLES[x.role].icon}${ROLES[x.role].label}・${esc(skillText(x))}</small></button>`;
+      }).join("")}</div>
+    </div></div>`;
+  app.querySelectorAll("[data-pick]").forEach((b) => b.addEventListener("click", () => {
+    P.partner = b.dataset.pick;
+    save(); SFX.win(); render();
+  }));
+}
+
+/* ---------- 冒險地圖 ---------- */
+function renderMap() {
+  const list = worldList();
+  P.world = clamp(P.world, 0, list.length - 1);
+  const wi = P.world, w = list[wi];
+  setTheme(w);
+  const open = w.custom ? true : worldOpen(wi);
+  const nodes = w.custom ? [1, 2, 3] : [1, 2, 3, 4, 5, 6];
+  const pos = w.custom ? [[30, 80], [70, 52], [40, 22]] : NODE_POS;
+  const isOpen = (n) => (w.custom ? n === 1 || (P.stages[stageKey("custom", n - 1)] || 0) > 0 : stageOpen(wi, n));
+  const nextN = nodes.find((n) => isOpen(n) && !(P.stages[stageKey(w.id, n)] || 0));
+  const topicText = w.custom ? `家長在 QuestMon 設定的 ${CUSTOM.length} 個句子` : w.topics.map((t) => TOPICS[t]?.name).join("、");
+  const elites = !w.custom && open ? eliteWords(wi) : [];
+  const eliteMon = elites.length >= ELITE_MIN ? w.enemies[elites.length % w.enemies.length] : null;
+  const lockText = wi > 0 && starsOf(WORLDS[wi - 1].id, 6) > 0
+    ? `🔒 用「⚔️ 騎士 ★★」打倒「${esc(WORLDS[wi - 1].name)}」的魔王才能前往`
+    : `🔒 先打倒「${esc(WORLDS[wi - 1]?.name || "")}」的魔王才能前往`;
+  shell(`
+    <div class="map">
+      <div class="map-head"><b>${w.icon} ${esc(w.name)}</b><small>${open ? `主題：${esc(topicText)}<br>★ 見習 → ★★ 騎士 → ★★★ 勇者，越高級題目越難${w.custom ? "" : "；魔王要用騎士打倒才能前往下一個世界"}` : lockText}</small></div>
+      <div class="map-field">
+        ${w.decor.map((d, k) => `<span class="decor" style="left:${[6, 80, 70, 8][k]}%;top:${[8, 34, 86, 62][k]}%">${d}</span>`).join("")}
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pos.map(([x, y]) => `${x},${y}`).join(" ")}" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.6" stroke-dasharray="2 2" vector-effect="non-scaling-stroke" style="stroke-width:5px"/></svg>
+        ${nodes.map((n, k) => {
+          const st = P.stages[stageKey(w.id, n)] || 0;
+          const kind = w.custom ? "custom" : STAGE_KIND[n - 1];
+          const ok = open && isOpen(n);
+          return `<button class="node ${n === nextN ? "next" : ""}" style="left:${pos[k][0]}%;top:${pos[k][1]}%" data-stage="${n}" ${ok ? "" : "disabled"} aria-label="第 ${n} 關 ${KIND_LABEL[kind]}">
+            <img class="tile" src="${IMG(`tower-gen3/tile_${w.tile}.png`)}" alt="">
+            ${kind === "boss" ? `${monImg(w.boss, "boss-face", "drop-shadow(0 4px 4px rgba(0,0,0,.3))")}` : `<span class="num">${ok ? n : "🔒"}</span>`}
+            <span class="lbl">${kind === "boss" ? "👑 " : ""}${KIND_LABEL[kind]}</span>
+            <span class="st">${[1, 2, 3].map((s) => `<i class="${s <= st ? "on" : ""}">★</i>`).join("")}</span>
+          </button>`;
+        }).join("")}
+        ${eliteMon ? `<button class="node elite" style="left:${ELITE_POS[0]}%;top:${ELITE_POS[1]}%" data-elite aria-label="精英怪">
+            <img class="tile" src="${IMG(`tower-gen3/tile_${w.tile}.png`)}" alt="">
+            <img class="boss-face" src="${IMG(eliteMon.img)}" alt="" style="filter:${monFilter(eliteMon, "drop-shadow(0 0 6px #ffcf3d)")}">
+            <span class="alert">❗</span>
+            <span class="lbl">精英 · ${elites.length} 字</span>
+          </button>` : ""}
+      </div>
+    </div>`);
+  app.querySelectorAll("[data-stage]").forEach((b) => b.addEventListener("click", () => { SFX.tap(); pickTier(wi, +b.dataset.stage); }));
+  $("[data-elite]")?.addEventListener("click", () => {
+    SFX.tap();
+    const paid = P.eliteDay[w.id] === today();
+    showOverlay(`
+      <h2>❗ 精英「${esc(eliteMon.name)}」</h2>
+      <p>你在${esc(w.name)}拼錯過的 ${elites.length} 個單字，變成了精英怪！<br>打倒牠可以拿到額外經驗${paid ? "" : "和 🧪 藥水（每天一次）"}，拼對的單字也會從單字本畢業。</p>
+      <div class="row two"><button class="big-btn" data-o="go">挑戰！</button><button class="ghost-btn" data-o="close">等一下</button></div>`,
+    { go: () => startElite(wi, eliteMon), close: () => {} });
+  });
+}
+
+/* 選挑戰等級 */
+function pickTier(wi, n) {
+  const w = worldList()[wi];
+  const kind = w.custom ? "custom" : STAGE_KIND[n - 1];
+  const done = P.stages[stageKey(w.id, n)] || 0;
+  const rec = Math.min(done + 1, 3);
+  showOverlay(`
+    <h2>第 ${n} 關 · ${kind === "boss" ? "👑 " : ""}${KIND_LABEL[kind]}</h2>
+    <p>選擇挑戰等級</p>
+    <div class="tiers">${TIERS.map((t, i) => {
+      const lv = i + 1, ok = lv <= done + 1;
+      return `<button class="tier ${lv === rec ? "rec" : ""}" data-o="t${lv}" data-tier="${lv}" ${ok ? "" : "disabled"}>
+        <b>${t.icon} ${t.name} <i>${"★".repeat(lv)}</i></b>
+        <small>${ok ? esc(tierDesc(kind, lv)) : `🔒 先通過「${TIERS[i - 1].name}」`}</small>
+        ${lv <= done ? "<em>✔ 已通過</em>" : ""}</button>`;
+    }).join("")}</div>
+    <button class="ghost-btn" data-o="close" style="width:100%">取消</button>`, {
+    t1: () => startStage(wi, n, 1), t2: () => startStage(wi, n, 2), t3: () => startStage(wi, n, 3), close: () => {},
+  });
+}
+
+/* ---------- 夥伴 ---------- */
+function monWorld(id) {
+  const wid = Object.keys(WORLD_MONS).find((k) => WORLD_MONS[k].includes(id));
+  return WORLDS.find((w) => w.id === wid);
+}
+function renderPartners() {
+  setTheme(WORLDS[Math.min(P.world, WORLDS.length - 1)]);
+  const p = partner();
+  const c = col(p.id);
+  const next = c.star < 3 ? { label: `⬆️ 升到 ${"★".repeat(c.star + 1)}`, cost: UPGRADE_COST[c.star + 1], act: "star" } : !c.evo ? { label: "👑 進化", cost: UPGRADE_COST.evo, act: "evo" } : null;
+  const order = (m) => (owned(m.id) ? 0 : (P.mons[m.id]?.shards || 0) > 0 ? 1 : P.dex[m.id] ? 2 : 3);
+  const list = CATALOG.slice().sort((x, y) => order(x) - order(y));
+  const ownN = CATALOG.filter((m) => owned(m.id)).length;
+  shell(`<div class="page">
+    <div class="card">
+      <div style="display:flex;gap:12px;align-items:center">
+        ${monImg(p, "", "drop-shadow(0 4px 3px rgba(0,0,0,.2))").replace("<img ", '<img style="width:104px;height:104px;object-fit:contain" ')}
+        <div style="flex:1;display:grid;gap:5px">
+          <h3 style="margin:0">${esc(p.name)} <span class="stars-badge">${p.evo ? "👑" : ""}${"★".repeat(p.star)}</span></h3>
+          <small style="color:var(--muted);font-weight:700">${ROLES[p.role].icon} ${ROLES[p.role].label}型・訓練師 Lv ${P.lv}</small>
+          <div class="lvbar"><i style="width:${P.lv >= 30 ? 100 : (P.xp / xpNeed(P.lv)) * 100}%"></i></div>
+        </div>
+      </div>
+      <dl class="stats" style="margin-top:10px"><dt>體力</dt><dd>${maxHp()}</dd><dt>攻擊</dt><dd>${Math.round(p.atk * (1 + 0.04 * (P.lv - 1)) * 100)}</dd><dt>特技</dt><dd>${esc(skillText(p))}</dd><dt>藥水</dt><dd>🧪 × ${P.potions}</dd><dt>星塵</dt><dd>✨ ${P.dust}</dd></dl>
+      ${!c.evo && EVO_ART[p.id] ? `<div class="evo-tease"><img src="${IMG(EVO_ART[p.id].img)}" alt="" draggable="false"><span>${c.star >= 3 ? "準備好了！進化後會變成…？" : `升到 ★★★ 就能進化，會變成…？`}</span></div>` : ""}
+      <div style="margin-top:10px">${next
+        ? `<button class="big-btn" data-up="${next.act}" ${P.dust >= next.cost ? "" : "disabled"}>${next.label}（✨${next.cost}）</button>
+           <p style="margin:6px 0 0;font-size:12px;color:var(--muted)">${next.act === "evo" ? "進化後換上新造型，體力、攻擊和特技都會變強！" : "升星讓體力和攻擊各 +10%。"}每次過關都能得到星塵，勇者等級拿得最多。</p>`
+        : `<p style="margin:0;font-size:14px;font-weight:700;color:var(--good)">👑 已經是最強型態了！</p>`}</div>
+    </div>
+    <div class="card"><h3>🐾 怪獸收藏 <small style="font:600 14px var(--round);color:var(--muted)">${ownN} / ${CATALOG.length}</small></h3>
+      <div class="dex">${list.map((m) => {
+        const st = owned(m.id) ? stats(m.id) : m;
+        const cc = P.mons[m.id] || { star: 0, shards: 0 };
+        const seen = owned(m.id) || P.dex[m.id] || cc.shards > 0;
+        let sub;
+        if (owned(m.id)) sub = `<small>${cc.evo ? "👑" : ""}${"★".repeat(cc.star)}</small>`;
+        else if (m.partnerOnly) sub = `<em>${esc(m.unlock || "")}</em>`;
+        else if (seen) sub = `<span class="shard"><i style="width:${(cc.shards / SHARDS_TO_RECRUIT) * 100}%"></i></span><em>🧩 ${cc.shards}/${SHARDS_TO_RECRUIT}</em>`;
+        else sub = `<em>${esc(monWorld(m.id)?.name || "")}</em>`;
+        return `<button class="${seen ? "" : "no"} ${owned(m.id) ? "own" : ""}" data-p="${m.id}" aria-pressed="${m.id === p.id}" ${owned(m.id) ? "" : "disabled"}>
+          ${monImg(st, "", "none")}<b>${seen || owned(m.id) ? `${m.boss ? "👑" : ""}${esc(st.name)}` : "？？？"}</b>${sub}</button>`;
+      }).join("")}</div>
+      <p style="margin:10px 0 0;font-size:13px;color:var(--muted)">打倒怪獸會掉碎片：見習 1 片、騎士 2 片、勇者 3 片。集滿 ${SHARDS_TO_RECRUIT} 片就收服，點一下就能換牠上場。等級是訓練師共用的，換夥伴不會掉等級。</p>
+    </div></div>`);
+  app.querySelectorAll("[data-p]").forEach((b) => b.addEventListener("click", () => { P.partner = b.dataset.p; save(); SFX.heal(); render(); }));
+  $("[data-up]")?.addEventListener("click", () => {
+    if (!next || P.dust < next.cost) return;
+    const before = stats(p.id);
+    P.dust -= next.cost;
+    if (next.act === "star") c.star++; else c.evo = true;
+    save();
+    const after = stats(p.id);
+    SFX.win();
+    showOverlay(`
+      <h2>${next.act === "evo" ? "👑 進化成功！" : "⬆️ 升星成功！"}</h2>
+      <div style="display:flex;align-items:center;gap:8px">${monImg(before, "", "none").replace("<img ", '<img style="width:80px;height:80px;object-fit:contain;opacity:.6" ')}<b style="font-size:26px">→</b>${monImg(after, "", "drop-shadow(0 4px 3px rgba(0,0,0,.2))").replace("<img ", '<img class="evo-pop" style="width:120px;height:120px;object-fit:contain" ')}</div>
+      <p><b>${esc(after.name)}</b> ${after.evo ? "👑" : ""}${"★".repeat(after.star)}<br>${esc(skillText(after))}</p>
+      <button class="big-btn" data-o="ok">太棒了！</button>`, { ok: () => render() });
+  });
+}
+
+/* ---------- 單字本 ---------- */
+function renderBook() {
+  setTheme(WORLDS[Math.min(P.world, WORLDS.length - 1)]);
+  const wrong = Object.entries(P.wrong).filter(([w]) => WORD_MAP.has(w)).sort((a, b) => b[1] - a[1]);
+  const knownN = Object.keys(P.known).length;
+  const totalN = WORD_MAP.size;
+  shell(`<div class="page">
+    <div class="card"><h3>📕 我的單字本</h3>
+      <p style="margin:0 0 8px;font-size:14px">已經會拼 <b>${knownN}</b> / ${totalN} 個單字</p>
+      <div class="lvbar"><i style="width:${(knownN / totalN) * 100}%;background:var(--good)"></i></div>
+      <div class="topic-grid" style="margin-top:10px">${Object.values(TOPICS).map((t) => `<div><span>${t.icon} ${esc(t.name)}</span><b>${t.words.filter((x) => P.known[x.en]).length}/${t.words.length}</b></div>`).join("")}</div>
+    </div>
+    <div class="card"><h3>😵 容易拼錯的單字</h3>
+      ${wrong.length ? `<div class="wlist">${wrong.slice(0, 40).map(([w, n]) => {
+        const x = WORD_MAP.get(w);
+        return `<div class="wrow"><b>${esc(w)}</b><span>${x.emoji ? x.emoji + " " : ""}${esc(x.zh)}</span><em>錯 ${n}</em><button class="small-btn" data-say="${esc(w)}">🔊</button></div>`;
+      }).join("")}</div>` : `<p style="margin:0;color:var(--muted);font-size:14px">目前沒有。戰鬥中拼錯或用防禦的單字會收在這裡。</p>`}
+      <div style="margin-top:12px"><button class="big-btn" data-act2="train" ${wrong.length >= 3 ? "" : "disabled"}>⚔️ 易錯單字特訓${wrong.length >= 3 ? "" : "（至少 3 個）"}</button></div>
+      <p style="margin:8px 0 0;font-size:12px;color:var(--muted)">特訓時完美拼對，錯誤次數就會減少；減到 0 就會從這裡畢業。</p>
+    </div></div>`);
+  app.querySelectorAll("[data-say]").forEach((b) => b.addEventListener("click", () => speak(b.dataset.say, true)));
+  $('[data-act2="train"]')?.addEventListener("click", startTraining);
+}
+
+/* ---------- 出題 ---------- */
+function wordPool(topics, maxLen) {
+  const all = topics.flatMap((t) => TOPICS[t]?.words || []);
+  const short = all.filter((x) => x.en.length <= maxLen);
+  return short.length >= 12 ? short : all;
+}
+function makeWordPicker(pool) {
+  const used = new Set();
+  return () => {
+    const wrongIn = pool.filter((x) => P.wrong[x.en] && !used.has(x.en));
+    let cand = wrongIn.length && Math.random() < 0.35 ? wrongIn : pool.filter((x) => !used.has(x.en));
+    if (!cand.length) { used.clear(); cand = pool; }
+    const w = pick(cand);
+    used.add(w.en);
+    return { type: "word", ...w, pool };
+  };
+}
+function makeSentencePicker(list) {
+  let bag = [];
+  return () => {
+    if (!bag.length) bag = shuffle(list);
+    const s = bag.pop();
+    return { type: "sentence", en: s.en, zh: s.zh, tokens: s.en.split(/\s+/) };
+  };
+}
+
+/* ---------- 開始戰鬥 ---------- */
+function startStage(wi, n, tier = 2) {
+  const w = worldList()[wi];
+  if (w.custom) {
+    return battle({
+      w, wi, n, tier, kind: "custom", key: stageKey("custom", n),
+      enemy: { ...pick(WORLDS.flatMap((x) => x.enemies)) },
+      next: { sentence: makeSentencePicker(CUSTOM) }, order: ["sentence"],
+    });
+  }
+  const kind = STAGE_KIND[n - 1];
+  const topics = kind === "word" ? [w.topics[n - 1]] : w.topics;
+  const next = { word: makeWordPicker(wordPool(topics, MAX_LEN[wi])), sentence: makeSentencePicker(SENTENCES[w.id] || []) };
+  const order = kind === "word" ? ["word"] : kind === "sentence" ? ["sentence"] : kind === "mix" ? ["word", "word", "sentence"] : ["word", "sentence"];
+  const enemy = kind === "boss" ? { ...w.boss, boss: true } : { ...w.enemies[(n - 1) % 4] };
+  battle({ w, wi, n, tier, kind, key: stageKey(w.id, n), enemy, next, order });
+}
+function startTraining() {
+  const pool = Object.keys(P.wrong).map((k) => WORD_MAP.get(k)).filter(Boolean);
+  if (pool.length < 3) return;
+  const wi = clamp(P.world, 0, WORLDS.length - 1);
+  battle({ w: WORLDS[wi], wi, n: 0, tier: 2, kind: "train", key: null, enemy: { ...pick(WORLDS.flatMap((x) => x.enemies)) }, next: { word: makeWordPicker(pool) }, order: ["word"] });
+}
+/* 精英怪：只出這個世界拼錯過的單字，騎士等級 */
+function startElite(wi, mon) {
+  const pool = eliteWords(wi);
+  if (pool.length < ELITE_MIN) { tab = "map"; return render(); }
+  const p = makeWordPicker(pool);
+  battle({ w: WORLDS[wi], wi, n: 0, tier: 2, kind: "elite", key: null, enemy: { ...mon, elite: true }, next: { word: () => p() }, order: ["word"] });
+}
+
+/* ---------- 戰鬥 ---------- */
+function battle(cfg) {
+  const { w, wi, kind } = cfg;
+  const tier = cfg.tier || 2;
+  const T = TIERS[tier - 1];
+  const p = partner();
+  setTheme(w);
+  const ehp = Math.round(ENEMY_HP[kind] * T.hp);
+  const B = {
+    hp: maxHp(), max: maxHp(),
+    ehp, emax: ehp,
+    eatk: (5 + 2 * Math.min(wi, 5) + (cfg.enemy.boss ? 3 : 0)) * T.atk,
+    gauge: p.startGauge || 0, gaugeMax: p.gauge || 3,
+    mistakes: 0, defends: 0, turn: 0, busy: false, over: false, rage: false,
+    potionsUsed: 0,
+  };
+  const enemyName = (cfg.enemy.elite ? "精英·" : ENEMY_PREFIX[tier - 1]) + cfg.enemy.name;
+  const glow = cfg.enemy.elite ? "drop-shadow(0 0 7px #ffcf3d) drop-shadow(0 0 3px #fff3b0)" : tier === 3 ? "drop-shadow(0 0 7px #ff4b3b) drop-shadow(0 0 3px #ff9a3d)" : "";
+  const tierText = kind === "train" || kind === "elite" ? "" : ` · ${T.icon}${T.name}`;
+  const stageText = kind === "train" ? "易錯單字特訓" : kind === "elite" ? `${w.name} · ❗精英怪` : kind === "custom" ? `老師的句子塔 · 第 ${cfg.n} 關${tierText}` : `${w.name} · 第 ${cfg.n} 關 · ${KIND_LABEL[kind]}${tierText}`;
+
+  app.innerHTML = `
+    <div class="battle">
+      <div class="scene">
+        <span class="stage-tag">${esc(stageText)}</span>
+        <button class="pill flee" data-act="flee">🏃 逃跑</button>
+        ${w.decor.slice(0, 3).map((d, k) => `<span class="decor" style="left:${[8, 46, 84][k]}%;top:${[12, 6, 52][k]}%;font-size:22px">${d}</span>`).join("")}
+        <div class="plate e"><div class="nm"><span>${cfg.enemy.boss ? "👑 " : cfg.enemy.elite ? "❗ " : ""}${esc(enemyName)}</span><small>HP <span data-ehpt>${B.ehp}</span></small></div><div class="hpbar"><i data-ehp style="width:100%"></i></div></div>
+        <div class="fighter enemy ${cfg.enemy.boss ? "boss" : ""}" data-enemy><div class="body">
+          ${cfg.enemy.elite ? `<span class="crown">✨</span>` : ""}
+          <img class="mon" src="${IMG(cfg.enemy.img)}" alt="${esc(enemyName)}" style="filter:${monFilter(cfg.enemy, glow)}">
+          <img class="plat" src="${IMG(`tower-gen3/tile_${w.tile}.png`)}" alt="">
+        </div></div>
+        <div class="fighter ally" data-ally><div class="body">
+          ${p.evoNoArt ? `<span class="crown">👑</span>` : ""}${monImg(p, "mon")}
+          <img class="plat" src="${IMG(`tower-gen3/tile_${w.tile}.png`)}" alt="">
+        </div></div>
+        <div class="plate a"><div class="nm"><span>${esc(p.name)}</span><small>Lv${P.lv} · <span data-hpt>${B.hp}/${B.max}</span></small></div><div class="hpbar"><i data-hp style="width:100%"></i></div>
+          <div class="gauge" data-gauge></div></div>
+      </div>
+      <div class="panel" data-panel></div>
+    </div>`;
+  const panel = $("[data-panel]");
+  const scene = $(".scene");
+  const enemyEl = $("[data-enemy]");
+  const allyEl = $("[data-ally]");
+  $('[data-act="flee"]').addEventListener("click", () => { if (B.over) return; B.over = true; if (tts) speechSynthesis.cancel(); tab = "map"; render(); });
+
+  function paintBars() {
+    const e = $("[data-ehp]"), h = $("[data-hp]");
+    e.style.width = `${(B.ehp / B.emax) * 100}%`;
+    $("[data-ehpt]").textContent = Math.max(0, Math.ceil(B.ehp));
+    h.style.width = `${(B.hp / B.max) * 100}%`;
+    h.style.background = B.hp / B.max < 0.25 ? "var(--bad)" : B.hp / B.max < 0.5 ? "var(--gold)" : "var(--hp)";
+    $("[data-hpt]").textContent = `${Math.max(0, Math.ceil(B.hp))}/${B.max}`;
+    const g = $("[data-gauge]");
+    g.className = `gauge ${B.gauge >= B.gaugeMax ? "full" : ""}`;
+    g.innerHTML = `必殺 ${Array.from({ length: B.gaugeMax }, (_, k) => `<i class="${k < B.gauge ? "on" : ""}"></i>`).join("")}`;
+  }
+  function floatText(target, text, cls = "") {
+    const r = target.getBoundingClientRect(), s = scene.getBoundingClientRect();
+    const d = document.createElement("div");
+    d.className = `dmg ${cls}`;
+    d.textContent = text;
+    d.style.left = `${r.left - s.left + r.width / 2}px`;
+    d.style.top = `${r.top - s.top + r.height * 0.25}px`;
+    scene.append(d);
+    setTimeout(() => d.remove(), 950);
+  }
+  function fx(target, emoji) {
+    const r = target.getBoundingClientRect(), s = scene.getBoundingClientRect();
+    const d = document.createElement("div");
+    d.className = "fx";
+    d.textContent = emoji;
+    d.style.left = `${r.left - s.left + r.width / 2}px`;
+    d.style.top = `${r.top - s.top + r.height * 0.45}px`;
+    scene.append(d);
+    setTimeout(() => d.remove(), 520);
+  }
+  function banner(text) {
+    const d = document.createElement("div");
+    d.className = "banner";
+    d.textContent = text;
+    scene.append(d);
+    setTimeout(() => d.remove(), 1250);
+  }
+  const anim = (el, cls, ms) => { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); setTimeout(() => el.classList.remove(cls), ms); };
+
+  /* 敵人反擊：答錯一次就挨一下 */
+  async function enemyStrike(defending) {
+    const dmg = Math.max(1, Math.round(B.eatk * (defending ? p.def || 0.5 : 1) * (0.9 + Math.random() * 0.2)));
+    anim(enemyEl, "lunge-e", 450);
+    await wait(180);
+    anim(allyEl, "hit", 450);
+    fx(allyEl, "💥");
+    SFX.bad();
+    B.hp = Math.max(0, B.hp - dmg);
+    floatText(allyEl, `-${dmg}`);
+    paintBars();
+    if (navigator.vibrate) try { navigator.vibrate(40); } catch { /* 不支援震動 */ }
+    if (B.hp <= 0 && !B.over) { await wait(400); lose(); }
+  }
+  async function allyStrike(q, perfect, defending) {
+    const special = !defending && B.gauge >= B.gaugeMax;
+    const base = q.type === "sentence" ? 34 : 25;
+    let dmg = base * p.atk * (1 + 0.04 * (P.lv - 1));
+    if (perfect) dmg *= 1.2;
+    if (defending) dmg *= 0.5;
+    if (special) dmg *= p.crit || 2;
+    if (cfg.enemy.boss && p.bossDmg) dmg *= p.bossDmg;
+    dmg = Math.round(dmg * (0.92 + Math.random() * 0.16));
+    if (special) { B.gauge = 0; banner("必殺技！"); await wait(500); }
+    anim(allyEl, "lunge-a", 450);
+    await wait(180);
+    anim(enemyEl, "hit", 450);
+    fx(enemyEl, special ? "🌟" : perfect ? "✨" : "⚔️");
+    (special || perfect ? SFX.crit : SFX.hit)();
+    B.ehp = Math.max(0, B.ehp - dmg);
+    floatText(enemyEl, `-${dmg}`, special || perfect ? "crit" : "");
+    if (perfect && !defending && !special) B.gauge = Math.min(B.gaugeMax, B.gauge + 1);
+    if (perfect && !defending && p.regen && B.hp < B.max) {
+      const h = Math.max(1, Math.round(B.max * p.regen));
+      B.hp = Math.min(B.max, B.hp + h);
+      setTimeout(() => floatText(allyEl, `+${h}`, "heal"), 300);
+    }
+    paintBars();
+    await wait(550);
+    if (B.ehp <= 0) {
+      enemyEl.classList.add("faint");
+      await wait(800);
+      win();
+    } else if (cfg.enemy.boss && tier === 3 && !B.rage && B.ehp <= B.emax / 2) {
+      /* 勇者魔王剩一半血：狂暴化，攻擊變強、改成句子為主 */
+      B.rage = true;
+      B.eatk *= 1.3;
+      cfg.order = ["sentence", "sentence", "word"];
+      B.turn = 0;
+      enemyEl.classList.add("rage");
+      banner(`${cfg.enemy.name}狂暴化了！`);
+      SFX.lose();
+      await wait(1100);
+      menu();
+    } else {
+      if (B.gauge >= B.gaugeMax && !special) banner("必殺技準備好了！");
+      menu();
+    }
+  }
+
+  function nextQuestion() {
+    const type = cfg.order[B.turn % cfg.order.length];
+    B.turn++;
+    return cfg.next[type]();
+  }
+  let queued = null;
+  function peekType() { return cfg.order[B.turn % cfg.order.length]; }
+
+  /* 指令選單 */
+  function menu() {
+    if (B.over) return;
+    keyHandler = null;
+    const t = peekType();
+    const ready = B.gauge >= B.gaugeMax;
+    panel.innerHTML = `
+      <div class="say-line"><span class="who">${esc(p.name)}</span>要怎麼做？</div>
+      <div class="cmds">
+        <button class="cmd atk ${ready ? "ready" : ""}" data-c="atk"><b>⚔️ ${ready ? "必殺技" : "攻擊"}</b><small>${t === "sentence" ? "排好句子攻擊" : tier === 1 ? "選出單字攻擊" : "拼出單字攻擊"}${ready ? "・傷害加倍！" : "・不出錯會累積必殺"}</small></button>
+        <button class="cmd def" data-c="def"><b>🛡️ 防禦</b><small>${tier === 3 ? "只提示開頭" : "看著答案作答"}・受到的傷害減半</small></button>
+        <button class="cmd pot" data-c="pot" ${P.potions > 0 && B.hp < B.max ? "" : "disabled"}><b>🧪 藥水 ×${P.potions}</b><small>${p.potion ? "回復全部體力" : "回復一半體力"}</small></button>
+        <button class="cmd run" data-c="run"><b>🏃 逃跑</b><small>回到地圖，下次再來</small></button>
+      </div>
+      <div class="log">${B.mistakes ? `目前失誤 ${B.mistakes} 次` : "答對就能攻擊；答錯會被怪獸反擊"}</div>`;
+    panel.querySelectorAll("[data-c]").forEach((b) => b.addEventListener("click", () => {
+      if (B.busy || B.over) return;
+      SFX.tap();
+      const c = b.dataset.c;
+      if (c === "atk") ask(false);
+      else if (c === "def") ask(true);
+      else if (c === "pot") usePotion();
+      else { B.over = true; if (tts) speechSynthesis.cancel(); tab = "map"; render(); }
+    }));
+    keyHandler = (e) => {
+      if (e.key === "1" || e.key === "a" || e.key === "Enter") panel.querySelector('[data-c="atk"]').click();
+      else if (e.key === "2" || e.key === "d") panel.querySelector('[data-c="def"]').click();
+      else if (e.key === "3" || e.key === "p") panel.querySelector('[data-c="pot"]:not(:disabled)')?.click();
+    };
+  }
+  function usePotion() {
+    if (P.potions <= 0 || B.hp >= B.max) return;
+    P.potions--; B.potionsUsed++; save();
+    const h = p.potion ? B.max - B.hp : Math.round(B.max / 2);
+    B.hp = Math.min(B.max, B.hp + h);
+    SFX.heal();
+    fx(allyEl, "💚");
+    floatText(allyEl, `+${h}`, "heal");
+    paintBars();
+    menu();
+  }
+
+  /* 出題與作答 */
+  function ask(defending) {
+    if (defending) B.defends++;
+    const q = queued || nextQuestion();
+    queued = null;
+    q.type === "word" ? askWord(q, defending) : askSentence(q, defending);
+  }
+  /* 見習：看中文選英文 */
+  function askChoice(q, defending) {
+    const src = q.pool && q.pool.length >= 4 ? q.pool : [...WORD_MAP.values()];
+    const others = shuffle(src.filter((x) => x.en.toLowerCase() !== q.en.toLowerCase() && x.zh !== q.zh)).slice(0, 3);
+    const opts = shuffle([q, ...others]);
+    let miss = 0;
+    panel.innerHTML = `
+      <div class="say-line"><span class="who">${esc(p.name)}</span>：${defending ? "🛡️ 選藍色的" : "哪一個是"}「${esc(q.zh)}」？<span class="sp"></span>
+        <button class="small-btn" data-say>🔊</button><button class="small-btn" data-back>↩ 指令</button></div>
+      <div class="prompt">${q.emoji ? `<span class="emo">${q.emoji}</span>` : ""}<span class="zh">${esc(q.zh)}</span></div>
+      <div class="choices">${opts.map((o, k) => `<button class="choice ${defending && o === q ? "hint" : ""}" data-ch="${k}">${esc(o.en)}</button>`).join("")}</div>
+      <div class="log">${defending ? "藍色的就是答案，記住它長什麼樣子" : "選出正確的英文單字"}</div>`;
+    panel.querySelector("[data-say]").addEventListener("click", () => speak(q.en, true));
+    panel.querySelector("[data-back]").addEventListener("click", () => { if (!B.busy) { queued = q; menu(); } });
+    setTimeout(() => speak(q.en), 200);
+    const btns = [...panel.querySelectorAll("[data-ch]")];
+    btns.forEach((b, k) => b.addEventListener("click", async () => {
+      if (B.busy || B.over || b.disabled) return;
+      if (opts[k] === q) {
+        B.busy = true; keyHandler = null;
+        b.classList.add("ok");
+        if (miss) recordWord(q.en, false);
+        panel.querySelector(".log").textContent = miss ? "找到了！" : "答對了！";
+        speak(q.en);
+        await wait(300);
+        await allyStrike(q, miss === 0, defending);
+        B.busy = false;
+      } else {
+        miss++; B.mistakes++;
+        b.classList.add("bad"); b.disabled = true;
+        panel.querySelector(".log").textContent = `「${opts[k].en}」是「${opts[k].zh}」，再找找看！`;
+        B.busy = true;
+        await enemyStrike(defending);
+        B.busy = false;
+      }
+    }));
+    keyHandler = (e) => {
+      if (e.key === "Escape") panel.querySelector("[data-back]").click();
+      else if (/^[1-4]$/.test(e.key)) btns[+e.key - 1]?.click();
+    };
+  }
+  function askWord(q, defending) {
+    if (tier === 1) return askChoice(q, defending);
+    const letters = [...q.en];
+    /* 勇者：整排鍵盤，看不出要用哪些字母 */
+    const typing = tier === 3;
+    const ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
+    const norm = (c) => (typing ? c.toLowerCase() : c);
+    const extra = letters.length <= 4 ? 2 : 3;
+    const pool = "abcdefghijklmnopqrstuvwxyz";
+    const tiles = typing ? [...ROWS.join("")] : shuffle([...letters, ...Array.from({ length: extra }, () => pool[rnd(26)])]);
+    let pos = 0, miss = 0;
+    const peek = typing ? `${q.en[0]}${" _".repeat(letters.length - 1)}` : q.en;
+    const tilesHtml = typing
+      ? `<div class="kb">${ROWS.map((row) => `<div>${[...row].map((c) => `<button class="tl" data-t="${tiles.indexOf(c)}">${c}</button>`).join("")}</div>`).join("")}</div>`
+      : `<div class="tiles">${tiles.map((c, k) => `<button class="tl" data-t="${k}">${esc(c)}</button>`).join("")}</div>`;
+    panel.innerHTML = `
+      <div class="say-line"><span class="who">${esc(p.name)}</span>：${defending ? "🛡️ 照著拼出" : "拼出"}「${esc(q.zh)}」<span class="sp"></span>
+        <button class="small-btn" data-say>🔊</button><button class="small-btn" data-back>↩ 指令</button></div>
+      <div class="prompt">${q.emoji ? `<span class="emo">${q.emoji}</span>` : ""}<span class="zh">${esc(q.zh)}</span>${defending ? `<span class="peek">${esc(peek)}</span>` : ""}</div>
+      <div class="slots">${letters.map((_, k) => `<span class="slot ${k === 0 ? "cur" : ""}" data-s="${k}"></span>`).join("")}</div>
+      ${tilesHtml}
+      <div class="log">${defending ? (typing ? "提示了第一個字母和字數，加油！" : "看著藍色的答案拼，慢慢來沒關係") : typing ? "👑 勇者：用鍵盤一個一個拼出來" : "點字母依序拼出單字，也可以用鍵盤打字"}</div>`;
+    const tileBtns = [...panel.querySelectorAll(".tl")];
+    panel.querySelector("[data-say]").addEventListener("click", () => speak(q.en, true));
+    panel.querySelector("[data-back]").addEventListener("click", () => { if (!B.busy) { queued = q; menu(); } });
+    setTimeout(() => speak(q.en), 200);
+
+    async function tap(k) {
+      if (B.busy || B.over) return;
+      const b = tileBtns[k];
+      if (!b || b.classList.contains("used")) return;
+      if (norm(tiles[k]) === norm(letters[pos])) {
+        SFX.tap();
+        if (!typing) b.classList.add("used");
+        const s = panel.querySelector(`[data-s="${pos}"]`);
+        s.textContent = letters[pos]; s.classList.remove("cur"); s.classList.add("done");
+        pos++;
+        panel.querySelector(`[data-s="${pos}"]`)?.classList.add("cur");
+        if (pos === letters.length) {
+          B.busy = true;
+          keyHandler = null;
+          const perfect = miss === 0;
+          recordWord(q.en, perfect && !defending);
+          panel.querySelector(".log").textContent = perfect ? (defending ? "拼好了！" : "完美！") : "拼好了！";
+          speak(q.en);
+          await wait(250);
+          await allyStrike(q, perfect, defending);
+          B.busy = false;
+        }
+      } else {
+        miss++; B.mistakes++;
+        b.classList.remove("bad"); void b.offsetWidth; b.classList.add("bad");
+        panel.querySelector(".log").textContent = `下一個字母不是「${tiles[k]}」，再想想！`;
+        B.busy = true;
+        await enemyStrike(defending);
+        B.busy = false;
+      }
+    }
+    tileBtns.forEach((b, k) => b.addEventListener("click", () => tap(k)));
+    keyHandler = (e) => {
+      if (e.key === "Escape") { panel.querySelector("[data-back]").click(); return; }
+      if (e.key.length !== 1) return;
+      if (typing) { const k = tiles.indexOf(e.key.toLowerCase()); if (k >= 0) tap(k); return; }
+      const want = letters[pos];
+      const free = tileBtns.map((b, k) => (!b.classList.contains("used") ? k : -1)).filter((k) => k >= 0);
+      const exact = free.find((k) => tiles[k] === e.key && tiles[k] === want);
+      const any = free.find((k) => tiles[k] === e.key) ?? free.find((k) => tiles[k].toLowerCase() === e.key.toLowerCase());
+      if (exact !== undefined) tap(exact);
+      else if (any !== undefined) tap(any);
+    };
+  }
+  function askSentence(q, defending) {
+    /* 見習：第一個字排好；勇者：多 2 個干擾字 */
+    const start = tier === 1 && q.tokens.length > 2 ? 1 : 0;
+    const all = [...q.tokens];
+    if (tier === 3) {
+      const have = new Set(q.tokens.map((t) => t.toLowerCase().replace(/[^a-z']/g, "")));
+      const bank = [...new Set([...Object.values(SENTENCES).flat(), ...CUSTOM].flatMap((s) => s.en.split(/\s+/)).map((t) => t.toLowerCase()).filter((t) => /^[a-z']+$/.test(t) && !have.has(t)))];
+      all.push(...shuffle(bank).slice(0, 2));
+    }
+    let order = shuffle(all.map((_, k) => k).filter((k) => k >= start));
+    if (all.length === q.tokens.length && order.every((v, k) => all[v] === q.tokens[k + start])) order.reverse();
+    let pos = start, miss = 0;
+    const built = q.tokens.slice(0, start);
+    const peek = tier === 3 ? `${q.tokens.slice(0, 2).join(" ")} …` : q.en;
+    panel.innerHTML = `
+      <div class="say-line"><span class="who">${esc(p.name)}</span>：${defending ? "🛡️ 照著排出句子" : "排出句子攻擊！"}<span class="sp"></span>
+        <button class="small-btn" data-say>🔊</button><button class="small-btn" data-back>↩ 指令</button></div>
+      <div class="prompt"><span class="zh" style="font-size:21px">${esc(q.zh || "（聽聽看）")}</span>${defending ? `<span class="peek s">${esc(peek)}</span>` : ""}</div>
+      <div class="built" data-built>${built.map((t) => `<span>${esc(t)}</span>`).join("")}</div>
+      <div class="tiles">${order.map((v) => `<button class="tl word" data-w="${v}">${esc(all[v])}</button>`).join("")}</div>
+      <div class="log">${defending ? (tier === 3 ? "提示了開頭，後面靠自己！" : "看著藍色的句子排") : tier === 3 ? "👑 勇者：小心，有 2 個字是多出來的" : start ? "第一個字已經排好了，接著點下去" : "從第一個字開始，依序點選"}</div>`;
+    const builtEl = panel.querySelector("[data-built]");
+    panel.querySelector("[data-say]").addEventListener("click", () => speak(q.en, true));
+    panel.querySelector("[data-back]").addEventListener("click", () => { if (!B.busy) { queued = q; menu(); } });
+    if (defending || !q.zh) setTimeout(() => speak(q.en), 200);
+    panel.querySelectorAll("[data-w]").forEach((b) => b.addEventListener("click", async () => {
+      if (B.busy || B.over || b.classList.contains("used")) return;
+      const v = +b.dataset.w;
+      if (all[v] === q.tokens[pos]) {
+        SFX.tap();
+        b.classList.add("used");
+        built.push(all[v]);
+        builtEl.innerHTML = built.map((t) => `<span>${esc(t)}</span>`).join("");
+        pos++;
+        if (pos === q.tokens.length) {
+          B.busy = true;
+          const perfect = miss === 0;
+          panel.querySelector(".log").textContent = perfect ? "完美！" : "排好了！";
+          speak(q.en);
+          await wait(300);
+          await allyStrike(q, perfect, defending);
+          B.busy = false;
+        }
+      } else {
+        miss++; B.mistakes++;
+        b.classList.remove("bad"); void b.offsetWidth; b.classList.add("bad");
+        panel.querySelector(".log").textContent = v >= q.tokens.length ? `「${all[v]}」是多出來的字！` : `下一個字不是「${all[v]}」`;
+        if (v >= q.tokens.length) setTimeout(() => b.classList.add("used"), 400);
+        B.busy = true;
+        await enemyStrike(defending);
+        B.busy = false;
+      }
+    }));
+    keyHandler = (e) => { if (e.key === "Escape") panel.querySelector("[data-back]").click(); };
+  }
+  function recordWord(en, perfect) {
+    if (perfect) {
+      P.known[en] = 1;
+      if (P.wrong[en]) { P.wrong[en]--; if (P.wrong[en] <= 0) delete P.wrong[en]; }
+    } else {
+      P.wrong[en] = (P.wrong[en] || 0) + 1;
+    }
+    save();
+  }
+
+  /* 勝負 */
+  function gainXp(amount) {
+    let ups = 0;
+    if (P.lv >= 30) return 0;
+    P.xp += amount;
+    while (P.lv < 30 && P.xp >= xpNeed(P.lv)) { P.xp -= xpNeed(P.lv); P.lv++; ups++; }
+    if (P.lv >= 30) P.xp = 0;
+    return ups;
+  }
+  function win() {
+    if (B.over) return;
+    B.over = true;
+    keyHandler = null;
+    SFX.win();
+    const perfect = B.mistakes === 0 && B.defends === 0;
+    const rewards = [];
+    let xp = Math.round(XP_BASE[kind] * (1 + 0.25 * Math.min(wi, 5)) * T.xp);
+    if (perfect) xp = Math.round(xp * 1.2);
+    const ups = gainXp(xp);
+    rewards.push(`✨ 經驗 +${xp}${perfect ? "（零失誤加成）" : ""}`);
+    if (ups) rewards.push(`⬆️ 升到 Lv${P.lv}`);
+    /* 星塵和碎片 */
+    let dust = kind === "elite" ? 15 : kind === "train" ? 5 : [5, 10, 15][tier - 1] * (kind === "boss" ? 2 : 1);
+    if (perfect) dust += 5;
+    const eid = cfg.enemy.id;
+    let recruitedNow = null;
+    if (eid && MON[eid]) {
+      P.dex[eid] = 1;
+      const n = kind === "elite" ? 3 : kind === "train" || kind === "custom" ? 2 : tier;
+      const c = col(eid);
+      if (owned(eid)) {
+        dust += n * SHARD_DUST;
+        rewards.push(`🧩 ${MON[eid].name}碎片 ×${n} → ✨`);
+      } else {
+        c.shards += n;
+        if (c.shards >= SHARDS_TO_RECRUIT) { c.shards -= SHARDS_TO_RECRUIT; recruit(eid); recruitedNow = stats(eid); }
+        else rewards.push(`🧩 ${MON[eid].name}碎片 +${n}（${c.shards}/${SHARDS_TO_RECRUIT}）`);
+      }
+    }
+    P.dust += dust;
+    rewards.push(`✨ 星塵 +${dust}`);
+    let unlockedNow = null, firstTier = false;
+    const prev = cfg.key ? P.stages[cfg.key] || 0 : 0;
+    if (cfg.key) {
+      firstTier = tier > prev;
+      P.stages[cfg.key] = Math.max(prev, tier);
+      if (tier === 3 && firstTier && P.potions < 9) { P.potions++; rewards.push("🧪 勇者獎勵藥水 +1"); }
+      if (kind === "boss" && tier >= BOSS_GATE && prev < BOSS_GATE) {
+        if (P.potions < 9) { P.potions++; rewards.push("🧪 魔王獎勵藥水 +1"); }
+        const pid = UNLOCK_BY_BOSS[w.id];
+        if (pid && !owned(pid)) { recruit(pid); unlockedNow = stats(pid); }
+        if (wi + 1 < WORLDS.length) { P.world = wi + 1; rewards.push(`🗺️ ${WORLDS[wi + 1].name} 開放`); }
+      }
+    }
+    if (kind === "elite" && P.eliteDay[w.id] !== today()) {
+      P.eliteDay[w.id] = today();
+      if (P.potions < 9) { P.potions++; rewards.push("🧪 精英獎勵藥水 +1"); }
+    }
+    save();
+    const nextStage = cfg.key ? (w.custom ? (cfg.n < 3 ? cfg.n + 1 : null) : cfg.n < 6 ? cfg.n + 1 : null) : null;
+    const stars = cfg.key ? P.stages[cfg.key] : 0;
+    let msg;
+    if (kind === "elite") msg = eliteWords(wi).length >= ELITE_MIN ? "還有拼錯的單字，精英怪之後還會再出現，多練幾次就能讓牠消失！" : "易錯單字幾乎都練熟了，精英怪暫時不會出現！";
+    else if (!cfg.key) msg = "特訓完成！完美拼對的單字會從單字本畢業。";
+    else if (kind === "boss" && tier < BOSS_GATE) msg = "見習通過！再用「⚔️ 騎士」打倒魔王，就能前往下一個世界。";
+    else if (tier < 3) msg = `${T.name}通過！${firstTier ? "解鎖了" : "可以挑戰"}「${TIERS[tier].icon} ${TIERS[tier].name}」等級，題目更難、怪獸更強。`;
+    else msg = perfect ? "勇者零失誤，真正的英文高手！" : "勇者通過！這關已經拿滿三顆星。";
+    showOverlay(`
+      <h2>打倒了${esc(enemyName)}！</h2>
+      ${cfg.key ? `<div class="big-stars">${[1, 2, 3].map((s) => `<i class="${s <= stars ? "on" : ""}">★</i>`).join("")}</div>` : ""}
+      <p>${msg}</p>
+      <div class="reward">${rewards.map((r) => `<span>${r}</span>`).join("")}</div>
+      ${[unlockedNow, recruitedNow].filter(Boolean).map((m) => `<div class="card" style="display:flex;gap:10px;align-items:center;width:100%">${monImg(m, "evo-pop", "none").replace("<img ", '<img style="width:64px;height:64px;object-fit:contain" ')}<div style="text-align:left"><b>${m === recruitedNow ? "🎉 收服了" : "新夥伴加入："}${esc(m.name)}！</b><br><small style="color:var(--muted)">${ROLES[m.role].icon}${ROLES[m.role].label}・${esc(skillText(m))}</small></div></div>`).join("")}
+      <div class="row ${nextStage ? "two" : ""}">
+        ${nextStage ? `<button class="big-btn" data-o="next">下一關 →</button>` : ""}
+        <button class="ghost-btn" data-o="map">回到地圖</button>
+      </div>
+      ${cfg.key && tier < 3 ? `<button class="big-btn" data-o="up" style="width:100%;background:#ffb5a3">${TIERS[tier].icon} 挑戰${TIERS[tier].name}等級</button>` : ""}
+      ${kind === "elite" ? "" : `<button class="ghost-btn" data-o="again" style="width:100%">再打一次</button>`}`, {
+      next: () => startStage(wi, nextStage, Math.min(tier, (P.stages[stageKey(w.id, nextStage)] || 0) + 1)),
+      up: () => startStage(wi, cfg.n, tier + 1),
+      map: () => { tab = "map"; render(); },
+      again: () => (kind === "train" ? startTraining() : startStage(wi, cfg.n, tier)),
+    });
+  }
+  function lose() {
+    if (B.over) return;
+    B.over = true;
+    keyHandler = null;
+    SFX.lose();
+    allyEl.classList.add("faint");
+    setTimeout(() => showOverlay(`
+      <h2>${esc(p.name)}累倒了…</h2>
+      <p>沒關係！不確定的單字可以先用「🛡️ 防禦」${tier === 3 ? "看提示" : "看著答案"}作答，受到的傷害也會減半。${tier > 1 && cfg.key ? `<br>也可以先回到「${TIERS[tier - 2].name}」等級多練幾次。` : ""}</p>
+      <div class="row two"><button class="big-btn" data-o="again">再挑戰</button><button class="ghost-btn" data-o="map">回到地圖</button></div>`, {
+      again: () => (kind === "train" ? startTraining() : kind === "elite" ? startElite(wi, cfg.enemy) : startStage(wi, cfg.n, tier)),
+      map: () => { tab = "map"; render(); },
+    }), 700);
+  }
+
+  paintBars();
+  panel.innerHTML = `<div class="say-line" style="justify-content:center;font-size:18px">${cfg.enemy.boss ? "👑 魔王" : "野生的"}「${esc(enemyName)}」出現了！</div>`;
+  B.busy = true;
+  setTimeout(() => { B.busy = false; menu(); }, 900);
+}
+
+/* QuestMon 的遊戲視窗暫停時，停止朗讀 */
+addEventListener("message", (e) => {
+  if (e.origin !== location.origin || e.source !== window.parent) return;
+  if (e.data?.type === "QUESTMON_PAUSE" && tts) speechSynthesis.cancel();
+});
+
+(async () => {
+  try {
+    await loadData();
+    render();
+  } catch (err) {
+    console.error(err);
+    app.innerHTML = `<div class="err"><h2>遊戲載入失敗</h2><p>請重新整理再試一次。</p></div>`;
+  }
+})();
+</script>
+</body>
+</html>

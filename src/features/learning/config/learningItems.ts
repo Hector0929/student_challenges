@@ -76,6 +76,23 @@ export const LANGUAGE_LEARNING_ITEMS: LearningItem[] = [
         tags: ['英文', '句型'],
     },
     {
+        id: 'word_quest',
+        name: '怪獸單字闖關',
+        icon: '⚔️',
+        description: '帶夥伴怪獸闖關・拼單字、排句子打魔王',
+        subjectId: 'english',
+        stageId: 'general',
+        order: 4,
+        enabledByDefault: true,
+        status: 'active',
+        launcher: {
+            type: 'html',
+            target: '/games/word_quest.html',
+        },
+        accentColorToken: 'violet',
+        tags: ['英文', '單字', '拼字', '句型'],
+    },
+    {
         id: 'idiom',
         name: '成語大挑戰',
         icon: '📜',
