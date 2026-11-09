@@ -31,4 +31,5 @@ dist-ssr
 .claude/
 
 # 產圖原始檔（去背前），不部署
+public/images/monsters/_raw/
 public/images/monsters/*/_raw/
