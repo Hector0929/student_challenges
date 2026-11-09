@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>學科島</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%8F%AB%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --paper: #fff8f4;
+  --paper-2: #f6ece3;
+  --ink: #211d1d;
+  --muted: #6e645d;
+  --line: rgba(33, 29, 29, 0.12);
+  --coral: #db6a41;
+  --good: #3f8f52;
+  --good-soft: #dcefd9;
+  --bad: #c6493a;
+  --bad-soft: #f8dcd6;
+  --gold: #e3a21a;
+  --sea: #aedcea;
+  --sc: #db6a41;
+  --shadow: 0 10px 30px rgba(33, 29, 29, 0.12), 0 2px 6px rgba(33, 29, 29, 0.06);
+  --radius: 18px;
+  --mono: "Space Mono", ui-monospace, monospace;
+  --sans: "Noto Sans TC", system-ui, -apple-system, "PingFang TC", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--sea) 0%, #d8eef0 55%, #f3ead9 100%) fixed;
+  -webkit-font-smoothing: antialiased;
+  padding: max(12px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+}
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+button:disabled { cursor: default; }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--sc); outline-offset: 2px; }
+a { color: inherit; }
+.wrap { max-width: 860px; margin: 0 auto; }
+
+/* top bar */
+.top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; min-height: 44px; }
+.top h1 { font-size: 22px; font-weight: 900; margin: 0; flex: 1; letter-spacing: 0.02em; }
+.top h1 small { display: block; font: 700 11px/1.2 var(--mono); color: var(--muted); letter-spacing: 0.12em; }
+.chip-btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 999px;
+  background: rgba(255, 248, 244, 0.9); box-shadow: 0 2px 0 var(--line); font-weight: 700; font-size: 14px;
+  text-decoration: none; white-space: nowrap;
+}
+.chip-btn:hover { background: #fff; }
+.panel { background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
+
+/* home */
+.hero { display: grid; gap: 4px; margin: 6px 0 18px; }
+.hero p { margin: 0; color: var(--muted); font-size: 15px; }
+.halls { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.hall {
+  text-align: left; background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 18px; display: grid; gap: 10px; border-top: 6px solid var(--hc); transition: transform 0.15s;
+}
+.hall:hover { transform: translateY(-3px); }
+.hall .h-head { display: flex; gap: 12px; align-items: center; }
+.hall .h-ico { font-size: 32px; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 14px; background: color-mix(in srgb, var(--hc) 14%, white); }
+.hall b { font-size: 20px; display: block; }
+.hall small { color: var(--muted); font-size: 13px; }
+.bar { height: 8px; border-radius: 99px; background: var(--paper-2); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--hc, var(--sc)); border-radius: 99px; }
+.h-meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); font-weight: 700; }
+.h-meta .star { color: var(--gold); }
+.tip { margin-top: 18px; font-size: 13px; color: var(--muted); text-align: center; }
+
+/* subject */
+.sub-head { display: flex; gap: 14px; align-items: center; border-left: 6px solid var(--sc); padding-left: 14px; margin-bottom: 14px; }
+.sub-head .h-ico { font-size: 34px; }
+.sub-head b { font-size: 24px; display: block; }
+.sub-head small { color: var(--muted); }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+.filters .sp { flex: 1; }
+.fchip { padding: 8px 14px; border-radius: 999px; background: rgba(255, 248, 244, 0.8); font-weight: 700; font-size: 14px; box-shadow: 0 2px 0 var(--line); }
+.fchip[aria-pressed="true"] { background: var(--sc); color: #fff; box-shadow: 0 2px 0 color-mix(in srgb, var(--sc) 60%, black); }
+.review-btn { padding: 8px 14px; border-radius: 999px; background: var(--bad-soft); color: var(--bad); font-weight: 700; font-size: 14px; }
+.review-btn:disabled { opacity: 0.45; }
+.unit { margin-bottom: 18px; }
+.unit h3 { margin: 0 0 10px; font-size: 16px; display: flex; gap: 8px; align-items: center; }
+.unit h3 span { font: 700 11px/1 var(--mono); background: var(--sc); color: #fff; padding: 5px 8px; border-radius: 6px; }
+.levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.lv { text-align: left; background: var(--paper); border-radius: 16px; box-shadow: var(--shadow); padding: 14px 16px; display: grid; gap: 6px; border: 2px solid transparent; }
+.lv:hover { border-color: color-mix(in srgb, var(--sc) 45%, transparent); }
+.lv b { font-size: 17px; }
+.lv p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lv .stars { font-size: 15px; letter-spacing: 2px; }
+.stars .on { color: var(--gold); }
+.stars .off { color: #d9cfc6; }
+
+/* play */
+.play-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.play-top .ttl { flex: 1; font-weight: 900; font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dots { display: flex; gap: 6px; }
+.dots i { width: 12px; height: 12px; border-radius: 50%; background: #e6dcd2; }
+.dots i.cur { background: var(--sc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sc) 30%, transparent); }
+.dots i.ok { background: var(--good); }
+.dots i.mid { background: var(--gold); }
+.dots i.ng { background: var(--bad); }
+.qcard { display: grid; gap: 14px; }
+.kicker { font: 700 12px/1 var(--mono); color: var(--sc); letter-spacing: 0.1em; }
+.passage { background: var(--paper-2); border-radius: 14px; padding: 14px 16px; line-height: 1.8; font-size: 16px; position: relative; }
+.qtext { font-size: 21px; font-weight: 700; line-height: 1.6; margin: 0; }
+.say { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: color-mix(in srgb, var(--sc) 14%, white); color: color-mix(in srgb, var(--sc) 80%, black); font-weight: 700; font-size: 14px; vertical-align: middle; }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 560px) { .opts { grid-template-columns: 1fr; } .qtext { font-size: 19px; } }
+.opt {
+  display: flex; gap: 10px; align-items: center; text-align: left; padding: 14px 16px; border-radius: 14px;
+  background: #fff; border: 2px solid var(--line); font-size: 17px; font-weight: 500; line-height: 1.45; min-height: 58px;
+  box-shadow: 0 3px 0 var(--line); transition: transform 0.08s;
+}
+.opt:not(:disabled):hover { border-color: var(--sc); }
+.opt:not(:disabled):active { transform: translateY(2px); box-shadow: none; }
+.opt .k { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font: 700 13px var(--mono); background: var(--paper-2); color: var(--muted); }
+.opt.right { background: var(--good-soft); border-color: var(--good); }
+.opt.right .k { background: var(--good); color: #fff; }
+.opt.wrong { background: var(--bad-soft); border-color: var(--bad); opacity: 0.75; }
+.opt.wrong .k { background: var(--bad); color: #fff; }
+.tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.hint-btn { padding: 9px 14px; border-radius: 999px; background: #fff3d0; color: #8a5a00; font-weight: 700; font-size: 14px; }
+.hint-btn:disabled { opacity: 0.45; }
+.hints { display: grid; gap: 6px; }
+.hints p { margin: 0; padding: 10px 14px; border-radius: 12px; background: #fff7e0; font-size: 15px; line-height: 1.55; }
+.hints p::before { content: "💡 "; }
+.fb { border-radius: 14px; padding: 14px 16px; line-height: 1.65; font-size: 16px; display: none; }
+.fb.show { display: block; }
+.fb.ok { background: var(--good-soft); }
+.fb.ng { background: var(--bad-soft); }
+.fb.try { background: #fff1e6; }
+.fb b { display: block; margin-bottom: 4px; }
+.next { margin-left: auto; padding: 12px 22px; border-radius: 999px; background: var(--sc); color: #fff; font-weight: 900; font-size: 16px; box-shadow: 0 3px 0 color-mix(in srgb, var(--sc) 60%, black); }
+.next:disabled { opacity: 0.4; box-shadow: none; }
+.next[hidden] { display: none; }
+
+/* order */
+.slots, .pool { display: grid; gap: 8px; }
+.slots { counter-reset: s; min-height: 60px; padding: 10px; border-radius: 14px; border: 2px dashed color-mix(in srgb, var(--sc) 40%, transparent); background: color-mix(in srgb, var(--sc) 5%, white); }
+.slots:empty::before { content: "依序點選下面的卡片，排在這裡"; color: var(--muted); font-size: 14px; padding: 8px; }
+.pool { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.card-it { text-align: left; padding: 12px 14px; border-radius: 12px; background: #fff; border: 2px solid var(--line); font-size: 16px; line-height: 1.45; box-shadow: 0 3px 0 var(--line); display: flex; gap: 10px; align-items: center; }
+.slots .card-it::before { counter-increment: s; content: counter(s); flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font: 700 12px var(--mono); background: var(--sc); color: #fff; }
+.card-it.lock { border-color: var(--good); background: var(--good-soft); }
+.card-it.lock::before { background: var(--good) !important; }
+
+/* result */
+.result { text-align: center; display: grid; gap: 14px; justify-items: center; }
+.big-stars { font-size: 52px; letter-spacing: 6px; }
+.big-stars span { display: inline-block; animation: pop 0.45s both; }
+.big-stars span:nth-child(2) { animation-delay: 0.15s; }
+.big-stars span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes pop { from { transform: scale(0.2); opacity: 0; } 70% { transform: scale(1.2); } to { transform: scale(1); opacity: 1; } }
+.result h2 { margin: 0; font-size: 26px; }
+.result .score { font: 700 15px var(--mono); color: var(--muted); }
+.missed { text-align: left; width: 100%; display: grid; gap: 8px; }
+.missed h4 { margin: 6px 0 0; font-size: 15px; }
+.missed div { background: var(--paper-2); border-radius: 12px; padding: 10px 14px; font-size: 15px; line-height: 1.6; }
+.missed div em { font-style: normal; color: var(--good); font-weight: 700; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.ghost { padding: 12px 20px; border-radius: 999px; background: var(--paper-2); font-weight: 700; }
+
+/* fractions */
+.frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; font-size: 0.82em; line-height: 1.1; margin: 0 2px; }
+.frac span:first-child { border-bottom: 1.5px solid currentColor; padding: 0 3px; }
+.frac span:last-child { padding: 0 3px; }
+.empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+.err { text-align: center; padding: 40px 20px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app" aria-live="polite"></div>
+<script type="module">
+/* 學科島：國語、英語、數學、自然、社會五棟建築的複習關卡。
+   題庫在 ./subject_island/<科目>.json，題目為原創，格式：
+   qs: [{ q 題幹, a 正解, w [錯誤選項×3], h [提示…], e 詳解, p? 閱讀短文, say? 英文朗讀, listen? 聽力題 }]
+   order: { q 題目, items [依正確順序], h [提示…], e 詳解 } */
+const SUBJECTS = ["chinese", "english", "math", "science", "social"];
+const GRADE_ZH = { 3: "三年級", 4: "四年級", 5: "五年級", 6: "六年級" };
+const KEY = "si-progress-v1";
+const app = document.getElementById("app");
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* 無法儲存時，進度只保留在這次瀏覽 */ } },
+};
+function loadProgress() {
+  const p = store.get(KEY, null);
+  const ok = p && typeof p === "object" && !Array.isArray(p);
+  return {
+    lv: ok && p.lv && typeof p.lv === "object" ? p.lv : {},
+    wrong: ok && p.wrong && typeof p.wrong === "object" ? p.wrong : {},
+  };
+}
+const prog = loadProgress();
+const saveProgress = () => store.set(KEY, prog);
+
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+/* "1{3/4}" → 帶分數；"{3/8}" → 分數 */
+const fmt = (s) => esc(s).replace(/\{(\d+)\/(\d+)\}/g, '<span class="frac"><span>$1</span><span>$2</span></span>');
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const starsHtml = (n, max = 3) => `<span class="stars">${Array.from({ length: max }, (_, i) => `<span class="${i < n ? "on" : "off"}">★</span>`).join("")}</span>`;
+
+/* ---------- 語音（英語題） ---------- */
+const tts = "speechSynthesis" in window;
+let enVoice = null;
+function pickVoice() {
+  if (!tts) return;
+  const vs = speechSynthesis.getVoices().filter((v) => /^en[-_]/i.test(v.lang));
+  enVoice = vs.find((v) => /en[-_]US/i.test(v.lang) && v.localService) || vs.find((v) => /en[-_]US/i.test(v.lang)) || vs[0] || null;
+}
+if (tts) { pickVoice(); speechSynthesis.addEventListener?.("voiceschanged", pickVoice); }
+function speak(text) {
+  if (!tts || !text) return false;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-US";
+  if (enVoice) u.voice = enVoice;
+  u.rate = 0.85;
+  speechSynthesis.speak(u);
+  return true;
+}
+
+/* ---------- 資料 ---------- */
+const DATA = {};
+async function loadSubject(id) {
+  if (DATA[id]) return DATA[id];
+  const r = await fetch(`./subject_island/${id}.json`);
+  if (!r.ok) throw Error(`${id}.json: ${r.status}`);
+  const d = await r.json();
+  d.levelList = d.units.flatMap((u) => u.levels.map((l) => ((l.unit = u), l)));
+  DATA[id] = d;
+  return d;
+}
+const findLevel = (d, id) => d.levelList.find((l) => l.id === id);
+const wrongKeys = (sid) => Object.keys(prog.wrong).filter((k) => k.startsWith(sid + "|"));
+function subjectStats(d) {
+  const total = d.levelList.length;
+  let cleared = 0, stars = 0;
+  for (const l of d.levelList) { const s = prog.lv[l.id]?.stars || 0; if (s) cleared++; stars += s; }
+  return { total, cleared, stars, max: total * 3, wrong: wrongKeys(d.id).length };
+}
+/* 整科每關都至少一顆星，就在群島標記完成 */
+function syncIsland(d) {
+  const st = subjectStats(d);
+  if (st.cleared < st.total) return;
+  const id = `review_${d.id}`;
+  const done = store.get("ci-done", []);
+  const list = Array.isArray(done) ? done : [];
+  if (!list.includes(id)) store.set("ci-done", [...list, id]);
+}
+
+/* ---------- 路由 ---------- */
+function setUrl(sid) {
+  const u = new URL(location.href);
+  if (sid) u.searchParams.set("s", sid); else u.searchParams.delete("s");
+  history.replaceState(null, "", u);
+}
+let keyHandler = null;
+document.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  keyHandler?.(e);
+});
+function setTheme(color) { document.documentElement.style.setProperty("--sc", color || "#db6a41"); }
+
+/* ---------- 首頁：五棟建築 ---------- */
+async function showHome() {
+  keyHandler = null;
+  setUrl(null);
+  setTheme();
+  document.title = "學科島";
+  const ds = await Promise.all(SUBJECTS.map(loadSubject));
+  app.innerHTML = `
+    <div class="top">
+      <a class="chip-btn" href="/challenge-island/">← 群島</a>
+      <h1>學科島<small>SUBJECT ISLAND</small></h1>
+    </div>
+    <div class="hero"><p>島上有五棟建築，選一科走進去，挑想複習的關卡。</p></div>
+    <div class="halls">
+      ${ds.map((d) => {
+        const st = subjectStats(d);
+        return `<button class="hall" style="--hc:${esc(d.color)}" data-subject="${esc(d.id)}">
+          <div class="h-head"><span class="h-ico">${d.icon}</span><div><b>${esc(d.building)}</b><small>${esc(d.name)} · ${esc(d.motto)}</small></div></div>
+          <div class="bar"><i style="width:${(st.cleared / st.total) * 100}%"></i></div>
+          <div class="h-meta"><span>已完成 ${st.cleared}/${st.total} 關</span><span><span class="star">★</span> ${st.stars}/${st.max}${st.wrong ? ` · 錯題 ${st.wrong}` : ""}</span></div>
+        </button>`;
+      }).join("")}
+    </div>
+    <p class="tip">題目依國小三～六年級常見學習重點原創編寫，不對應特定版本的課次。</p>`;
+  app.querySelectorAll("[data-subject]").forEach((b) => b.addEventListener("click", () => showSubject(b.dataset.subject)));
+}
+
+/* ---------- 建築內：選年級、選關卡 ---------- */
+let gradeFilter = 0;
+async function showSubject(sid) {
+  keyHandler = null;
+  const d = await loadSubject(sid);
+  setUrl(sid);
+  setTheme(d.color);
+  document.title = `${d.building}｜學科島`;
+  const st = subjectStats(d);
+  const grades = [...new Set(d.units.map((u) => u.grade))];
+  const units = d.units.filter((u) => !gradeFilter || u.grade === gradeFilter);
+  app.innerHTML = `
+    <div class="top">
+      <button class="chip-btn" data-act="home">← 學科島</button>
+      <h1></h1>
+    </div>
+    <div class="sub-head"><span class="h-ico">${d.icon}</span><div><b>${esc(d.building)}</b><small>${esc(d.name)} · 已完成 ${st.cleared}/${st.total} 關 · ★ ${st.stars}/${st.max}</small></div></div>
+    <div class="filters">
+      <button class="fchip" data-grade="0" aria-pressed="${!gradeFilter}">全部</button>
+      ${grades.map((g) => `<button class="fchip" data-grade="${g}" aria-pressed="${gradeFilter === g}">${GRADE_ZH[g] || g + " 年級"}</button>`).join("")}
+      <span class="sp"></span>
+      <button class="review-btn" data-act="review" ${st.wrong ? "" : "disabled"}>📕 錯題複習 ${st.wrong}</button>
+    </div>
+    ${units.length ? units.map((u) => `
+      <section class="unit">
+        <h3><span>${esc(GRADE_ZH[u.grade] || u.grade)}</span>${esc(u.title)}</h3>
+        <div class="levels">
+          ${u.levels.map((l) => `<button class="lv" data-level="${esc(l.id)}">
+            <b>${esc(l.name)}</b><p>${esc(l.intro)}</p>
+            <div>${starsHtml(prog.lv[l.id]?.stars || 0)} <small style="color:var(--muted)">· ${l.qs.length + (l.order ? 1 : 0)} 題</small></div>
+          </button>`).join("")}
+        </div>
+      </section>`).join("") : `<p class="empty">這個年級還沒有關卡。</p>`}`;
+  app.querySelector('[data-act="home"]').addEventListener("click", showHome);
+  app.querySelector('[data-act="review"]').addEventListener("click", () => startReview(d));
+  app.querySelectorAll("[data-grade]").forEach((b) => b.addEventListener("click", () => { gradeFilter = +b.dataset.grade; showSubject(sid); }));
+  app.querySelectorAll("[data-level]").forEach((b) => b.addEventListener("click", () => startLevel(d, findLevel(d, b.dataset.level))));
+}
+
+/* ---------- 作答 ---------- */
+/* 每題 item：{ kind:"mc"|"order", data, key, level } */
+function levelItems(d, l) {
+  const items = l.qs.map((q, i) => ({ kind: "mc", data: q, key: `${d.id}|${l.id}|${i}`, level: l }));
+  if (l.order) items.push({ kind: "order", data: l.order, key: `${d.id}|${l.id}|o`, level: l });
+  return items;
+}
+function resolveKey(d, key) {
+  const [, lid, idx] = key.split("|");
+  const l = findLevel(d, lid);
+  if (!l) return null;
+  if (idx === "o") return l.order ? { kind: "order", data: l.order, key, level: l } : null;
+  const q = l.qs[+idx];
+  return q ? { kind: "mc", data: q, key, level: l } : null;
+}
+function startLevel(d, l) {
+  if (!l) return;
+  run({ d, title: l.name, items: levelItems(d, l), level: l, review: false });
+}
+function startReview(d) {
+  const keys = wrongKeys(d.id);
+  const items = shuffle(keys).map((k) => resolveKey(d, k)).filter(Boolean).slice(0, 8);
+  /* 題庫改版後找不到的錯題，順手清掉 */
+  keys.forEach((k) => { if (!resolveKey(d, k)) delete prog.wrong[k]; });
+  saveProgress();
+  if (!items.length) return showSubject(d.id);
+  run({ d, title: "錯題複習", items, level: null, review: true });
+}
+
+/* 計分：一次答對 1 分；看了提示才答對 0.7；答錯一次後答對 0.4；之後 0 分 */
+const points = (tries, hints) => (tries === 0 ? (hints ? 0.7 : 1) : tries === 1 ? 0.4 : 0);
+
+function run(session) {
+  const { d, items } = session;
+  const res = [];
+  let i = 0;
+
+  const exit = () => { if (tts) speechSynthesis.cancel(); showSubject(d.id); };
+  const dots = () => items.map((_, k) => {
+    const r = res[k];
+    const cls = k === i && !r ? "cur" : !r ? "" : r.pts >= 1 ? "ok" : r.pts > 0 ? "mid" : "ng";
+    return `<i class="${cls}"></i>`;
+  }).join("");
+
+  function frame(inner) {
+    app.innerHTML = `
+      <div class="play-top">
+        <button class="chip-btn" data-act="exit" aria-label="離開">✕</button>
+        <div class="ttl">${esc(d.icon)} ${esc(session.title)}</div>
+        <div class="dots" aria-label="第 ${i + 1} 題，共 ${items.length} 題">${dots()}</div>
+      </div>
+      <div class="panel qcard">${inner}</div>`;
+    app.querySelector('[data-act="exit"]').addEventListener("click", exit);
+  }
+
+  function finish(item, tries, hints) {
+    const pts = points(tries, hints);
+    res[i] = { item, pts, tries, hints };
+    if (tries > 0) prog.wrong[item.key] = (prog.wrong[item.key] || 0) + 1;
+    else if (session.review) delete prog.wrong[item.key];
+    saveProgress();
+    app.querySelector(".dots").innerHTML = dots();
+  }
+  const next = () => { i++; i < items.length ? show() : result(); };
+
+  function hintTools(item, state, onHint) {
+    const total = (item.data.h || []).length;
+    return {
+      html: `<div class="hints" data-hints></div>`,
+      btn: `<button class="hint-btn" data-act="hint" ${total ? "" : "disabled"}>💡 提示 <span data-hc>0/${total}</span></button>`,
+      reveal() {
+        if (state.hints >= total) return false;
+        const p = document.createElement("p");
+        p.textContent = item.data.h[state.hints++];
+        app.querySelector("[data-hints]").append(p);
+        app.querySelector("[data-hc]").textContent = `${state.hints}/${total}`;
+        if (state.hints >= total) app.querySelector('[data-act="hint"]').disabled = true;
+        onHint?.();
+        return true;
+      },
+    };
+  }
+
+  function show() {
+    const item = items[i];
+    item.kind === "mc" ? showMC(item) : showOrder(item);
+  }
+
+  /* 選擇題 */
+  function showMC(item) {
+    const q = item.data;
+    const state = { tries: 0, hints: 0, done: false };
+    const opts = shuffle([q.a, ...q.w]);
+    const ht = hintTools(item, state);
+    const canSay = tts && q.say;
+    const head = session.review ? `${esc(item.level.unit ? GRADE_ZH[item.level.unit.grade] : "")} · ${esc(item.level.name)}` : `第 ${i + 1} 題 / ${items.length}`;
+    frame(`
+      <div class="kicker">${head}</div>
+      ${i === 0 && !session.review && session.level ? `<p style="margin:0;color:var(--muted);line-height:1.6">${esc(session.level.intro)}</p>` : ""}
+      ${q.p ? `<div class="passage">${fmt(q.p)}${tts && d.id === "english" ? ` <button class="say" data-say-p>🔊 聽短文</button>` : ""}</div>` : ""}
+      <p class="qtext">${fmt(q.q)} ${canSay ? `<button class="say" data-say>🔊 ${q.listen ? "再聽一次" : "聽"}</button>` : ""}</p>
+      ${q.listen && !tts ? `<div class="hints"><p>這台裝置無法播放語音，題目單字是：${esc(q.say)}</p></div>` : ""}
+      <div class="opts">${opts.map((o, k) => `<button class="opt" data-o="${k}"><span class="k">${k + 1}</span><span>${fmt(o)}</span></button>`).join("")}</div>
+      ${ht.html}
+      <div class="fb" data-fb></div>
+      <div class="tools">${ht.btn}<button class="next" data-act="next" hidden>${i + 1 < items.length ? "下一題 →" : "看結果 →"}</button></div>`);
+    const fb = app.querySelector("[data-fb]");
+    const nextBtn = app.querySelector('[data-act="next"]');
+    const optBtns = [...app.querySelectorAll(".opt")];
+    app.querySelector('[data-act="hint"]').addEventListener("click", () => ht.reveal());
+    app.querySelector("[data-say]")?.addEventListener("click", () => speak(q.say));
+    app.querySelector("[data-say-p]")?.addEventListener("click", () => speak(q.p));
+    nextBtn.addEventListener("click", next);
+    if (q.listen) setTimeout(() => speak(q.say), 250);
+
+    function settle(ok) {
+      state.done = true;
+      optBtns.forEach((b) => (b.disabled = true));
+      optBtns[opts.indexOf(q.a)].classList.add("right");
+      fb.className = `fb show ${ok ? "ok" : "ng"}`;
+      fb.innerHTML = `<b>${ok ? (state.tries === 0 ? "答對了！" : "這次對了！") : `正確答案是「${fmt(q.a)}」`}</b>${fmt(q.e)}`;
+      app.querySelector('[data-act="hint"]').disabled = true;
+      finish(item, state.tries, state.hints);
+      nextBtn.hidden = false;
+      nextBtn.focus({ preventScroll: true });
+    }
+    function choose(k) {
+      if (state.done) return;
+      const b = optBtns[k];
+      if (!b || b.disabled) return;
+      if (opts[k] === q.a) return settle(true);
+      b.classList.add("wrong");
+      b.disabled = true;
+      state.tries++;
+      if (state.tries >= 2) return settle(false);
+      const gave = ht.reveal();
+      fb.className = "fb show try";
+      fb.innerHTML = `<b>再想想看！</b>${gave ? "看看上面的提示。" : "還有機會，換一個答案試試。"}`;
+    }
+    optBtns.forEach((b, k) => b.addEventListener("click", () => choose(k)));
+    keyHandler = (e) => {
+      if (/^[1-4]$/.test(e.key)) choose(+e.key - 1);
+      else if (e.key === "h" || e.key === "H") ht.reveal();
+      else if (e.key === "Enter" && state.done && document.activeElement !== nextBtn) next();
+    };
+  }
+
+  /* 排序題 */
+  function showOrder(item) {
+    const o = item.data;
+    const state = { tries: 0, hints: 0, done: false };
+    let pool = shuffle(o.items.map((_, k) => k));
+    if (pool.every((v, k) => v === k)) pool.reverse();
+    let placed = [];
+    const locked = new Set();
+    const ht = hintTools(item, state);
+    frame(`
+      <div class="kicker">${session.review ? `排序題 · ${esc(item.level.name)}` : `第 ${i + 1} 題 / ${items.length} · 排序挑戰`}</div>
+      <p class="qtext">${fmt(o.q)}</p>
+      <div class="slots" data-slots></div>
+      <div class="pool" data-pool></div>
+      ${ht.html}
+      <div class="fb" data-fb></div>
+      <div class="tools">${ht.btn}<button class="ghost" data-act="reset">重排</button><button class="next" data-act="check" disabled>檢查</button><button class="next" data-act="next" hidden>${i + 1 < items.length ? "下一題 →" : "看結果 →"}</button></div>`);
+    const slotsEl = app.querySelector("[data-slots]");
+    const poolEl = app.querySelector("[data-pool]");
+    const fb = app.querySelector("[data-fb]");
+    const checkBtn = app.querySelector('[data-act="check"]');
+    const nextBtn = app.querySelector('[data-act="next"]');
+    const resetBtn = app.querySelector('[data-act="reset"]');
+
+    function paint() {
+      slotsEl.innerHTML = placed.map((v, pos) => `<button class="card-it ${locked.has(pos) ? "lock" : ""}" data-pos="${pos}" ${locked.has(pos) || state.done ? "disabled" : ""}>${fmt(o.items[v])}</button>`).join("");
+      poolEl.innerHTML = pool.map((v) => `<button class="card-it" data-v="${v}" ${state.done ? "disabled" : ""}>${fmt(o.items[v])}</button>`).join("");
+      checkBtn.disabled = state.done || pool.length > 0;
+      slotsEl.querySelectorAll("[data-pos]").forEach((b) => b.addEventListener("click", () => {
+        /* 鎖住的卡片永遠排在最前面，所以移走後面的卡片不會影響鎖定位置 */
+        const pos = +b.dataset.pos;
+        if (locked.has(pos)) return;
+        pool.push(placed[pos]);
+        placed.splice(pos, 1);
+        paint();
+      }));
+      poolEl.querySelectorAll("[data-v]").forEach((b) => b.addEventListener("click", () => {
+        const v = +b.dataset.v;
+        pool = pool.filter((x) => x !== v);
+        placed.push(v);
+        paint();
+      }));
+    }
+    function check() {
+      if (state.done || pool.length) return;
+      const allOk = placed.every((v, pos) => v === pos);
+      if (allOk) return settle(true);
+      state.tries++;
+      if (state.tries >= 2) {
+        placed = o.items.map((_, k) => k);
+        pool = [];
+        return settle(false);
+      }
+      /* 位置對的鎖住，錯的退回 */
+      const keep = [];
+      placed.forEach((v, pos) => { if (v === pos && keep.length === pos) keep.push(v); });
+      const back = placed.filter((v) => !keep.includes(v));
+      placed = keep;
+      locked.clear();
+      keep.forEach((_, p) => locked.add(p));
+      pool = shuffle(back);
+      const gave = ht.reveal();
+      fb.className = "fb show try";
+      fb.innerHTML = `<b>還差一點！</b>前面排對的${keep.length ? ` ${keep.length} 張` : ""}已經鎖住，其他的再排一次。${gave ? "看看提示吧。" : ""}`;
+      paint();
+    }
+    function settle(ok) {
+      state.done = true;
+      fb.className = `fb show ${ok ? "ok" : "ng"}`;
+      fb.innerHTML = `<b>${ok ? (state.tries === 0 ? "全部排對了！" : "這次排對了！") : "正確的順序在上面"}</b>${fmt(o.e)}`;
+      o.items.forEach((_, p) => locked.add(p));
+      paint();
+      checkBtn.hidden = true;
+      resetBtn.hidden = true;
+      app.querySelector('[data-act="hint"]').disabled = true;
+      finish(item, state.tries, state.hints);
+      nextBtn.hidden = false;
+      nextBtn.focus({ preventScroll: true });
+    }
+    checkBtn.addEventListener("click", check);
+    resetBtn.addEventListener("click", () => {
+      if (state.done) return;
+      const free = placed.filter((_, p) => !locked.has(p));
+      placed = placed.filter((_, p) => locked.has(p));
+      pool = pool.concat(free);
+      paint();
+    });
+    nextBtn.addEventListener("click", next);
+    app.querySelector('[data-act="hint"]').addEventListener("click", () => ht.reveal());
+    keyHandler = (e) => {
+      if (e.key === "h" || e.key === "H") ht.reveal();
+      else if (e.key === "Enter" && !state.done && !checkBtn.disabled) check();
+      else if (e.key === "Enter" && state.done && document.activeElement !== nextBtn) next();
+    };
+    paint();
+  }
+
+  /* 結果 */
+  function result() {
+    keyHandler = null;
+    const total = res.reduce((s, r) => s + r.pts, 0);
+    const ratio = total / items.length;
+    const stars = ratio >= 0.9 ? 3 : ratio >= 0.6 ? 2 : 1;
+    let nextLevel = null;
+    if (!session.review && session.level) {
+      const prev = prog.lv[session.level.id]?.stars || 0;
+      prog.lv[session.level.id] = { stars: Math.max(prev, stars), at: Date.now() };
+      saveProgress();
+      syncIsland(d);
+      const idx = d.levelList.indexOf(session.level);
+      nextLevel = d.levelList[idx + 1] || null;
+    }
+    const missed = res.filter((r) => r.pts < 1);
+    const fixed = session.review ? res.filter((r) => r.tries === 0).length : 0;
+    const title = session.review
+      ? fixed === items.length ? "錯題全部訂正了！" : `訂正了 ${fixed} 題`
+      : stars === 3 ? "太厲害了！" : stars === 2 ? "做得很好！" : "完成了！再複習一次會更熟";
+    app.innerHTML = `
+      <div class="panel result">
+        <div class="kicker">${esc(d.building)} · ${esc(session.title)}</div>
+        ${session.review ? `<div class="big-stars">📕</div>` : `<div class="big-stars">${Array.from({ length: 3 }, (_, k) => `<span style="color:${k < stars ? "var(--gold)" : "#d9cfc6"}">★</span>`).join("")}</div>`}
+        <h2>${title}</h2>
+        <div class="score">得分 ${Math.round(ratio * 100)} / 100</div>
+        ${missed.length ? `<div class="missed"><h4>要再看一眼的題目（已收進錯題本）</h4>${missed.map((r) => {
+          const it = r.item;
+          const ans = it.kind === "mc" ? fmt(it.data.a) : it.data.items.map(fmt).join(" → ");
+          return `<div>${fmt(it.data.q)}<br>答案：<em>${ans}</em></div>`;
+        }).join("")}</div>` : ""}
+        <div class="row">
+          ${session.review ? (wrongKeys(d.id).length ? `<button class="next" data-act="again">繼續訂正</button>` : "") : `<button class="ghost" data-act="again">再挑戰一次</button>`}
+          ${nextLevel ? `<button class="next" data-act="nextlv">下一關：${esc(nextLevel.name)} →</button>` : ""}
+          <button class="ghost" data-act="back">回到${esc(d.building)}</button>
+        </div>
+      </div>`;
+    app.querySelector('[data-act="again"]')?.addEventListener("click", () => (session.review ? startReview(d) : startLevel(d, session.level)));
+    app.querySelector('[data-act="nextlv"]')?.addEventListener("click", () => startLevel(d, nextLevel));
+    app.querySelector('[data-act="back"]').addEventListener("click", () => showSubject(d.id));
+  }
+
+  show();
+}
+
+/* ---------- 啟動 ---------- */
+(async () => {
+  try {
+    const s = new URLSearchParams(location.search).get("s");
+    if (SUBJECTS.includes(s)) await showSubject(s);
+    else await showHome();
+  } catch (err) {
+    console.error(err);
+    app.innerHTML = `<div class="panel err"><h2>學科島暫時打不開</h2><p>題庫載入失敗，請重新整理再試一次。</p><a class="chip-btn" href="/challenge-island/">← 回到群島</a></div>`;
+  }
+})();
+</script>
+</body>
+</html>

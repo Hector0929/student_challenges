@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>學習挑戰群島</title>
+    <meta name="description" content="Daily QuestMon 的學習挑戰地圖：每座六角島是一個學習主題，點一棟建築開始挑戰。" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%8F%9D%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./ui.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.183.2/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app" class="panel-open">
+      <main id="stage" aria-label="3D 學習挑戰群島地圖"></main>
+
+      <header class="brand">
+        <a class="logo" href="/" title="回到 Daily QuestMon">
+          <span class="logo-mark">QUEST<br />ISLES</span>
+          <span class="logo-text"><b>學習挑戰群島</b><small>DAILY QUESTMON</small></span>
+        </a>
+        <div class="seg" role="tablist" aria-label="檢視模式">
+          <button role="tab" data-mode="overview">全景</button>
+          <button role="tab" data-mode="list" aria-selected="true">清單</button>
+          <button role="tab" data-mode="time">時間</button>
+        </div>
+      </header>
+
+      <nav class="toolbar" aria-label="地圖工具">
+        <button class="tg on" data-tool="names" title="名牌 (N)"><i data-icon="tag"></i><span>名牌</span></button>
+        <button class="tg on" data-tool="flows" title="連結線 (L)"><i data-icon="link"></i><span>連結線</span></button>
+        <button class="tg" data-tool="pause" title="暫停 (空白鍵)"><i data-icon="pause"></i><span>暫停</span></button>
+        <button class="tg" data-tool="home" title="鳥瞰 (H)"><i data-icon="globe"></i><span>鳥瞰</span></button>
+        <button class="tg" data-tool="log" title="日誌"><i data-icon="scroll"></i><span>日誌</span></button>
+        <span class="sep"></span>
+        <div class="clock" aria-live="off">
+          <b id="clock">08:00</b>
+          <div class="presets">
+            <button data-time="360" title="清晨">🌅</button>
+            <button data-time="720" title="白天">☀️</button>
+            <button data-time="1080" title="黃昏">🌇</button>
+            <button data-time="1260" title="夜晚">🌙</button>
+          </div>
+        </div>
+      </nav>
+
+      <aside id="panel" aria-label="挑戰清單">
+        <button class="sheet-handle" aria-label="展開或收合清單"></button>
+        <div class="panel-head">
+          <p class="kicker">CHALLENGE ARCHIPELAGO</p>
+          <h1>一格挑戰，一座相連的群島</h1>
+          <p class="lede">從一個小挑戰開始，看見科目之間怎麼互相幫忙。</p>
+          <div class="stats" id="stats"></div>
+        </div>
+        <label class="search">
+          <i data-icon="search"></i>
+          <input id="search" type="search" placeholder="搜尋挑戰、關鍵字…" autocomplete="off" />
+        </label>
+        <div class="tabs" role="tablist">
+          <button role="tab" data-tab="list" aria-selected="true">清單</button>
+          <button role="tab" data-tab="log">群島日誌 <em class="live">LIVE</em></button>
+        </div>
+        <div class="panel-body">
+          <div id="list" role="tabpanel"></div>
+          <ol id="log" role="tabpanel" hidden></ol>
+        </div>
+        <p class="foot">連結線依據各單元的先備知識整理；完成紀錄只存在這台裝置的瀏覽器。</p>
+      </aside>
+
+      <section id="card" hidden aria-live="polite"></section>
+
+      <div id="timeline" hidden>
+        <div class="tl-top">
+          <span class="tl-time" id="tl-time">06:00</span>
+          <span class="tl-text" id="tl-text">一天的學習行程</span>
+          <span class="tl-count" id="tl-count">00 / 00</span>
+        </div>
+        <div class="tl-bar"><div class="tl-fill" id="tl-fill"></div><div class="tl-ticks" id="tl-ticks"></div></div>
+        <div class="tl-btns">
+          <button data-tl="toggle"><i data-icon="pause"></i><span>暫停</span></button>
+          <button data-tl="replay"><i data-icon="replay"></i><span>重播</span></button>
+          <button data-tl="exit"><i data-icon="x"></i><span>離開</span></button>
+        </div>
+      </div>
+
+      <div id="tip" hidden></div>
+
+      <div id="intro" hidden role="dialog" aria-modal="true" aria-labelledby="intro-title">
+        <div class="intro-card">
+          <p class="kicker" id="intro-kicker">HELLO, LEARNER / 01</p>
+          <h2 id="intro-title"></h2>
+          <p id="intro-body"></p>
+          <div class="intro-btns">
+            <button class="ghost" id="intro-skip">略過</button>
+            <button class="primary" id="intro-next">下一步 →</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="loading"><span class="spinner"></span>正在組合挑戰群島…</div>
+    </div>
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>

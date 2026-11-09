@@ -1,0 +1,141 @@
+{
+  "title": "學習挑戰群島",
+  "subtitle": "Daily QuestMon · Challenge Archipelago",
+  "islands": [
+    {
+      "id": "subjects", "name": "學科島", "en": "Subject Island", "icon": "🏫",
+      "axial": [0, -1], "style": "library", "ground": "#cfe0b0", "accent": "#d9822b",
+      "summary": "五棟建築各是一個學科，自己挑一科走進去複習。",
+      "challenges": [
+        { "id": "review_chinese", "name": "文字書院", "icon": "📖", "style": "temple", "desc": "國語複習：標點、字詞、修辭、閱讀理解、成語和古詩。", "tags": ["國語", "三～六年級"], "launch": "/games/subject_island.html?s=chinese" },
+        { "id": "review_english", "name": "英語會話館", "icon": "🔤", "style": "library", "desc": "英語複習：單字、日常對話、句型和短文閱讀，可以聽發音。", "tags": ["英語", "三～六年級"], "launch": "/games/subject_island.html?s=english" },
+        { "id": "review_math", "name": "數感鐘塔", "icon": "📐", "style": "tower", "desc": "數學複習：大數、乘除、分數、角度、因倍數、面積、比和圓。", "tags": ["數學", "三～六年級"], "launch": "/games/subject_island.html?s=math" },
+        { "id": "review_science", "name": "自然實驗室", "icon": "🔬", "style": "observatory", "desc": "自然複習：植物、磁鐵、電路、聲光、太陽、燃燒、天氣和水溶液。", "tags": ["自然", "三～六年級"], "launch": "/games/subject_island.html?s=science" },
+        { "id": "review_social", "name": "社會探索館", "icon": "🌏", "style": "hall", "desc": "社會複習：家庭與學校、地圖與節慶、臺灣歷史地理、民主與經濟。", "tags": ["社會", "三～六年級"], "launch": "/games/subject_island.html?s=social" }
+      ]
+    },
+    {
+      "id": "english", "name": "英文書港", "en": "English Harbour", "icon": "🔤",
+      "axial": [-1, 0], "style": "library", "ground": "#bcd39a", "accent": "#3f8f8a",
+      "summary": "單字、發音與句子，三座書塔圍出英文港口。",
+      "challenges": [
+        { "id": "spelling", "name": "單字召喚術", "icon": "🅰️", "desc": "拼字主題挑戰，把聽到的單字一個字母一個字母召喚出來。", "tags": ["英文", "拼字"], "launch": "/games/spelling_game.html" },
+        { "id": "pronunciation", "name": "發音選單字", "icon": "👂", "desc": "聽發音選出正確單字，訓練英文聽力。", "tags": ["英文", "聽力"], "launch": "/games/pronunciation_game.html" },
+        { "id": "sentence", "name": "句子重組", "icon": "📝", "desc": "把打散的單字排回正確的英文句子。", "tags": ["英文", "句型"], "launch": "/games/sentence_game.html" },
+        { "id": "word_quest", "name": "怪獸單字闖關", "icon": "⚔️", "desc": "帶著夥伴怪獸闖六個世界：拼單字、排句子打倒怪獸和魔王。", "tags": ["英文", "拼字", "句型"], "launch": "/games/word_quest.html" }
+      ]
+    },
+    {
+      "id": "chinese", "name": "成語古城", "en": "Idiom Old Town", "icon": "📚",
+      "axial": [-1, 1], "style": "temple", "ground": "#d8c7a4", "accent": "#b4483a",
+      "summary": "飛簷樓閣裡藏著一句句成語故事。",
+      "challenges": [
+        { "id": "idiom", "name": "成語大挑戰", "icon": "📜", "desc": "看提示猜成語、補缺字，認識成語背後的故事。", "tags": ["國語", "成語"], "launch": "/games/idiom_game.html" }
+      ]
+    },
+    {
+      "id": "ops", "name": "四則運算鎮", "en": "Arithmetic Town", "icon": "🧮",
+      "axial": [0, 0], "style": "tower", "ground": "#c9d8a6", "accent": "#3d6fb6",
+      "summary": "群島中心的鐘塔小鎮，加減乘除是所有數學的起點。",
+      "challenges": [
+        { "id": "akila", "name": "加法練習", "icon": "➕", "desc": "數學計算挑戰，從個位數加到進位加法。", "tags": ["加法", "國小低年級"], "launch": "/games/akila_plus_test.html" },
+        { "id": "subtraction", "name": "減法練習", "icon": "➖", "desc": "減法計算挑戰，練熟借位。", "tags": ["減法", "國小低年級"], "launch": "/games/subtraction_test.html" },
+        { "id": "multiplication", "name": "乘法練習", "icon": "✖️", "desc": "九九乘法表，背熟再挑戰速度。", "tags": ["乘法", "九九乘法"], "launch": "/games/multiplication_test.html" },
+        { "id": "division", "name": "除法練習", "icon": "➗", "desc": "除法與餘數。", "tags": ["除法", "餘數"], "launch": "/games/division_test.html" },
+        { "id": "shooter", "name": "霓虹數學射擊", "icon": "🎯", "desc": "一邊閃躲一邊射中正確答案的算式射擊遊戲。", "tags": ["四則運算", "反應"], "launch": "/games/shooting_game.html" }
+      ]
+    },
+    {
+      "id": "fraction", "name": "分數甜點島", "en": "Fraction Bakery", "icon": "🍰",
+      "axial": [1, -1], "style": "bakery", "ground": "#f0d2c4", "accent": "#d9667a",
+      "summary": "每一塊蛋糕都少了一角——那一角就是分數。",
+      "challenges": [
+        { "id": "fractions", "name": "分數練習", "icon": "🍰", "desc": "分數辨識、約分與分數加減。", "tags": ["分數", "國小中年級"], "launch": "app" },
+        { "id": "factors_multiples", "name": "因數與倍數", "icon": "🧩", "desc": "因數、倍數、最大公因數與最小公倍數。", "tags": ["因數", "倍數"], "launch": "app" }
+      ]
+    },
+    {
+      "id": "geometry", "name": "幾何積木島", "en": "Geometry Blocks", "icon": "📐",
+      "axial": [1, 0], "style": "blocks", "ground": "#d6dcae", "accent": "#e0a23a",
+      "summary": "方塊、角錐與圓柱堆成的島，量一量就懂周長、面積與體積。",
+      "challenges": [
+        { "id": "perimeter", "name": "周長", "icon": "📏", "desc": "正方形、長方形與複合圖形周長。", "tags": ["周長", "圖形"], "launch": "app" },
+        { "id": "area", "name": "面積", "icon": "🟦", "desc": "長方形、正方形、三角形與平行四邊形面積。", "tags": ["面積", "圖形"], "launch": "app" },
+        { "id": "volume", "name": "體積", "icon": "🧊", "desc": "正方體與長方體體積。", "tags": ["體積", "立體"], "launch": "app" }
+      ]
+    },
+    {
+      "id": "algebra", "name": "代數天文台", "en": "Algebra Observatory", "icon": "🔭",
+      "axial": [2, -1], "style": "observatory", "ground": "#b9c7c9", "accent": "#4a4f8f",
+      "summary": "國中數學的觀星台：用 x 看見未知。",
+      "challenges": [
+        { "id": "linear_equation", "name": "一元一次方程式", "icon": "🟰", "desc": "一步驟與兩步驟方程式練習。", "tags": ["方程式", "國中"], "launch": "app" },
+        { "id": "polynomials", "name": "多項式基礎", "icon": "📐", "desc": "同類項辨識、合併與代入求值。", "tags": ["多項式", "國中"], "launch": "app" }
+      ]
+    },
+    {
+      "id": "puzzle", "name": "益智棋堡", "en": "Puzzle Keep", "icon": "♟",
+      "axial": [0, 1], "style": "castle", "ground": "#c4d3b0", "accent": "#5b5f6b",
+      "summary": "動腦的城堡：棋盤、記憶與數字合成。",
+      "challenges": [
+        { "id": "othello", "name": "黑白棋", "icon": "♟", "desc": "挑戰電腦，翻轉棋盤！", "tags": ["策略", "棋類"], "launch": "app" },
+        { "id": "memory_matrix", "name": "記憶矩陣", "icon": "🧠", "desc": "記住亮起的格子，再一格格點回來。", "tags": ["記憶", "專注"], "launch": "/games/memory_matrix.html" },
+        { "id": "game2048", "name": "2048 Cyber", "icon": "🔢", "desc": "合併相同數字，湊出 2048。", "tags": ["數字", "策略"], "launch": "/games/2048_cyber.html" },
+        { "id": "tetris", "name": "俄羅斯方塊", "icon": "🧱", "desc": "旋轉方塊、填滿橫列。", "tags": ["空間", "反應"], "launch": "/games/Tetris.html" }
+      ]
+    },
+    {
+      "id": "arcade", "name": "霓虹遊樂場", "en": "Neon Arcade", "icon": "🕹️",
+      "axial": [1, 1], "style": "arcade", "ground": "#c7c0d6", "accent": "#d94f9b",
+      "summary": "完成學習任務後的獎勵時間——但別玩太久喔。",
+      "challenges": [
+        { "id": "snake", "name": "Neon Snake", "icon": "🐍", "desc": "經典貪食蛇。", "tags": ["反應", "休閒"], "launch": "/games/snake_game.html" },
+        { "id": "bubble", "name": "Bubble Shooter", "icon": "🫧", "desc": "瞄準、三顆同色就消除。", "tags": ["瞄準", "休閒"], "launch": "/games/bubble_shooter.html" },
+        { "id": "breaker", "name": "Neon Breaker", "icon": "🏓", "desc": "霓虹打磚塊。", "tags": ["反應", "休閒"], "launch": "/games/neon_breaker.html" },
+        { "id": "shaft", "name": "Neon Shaft", "icon": "⬇️", "desc": "一路往下跳，別碰到尖刺。", "tags": ["反應", "休閒"], "launch": "/games/ns_shaft.html" },
+        { "id": "parkour", "name": "方塊衝刺", "icon": "🏃", "desc": "六大主題的方塊跑酷。", "tags": ["跑酷", "休閒"], "launch": "/games/parkour_game_v2.html" },
+        { "id": "survivor", "name": "怪獸生存戰", "icon": "👾", "desc": "在怪獸潮中撐到最後。", "tags": ["動作", "休閒"], "launch": "/games/monster_survivor.html" }
+      ]
+    }
+  ],
+  "flows": [
+    { "id": "f1", "from": "akila", "to": "subtraction", "label": "加減互逆", "note": "減法就是把加法倒過來看。" },
+    { "id": "f2", "from": "multiplication", "to": "division", "label": "乘除互逆", "note": "背熟九九乘法，除法自然就快。" },
+    { "id": "f3", "from": "multiplication", "to": "factors_multiples", "label": "乘法 → 因倍數", "note": "倍數就是乘法表的一整列。" },
+    { "id": "f4", "from": "division", "to": "fractions", "label": "除法 → 分數", "note": "分數其實是一個還沒算完的除法。" },
+    { "id": "f5", "from": "factors_multiples", "to": "fractions", "label": "約分需要公因數", "note": "最大公因數讓約分一步到位。" },
+    { "id": "f6", "from": "multiplication", "to": "area", "label": "長 × 寬", "note": "面積就是乘法的圖形版本。" },
+    { "id": "f7", "from": "akila", "to": "perimeter", "label": "邊長相加", "note": "周長就是把每條邊加起來。" },
+    { "id": "f8", "from": "area", "to": "volume", "label": "面積 × 高", "note": "把面積往上疊，就變成體積。" },
+    { "id": "f9", "from": "fractions", "to": "linear_equation", "label": "移項與通分", "note": "解方程式常常會遇到分數係數。" },
+    { "id": "f10", "from": "linear_equation", "to": "polynomials", "label": "同類項", "note": "合併同類項是解方程式的第一步。" },
+    { "id": "f11", "from": "spelling", "to": "pronunciation", "label": "拼音對應", "note": "會唸就比較會拼。" },
+    { "id": "f12", "from": "pronunciation", "to": "sentence", "label": "從字到句", "note": "認得單字後，練習把它們排成句子。" },
+    { "id": "f13", "from": "idiom", "to": "sentence", "label": "語感", "note": "中英文的語序練習互相幫忙。" },
+    { "id": "f14", "from": "othello", "to": "game2048", "label": "策略思考", "note": "都要先想好下一步。" },
+    { "id": "f15", "from": "shooter", "to": "akila", "label": "心算速度", "note": "射擊遊戲考的是心算反應。" },
+    { "id": "f16", "from": "memory_matrix", "to": "spelling", "label": "記憶力", "note": "記住格子位置，也幫助記住字母順序。" },
+    { "id": "f17", "from": "review_english", "to": "spelling", "label": "單字延伸", "note": "複習過的單字，到單字召喚術練拼寫。" },
+    { "id": "f18", "from": "review_chinese", "to": "idiom", "label": "成語延伸", "note": "成語茶館學到的，到成語古城再挑戰。" },
+    { "id": "f19", "from": "review_math", "to": "fractions", "label": "分數練習", "note": "複習分數觀念後，多做幾題計算。" },
+    { "id": "f20", "from": "review_math", "to": "area", "label": "面積練習", "note": "面積公式複習完，換實際算算看。" },
+    { "id": "f21", "from": "spelling", "to": "word_quest", "label": "拼字實戰", "note": "練熟的單字，帶去怪獸對戰裡用。" },
+    { "id": "f22", "from": "sentence", "to": "word_quest", "label": "句子魔法", "note": "句子重組也是魔王戰的招式。" }
+  ],
+  "schedule": [
+    { "time": 390, "island": "english", "challenge": "pronunciation", "text": "晨間聽力：起床先聽幾個英文單字。" },
+    { "time": 450, "island": "ops", "challenge": "akila", "text": "早餐前暖身，十題加法。" },
+    { "time": 510, "island": "ops", "challenge": "multiplication", "text": "上學路上默背九九乘法。" },
+    { "time": 600, "island": "geometry", "challenge": "area", "text": "數學課：把長方形切成方格數面積。" },
+    { "time": 690, "island": "fraction", "challenge": "fractions", "text": "午餐切披薩，正好練分數。" },
+    { "time": 780, "island": "chinese", "challenge": "idiom", "text": "午休後的成語接龍。" },
+    { "time": 870, "island": "english", "challenge": "spelling", "text": "英文課：單字召喚術。" },
+    { "time": 920, "island": "subjects", "challenge": "review_science", "text": "回家先到學科島，挑一科複習今天上的內容。" },
+    { "time": 960, "island": "fraction", "challenge": "factors_multiples", "text": "放學作業：找最大公因數。" },
+    { "time": 1020, "island": "algebra", "challenge": "linear_equation", "text": "挑戰一題國中方程式。" },
+    { "time": 1080, "island": "puzzle", "challenge": "othello", "text": "晚餐前跟電腦下一盤黑白棋。" },
+    { "time": 1170, "island": "english", "challenge": "sentence", "text": "睡前複習：句子重組。" },
+    { "time": 1230, "island": "arcade", "challenge": "snake", "text": "任務都完成了，獎勵十分鐘遊戲時間！" },
+    { "time": 1290, "island": "puzzle", "challenge": "memory_matrix", "text": "最後一回記憶矩陣，然後關燈睡覺。" }
+  ]
+}
