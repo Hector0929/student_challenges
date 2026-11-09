@@ -52,6 +52,8 @@ export interface Profile {
     pin_code?: string; // Hashed/Encrypted ideally, but frontend might just send it
     line_user_id?: string;
     is_family_admin?: boolean;
+    /** 年級（2～6），概念題庫用；需執行 add_concept_progress.sql */
+    grade?: number | null;
     created_at: string;
 }
 

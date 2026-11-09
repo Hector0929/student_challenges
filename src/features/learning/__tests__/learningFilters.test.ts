@@ -47,7 +47,7 @@ describe('learningFilters', () => {
         const visibleItems = getVisibleLearningItems(LEARNING_ITEMS, [], [...visibleStatuses]);
         const subjectGroups = groupLearningItemsBySubject(visibleItems);
 
-        expect(subjectGroups.map((group) => group.subject.id)).toEqual(['english', 'chinese', 'math', 'review']);
+        expect(subjectGroups.map((group) => group.subject.id)).toEqual(['english', 'chinese', 'math', 'science', 'social']);
         expect(subjectGroups[2].items.some((item) => item.id === 'multiplication')).toBe(true);
     });
 

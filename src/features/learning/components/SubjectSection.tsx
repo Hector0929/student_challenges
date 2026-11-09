@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calculator, Languages, LibraryBig, School } from 'lucide-react';
+import { Calculator, FlaskConical, Globe, Languages, LibraryBig } from 'lucide-react';
 import type { LearningItem, LearningSubjectGroup } from '../types/learning';
 import { groupLearningItemsByStage } from '../utils/learningFilters';
 import { LearningItemCard } from './LearningItemCard';
@@ -9,7 +9,8 @@ const SUBJECT_ICONS = {
     english: Languages,
     chinese: LibraryBig,
     math: Calculator,
-    review: School,
+    science: FlaskConical,
+    social: Globe,
 } as const;
 
 interface SubjectSectionProps {

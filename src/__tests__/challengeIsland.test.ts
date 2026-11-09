@@ -119,10 +119,21 @@ describe('學習與遊戲', () => {
     });
 
     it('家長關閉的項目不出現，空島整座拿掉，相關連結線也移除', () => {
-        const model = buildIslandModel(baseInput({ learningItems: LEARNING_ITEMS.filter((i) => i.id !== 'idiom') }));
+        // 成語古城有成語大挑戰和國語概念站，兩個都關掉才會變成空島
+        const model = buildIslandModel(baseInput({ learningItems: LEARNING_ITEMS.filter((i) => i.id !== 'idiom' && i.id !== 'concept_chinese') }));
         expect(model.islands.find((i) => i.id === 'chinese')).toBeUndefined();
         expect(model.flows.some((f) => f.from === 'idiom' || f.to === 'idiom')).toBe(false);
         expect(find(model, 'idiom')).toBeUndefined();
+    });
+
+    it('概念站住在各科島，自然和社會有自己的島', () => {
+        const model = buildIslandModel(baseInput());
+        const islandOf = (id: string) => model.islands.find((i) => i.challenges.some((c) => c.id === id))?.id;
+        expect(islandOf('concept_chinese')).toBe('chinese');
+        expect(islandOf('concept_english')).toBe('english');
+        expect(islandOf('concept_math')).toBe('ops');
+        expect(islandOf('concept_science')).toBe('science');
+        expect(islandOf('concept_social')).toBe('social');
     });
 
     it('沒列在配置裡的新項目也有地方住', () => {

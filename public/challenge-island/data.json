@@ -3,18 +3,6 @@
   "subtitle": "Daily QuestMon · Challenge Archipelago",
   "islands": [
     {
-      "id": "subjects", "name": "學科島", "en": "Subject Island", "icon": "🏫",
-      "axial": [0, -1], "style": "library", "ground": "#cfe0b0", "accent": "#d9822b",
-      "summary": "五棟建築各是一個學科，自己挑一科走進去複習。",
-      "challenges": [
-        { "id": "review_chinese", "name": "文字書院", "icon": "📖", "style": "temple", "desc": "國語複習：標點、字詞、修辭、閱讀理解、成語和古詩。", "tags": ["國語", "三～六年級"], "launch": "/games/subject_island.html?s=chinese" },
-        { "id": "review_english", "name": "英語會話館", "icon": "🔤", "style": "library", "desc": "英語複習：單字、日常對話、句型和短文閱讀，可以聽發音。", "tags": ["英語", "三～六年級"], "launch": "/games/subject_island.html?s=english" },
-        { "id": "review_math", "name": "數感鐘塔", "icon": "📐", "style": "tower", "desc": "數學複習：大數、乘除、分數、角度、因倍數、面積、比和圓。", "tags": ["數學", "三～六年級"], "launch": "/games/subject_island.html?s=math" },
-        { "id": "review_science", "name": "自然實驗室", "icon": "🔬", "style": "observatory", "desc": "自然複習：植物、磁鐵、電路、聲光、太陽、燃燒、天氣和水溶液。", "tags": ["自然", "三～六年級"], "launch": "/games/subject_island.html?s=science" },
-        { "id": "review_social", "name": "社會探索館", "icon": "🌏", "style": "hall", "desc": "社會複習：家庭與學校、地圖與節慶、臺灣歷史地理、民主與經濟。", "tags": ["社會", "三～六年級"], "launch": "/games/subject_island.html?s=social" }
-      ]
-    },
-    {
       "id": "english", "name": "英文書港", "en": "English Harbour", "icon": "🔤",
       "axial": [-1, 0], "style": "library", "ground": "#bcd39a", "accent": "#3f8f8a",
       "summary": "單字、發音與句子，三座書塔圍出英文港口。",
@@ -115,10 +103,6 @@
     { "id": "f14", "from": "othello", "to": "game2048", "label": "策略思考", "note": "都要先想好下一步。" },
     { "id": "f15", "from": "shooter", "to": "akila", "label": "心算速度", "note": "射擊遊戲考的是心算反應。" },
     { "id": "f16", "from": "memory_matrix", "to": "spelling", "label": "記憶力", "note": "記住格子位置，也幫助記住字母順序。" },
-    { "id": "f17", "from": "review_english", "to": "spelling", "label": "單字延伸", "note": "複習過的單字，到單字召喚術練拼寫。" },
-    { "id": "f18", "from": "review_chinese", "to": "idiom", "label": "成語延伸", "note": "成語茶館學到的，到成語古城再挑戰。" },
-    { "id": "f19", "from": "review_math", "to": "fractions", "label": "分數練習", "note": "複習分數觀念後，多做幾題計算。" },
-    { "id": "f20", "from": "review_math", "to": "area", "label": "面積練習", "note": "面積公式複習完，換實際算算看。" },
     { "id": "f21", "from": "spelling", "to": "word_quest", "label": "拼字實戰", "note": "練熟的單字，帶去怪獸對戰裡用。" },
     { "id": "f22", "from": "sentence", "to": "word_quest", "label": "句子魔法", "note": "句子重組也是魔王戰的招式。" }
   ],
@@ -130,7 +114,6 @@
     { "time": 690, "island": "fraction", "challenge": "fractions", "text": "午餐切披薩，正好練分數。" },
     { "time": 780, "island": "chinese", "challenge": "idiom", "text": "午休後的成語接龍。" },
     { "time": 870, "island": "english", "challenge": "spelling", "text": "英文課：單字召喚術。" },
-    { "time": 920, "island": "subjects", "challenge": "review_science", "text": "回家先到學科島，挑一科複習今天上的內容。" },
     { "time": 960, "island": "fraction", "challenge": "factors_multiples", "text": "放學作業：找最大公因數。" },
     { "time": 1020, "island": "algebra", "challenge": "linear_equation", "text": "挑戰一題國中方程式。" },
     { "time": 1080, "island": "puzzle", "challenge": "othello", "text": "晚餐前跟電腦下一盤黑白棋。" },

@@ -23,11 +23,18 @@ export const LEARNING_SUBJECTS: LearningSubject[] = [
         order: 3,
     },
     {
-        id: 'review',
-        name: '學科複習',
-        icon: '🏫',
-        description: '國語、英語、數學、自然、社會五科總複習',
+        id: 'science',
+        name: '自然學習',
+        icon: '🔬',
+        description: '植物、動物、天氣與生活中的科學',
         order: 4,
+    },
+    {
+        id: 'social',
+        name: '社會學習',
+        icon: '🌏',
+        description: '家庭、社區、臺灣與世界',
+        order: 5,
     },
 ];
 

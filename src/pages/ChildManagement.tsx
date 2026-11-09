@@ -79,6 +79,22 @@ export const ChildManagement: React.FC = () => {
         },
     });
 
+    // 年級：概念題庫依年級出題（profiles.grade，透過 set_child_grade 設定）
+    const setGradeMutation = useMutation({
+        mutationFn: async ({ childId, grade }: { childId: string; grade: number | null }) => {
+            const { error } = await supabase.rpc('set_child_grade', { p_child_id: childId, p_grade: grade });
+            if (error) throw error;
+        },
+        onSuccess: (_, { childId }) => {
+            queryClient.invalidateQueries({ queryKey: ['children'] });
+            queryClient.invalidateQueries({ queryKey: ['child_grade', childId] });
+        },
+        onError: (error) => {
+            const msg = error instanceof Error ? error.message : String(error);
+            alert(`年級儲存失敗：${msg}\n\n如果是第一次使用，請先在 Supabase SQL Editor 執行 supabase/add_concept_progress.sql。`);
+        },
+    });
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         createChildMutation.mutate(formData);
@@ -135,6 +151,20 @@ export const ChildManagement: React.FC = () => {
                                     <p className="font-body text-sm text-gray-500 mt-2">
                                         建立於: {new Date(child.created_at).toLocaleDateString('zh-TW')}
                                     </p>
+                                    <label className="mt-3 flex items-center gap-2 font-body text-sm" style={{ color: 'var(--color-text)' }}>
+                                        <span className="font-bold">年級</span>
+                                        <select
+                                            className="rounded-xl border-2 border-indigo-100 bg-white px-2 py-1"
+                                            value={child.grade ?? ''}
+                                            disabled={setGradeMutation.isPending}
+                                            onChange={(e) => setGradeMutation.mutate({ childId: child.id, grade: e.target.value ? Number(e.target.value) : null })}
+                                        >
+                                            <option value="">未設定</option>
+                                            {[2, 3, 4, 5, 6].map((g) => (
+                                                <option key={g} value={g}>{g} 年級</option>
+                                            ))}
+                                        </select>
+                                    </label>
                                 </div>
                                 <button
                                     onClick={() => handleDelete(child)}

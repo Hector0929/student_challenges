@@ -9,10 +9,18 @@ import { LinearEquationPractice } from './LinearEquationPractice';
 import { PolynomialsPractice } from './PolynomialsPractice';
 import { OthelloPractice } from './OthelloPractice';
 import { EnglishHarbour } from '../../englishHarbour/EnglishHarbour';
+import { ConceptStation } from '../../concepts/ConceptStation';
+import { CONCEPT_SUBJECTS } from '../../concepts/loadConcepts';
+import type { ConceptSubject } from '../../concepts/types';
 
 export const getLearningEmbeddedContent = (item: LearningItem, userId = ''): React.ReactNode | null => {
     if (item.launcher.type !== 'react') {
         return null;
+    }
+
+    if (item.launcher.target.startsWith('concept_station:')) {
+        const subject = item.launcher.target.slice('concept_station:'.length) as ConceptSubject;
+        if (CONCEPT_SUBJECTS.includes(subject)) return <ConceptStation subject={subject} userId={userId} />;
     }
 
     switch (item.launcher.target) {
