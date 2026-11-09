@@ -22,6 +22,13 @@ export const LEARNING_SUBJECTS: LearningSubject[] = [
         description: '依學段與單元分類的數學練習',
         order: 3,
     },
+    {
+        id: 'review',
+        name: '學科複習',
+        icon: '🏫',
+        description: '國語、英語、數學、自然、社會五科總複習',
+        order: 4,
+    },
 ];
 
 export const LEARNING_SUBJECT_MAP = Object.fromEntries(

@@ -1,4 +1,4 @@
-export type LearningSubjectId = 'math' | 'english' | 'chinese';
+export type LearningSubjectId = 'math' | 'english' | 'chinese' | 'review';
 
 export type LearningStageId = 'general' | 'elementary' | 'junior_high';
 

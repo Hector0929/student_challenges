@@ -183,6 +183,12 @@ const ISLAND_LAYOUT: IslandLayout[] = [
         learning: ['idiom'], subject: 'chinese',
     },
     {
+        id: 'subjects', name: '學科島', en: 'Subject Island', icon: '🏫',
+        axial: [-2, 1], style: 'library', ground: '#cfe0b0', accent: '#d9822b',
+        summary: '五棟建築各是一個學科，自己挑一科走進去複習。',
+        learning: ['review_chinese', 'review_english', 'review_math', 'review_science', 'review_social'], subject: 'review',
+    },
+    {
         id: 'ops', name: '四則運算鎮', en: 'Arithmetic Town', icon: '🧮',
         axial: [0, 0], style: 'tower', ground: '#c9d8a6', accent: '#3d6fb6',
         summary: '群島中心的鐘塔小鎮，加減乘除是所有數學的起點。',

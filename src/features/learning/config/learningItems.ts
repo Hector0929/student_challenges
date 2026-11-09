@@ -112,6 +112,95 @@ export const LANGUAGE_LEARNING_ITEMS: LearningItem[] = [
     },
 ];
 
+// 學科島：五棟建築各是一科，共用 subject_island.html，用 ?s= 切換科目
+export const REVIEW_LEARNING_ITEMS: LearningItem[] = [
+    {
+        id: 'review_chinese',
+        name: '文字書院',
+        icon: '📖',
+        description: '國語複習：標點、字詞、修辭、閱讀、成語、古詩',
+        subjectId: 'review',
+        stageId: 'elementary',
+        order: 0,
+        enabledByDefault: true,
+        status: 'active',
+        launcher: {
+            type: 'html',
+            target: '/games/subject_island.html?s=chinese',
+        },
+        accentColorToken: 'rose',
+        tags: ['國語', '閱讀'],
+    },
+    {
+        id: 'review_english',
+        name: '英語會話館',
+        icon: '🔤',
+        description: '英語複習：單字、對話、句型、短文閱讀',
+        subjectId: 'review',
+        stageId: 'elementary',
+        order: 1,
+        enabledByDefault: true,
+        status: 'active',
+        launcher: {
+            type: 'html',
+            target: '/games/subject_island.html?s=english',
+        },
+        accentColorToken: 'teal',
+        tags: ['英語', '會話'],
+    },
+    {
+        id: 'review_math',
+        name: '數感鐘塔',
+        icon: '📐',
+        description: '數學複習：大數、乘除、分數、角度、面積、比和圓',
+        subjectId: 'review',
+        stageId: 'elementary',
+        order: 2,
+        enabledByDefault: true,
+        status: 'active',
+        launcher: {
+            type: 'html',
+            target: '/games/subject_island.html?s=math',
+        },
+        accentColorToken: 'indigo',
+        tags: ['數學', '觀念'],
+    },
+    {
+        id: 'review_science',
+        name: '自然實驗室',
+        icon: '🔬',
+        description: '自然複習：植物、磁鐵、電路、聲光、天氣、水溶液',
+        subjectId: 'review',
+        stageId: 'elementary',
+        order: 3,
+        enabledByDefault: true,
+        status: 'active',
+        launcher: {
+            type: 'html',
+            target: '/games/subject_island.html?s=science',
+        },
+        accentColorToken: 'emerald',
+        tags: ['自然', '實驗'],
+    },
+    {
+        id: 'review_social',
+        name: '社會探索館',
+        icon: '🌏',
+        description: '社會複習：地圖、節慶、臺灣歷史地理、民主與經濟',
+        subjectId: 'review',
+        stageId: 'elementary',
+        order: 4,
+        enabledByDefault: true,
+        status: 'active',
+        launcher: {
+            type: 'html',
+            target: '/games/subject_island.html?s=social',
+        },
+        accentColorToken: 'orange',
+        tags: ['社會', '臺灣'],
+    },
+];
+
 export const FUN_LEARNING_ITEMS: LearningItem[] = [
     {
         id: 'othello',
@@ -135,5 +224,6 @@ export const FUN_LEARNING_ITEMS: LearningItem[] = [
 export const LEARNING_ITEMS: LearningItem[] = [
     ...LANGUAGE_LEARNING_ITEMS,
     ...MATH_LEARNING_ITEMS,
+    ...REVIEW_LEARNING_ITEMS,
     ...FUN_LEARNING_ITEMS,
 ];
