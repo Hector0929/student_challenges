@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { lazy, Suspense, useMemo, useState } from 'react';
 import { ChallengeIslandHome } from '../features/challengeIsland/ChallengeIslandFullScreen';
 import type { FeatureDef } from '../features/challengeIsland/model';
 import { useStarBalance } from '../hooks/useQuests';
@@ -6,11 +6,14 @@ import { useTowerProgress } from '../hooks/useTowerProgress';
 import { useFamilySettings } from '../hooks/useFamilySettings';
 import { useWorldPersistence } from '../hooks/useWorldPersistence';
 import type { WorldTheme } from '../hooks/useWorldState';
-import { MonsterTowerV4 } from '../components/MonsterTowerV4';
-import { ShopModal } from '../components/ShopModal';
-import { WorldFullScreen } from '../components/WorldFullScreen';
 import { WishQuestDialog } from '../components/WishQuestDialog';
 import { ExchangeRequestDialog } from '../components/ExchangeRequestDialog';
+import { useMountOnFirstOpen } from '../hooks/useMountOnFirstOpen';
+
+// 怪獸塔、世界島、商店都是第一次打開時才下載（見 useMountOnFirstOpen）
+const MonsterTowerV4 = lazy(() => import('../components/MonsterTowerV4').then((m) => ({ default: m.MonsterTowerV4 })));
+const WorldFullScreen = lazy(() => import('../components/WorldFullScreen').then((m) => ({ default: m.WorldFullScreen })));
+const ShopModal = lazy(() => import('../components/ShopModal').then((m) => ({ default: m.ShopModal })));
 
 interface ChildHomeProps {
     userId: string;
@@ -71,6 +74,9 @@ export const ChildHome: React.FC<ChildHomeProps> = ({ userId, onSwitchProfile, o
 
     const parentMessage = settings?.parent_message_enabled ? settings.parent_message : null;
     const close = () => setOpen(null);
+    const towerMounted = useMountOnFirstOpen(open === 'tower');
+    const shopMounted = useMountOnFirstOpen(open === 'shop');
+    const worldMounted = useMountOnFirstOpen(open === 'world');
 
     return (
         <>
@@ -84,17 +90,21 @@ export const ChildHome: React.FC<ChildHomeProps> = ({ userId, onSwitchProfile, o
                 parentMessage={parentMessage}
             />
 
-            <MonsterTowerV4 userId={userId} isOpen={open === 'tower'} onClose={close} />
-            <ShopModal isOpen={open === 'shop'} onClose={close} onGoHome={close} userId={userId} starBalance={starBalance} initialTab="monster" />
-            <WorldFullScreen
-                isOpen={open === 'world'}
-                onClose={close}
-                onGoHome={close}
-                userId={userId}
-                starBalance={starBalance}
-                worldTheme={worldTheme}
-                onThemeChange={setThemeOverride}
-            />
+            <Suspense fallback={null}>
+                {towerMounted && <MonsterTowerV4 userId={userId} isOpen={open === 'tower'} onClose={close} />}
+                {shopMounted && <ShopModal isOpen={open === 'shop'} onClose={close} onGoHome={close} userId={userId} starBalance={starBalance} initialTab="monster" />}
+                {worldMounted && (
+                    <WorldFullScreen
+                        isOpen={open === 'world'}
+                        onClose={close}
+                        onGoHome={close}
+                        userId={userId}
+                        starBalance={starBalance}
+                        worldTheme={worldTheme}
+                        onThemeChange={setThemeOverride}
+                    />
+                )}
+            </Suspense>
             <WishQuestDialog isOpen={open === 'wish'} onClose={close} userId={userId} />
             <ExchangeRequestDialog isOpen={open === 'exchange'} onClose={close} />
         </>

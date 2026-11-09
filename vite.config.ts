@@ -13,6 +13,7 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom'],
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-utils': ['@tanstack/react-query', '@line/liff', 'lucide-react'],
+          'vendor-three': ['three'],
         },
       },
     },

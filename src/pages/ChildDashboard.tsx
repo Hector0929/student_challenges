@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { ParentsMessageCard, ExchangeRateCard } from '../components/ChildDashboardWidgets';
 import { ExchangeRequestDialog } from '../components/ExchangeRequestDialog';
-import { MonsterTowerV4, TowerV4Preview } from '../components/MonsterTowerV4';
+import { TowerV4Preview } from '../components/TowerV4Preview';
 
 import { Star, ChevronDown, ChevronUp, RefreshCw, Trash2, Check, Store } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
@@ -11,16 +11,20 @@ import { RPGButton } from '../components/RPGButton';
 import { RewardTime } from '../components/RewardTime';
 import { WishQuestDialog } from '../components/WishQuestDialog';
 import { LearningArea } from '../components/LearningArea';
-import { ShopModal } from '../components/ShopModal';
 import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings } from '../hooks/useFamilySettings';
 import { WorldPreviewCard } from '../components/WorldPreviewCard';
-import { WorldFullScreen } from '../components/WorldFullScreen';
 import { useWorldPersistence } from '../hooks/useWorldPersistence';
 import { ChallengeIslandPreviewCard } from '../features/challengeIsland/ChallengeIslandPreviewCard';
 import type { WorldTheme } from '../hooks/useWorldState';
 
 import { DAILY_QUEST_TARGET } from '../lib/constants';
+import { useMountOnFirstOpen } from '../hooks/useMountOnFirstOpen';
+
+// 怪獸塔、世界島、商店都是第一次打開時才下載（見 useMountOnFirstOpen）
+const MonsterTowerV4 = lazy(() => import('../components/MonsterTowerV4').then((m) => ({ default: m.MonsterTowerV4 })));
+const WorldFullScreen = lazy(() => import('../components/WorldFullScreen').then((m) => ({ default: m.WorldFullScreen })));
+const ShopModal = lazy(() => import('../components/ShopModal').then((m) => ({ default: m.ShopModal })));
 
 
 // 3D 群島第一次打開時才下載
@@ -89,6 +93,9 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     const [isTowerOpen, setIsTowerOpen] = useState(false);
     const [isShopOpen, setIsShopOpen] = useState(false);
     const [isWorldOpen, setIsWorldOpen] = useState(false);
+    const towerMounted = useMountOnFirstOpen(isTowerOpen);
+    const shopMounted = useMountOnFirstOpen(isShopOpen);
+    const worldMounted = useMountOnFirstOpen(isWorldOpen);
     const [isIslandOpen, setIsIslandOpen] = useState(false);
     const [islandRequested, setIslandRequested] = useState(false);
     const [shopInitialTab, setShopInitialTab] = useState<'monster' | 'world'>('monster');
@@ -502,21 +509,29 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
             />
 
             {/* Monster Tower Gen3 Modal (2.5D 新版) */}
-            <MonsterTowerV4
-                userId={userId}
-                isOpen={isTowerOpen}
-                onClose={() => setIsTowerOpen(false)}
-            />
+            {towerMounted && (
+                <Suspense fallback={null}>
+                    <MonsterTowerV4
+                        userId={userId}
+                        isOpen={isTowerOpen}
+                        onClose={() => setIsTowerOpen(false)}
+                    />
+                </Suspense>
+            )}
 
             {/* Monster Shop Modal */}
-            <ShopModal
-                isOpen={isShopOpen}
-                onClose={() => setIsShopOpen(false)}
-                onGoHome={onGoHome}
-                userId={userId}
-                starBalance={starBalance || 0}
-                initialTab={shopInitialTab}
-            />
+            {shopMounted && (
+                <Suspense fallback={null}>
+                    <ShopModal
+                        isOpen={isShopOpen}
+                        onClose={() => setIsShopOpen(false)}
+                        onGoHome={onGoHome}
+                        userId={userId}
+                        starBalance={starBalance || 0}
+                        initialTab={shopInitialTab}
+                    />
+                </Suspense>
+            )}
 
             {/* 學習挑戰群島 Full Screen */}
             {islandRequested && (
@@ -532,15 +547,19 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
             )}
 
             {/* World Full Screen Modal */}
-            <WorldFullScreen
-                isOpen={isWorldOpen}
-                onClose={() => setIsWorldOpen(false)}
-                onGoHome={onGoHome}
-                userId={userId}
-                starBalance={starBalance || 0}
-                worldTheme={localTheme}
-                onThemeChange={handleThemeChange}
-            />
+            {worldMounted && (
+                <Suspense fallback={null}>
+                    <WorldFullScreen
+                        isOpen={isWorldOpen}
+                        onClose={() => setIsWorldOpen(false)}
+                        onGoHome={onGoHome}
+                        userId={userId}
+                        starBalance={starBalance || 0}
+                        worldTheme={localTheme}
+                        onThemeChange={handleThemeChange}
+                    />
+                </Suspense>
+            )}
         </div >
     );
 };

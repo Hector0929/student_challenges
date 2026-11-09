@@ -25,6 +25,9 @@ vi.mock('../components/ExchangeRequestDialog', () => ({
 
 vi.mock('../components/MonsterTowerV4', () => ({
     MonsterTowerV4: ({ isOpen }: { isOpen: boolean }) => isOpen ? <div>Monster Tower Modal</div> : null,
+}));
+
+vi.mock('../components/TowerV4Preview', () => ({
     TowerV4Preview: ({ onClick }: { onClick: () => void }) => <button onClick={onClick}>Open Tower Preview</button>,
 }));
 
@@ -114,7 +117,7 @@ describe('ChildDashboard', () => {
         });
     });
 
-    it('opens the top shop street button and lets the child switch to world shop', () => {
+    it('opens the top shop street button and lets the child switch to world shop', async () => {
         render(
             <TestWrapper>
                 <ChildDashboard userId="child-1" />
@@ -122,7 +125,8 @@ describe('ChildDashboard', () => {
         );
 
         fireEvent.click(screen.getByRole('button', { name: /^商店街$/i }));
-        expect(screen.getByText('怪獸商店街')).toBeInTheDocument();
+        // 商店是第一次打開時才載入（lazy），要等它出現
+        expect(await screen.findByText('怪獸商店街')).toBeInTheDocument();
         expect(screen.getByText('Monster Shop Content')).toBeInTheDocument();
         expect(screen.queryByText('World Shop Street Content')).not.toBeInTheDocument();
 

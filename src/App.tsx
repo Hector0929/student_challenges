@@ -1,21 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { FamilyOnboarding } from './pages/FamilyOnboarding';
 import { RoleSelection } from './pages/RoleSelection';
-import { ChildDashboard } from './pages/ChildDashboard';
-import { ChildHome } from './pages/ChildHome';
-import { ParentControl } from './pages/ParentControl';
-import { ParentApproval } from './pages/ParentApproval';
-import { ChildManagement } from './pages/ChildManagement';
-import { ParentSettings } from './pages/ParentSettings';
-import { DebugPage } from './pages/DebugPage';
 import { HomeButton } from './components/HomeButton';
 import { useRealtimeSubscription } from './hooks/useRealtime';
 import { LogOut, ArrowLeft, Lock, LayoutDashboard, Briefcase, Users, Settings, Bug, Map } from 'lucide-react';
 import type { Profile } from './types/database';
 import { FloatingEncouragement } from './components/FloatingEncouragement';
 import './index.css';
+
+// 各頁面分開打包：孩子端不會下載家長頁，家長端也不會下載 3D 群島與怪獸塔
+const ChildDashboard = lazy(() => import('./pages/ChildDashboard').then((m) => ({ default: m.ChildDashboard })));
+const ChildHome = lazy(() => import('./pages/ChildHome').then((m) => ({ default: m.ChildHome })));
+const ParentControl = lazy(() => import('./pages/ParentControl').then((m) => ({ default: m.ParentControl })));
+const ParentApproval = lazy(() => import('./pages/ParentApproval').then((m) => ({ default: m.ParentApproval })));
+const ChildManagement = lazy(() => import('./pages/ChildManagement').then((m) => ({ default: m.ChildManagement })));
+const ParentSettings = lazy(() => import('./pages/ParentSettings').then((m) => ({ default: m.ParentSettings })));
+const DebugPage = lazy(() => import('./pages/DebugPage').then((m) => ({ default: m.DebugPage })));
+
+const PageLoading = () => (
+  <div className="min-h-[40vh] flex items-center justify-center">
+    <div className="text-xl font-pixel animate-pulse">Loading...</div>
+  </div>
+);
 
 // 小孩進來後看哪一頁：使用者清單上點頭像 → 儀表板；點「進入我的群島」→ 群島。
 // 記在 sessionStorage，同一個分頁重新整理會停在原本那頁。
@@ -126,7 +134,11 @@ function AppContent() {
 
   // 3. Child -> 自己的學習挑戰群島（整頁）
   if (user.role === 'child' && childView === 'island') {
-    return <ChildHome userId={user.id} onSwitchProfile={exitProfile} onClassic={() => setChildView('dashboard')} />;
+    return (
+      <Suspense fallback={<PageLoading />}>
+        <ChildHome userId={user.id} onSwitchProfile={exitProfile} onClassic={() => setChildView('dashboard')} />
+      </Suspense>
+    );
   }
 
   // 4. Parent, or child who chose the classic dashboard
@@ -199,7 +211,9 @@ function AppContent() {
       </div>
 
       {user.role === 'child' ? (
-        <ChildDashboard userId={user.id} onGoHome={exitProfile} />
+        <Suspense fallback={<PageLoading />}>
+          <ChildDashboard userId={user.id} onGoHome={exitProfile} />
+        </Suspense>
       ) : (
         <>
           {/* Parent View Toggle */}
@@ -243,6 +257,7 @@ function AppContent() {
             </div>
           </div>
 
+          <Suspense fallback={<PageLoading />}>
           {view === 'dashboard' ? (
             <ParentApproval />
           ) : view === 'control' ? (
@@ -254,6 +269,7 @@ function AppContent() {
           ) : (
             <DebugPage />
           )}
+          </Suspense>
         </>
       )}
 
