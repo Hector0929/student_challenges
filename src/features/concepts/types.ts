@@ -42,11 +42,10 @@ export interface Concept {
     generator?: GeneratorRef;
 }
 
-export interface SubjectBank {
+/** content/<subject>/g<grade>.json 的內容 */
+export interface GradeBank {
     subject: ConceptSubject;
-    name: string;
-    icon: string;
-    color: string;
+    grade: ConceptGrade;
     concepts: Concept[];
 }
 

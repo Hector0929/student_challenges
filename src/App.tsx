@@ -5,7 +5,7 @@ import { FamilyOnboarding } from './pages/FamilyOnboarding';
 import { RoleSelection } from './pages/RoleSelection';
 import { HomeButton } from './components/HomeButton';
 import { useRealtimeSubscription } from './hooks/useRealtime';
-import { LogOut, ArrowLeft, Lock, LayoutDashboard, Briefcase, Users, Settings, Bug, Map } from 'lucide-react';
+import { LogOut, ArrowLeft, Lock, LayoutDashboard, Briefcase, Users, Settings, Bug, Map, BookOpen } from 'lucide-react';
 import type { Profile } from './types/database';
 import { FloatingEncouragement } from './components/FloatingEncouragement';
 import './index.css';
@@ -17,6 +17,7 @@ const ParentControl = lazy(() => import('./pages/ParentControl').then((m) => ({ 
 const ParentApproval = lazy(() => import('./pages/ParentApproval').then((m) => ({ default: m.ParentApproval })));
 const ChildManagement = lazy(() => import('./pages/ChildManagement').then((m) => ({ default: m.ChildManagement })));
 const ParentSettings = lazy(() => import('./pages/ParentSettings').then((m) => ({ default: m.ParentSettings })));
+const ConceptPreview = lazy(() => import('./features/concepts/ConceptPreview').then((m) => ({ default: m.ConceptPreview })));
 const DebugPage = lazy(() => import('./pages/DebugPage').then((m) => ({ default: m.DebugPage })));
 
 const PageLoading = () => (
@@ -52,7 +53,7 @@ function AppContent() {
   // Enable global realtime updates
   useRealtimeSubscription(user?.id);
 
-  const [view, setView] = useState<'dashboard' | 'control' | 'children' | 'settings' | 'debug'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'control' | 'children' | 'concepts' | 'settings' | 'debug'>('dashboard');
   const [childView, setChildViewState] = useState<ChildView>(readChildView);
   const setChildView = (next: ChildView) => {
     setChildViewState(next);
@@ -241,6 +242,13 @@ function AppContent() {
                 管理孩子
               </button>
               <button
+                onClick={() => setView('concepts')}
+                className={view === 'concepts' ? 'active' : ''}
+              >
+                <BookOpen size={16} />
+                題庫預覽
+              </button>
+              <button
                 onClick={() => setView('settings')}
                 className={view === 'settings' ? 'active' : ''}
               >
@@ -264,6 +272,8 @@ function AppContent() {
             <ParentControl />
           ) : view === 'children' ? (
             <ChildManagement />
+          ) : view === 'concepts' ? (
+            <ConceptPreview />
           ) : view === 'settings' ? (
             <ParentSettings />
           ) : (

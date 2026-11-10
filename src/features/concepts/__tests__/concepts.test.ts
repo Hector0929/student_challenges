@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { applyRound, addDays, type ConceptProgress } from '../srs';
 import { answerText, isCorrect, normalizeAnswer, pickQuestions, questionKey } from '../pickQuestions';
 import { generateQuestion, hasGenerator } from '../generators';
-import { CONCEPT_SUBJECTS, loadSubjectBank } from '../loadConcepts';
+import { CONCEPT_SUBJECTS, hasGradeContent, loadGradeConcepts } from '../loadConcepts';
 import { CONCEPT_GRADES, type Concept } from '../types';
 
 const TODAY = '2026-11-10';
@@ -105,10 +105,14 @@ describe('數學產生器轉接', () => {
 // 題庫內容檢查：之後分批補題時，格式錯誤會在這裡被抓到
 describe('題庫內容', () => {
     it.each(CONCEPT_SUBJECTS)('%s 題庫格式正確', async (subject) => {
-        const bank = await loadSubjectBank(subject);
-        expect(bank.subject).toBe(subject);
+        const byGrade = await Promise.all(CONCEPT_GRADES.map(async (g) => ({ g, list: await loadGradeConcepts(subject, g) })));
+        for (const { g, list } of byGrade) {
+            expect(list.length > 0, `${subject} g${g} 檔案存在但沒有概念`).toBe(hasGradeContent(subject, g));
+            for (const c of list) expect(c.grade, `${c.id} 放錯年級檔案`).toBe(g);
+        }
+        const concepts = byGrade.flatMap((x) => x.list);
         const ids = new Set<string>();
-        for (const c of bank.concepts) {
+        for (const c of concepts) {
             const where = `${c.id}`;
             expect(c.id, where).toMatch(new RegExp(`^${subject}\\.g${c.grade}\\.[a-z0-9-]+$`));
             expect(CONCEPT_GRADES, where).toContain(c.grade);
@@ -122,6 +126,8 @@ describe('題庫內容', () => {
                 expect(texts.has(q.q), `${where} 題目重複：${q.q}`).toBe(false);
                 texts.add(q.q);
                 expect(q.e, `${where} 缺解析：${q.q}`).toBeTruthy();
+                if (c.grade === 2) expect(q.h?.length, `${where} 缺提示：${q.q}`).toBeGreaterThan(0);
+                if (q.type === 'order') expect(new Set(q.a).size, `${where} 排序題有重複的片段：${q.q}`).toBe(q.a.length);
                 if (q.type === 'choice') {
                     expect(q.w, `${where}：${q.q}`).toHaveLength(3);
                     expect(q.w, `${where} 誘答與正解相同：${q.q}`).not.toContain(q.a);
@@ -129,6 +135,15 @@ describe('題庫內容', () => {
                 }
             }
         }
-        for (const c of bank.concepts) for (const pre of c.prerequisites ?? []) expect(ids.has(pre) || !pre.startsWith(subject), `${c.id} 的先備概念 ${pre} 不存在`).toBe(true);
+        for (const c of concepts) for (const pre of c.prerequisites ?? []) expect(ids.has(pre) || !pre.startsWith(subject), `${c.id} 的先備概念 ${pre} 不存在`).toBe(true);
+    });
+});
+
+// 第 2 階段完成標準：二年級每科至少 8 個概念，寫好的題目每個概念 12 題以上
+describe('二年級份量', () => {
+    it.each(CONCEPT_SUBJECTS)('%s 二年級至少 8 個概念、每個 12 題以上', async (subject) => {
+        const list = await loadGradeConcepts(subject, 2);
+        expect(list.length).toBeGreaterThanOrEqual(8);
+        for (const c of list) if (!c.generator) expect(c.questions?.length ?? 0, c.id).toBeGreaterThanOrEqual(12);
     });
 });

@@ -1,0 +1,174 @@
+{
+ "subject": "english",
+ "grade": 4,
+ "concepts": [
+  {
+   "id": "english.g4.greetings",
+   "grade": 4,
+   "unit": "Daily Talk 日常對話",
+   "title": "Greetings",
+   "summary": "打招呼、自我介紹，學會就能和外國朋友聊天。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "早上在學校遇到老師，你可以說：",
+     "a": "Good morning.",
+     "w": [
+      "Good night.",
+      "Goodbye.",
+      "Thank you."
+     ],
+     "h": [
+      "morning 是早上。",
+      "Good night 是睡前說的。"
+     ],
+     "e": "Good morning. 早安；Good night. 晚安；Goodbye. 再見。"
+    },
+    {
+     "type": "choice",
+     "q": "別人對你說「Thank you.」，你可以回答：",
+     "a": "You're welcome.",
+     "w": [
+      "I'm fine.",
+      "Nice to meet you.",
+      "Good night."
+     ],
+     "h": [
+      "中文會說「不客氣」。",
+      "welcome 有歡迎的意思。"
+     ],
+     "e": "Thank you. 謝謝 → You're welcome. 不客氣。"
+    },
+    {
+     "type": "choice",
+     "q": "「How are you?」最適合怎麼回答？",
+     "a": "I'm fine, thank you.",
+     "w": [
+      "I'm ten.",
+      "I'm Amy.",
+      "It's red."
+     ],
+     "h": [
+      "How are you? 是問你好不好。",
+      "回答自己的狀況。"
+     ],
+     "e": "How are you? 你好嗎？→ I'm fine, thank you. 我很好，謝謝。"
+    },
+    {
+     "type": "choice",
+     "q": "「What's your name?」最適合怎麼回答？",
+     "a": "My name is Ben.",
+     "w": [
+      "I'm nine years old.",
+      "I like dogs.",
+      "It's a book."
+     ],
+     "h": [
+      "name 是名字。",
+      "回答你叫什麼名字。"
+     ],
+     "e": "What's your name? 你叫什麼名字？→ My name is ___。"
+    },
+    {
+     "type": "choice",
+     "q": "「How old are you?」最適合怎麼回答？",
+     "a": "I'm ten years old.",
+     "w": [
+      "I'm fine.",
+      "Yes, I am.",
+      "It's ten o'clock."
+     ],
+     "h": [
+      "How old 是問年紀。",
+      "要說出幾歲。"
+     ],
+     "e": "How old are you? 你幾歲？→ I'm ___ years old. 我 ___ 歲。"
+    }
+   ]
+  },
+  {
+   "id": "english.g4.time-days",
+   "grade": 4,
+   "unit": "Daily Talk 日常對話",
+   "title": "Time & Days",
+   "summary": "幾點了？今天星期幾？時間的說法一次學會。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "時鐘指著 7:00，「What time is it?」要怎麼回答？",
+     "a": "It's seven o'clock.",
+     "w": [
+      "It's Monday.",
+      "It's seven years old.",
+      "It's sunny."
+     ],
+     "h": [
+      "What time 是問時間。",
+      "整點說 o'clock。"
+     ],
+     "e": "整點用 It's ___ o'clock.，例如 It's seven o'clock. 七點整。"
+    },
+    {
+     "type": "choice",
+     "q": "「星期一」的英文是哪一個？",
+     "a": "Monday",
+     "w": [
+      "Sunday",
+      "Friday",
+      "Tuesday"
+     ],
+     "h": [
+      "Moon（月亮）day。",
+      "M 開頭。"
+     ],
+     "e": "Monday 星期一、Tuesday 星期二、Friday 星期五、Sunday 星期日。"
+    },
+    {
+     "type": "choice",
+     "q": "Saturday 是星期幾？",
+     "a": "星期六",
+     "w": [
+      "星期日",
+      "星期五",
+      "星期四"
+     ],
+     "h": [
+      "週末有兩天：Saturday 和 Sunday。",
+      "Sunday 是星期日。"
+     ],
+     "e": "Saturday = 星期六，Sunday = 星期日。"
+    },
+    {
+     "type": "choice",
+     "q": "「What day is it today?」最適合怎麼回答？",
+     "a": "It's Friday.",
+     "w": [
+      "It's three o'clock.",
+      "It's hot.",
+      "It's my book."
+     ],
+     "h": [
+      "What day 是問星期幾。",
+      "答案要是星期的名稱。"
+     ],
+     "e": "What day is it today? 今天星期幾？→ It's Friday. 星期五。"
+    },
+    {
+     "type": "choice",
+     "q": "breakfast 是什麼意思？",
+     "a": "早餐",
+     "w": [
+      "午餐",
+      "晚餐",
+      "點心"
+     ],
+     "h": [
+      "早上起床後吃的那一餐。",
+      "lunch 是午餐，dinner 是晚餐。"
+     ],
+     "e": "breakfast 早餐、lunch 午餐、dinner 晚餐。"
+    }
+   ]
+  }
+ ]
+}

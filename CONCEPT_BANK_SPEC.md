@@ -4,7 +4,7 @@
 
 > 版本：2026-11-10 初版。決策紀錄在第 9 節。
 >
-> **進度**：第 1 階段完成（分支 `feat/concept-bank`）。題庫目前有三～六年級 49 個概念（學科島搬入 200 題＋9 個數學程式出題概念），二年級待第 2 階段補齊。
+> **進度**：第 1、2 階段完成。二年級五科 50 個概念（國語 10、英語 9、自然 8、社會 8 個各 12 題；數學 15 個，其中 13 個程式出題、2 個各 12 題），三～六年級 49 個概念。家長可在「題庫預覽」分頁審題。
 
 ---
 
@@ -80,20 +80,19 @@ type Question =
 src/features/concepts/
   types.ts                 // Concept、Question
   content/
-    chinese.json           // 每科一個檔，依年級排列概念
-    math.json              // 只放 summary 與 generatorId，題目由程式產生
-    english.json
-    science.json
-    social.json
-  generators/              // 數學轉接層與新產生器
-  loadConcepts.ts          // 依科目動態 import，用到才下載
+    <科目>/g<年級>.json     // 每科每年級一個檔，例如 chinese/g2.json
+  generators/
+    index.ts               // 轉接層：舊產生器 → Question
+    grade2.ts              // 二年級：千以內的數、加減、九九、長度、時間、錢幣
+  loadConcepts.ts          // 依「科目＋年級」動態 import，用到才下載
   useConceptProgress.ts    // 讀寫進度
   pickReview.ts            // 每日複習挑題
   ConceptQuiz.tsx          // 共用作答元件（概念站、每日複習、守門怪、冒險都用它）
   ConceptStation.tsx       // 島上的概念站
+  ConceptPreview.tsx       // 家長的題庫預覽與標記
 ```
 
-題庫 JSON 用動態 import，各科分開打包。預估全部完成約 3,000 題、1 MB 以內，不影響首頁載入。
+題庫 JSON 用 `import.meta.glob` 動態載入，每科每年級各自打包，孩子只下載正在看的年級（二年級一科約 3～9 KB gzip）。題目存在前端，資料庫只記熟悉度，題目變多不影響資料庫大小。
 
 ## 6. 進度資料（Supabase）
 
@@ -157,3 +156,5 @@ CREATE TABLE IF NOT EXISTS concept_progress (
 | D5 | 先補齊二年級；二年級的自然、社會取自生活課主題 | 2026-11-10 |
 | D6 | 題目由 Claude 開發時撰寫、家長預覽標記；App 不在執行時呼叫 AI | 2026-11-10 |
 | D7 | 進度依概念記錄，存在 Supabase `concept_progress` | 2026-11-10 |
+| D8 | 題庫改成每科每年級一個檔，擴充題目不增加孩子的下載量 | 2026-11-10 |
+| D9 | 家長預覽頁的標記存在瀏覽器，用「複製標記清單」回報，不另建資料表 | 2026-11-10 |

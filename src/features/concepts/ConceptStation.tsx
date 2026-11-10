@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { getTodayDate } from '../../lib/supabase';
 import { ConceptQuiz } from './ConceptQuiz';
-import { useSubjectBank } from './loadConcepts';
+import { hasGradeContent, SUBJECT_INFO, useGradeConcepts } from './loadConcepts';
 import { pickQuestions } from './pickQuestions';
 import { isDue, LEVEL_LABELS, MAX_LEVEL, type ConceptProgress } from './srs';
 import { CONCEPT_GRADES, type Concept, type ConceptGrade, type ConceptSubject, type PlayableQuestion } from './types';
@@ -23,17 +23,17 @@ type View =
     | { kind: 'result'; concept: Concept; correct: number; total: number; before?: ConceptProgress; after: ConceptProgress };
 
 export const ConceptStation: React.FC<ConceptStationProps> = ({ subject, userId }) => {
-    const bank = useSubjectBank(subject);
     const progress = useConceptProgress(userId);
     const childGrade = useChildGrade(userId);
     const [pickedGrade, setPickedGrade] = useState<ConceptGrade | null>(null);
     const [view, setView] = useState<View>({ kind: 'list' });
     const today = getTodayDate();
 
-    const gradesWithContent = useMemo(() => new Set((bank.data?.concepts ?? []).map((c) => c.grade)), [bank.data]);
+    const info = SUBJECT_INFO[subject];
     // 沒設定年級時，預設看最低一個有題目的年級
-    const grade: ConceptGrade = pickedGrade ?? childGrade.data ?? CONCEPT_GRADES.find((g) => gradesWithContent.has(g)) ?? 2;
-    const concepts = useMemo(() => (bank.data?.concepts ?? []).filter((c) => c.grade === grade), [bank.data, grade]);
+    const grade: ConceptGrade = pickedGrade ?? childGrade.data ?? CONCEPT_GRADES.find((g) => hasGradeContent(subject, g)) ?? 2;
+    const bank = useGradeConcepts(subject, grade);
+    const concepts = useMemo(() => bank.data ?? [], [bank.data]);
     const units = useMemo(() => {
         const m = new Map<string, Concept[]>();
         concepts.forEach((c) => m.set(c.unit, [...(m.get(c.unit) ?? []), c]));
@@ -45,8 +45,7 @@ export const ConceptStation: React.FC<ConceptStationProps> = ({ subject, userId 
         if (items.length) setView({ kind: 'quiz', concept, items, round });
     };
 
-    if (bank.isLoading) return <Centered>題庫載入中…</Centered>;
-    if (!bank.data) return <Centered>題庫載入失敗，請關掉再開一次。</Centered>;
+    if (bank.isError) return <Centered>題庫載入失敗，請關掉再開一次。</Centered>;
 
     if (view.kind === 'quiz') {
         return (
@@ -108,9 +107,9 @@ export const ConceptStation: React.FC<ConceptStationProps> = ({ subject, userId 
     return (
         <Frame>
             <header className="flex items-center gap-3">
-                <span className="text-4xl">{bank.data.icon}</span>
+                <span className="text-4xl">{info.icon}</span>
                 <div>
-                    <h2 className="text-2xl font-black text-slate-800">{bank.data.name}概念站</h2>
+                    <h2 className="text-2xl font-black text-slate-800">{info.name}概念站</h2>
                     <p className="text-sm text-slate-500">選一個概念練 5 題，熟悉度會跟著你到每一座島。</p>
                 </div>
             </header>
@@ -123,7 +122,7 @@ export const ConceptStation: React.FC<ConceptStationProps> = ({ subject, userId 
                         role="tab"
                         aria-selected={g === grade}
                         onClick={() => setPickedGrade(g)}
-                        className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${g === grade ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-200 bg-white text-slate-600'} ${gradesWithContent.has(g) ? '' : 'opacity-50'}`}
+                        className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${g === grade ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-200 bg-white text-slate-600'} ${hasGradeContent(subject, g) ? '' : 'opacity-50'}`}
                     >
                         {GRADE_ZH[g]}
                         {g === childGrade.data ? ' ⭐' : ''}
@@ -133,7 +132,9 @@ export const ConceptStation: React.FC<ConceptStationProps> = ({ subject, userId 
 
             {progress.missing && <MissingTableNote />}
 
-            {units.length === 0 ? (
+            {bank.isLoading ? (
+                <p className="py-8 text-center font-bold text-slate-400">題庫載入中…</p>
+            ) : units.length === 0 ? (
                 <div className="rounded-3xl border-2 border-dashed border-slate-200 bg-white p-8 text-center">
                     <div className="mb-2 text-5xl">🛠️</div>
                     <p className="text-lg font-bold text-slate-700">{GRADE_ZH[grade]}的題目正在準備中</p>

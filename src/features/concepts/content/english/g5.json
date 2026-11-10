@@ -1,0 +1,174 @@
+{
+ "subject": "english",
+ "grade": 5,
+ "concepts": [
+  {
+   "id": "english.g5.be-verb-plurals",
+   "grade": 5,
+   "unit": "Sentences 句型",
+   "title": "be 動詞與複數",
+   "summary": "am、is、are 怎麼選？複數名詞怎麼變？",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "She ___ my sister.",
+     "a": "is",
+     "w": [
+      "am",
+      "are",
+      "be"
+     ],
+     "h": [
+      "She 是一個人（第三人稱單數）。",
+      "I 用 am，you 和複數用 are。"
+     ],
+     "e": "he、she、it 搭配 is：She is my sister."
+    },
+    {
+     "type": "choice",
+     "q": "They ___ students.",
+     "a": "are",
+     "w": [
+      "is",
+      "am",
+      "be"
+     ],
+     "h": [
+      "They 是好幾個人。",
+      "複數主詞用哪個 be 動詞？"
+     ],
+     "e": "we、you、they 搭配 are：They are students."
+    },
+    {
+     "type": "choice",
+     "q": "one box → two ___",
+     "a": "boxes",
+     "w": [
+      "boxs",
+      "box",
+      "boxies"
+     ],
+     "h": [
+      "字尾是 x 的名詞。",
+      "s、x、ch、sh 結尾要加 es。"
+     ],
+     "e": "box 字尾是 x，複數加 es：boxes。"
+    },
+    {
+     "type": "choice",
+     "q": "one child → three ___",
+     "a": "children",
+     "w": [
+      "childs",
+      "childes",
+      "childrens"
+     ],
+     "h": [
+      "這是不規則變化。",
+      "兒童節是 Children's Day。"
+     ],
+     "e": "child 的複數是不規則的 children。"
+    },
+    {
+     "type": "choice",
+     "q": "「Is this your pencil?」如果是，要怎麼回答？",
+     "a": "Yes, it is.",
+     "w": [
+      "Yes, I am.",
+      "Yes, they are.",
+      "Yes, this is."
+     ],
+     "h": [
+      "回答時，this 要換成 it。",
+      "用 Is 問，就用 is 答。"
+     ],
+     "e": "Is this ...? 回答用 Yes, it is. / No, it isn't."
+    }
+   ]
+  },
+  {
+   "id": "english.g5.progressive-can",
+   "grade": 5,
+   "unit": "Sentences 句型",
+   "title": "進行式與 can",
+   "summary": "正在做什麼？會不會做？天氣怎麼樣？",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "He is ___ a book now.",
+     "a": "reading",
+     "w": [
+      "read",
+      "reads",
+      "to read"
+     ],
+     "h": [
+      "now 表示「現在正在」。",
+      "is + 動詞 ing。"
+     ],
+     "e": "現在進行式：be 動詞 + V-ing，He is reading a book now."
+    },
+    {
+     "type": "choice",
+     "q": "「Can you swim?」如果不會，要怎麼回答？",
+     "a": "No, I can't.",
+     "w": [
+      "No, I don't.",
+      "No, I'm not.",
+      "No, you can't."
+     ],
+     "h": [
+      "用 Can 問，就用 can 答。",
+      "回答的是自己，用 I。"
+     ],
+     "e": "Can you ...? → Yes, I can. / No, I can't."
+    },
+    {
+     "type": "choice",
+     "q": "下列哪一句是正確的？",
+     "a": "She likes cats.",
+     "w": [
+      "She like cats.",
+      "She liking cats.",
+      "She are like cats."
+     ],
+     "h": [
+      "She 是第三人稱單數。",
+      "動詞要加 s。"
+     ],
+     "e": "主詞是 he、she、it 時，一般動詞要加 s：She likes cats."
+    },
+    {
+     "type": "choice",
+     "q": "「貓在床上。」用英文怎麼說？",
+     "a": "The cat is on the bed.",
+     "w": [
+      "The cat is under the bed.",
+      "The cat is in the box.",
+      "The cat is behind the door."
+     ],
+     "h": [
+      "on 是在……上面。",
+      "under 是在……下面。"
+     ],
+     "e": "on 上面、under 下面、in 裡面、behind 後面。"
+    },
+    {
+     "type": "choice",
+     "q": "「今天下雨。」用英文怎麼說？",
+     "a": "It's rainy today.",
+     "w": [
+      "It's sunny today.",
+      "It's windy today.",
+      "It's snowy today."
+     ],
+     "h": [
+      "rain 是雨。",
+      "sunny 是晴天。"
+     ],
+     "e": "rainy 下雨的、sunny 晴朗的、windy 颳風的、snowy 下雪的。"
+    }
+   ]
+  }
+ ]
+}

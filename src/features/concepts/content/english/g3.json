@@ -1,0 +1,174 @@
+{
+ "subject": "english",
+ "grade": 3,
+ "concepts": [
+  {
+   "id": "english.g3.colors-numbers",
+   "grade": 3,
+   "unit": "Words 單字起步",
+   "title": "Colors & Numbers",
+   "summary": "顏色和數字是最常用的英文單字。按 🔊 可以聽發音。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "red 是什麼顏色？",
+     "a": "紅色",
+     "w": [
+      "藍色",
+      "黃色",
+      "綠色"
+     ],
+     "h": [
+      "蘋果和消防車常常是這個顏色。",
+      "r-e-d 唸作 /rɛd/。"
+     ],
+     "e": "red = 紅色；blue 藍色、yellow 黃色、green 綠色。"
+    },
+    {
+     "type": "choice",
+     "q": "「藍色」的英文是哪一個？",
+     "a": "blue",
+     "w": [
+      "black",
+      "brown",
+      "green"
+     ],
+     "h": [
+      "天空和大海的顏色。",
+      "b 開頭，有四個字母。"
+     ],
+     "e": "blue = 藍色；black 黑色、brown 咖啡色、green 綠色。"
+    },
+    {
+     "type": "choice",
+     "q": "seven 是數字幾？",
+     "a": "7",
+     "w": [
+      "6",
+      "8",
+      "11"
+     ],
+     "h": [
+      "一個星期有 seven days。",
+      "six 之後就是 seven。"
+     ],
+     "e": "seven = 7。six 6、eight 8、eleven 11。"
+    },
+    {
+     "type": "choice",
+     "q": "下列哪一個單字是數字？",
+     "a": "ten",
+     "w": [
+      "cat",
+      "pen",
+      "red"
+     ],
+     "h": [
+      "cat 是動物，pen 是文具。",
+      "兩隻手的手指頭加起來。"
+     ],
+     "e": "ten = 10。cat 貓、pen 筆、red 紅色。"
+    },
+    {
+     "type": "choice",
+     "q": "🔊 聽一聽，選出你聽到的單字。",
+     "a": "yellow",
+     "w": [
+      "hello",
+      "pillow",
+      "purple"
+     ],
+     "h": [
+      "這是一個顏色。",
+      "香蕉的顏色。"
+     ],
+     "e": "你聽到的是 yellow（黃色）。"
+    }
+   ]
+  },
+  {
+   "id": "english.g3.animals-fruits",
+   "grade": 3,
+   "unit": "Words 單字起步",
+   "title": "Animals & Fruits",
+   "summary": "動物和水果的單字，從身邊的東西開始記。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "dog 是什麼動物？",
+     "a": "狗",
+     "w": [
+      "貓",
+      "豬",
+      "鴨"
+     ],
+     "h": [
+      "牠會汪汪叫。",
+      "cat 才是貓。"
+     ],
+     "e": "dog = 狗；cat 貓、pig 豬、duck 鴨。"
+    },
+    {
+     "type": "choice",
+     "q": "「蘋果」的英文是哪一個？",
+     "a": "apple",
+     "w": [
+      "orange",
+      "banana",
+      "grape"
+     ],
+     "h": [
+      "a 開頭的水果。",
+      "An ___ a day keeps the doctor away."
+     ],
+     "e": "apple = 蘋果；orange 柳橙、banana 香蕉、grape 葡萄。"
+    },
+    {
+     "type": "choice",
+     "q": "下列哪一個單字是動物？",
+     "a": "tiger",
+     "w": [
+      "table",
+      "tomato",
+      "train"
+     ],
+     "h": [
+      "四個單字都是 t 開頭。",
+      "有黑色條紋、住在森林裡。"
+     ],
+     "e": "tiger = 老虎；table 桌子、tomato 番茄、train 火車。"
+    },
+    {
+     "type": "choice",
+     "q": "「I like bananas.」是什麼意思？",
+     "a": "我喜歡香蕉。",
+     "w": [
+      "我有香蕉。",
+      "我不喜歡香蕉。",
+      "這是香蕉。"
+     ],
+     "h": [
+      "like 是「喜歡」。",
+      "句子裡沒有 not 或 don't。"
+     ],
+     "e": "I like ___ = 我喜歡 ___。I don't like ___ = 我不喜歡 ___。"
+    },
+    {
+     "type": "choice",
+     "q": "🔊 聽一聽，選出你聽到的單字。",
+     "a": "elephant",
+     "w": [
+      "eleven",
+      "egg",
+      "eraser"
+     ],
+     "h": [
+      "這是一種動物。",
+      "鼻子很長、耳朵很大。"
+     ],
+     "e": "你聽到的是 elephant（大象）。"
+    }
+   ]
+  }
+ ]
+}

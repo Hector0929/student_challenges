@@ -1,0 +1,174 @@
+{
+ "subject": "english",
+ "grade": 6,
+ "concepts": [
+  {
+   "id": "english.g6.past-tense",
+   "grade": 6,
+   "unit": "Reading 閱讀",
+   "title": "過去式",
+   "summary": "昨天做了什麼？說過去的事，動詞要變身。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "go 的過去式是哪一個？",
+     "a": "went",
+     "w": [
+      "goed",
+      "gone",
+      "going"
+     ],
+     "h": [
+      "go 是不規則動詞。",
+      "Yesterday I ___ to school."
+     ],
+     "e": "go → went（過去式）→ gone（過去分詞）。"
+    },
+    {
+     "type": "choice",
+     "q": "Yesterday I ___ soccer with my friends.",
+     "a": "played",
+     "w": [
+      "play",
+      "playing",
+      "plays"
+     ],
+     "h": [
+      "Yesterday 是昨天，說的是過去。",
+      "規則動詞加 ed。"
+     ],
+     "e": "說過去的事用過去式：play → played。"
+    },
+    {
+     "type": "choice",
+     "q": "eat 的過去式是哪一個？",
+     "a": "ate",
+     "w": [
+      "eated",
+      "eaten",
+      "eating"
+     ],
+     "h": [
+      "eat 是不規則動詞。",
+      "唸作 /et/。"
+     ],
+     "e": "eat → ate → eaten。"
+    },
+    {
+     "type": "choice",
+     "q": "「Did you watch TV last night?」如果有，要怎麼回答？",
+     "a": "Yes, I did.",
+     "w": [
+      "Yes, I do.",
+      "Yes, I watched.",
+      "Yes, I am."
+     ],
+     "h": [
+      "用 Did 問，就用 did 答。",
+      "回答的是自己，用 I。"
+     ],
+     "e": "Did you ...? → Yes, I did. / No, I didn't."
+    },
+    {
+     "type": "choice",
+     "q": "下列哪一個是表示「過去」的時間？",
+     "a": "last Sunday",
+     "w": [
+      "tomorrow",
+      "next week",
+      "now"
+     ],
+     "h": [
+      "last 是上一個。",
+      "tomorrow 和 next week 是未來。"
+     ],
+     "e": "last Sunday 上星期日（過去）；tomorrow 明天、next week 下星期（未來）。"
+    }
+   ]
+  },
+  {
+   "id": "english.g6.short-reading",
+   "grade": 6,
+   "unit": "Reading 閱讀",
+   "title": "短文閱讀",
+   "summary": "讀一篇短文，回答問題。可以按 🔊 聽整段。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "What is Lucky?",
+     "a": "A dog.",
+     "w": [
+      "A cat.",
+      "A ball.",
+      "A park."
+     ],
+     "h": [
+      "看第一句和第二句。",
+      "Mia has a pet ___."
+     ],
+     "e": "Mia has a pet dog. His name is Lucky. → Lucky 是一隻狗。"
+    },
+    {
+     "type": "choice",
+     "q": "What color is Lucky?",
+     "a": "Brown and white.",
+     "w": [
+      "Black.",
+      "Yellow and white.",
+      "Brown and black."
+     ],
+     "h": [
+      "找 color 相關的句子。",
+      "Lucky is ___ and ___."
+     ],
+     "e": "Lucky is brown and white. 咖啡色和白色。"
+    },
+    {
+     "type": "choice",
+     "q": "When do Mia and Lucky go for a walk?",
+     "a": "Every morning.",
+     "w": [
+      "Every night.",
+      "Only on Sundays.",
+      "After dinner."
+     ],
+     "h": [
+      "When 是問什麼時候。",
+      "找 go for a walk 那一句。"
+     ],
+     "e": "Every morning, Mia and Lucky go for a walk. 每天早上。"
+    },
+    {
+     "type": "choice",
+     "q": "What does Lucky like to do?",
+     "a": "Run after balls.",
+     "w": [
+      "Sleep all day.",
+      "Eat apples.",
+      "Swim in the river."
+     ],
+     "h": [
+      "找 likes 這個字。",
+      "Lucky likes to ___."
+     ],
+     "e": "Lucky likes to run after balls. 喜歡追球。"
+    },
+    {
+     "type": "choice",
+     "q": "「Mia loves Lucky very much.」是什麼意思？",
+     "a": "Mia 非常愛 Lucky。",
+     "w": [
+      "Mia 很想念 Lucky。",
+      "Lucky 非常愛玩球。",
+      "Mia 想要養一隻狗。"
+     ],
+     "h": [
+      "love 是「愛」。",
+      "very much 是「非常」。"
+     ],
+     "e": "love 愛、very much 非常：Mia 非常愛 Lucky。"
+    }
+   ]
+  }
+ ]
+}

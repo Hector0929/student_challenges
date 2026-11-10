@@ -7,6 +7,7 @@ import { generateAreaQuestion, type AreaDifficulty } from '../../learning/engine
 import { generatePerimeterQuestion, type PerimeterDifficulty } from '../../learning/engines/questionGenerators/perimeter';
 import { generateVolumeQuestion, type VolumeDifficulty } from '../../learning/engines/questionGenerators/volume';
 import type { ChoiceQuestion, GeneratorRef } from '../types';
+import { GRADE2_GENERATORS } from './grade2';
 
 interface GeneratedLike {
     type: string;
@@ -29,12 +30,15 @@ const GENERATORS: Record<string, Generator> = {
 /** 只能看圖作答的題型 */
 const VISUAL_ONLY_TYPES = new Set(['recognition', 'count_grid']);
 
-export const hasGenerator = (id: string) => id in GENERATORS;
+export const hasGenerator = (id: string) => id in GENERATORS || id in GRADE2_GENERATORS;
 
 /** 產生一題；找不到可用題型時回傳 null */
 export function generateQuestion(ref: GeneratorRef, rand: () => number = Math.random): ChoiceQuestion | null {
+    if (ref.difficulties.length === 0) return null;
+    const g2 = GRADE2_GENERATORS[ref.id];
+    if (g2) return g2(ref.difficulties[Math.floor(rand() * ref.difficulties.length)], rand);
     const gen = GENERATORS[ref.id];
-    if (!gen || ref.difficulties.length === 0) return null;
+    if (!gen) return null;
     for (let attempt = 0; attempt < 20; attempt++) {
         const difficulty = ref.difficulties[Math.floor(rand() * ref.difficulties.length)];
         const g = gen(difficulty);
