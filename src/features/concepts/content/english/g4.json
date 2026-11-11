@@ -7,7 +7,7 @@
    "grade": 4,
    "unit": "Daily Talk 日常對話",
    "title": "Greetings",
-   "summary": "打招呼、自我介紹，學會就能和外國朋友聊天。",
+   "summary": "打招呼、道謝、道歉、借過，有禮貌的英文說法一次學會。",
    "questions": [
     {
      "type": "choice",
@@ -83,6 +83,104 @@
       "要說出幾歲。"
      ],
      "e": "How old are you? 你幾歲？→ I'm ___ years old. 我 ___ 歲。"
+    },
+    {
+     "type": "choice",
+     "q": "不小心撞到別人，應該說哪一句？",
+     "a": "I'm sorry.",
+     "w": [
+      "Thank you.",
+      "You're welcome.",
+      "Good night."
+     ],
+     "h": [
+      "要向對方道歉。"
+     ],
+     "e": "I'm sorry. 是「對不起」。"
+    },
+    {
+     "type": "choice",
+     "q": "想請前面的人讓路，應該先說哪一句？",
+     "a": "Excuse me.",
+     "w": [
+      "I'm fine.",
+      "See you.",
+      "Here you are."
+     ],
+     "h": [
+      "有禮貌地引起對方注意。"
+     ],
+     "e": "Excuse me. 是「不好意思、借過」。"
+    },
+    {
+     "type": "choice",
+     "q": "別人對你說「I'm sorry.」，你可以怎麼回答？",
+     "a": "That's OK.",
+     "w": [
+      "You're welcome.",
+      "Good morning.",
+      "Me too."
+     ],
+     "h": [
+      "表示沒關係。"
+     ],
+     "e": "That's OK. 是「沒關係」。"
+    },
+    {
+     "type": "choice",
+     "q": "把東西拿給別人時，可以說哪一句？",
+     "a": "Here you are.",
+     "w": [
+      "Excuse me.",
+      "I'm sorry.",
+      "How are you?"
+     ],
+     "h": [
+      "「給你」。"
+     ],
+     "e": "Here you are. 是「拿去、給你」。"
+    },
+    {
+     "type": "choice",
+     "q": "放學要和同學道別，可以說哪一句？",
+     "a": "See you tomorrow.",
+     "w": [
+      "Nice to meet you.",
+      "Good morning.",
+      "Excuse me."
+     ],
+     "h": [
+      "明天見。"
+     ],
+     "e": "See you tomorrow. 是「明天見」。"
+    },
+    {
+     "type": "choice",
+     "q": "「Good night.」通常在什麼時候說？",
+     "a": "晚上睡覺前道別時",
+     "w": [
+      "早上見面時",
+      "中午吃飯時",
+      "第一次見面時"
+     ],
+     "h": [
+      "night 是晚上。"
+     ],
+     "e": "Good night. 是晚上道別或睡前說的「晚安」。"
+    },
+    {
+     "type": "order",
+     "q": "排出句子：很高興見到你。",
+     "a": [
+      "Nice",
+      "to",
+      "meet",
+      "you."
+     ],
+     "h": [
+      "Nice 開頭。"
+     ],
+     "e": "Nice to meet you."
     }
    ]
   },
@@ -167,6 +265,1303 @@
       "lunch 是午餐，dinner 是晚餐。"
      ],
      "e": "breakfast 早餐、lunch 午餐、dinner 晚餐。"
+    },
+    {
+     "type": "choice",
+     "q": "時鐘指著 3:30，「What time is it?」要怎麼回答？",
+     "a": "It's three thirty.",
+     "w": [
+      "It's three o'clock.",
+      "It's thirty three.",
+      "It's four thirty."
+     ],
+     "h": [
+      "先說幾點，再說幾分。"
+     ],
+     "e": "3:30 讀作 three thirty。"
+    },
+    {
+     "type": "choice",
+     "q": "「星期三」的英文是哪一個？",
+     "a": "Wednesday",
+     "w": [
+      "Tuesday",
+      "Thursday",
+      "Monday"
+     ],
+     "h": [
+      "拼字中間有一個不發音的 d。"
+     ],
+     "e": "Wednesday 是星期三；Tuesday 星期二，Thursday 星期四。"
+    },
+    {
+     "type": "choice",
+     "q": "Sunday 是星期幾？",
+     "a": "星期日",
+     "w": [
+      "星期六",
+      "星期一",
+      "星期五"
+     ],
+     "h": [
+      "sun 是太陽。"
+     ],
+     "e": "Sunday 是星期日（太陽日）。"
+    },
+    {
+     "type": "order",
+     "q": "依照順序排好星期。",
+     "a": [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday"
+     ],
+     "h": [
+      "從星期一開始。"
+     ],
+     "e": "Monday、Tuesday、Wednesday、Thursday。"
+    },
+    {
+     "type": "choice",
+     "q": "lunch 是什麼意思？",
+     "a": "午餐",
+     "w": [
+      "早餐",
+      "晚餐",
+      "點心"
+     ],
+     "h": [
+      "中午吃的那一餐。"
+     ],
+     "e": "breakfast 早餐、lunch 午餐、dinner 晚餐。"
+    },
+    {
+     "type": "choice",
+     "q": "「I get up at seven.」是什麼意思？",
+     "a": "我七點起床。",
+     "w": [
+      "我七點睡覺。",
+      "我七歲。",
+      "我有七個朋友。"
+     ],
+     "h": [
+      "get up 是起床。"
+     ],
+     "e": "get up 是起床，at seven 是在七點。"
+    },
+    {
+     "type": "tf",
+     "q": "一個星期有七天，第一天常寫作 Sunday 或 Monday。",
+     "a": true,
+     "h": [
+      "不同的月曆，第一天可能不一樣。"
+     ],
+     "e": "一週有七天，有的月曆從星期日開始，有的從星期一開始。"
+    }
+   ]
+  },
+  {
+   "id": "english.g4.weather",
+   "grade": 4,
+   "unit": "Daily Talk 日常對話",
+   "title": "How's the Weather?",
+   "summary": "晴天、雨天、颳風、下雪，用英文說說今天的天氣。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "sunny 是什麼天氣？",
+     "a": "晴天",
+     "w": [
+      "雨天",
+      "陰天",
+      "下雪"
+     ],
+     "h": [
+      "sun 是太陽。"
+     ],
+     "e": "sunny 是晴朗、出太陽的。"
+    },
+    {
+     "type": "choice",
+     "q": "「下雨的」英文是哪一個？",
+     "a": "rainy",
+     "w": [
+      "windy",
+      "snowy",
+      "cloudy"
+     ],
+     "h": [
+      "rain 是雨。"
+     ],
+     "e": "rainy 下雨的；windy 颳風的；snowy 下雪的；cloudy 多雲的。"
+    },
+    {
+     "type": "choice",
+     "q": "「How's the weather today?」是什麼意思？",
+     "a": "今天天氣怎麼樣？",
+     "w": [
+      "今天星期幾？",
+      "今天幾點了？",
+      "你今天好嗎？"
+     ],
+     "h": [
+      "weather 是天氣。"
+     ],
+     "e": "How's the weather? 是問天氣。"
+    },
+    {
+     "type": "choice",
+     "q": "外面颳大風，要怎麼說？",
+     "a": "It's windy.",
+     "w": [
+      "It's sunny.",
+      "It's hot.",
+      "It's snowy."
+     ],
+     "h": [
+      "wind 是風。"
+     ],
+     "e": "It's windy. 是「颳風了」。"
+    },
+    {
+     "type": "choice",
+     "q": "cloudy 是什麼天氣？",
+     "a": "多雲",
+     "w": [
+      "晴天",
+      "下雪",
+      "打雷"
+     ],
+     "h": [
+      "cloud 是雲。"
+     ],
+     "e": "cloudy 是多雲的、陰天的。"
+    },
+    {
+     "type": "choice",
+     "q": "下雨天出門要帶什麼？",
+     "a": "umbrella",
+     "w": [
+      "sunglasses",
+      "kite",
+      "fan"
+     ],
+     "h": [
+      "用來擋雨的。"
+     ],
+     "e": "umbrella 是雨傘；sunglasses 太陽眼鏡，kite 風箏，fan 扇子。"
+    },
+    {
+     "type": "choice",
+     "q": "「It's cold. Put on your coat.」是什麼意思？",
+     "a": "天氣很冷，穿上你的外套。",
+     "w": [
+      "天氣很熱，脫掉外套。",
+      "外套很冷。",
+      "把外套放好。"
+     ],
+     "h": [
+      "put on 是穿上。"
+     ],
+     "e": "cold 是冷，put on your coat 是穿上外套。"
+    },
+    {
+     "type": "choice",
+     "q": "下雪的天氣用哪一個字？",
+     "a": "snowy",
+     "w": [
+      "sunny",
+      "rainy",
+      "windy"
+     ],
+     "h": [
+      "snow 是雪。"
+     ],
+     "e": "snowy 是下雪的。"
+    },
+    {
+     "type": "tf",
+     "q": "hot 和 cold 是意思相反的詞。",
+     "a": true,
+     "h": [
+      "熱和冷。"
+     ],
+     "e": "hot 熱，cold 冷，是一組相反詞。"
+    },
+    {
+     "type": "choice",
+     "q": "天氣晴朗又有風，最適合做什麼？",
+     "a": "fly a kite",
+     "w": [
+      "make a snowman",
+      "take an umbrella",
+      "stay in bed"
+     ],
+     "h": [
+      "需要風的活動。"
+     ],
+     "e": "fly a kite 是放風箏，晴天有風最適合。"
+    },
+    {
+     "type": "order",
+     "q": "排出句子：今天是晴天。",
+     "a": [
+      "It",
+      "is",
+      "sunny",
+      "today."
+     ],
+     "h": [
+      "It is……"
+     ],
+     "e": "It is sunny today."
+    },
+    {
+     "type": "choice",
+     "q": "warm 是什麼意思？",
+     "a": "溫暖的",
+     "w": [
+      "很冷的",
+      "潮濕的",
+      "颳風的"
+     ],
+     "h": [
+      "春天的感覺。"
+     ],
+     "e": "warm 是溫暖的。"
+    }
+   ]
+  },
+  {
+   "id": "english.g4.clothes",
+   "grade": 4,
+   "unit": "Words 單字",
+   "title": "What Are You Wearing?",
+   "summary": "襯衫、裙子、帽子、鞋子……學會衣物的單字和怎麼說穿什麼。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "shirt 是什麼？",
+     "a": "襯衫",
+     "w": [
+      "裙子",
+      "褲子",
+      "外套"
+     ],
+     "h": [
+      "有領子和扣子的上衣。"
+     ],
+     "e": "shirt 是襯衫；skirt 是裙子，拼字很像要小心。"
+    },
+    {
+     "type": "choice",
+     "q": "「裙子」的英文是哪一個？",
+     "a": "skirt",
+     "w": [
+      "shirt",
+      "shorts",
+      "socks"
+     ],
+     "h": [
+      "sk 開頭。"
+     ],
+     "e": "skirt 是裙子；shorts 是短褲，socks 是襪子。"
+    },
+    {
+     "type": "choice",
+     "q": "pants 是什麼？",
+     "a": "長褲",
+     "w": [
+      "帽子",
+      "手套",
+      "圍巾"
+     ],
+     "h": [
+      "穿在腿上的。"
+     ],
+     "e": "pants 是長褲。"
+    },
+    {
+     "type": "choice",
+     "q": "「帽子」的英文是哪一個？",
+     "a": "cap",
+     "w": [
+      "cat",
+      "cup",
+      "coat"
+     ],
+     "h": [
+      "戴在頭上的。"
+     ],
+     "e": "cap 是有帽簷的帽子；cup 是杯子，coat 是外套。"
+    },
+    {
+     "type": "choice",
+     "q": "冬天很冷，脖子上可以圍什麼？",
+     "a": "scarf",
+     "w": [
+      "shorts",
+      "T-shirt",
+      "sandals"
+     ],
+     "h": [
+      "圍在脖子上。"
+     ],
+     "e": "scarf 是圍巾；shorts 短褲、sandals 涼鞋是夏天穿的。"
+    },
+    {
+     "type": "choice",
+     "q": "「I'm wearing a red jacket.」是什麼意思？",
+     "a": "我穿著一件紅色夾克。",
+     "w": [
+      "我想買紅色夾克。",
+      "我的夾克不見了。",
+      "我喜歡紅色。"
+     ],
+     "h": [
+      "wearing 是穿著。"
+     ],
+     "e": "I'm wearing…… 是「我穿著……」。"
+    },
+    {
+     "type": "choice",
+     "q": "shoes 是什麼？",
+     "a": "鞋子",
+     "w": [
+      "襪子",
+      "手套",
+      "眼鏡"
+     ],
+     "h": [
+      "穿在腳上、走路用的。"
+     ],
+     "e": "shoes 是鞋子，socks 是襪子。"
+    },
+    {
+     "type": "choice",
+     "q": "下列哪一個是穿在手上的？",
+     "a": "gloves",
+     "w": [
+      "boots",
+      "pants",
+      "cap"
+     ],
+     "h": [
+      "五根手指。"
+     ],
+     "e": "gloves 是手套；boots 是靴子。"
+    },
+    {
+     "type": "tf",
+     "q": "shorts 是短褲，適合夏天穿。",
+     "a": true,
+     "h": [
+      "short 是短的。"
+     ],
+     "e": "shorts 是短褲。"
+    },
+    {
+     "type": "choice",
+     "q": "「What are you wearing?」是什麼意思？",
+     "a": "你穿著什麼？",
+     "w": [
+      "你要去哪裡？",
+      "你喜歡什麼？",
+      "你在吃什麼？"
+     ],
+     "h": [
+      "wearing 是穿著。"
+     ],
+     "e": "What are you wearing? 是問對方穿什麼。"
+    },
+    {
+     "type": "order",
+     "q": "排出句子：她穿著一件裙子。",
+     "a": [
+      "She",
+      "is",
+      "wearing",
+      "a skirt."
+     ],
+     "h": [
+      "She is wearing……"
+     ],
+     "e": "She is wearing a skirt."
+    },
+    {
+     "type": "choice",
+     "q": "「Put on your shoes.」是什麼意思？",
+     "a": "穿上你的鞋子。",
+     "w": [
+      "脫掉你的鞋子。",
+      "買新鞋子。",
+      "鞋子很漂亮。"
+     ],
+     "h": [
+      "put on 是穿上，take off 是脫掉。"
+     ],
+     "e": "Put on 是穿上；Take off 是脫掉。"
+    }
+   ]
+  },
+  {
+   "id": "english.g4.places",
+   "grade": 4,
+   "unit": "Daily Talk 日常對話",
+   "title": "Where Are You Going?",
+   "summary": "學校、公園、醫院、超市……說出你要去哪裡。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "park 是什麼地方？",
+     "a": "公園",
+     "w": [
+      "學校",
+      "醫院",
+      "超市"
+     ],
+     "h": [
+      "有樹、有溜滑梯。"
+     ],
+     "e": "park 是公園。"
+    },
+    {
+     "type": "choice",
+     "q": "「醫院」的英文是哪一個？",
+     "a": "hospital",
+     "w": [
+      "library",
+      "supermarket",
+      "zoo"
+     ],
+     "h": [
+      "生病時去的地方。"
+     ],
+     "e": "hospital 是醫院；library 是圖書館。"
+    },
+    {
+     "type": "choice",
+     "q": "想借書，要去哪裡？",
+     "a": "library",
+     "w": [
+      "bakery",
+      "park",
+      "hospital"
+     ],
+     "h": [
+      "有很多書的地方。"
+     ],
+     "e": "library 是圖書館；bakery 是麵包店。"
+    },
+    {
+     "type": "choice",
+     "q": "「Where are you going?」是什麼意思？",
+     "a": "你要去哪裡？",
+     "w": [
+      "你從哪裡來？",
+      "你在做什麼？",
+      "你住在哪裡？"
+     ],
+     "h": [
+      "going 是正在去。"
+     ],
+     "e": "Where are you going? 問的是要去哪裡。"
+    },
+    {
+     "type": "choice",
+     "q": "「I'm going to the zoo.」是什麼意思？",
+     "a": "我要去動物園。",
+     "w": [
+      "我在動物園。",
+      "我喜歡動物園。",
+      "我從動物園回來。"
+     ],
+     "h": [
+      "zoo 是動物園。"
+     ],
+     "e": "I'm going to…… 是「我要去……」。"
+    },
+    {
+     "type": "choice",
+     "q": "想買牛奶和麵包，可以去哪裡？",
+     "a": "supermarket",
+     "w": [
+      "hospital",
+      "school",
+      "library"
+     ],
+     "h": [
+      "買東西的地方。"
+     ],
+     "e": "supermarket 是超市。"
+    },
+    {
+     "type": "choice",
+     "q": "post office 是什麼地方？",
+     "a": "郵局",
+     "w": [
+      "警察局",
+      "消防局",
+      "車站"
+     ],
+     "h": [
+      "寄信的地方。"
+     ],
+     "e": "post office 是郵局；police station 是警察局。"
+    },
+    {
+     "type": "choice",
+     "q": "「我要去學校。」英文怎麼說？",
+     "a": "I'm going to school.",
+     "w": [
+      "I'm at home.",
+      "I like school.",
+      "I'm from school."
+     ],
+     "h": [
+      "going to……"
+     ],
+     "e": "I'm going to school. 是「我要去學校」。"
+    },
+    {
+     "type": "tf",
+     "q": "restaurant 是吃飯的餐廳。",
+     "a": true,
+     "h": [
+      "可以點菜吃飯的地方。"
+     ],
+     "e": "restaurant 是餐廳。"
+    },
+    {
+     "type": "choice",
+     "q": "bookstore 是什麼地方？",
+     "a": "書店",
+     "w": [
+      "圖書館",
+      "文具店",
+      "學校"
+     ],
+     "h": [
+      "book + store（商店）。"
+     ],
+     "e": "bookstore 是賣書的書店；library 是借書的圖書館。"
+    },
+    {
+     "type": "order",
+     "q": "排出問句：你要去哪裡？",
+     "a": [
+      "Where",
+      "are",
+      "you",
+      "going?"
+     ],
+     "h": [
+      "Where 開頭。"
+     ],
+     "e": "Where are you going?"
+    },
+    {
+     "type": "choice",
+     "q": "去哪裡可以看到大象和獅子？",
+     "a": "zoo",
+     "w": [
+      "bank",
+      "park",
+      "museum"
+     ],
+     "h": [
+      "有很多動物的地方。"
+     ],
+     "e": "zoo 是動物園。"
+    }
+   ]
+  },
+  {
+   "id": "english.g4.hobbies",
+   "grade": 4,
+   "unit": "Talk 開口說",
+   "title": "I Like Swimming",
+   "summary": "打籃球、游泳、畫畫、唱歌……說說你喜歡做什麼、會做什麼。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "「play basketball」是什麼意思？",
+     "a": "打籃球",
+     "w": [
+      "踢足球",
+      "打棒球",
+      "打網球"
+     ],
+     "h": [
+      "basket 是籃子。"
+     ],
+     "e": "play basketball 是打籃球。"
+    },
+    {
+     "type": "choice",
+     "q": "「游泳」的英文是哪一個？",
+     "a": "swim",
+     "w": [
+      "sing",
+      "sleep",
+      "skate"
+     ],
+     "h": [
+      "在水裡的運動。"
+     ],
+     "e": "swim 是游泳；sing 唱歌，skate 溜冰。"
+    },
+    {
+     "type": "choice",
+     "q": "「I like drawing.」是什麼意思？",
+     "a": "我喜歡畫畫。",
+     "w": [
+      "我喜歡唱歌。",
+      "我會畫畫。",
+      "我不喜歡畫畫。"
+     ],
+     "h": [
+      "draw 是畫畫。"
+     ],
+     "e": "I like drawing. 是「我喜歡畫畫」。"
+    },
+    {
+     "type": "choice",
+     "q": "「Can you ride a bike?」是什麼意思？",
+     "a": "你會騎腳踏車嗎？",
+     "w": [
+      "你有腳踏車嗎？",
+      "你喜歡腳踏車嗎？",
+      "腳踏車在哪裡？"
+     ],
+     "h": [
+      "can 是「會、能」。"
+     ],
+     "e": "Can you……? 是問「你會……嗎？」。"
+    },
+    {
+     "type": "choice",
+     "q": "別人問「Can you swim?」，想回答「會」，要說哪一句？",
+     "a": "Yes, I can.",
+     "w": [
+      "Yes, I do.",
+      "Yes, I am.",
+      "No, I can't."
+     ],
+     "h": [
+      "用 can 問，就用 can 回答。"
+     ],
+     "e": "Can you……? 的肯定回答是 Yes, I can.。"
+    },
+    {
+     "type": "choice",
+     "q": "play soccer 是什麼運動？",
+     "a": "踢足球",
+     "w": [
+      "打籃球",
+      "打排球",
+      "打羽毛球"
+     ],
+     "h": [
+      "用腳踢的球。"
+     ],
+     "e": "soccer 是足球。"
+    },
+    {
+     "type": "choice",
+     "q": "「What do you like to do?」是什麼意思？",
+     "a": "你喜歡做什麼？",
+     "w": [
+      "你在做什麼？",
+      "你會做什麼？",
+      "你要去哪裡？"
+     ],
+     "h": [
+      "like to do 是喜歡做。"
+     ],
+     "e": "What do you like to do? 是問嗜好。"
+    },
+    {
+     "type": "choice",
+     "q": "「read books」是什麼意思？",
+     "a": "看書",
+     "w": [
+      "寫書",
+      "買書",
+      "畫書"
+     ],
+     "h": [
+      "read 是閱讀。"
+     ],
+     "e": "read books 是看書、讀書。"
+    },
+    {
+     "type": "tf",
+     "q": "「I can't dance.」的意思是「我會跳舞」。",
+     "a": false,
+     "h": [
+      "can't 是 can not。"
+     ],
+     "e": "can't 是不會，I can't dance. 是「我不會跳舞」。"
+    },
+    {
+     "type": "choice",
+     "q": "「play the piano」是什麼意思？",
+     "a": "彈鋼琴",
+     "w": [
+      "拉小提琴",
+      "吹笛子",
+      "打鼓"
+     ],
+     "h": [
+      "piano 是鋼琴。"
+     ],
+     "e": "play the piano 是彈鋼琴。"
+    },
+    {
+     "type": "order",
+     "q": "排出句子：我會打棒球。",
+     "a": [
+      "I",
+      "can",
+      "play",
+      "baseball."
+     ],
+     "h": [
+      "I can……"
+     ],
+     "e": "I can play baseball."
+    },
+    {
+     "type": "choice",
+     "q": "「fly a kite」是什麼意思？",
+     "a": "放風箏",
+     "w": [
+      "坐飛機",
+      "抓蝴蝶",
+      "看鳥"
+     ],
+     "h": [
+      "kite 是風箏。"
+     ],
+     "e": "fly a kite 是放風箏。"
+    }
+   ]
+  },
+  {
+   "id": "english.g4.this-that",
+   "grade": 4,
+   "unit": "Grammar 句型",
+   "title": "This, That, These, Those",
+   "summary": "近的用 this／these，遠的用 that／those；一個用單數，很多個用複數。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "手上拿著一枝筆，要怎麼說「這是一枝筆」？",
+     "a": "This is a pen.",
+     "w": [
+      "That is a pen.",
+      "These are a pen.",
+      "Those is a pen."
+     ],
+     "h": [
+      "近的、一個。"
+     ],
+     "e": "近的單數用 this：This is a pen."
+    },
+    {
+     "type": "choice",
+     "q": "指著遠處的一隻鳥，要怎麼說？",
+     "a": "That is a bird.",
+     "w": [
+      "This is a bird.",
+      "These are birds.",
+      "Those is a bird."
+     ],
+     "h": [
+      "遠的、一個。"
+     ],
+     "e": "遠的單數用 that：That is a bird."
+    },
+    {
+     "type": "choice",
+     "q": "手上拿著好幾本書，要怎麼說「這些是書」？",
+     "a": "These are books.",
+     "w": [
+      "This is books.",
+      "Those is books.",
+      "That are books."
+     ],
+     "h": [
+      "近的、很多個。"
+     ],
+     "e": "近的複數用 these，後面用 are：These are books."
+    },
+    {
+     "type": "choice",
+     "q": "指著遠處好幾隻狗，要怎麼說？",
+     "a": "Those are dogs.",
+     "w": [
+      "These is dogs.",
+      "That are dogs.",
+      "This is dogs."
+     ],
+     "h": [
+      "遠的、很多個。"
+     ],
+     "e": "遠的複數用 those：Those are dogs."
+    },
+    {
+     "type": "choice",
+     "q": "these 的單數是哪一個？",
+     "a": "this",
+     "w": [
+      "that",
+      "those",
+      "they"
+     ],
+     "h": [
+      "近的。"
+     ],
+     "e": "this（這個）→ these（這些）；that（那個）→ those（那些）。"
+    },
+    {
+     "type": "choice",
+     "q": "one apple，兩個以上要怎麼寫？",
+     "a": "two apples",
+     "w": [
+      "two apple",
+      "two appleses",
+      "two an apples"
+     ],
+     "h": [
+      "複數通常加 s。"
+     ],
+     "e": "可數名詞的複數通常加 s：apples。"
+    },
+    {
+     "type": "choice",
+     "q": "box 的複數怎麼寫？",
+     "a": "boxes",
+     "w": [
+      "boxs",
+      "box",
+      "boxies"
+     ],
+     "h": [
+      "x 結尾要加 es。"
+     ],
+     "e": "s、x、sh、ch 結尾的字，複數加 es：boxes。"
+    },
+    {
+     "type": "choice",
+     "q": "「What are these?」最適合怎麼回答？",
+     "a": "They are cookies.",
+     "w": [
+      "It is a cookie.",
+      "This is cookies.",
+      "That is cookies."
+     ],
+     "h": [
+      "these 是複數，回答也要用複數。"
+     ],
+     "e": "these 問的是很多個，用 They are…… 回答。"
+    },
+    {
+     "type": "tf",
+     "q": "「This are my shoes.」是正確的句子。",
+     "a": false,
+     "h": [
+      "shoes 是複數。"
+     ],
+     "e": "應該說 These are my shoes."
+    },
+    {
+     "type": "choice",
+     "q": "baby 的複數怎麼寫？",
+     "a": "babies",
+     "w": [
+      "babys",
+      "babyes",
+      "baby"
+     ],
+     "h": [
+      "子音 + y 結尾，要把 y 改成 i 再加 es。"
+     ],
+     "e": "子音加 y 結尾的字，去 y 加 ies：babies。"
+    },
+    {
+     "type": "order",
+     "q": "排出句子：那些是我的鉛筆。",
+     "a": [
+      "Those",
+      "are",
+      "my",
+      "pencils."
+     ],
+     "h": [
+      "遠的、很多個。"
+     ],
+     "e": "Those are my pencils."
+    },
+    {
+     "type": "choice",
+     "q": "「What's that?」最適合怎麼回答？",
+     "a": "It's a kite.",
+     "w": [
+      "They are kites.",
+      "These are kites.",
+      "Those are a kite."
+     ],
+     "h": [
+      "that 是單數。"
+     ],
+     "e": "What's that? 問一個東西，用 It's…… 回答。"
+    }
+   ]
+  },
+  {
+   "id": "english.g4.months",
+   "grade": 4,
+   "unit": "Daily Talk 日常對話",
+   "title": "Months & Birthdays",
+   "summary": "一年十二個月，學會說你的生日在幾月。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "January 是幾月？",
+     "a": "一月",
+     "w": [
+      "六月",
+      "七月",
+      "十二月"
+     ],
+     "h": [
+      "一年的第一個月。"
+     ],
+     "e": "January 是一月。"
+    },
+    {
+     "type": "choice",
+     "q": "「十二月」的英文是哪一個？",
+     "a": "December",
+     "w": [
+      "November",
+      "October",
+      "September"
+     ],
+     "h": [
+      "聖誕節在這個月。"
+     ],
+     "e": "December 是十二月；November 十一月，October 十月，September 九月。"
+    },
+    {
+     "type": "choice",
+     "q": "「When is your birthday?」是什麼意思？",
+     "a": "你的生日是什麼時候？",
+     "w": [
+      "你幾歲？",
+      "今天星期幾？",
+      "你的生日禮物是什麼？"
+     ],
+     "h": [
+      "when 是什麼時候。"
+     ],
+     "e": "When is your birthday? 問的是生日日期。"
+    },
+    {
+     "type": "choice",
+     "q": "「My birthday is in May.」是什麼意思？",
+     "a": "我的生日在五月。",
+     "w": [
+      "我的生日在三月。",
+      "我五歲。",
+      "我五月要去旅行。"
+     ],
+     "h": [
+      "May 是幾月？"
+     ],
+     "e": "May 是五月。"
+    },
+    {
+     "type": "choice",
+     "q": "八月的英文是哪一個？",
+     "a": "August",
+     "w": [
+      "April",
+      "June",
+      "July"
+     ],
+     "h": [
+      "A 開頭，暑假的月份。"
+     ],
+     "e": "August 是八月；April 四月，June 六月，July 七月。"
+    },
+    {
+     "type": "order",
+     "q": "依照順序排好月份。",
+     "a": [
+      "March",
+      "April",
+      "May",
+      "June"
+     ],
+     "h": [
+      "從三月開始。"
+     ],
+     "e": "March、April、May、June。"
+    },
+    {
+     "type": "choice",
+     "q": "一年有幾個月？",
+     "a": "twelve",
+     "w": [
+      "ten",
+      "eleven",
+      "twenty"
+     ],
+     "h": [
+      "一月到十二月。"
+     ],
+     "e": "一年有 12 個月，twelve。"
+    },
+    {
+     "type": "choice",
+     "q": "February 是幾月？",
+     "a": "二月",
+     "w": [
+      "四月",
+      "十月",
+      "十一月"
+     ],
+     "h": [
+      "一年的第二個月。"
+     ],
+     "e": "February 是二月，天數最少。"
+    },
+    {
+     "type": "tf",
+     "q": "月份的英文第一個字母要大寫。",
+     "a": true,
+     "h": [
+      "想想 January 怎麼寫。"
+     ],
+     "e": "月份和星期的英文第一個字母都要大寫。"
+    },
+    {
+     "type": "choice",
+     "q": "十月的英文是哪一個？",
+     "a": "October",
+     "w": [
+      "August",
+      "December",
+      "September"
+     ],
+     "h": [
+      "Oct 開頭。"
+     ],
+     "e": "October 是十月。"
+    },
+    {
+     "type": "choice",
+     "q": "「Happy birthday!」是什麼意思？",
+     "a": "生日快樂！",
+     "w": [
+      "新年快樂！",
+      "早安！",
+      "恭喜！"
+     ],
+     "h": [
+      "生日時說的話。"
+     ],
+     "e": "Happy birthday! 是「生日快樂」。"
+    },
+    {
+     "type": "choice",
+     "q": "「What month is it?」問的是什麼？",
+     "a": "現在是幾月",
+     "w": [
+      "今天幾號",
+      "現在幾點",
+      "今天星期幾"
+     ],
+     "h": [
+      "month 是月份。"
+     ],
+     "e": "What month is it? 問現在是幾月。"
+    }
+   ]
+  },
+  {
+   "id": "english.g4.prepositions",
+   "grade": 4,
+   "unit": "Grammar 句型",
+   "title": "In, On, Under",
+   "summary": "東西在哪裡？in 在裡面、on 在上面、under 在下面、by 在旁邊。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "「The cat is on the table.」貓在哪裡？",
+     "a": "在桌子上",
+     "w": [
+      "在桌子下",
+      "在桌子裡",
+      "在桌子旁邊"
+     ],
+     "h": [
+      "on 是在……上面。"
+     ],
+     "e": "on 是在上面，表示貼著表面。"
+    },
+    {
+     "type": "choice",
+     "q": "「The ball is under the chair.」球在哪裡？",
+     "a": "在椅子下",
+     "w": [
+      "在椅子上",
+      "在椅子裡",
+      "在椅子後面"
+     ],
+     "h": [
+      "under 是在……下面。"
+     ],
+     "e": "under 是在下面。"
+    },
+    {
+     "type": "choice",
+     "q": "鉛筆在鉛筆盒裡面，要用哪一個字？",
+     "a": "in",
+     "w": [
+      "on",
+      "under",
+      "by"
+     ],
+     "h": [
+      "在裡面。"
+     ],
+     "e": "in 是在裡面：The pencil is in the pencil box."
+    },
+    {
+     "type": "choice",
+     "q": "「Where is my bag?」是什麼意思？",
+     "a": "我的書包在哪裡？",
+     "w": [
+      "這是誰的書包？",
+      "我的書包是什麼顏色？",
+      "我要買書包。"
+     ],
+     "h": [
+      "Where 問地點。"
+     ],
+     "e": "Where is……? 是問東西在哪裡。"
+    },
+    {
+     "type": "choice",
+     "q": "「The dog is by the door.」狗在哪裡？",
+     "a": "在門旁邊",
+     "w": [
+      "在門裡面",
+      "在門上面",
+      "在門下面"
+     ],
+     "h": [
+      "by 是在旁邊。"
+     ],
+     "e": "by 是在旁邊。"
+    },
+    {
+     "type": "choice",
+     "q": "「behind」是什麼意思？",
+     "a": "在……後面",
+     "w": [
+      "在……前面",
+      "在……上面",
+      "在……裡面"
+     ],
+     "h": [
+      "和 in front of 相反。"
+     ],
+     "e": "behind 是在後面；in front of 是在前面。"
+    },
+    {
+     "type": "choice",
+     "q": "書放在書桌上面，要怎麼說？",
+     "a": "The book is on the desk.",
+     "w": [
+      "The book is under the desk.",
+      "The book is in the desk.",
+      "The book is behind the desk."
+     ],
+     "h": [
+      "在上面用哪一個字？"
+     ],
+     "e": "在上面用 on。"
+    },
+    {
+     "type": "tf",
+     "q": "「in front of」的意思是「在……前面」。",
+     "a": true,
+     "h": [
+      "front 是前面。"
+     ],
+     "e": "in front of 是在前面。"
+    },
+    {
+     "type": "choice",
+     "q": "魚在魚缸裡游泳，要用哪一個字？",
+     "a": "in",
+     "w": [
+      "on",
+      "under",
+      "behind"
+     ],
+     "h": [
+      "在水裡面。"
+     ],
+     "e": "The fish is in the fish tank."
+    },
+    {
+     "type": "order",
+     "q": "排出句子：貓在盒子裡。",
+     "a": [
+      "The cat",
+      "is",
+      "in",
+      "the box."
+     ],
+     "h": [
+      "The cat is……"
+     ],
+     "e": "The cat is in the box."
+    },
+    {
+     "type": "choice",
+     "q": "「The shoes are under the bed.」鞋子在哪裡？",
+     "a": "在床底下",
+     "w": [
+      "在床上",
+      "在床旁邊",
+      "在床後面"
+     ],
+     "h": [
+      "under 是在下面。"
+     ],
+     "e": "under the bed 是在床底下。"
+    },
+    {
+     "type": "choice",
+     "q": "「next to」和下列哪一個意思最接近？",
+     "a": "by",
+     "w": [
+      "under",
+      "in",
+      "on"
+     ],
+     "h": [
+      "在旁邊。"
+     ],
+     "e": "next to 和 by 都是在旁邊的意思。"
     }
    ]
   }

@@ -2,200 +2,36 @@
  "subject": "math",
  "grade": 4,
  "concepts": [
-  {
-   "id": "math.g4.fractions",
-   "grade": 4,
-   "unit": "分數與角度",
-   "title": "分數",
-   "summary": "把一個東西平分，其中的幾份就是分數。",
-   "questions": [
-    {
-     "type": "choice",
-     "q": "把一個披薩平分成 8 片，吃了 3 片，吃了幾分之幾？",
-     "a": "{3/8}",
-     "w": [
-      "{3/5}",
-      "{5/8}",
-      "{8/3}"
-     ],
-     "h": [
-      "分母是平分成幾份。",
-      "分子是吃了幾份。"
-     ],
-     "e": "平分 8 份（分母 8），吃 3 份（分子 3），是 {3/8}。"
-    },
-    {
-     "type": "choice",
-     "q": "假分數 {7/4} 化成帶分數是多少？",
-     "a": "1{3/4}",
-     "w": [
-      "1{1/4}",
-      "2{3/4}",
-      "7{1/4}"
-     ],
-     "h": [
-      "{4/4} 就是 1。",
-      "7 ÷ 4 = 1 餘 3。"
-     ],
-     "e": "7 ÷ 4 = 1 餘 3，所以 {7/4} = 1{3/4}。"
-    },
-    {
-     "type": "choice",
-     "q": "{2/5} + {1/5} = ？",
-     "a": "{3/5}",
-     "w": [
-      "{3/10}",
-      "{2/25}",
-      "{1/5}"
-     ],
-     "h": [
-      "分母相同，分母不變。",
-      "只把分子相加。"
-     ],
-     "e": "同分母相加：分母不變，分子 2 + 1 = 3，答案 {3/5}。"
-    },
-    {
-     "type": "choice",
-     "q": "下列哪一個分數最大？",
-     "a": "{1/2}",
-     "w": [
-      "{1/3}",
-      "{1/4}",
-      "{1/5}"
-     ],
-     "h": [
-      "分子都是 1。",
-      "分成越少份，每一份越大。"
-     ],
-     "e": "分子相同時，分母越小，分數越大，所以 {1/2} 最大。"
-    },
-    {
-     "type": "choice",
-     "q": "2{1/3} 換成假分數是多少？",
-     "a": "{7/3}",
-     "w": [
-      "{5/3}",
-      "{6/3}",
-      "{2/3}"
-     ],
-     "h": [
-      "2 等於 {6/3}。",
-      "再加上 {1/3}。"
-     ],
-     "e": "2 × 3 + 1 = 7，所以 2{1/3} = {7/3}。"
-    }
-   ]
-  },
-  {
-   "id": "math.g4.angles-big-numbers",
-   "grade": 4,
-   "unit": "分數與角度",
-   "title": "角度與大數",
-   "summary": "量角器可以量出角有多大；大數要四位四位一起看。",
-   "questions": [
-    {
-     "type": "choice",
-     "q": "直角是幾度？",
-     "a": "90°",
-     "w": [
-      "45°",
-      "180°",
-      "360°"
-     ],
-     "h": [
-      "課本的一個角就是直角。",
-      "轉一圈的四分之一。"
-     ],
-     "e": "直角 = 90°，平角 = 180°，周角 = 360°。"
-    },
-    {
-     "type": "choice",
-     "q": "平角是幾度？",
-     "a": "180°",
-     "w": [
-      "90°",
-      "270°",
-      "360°"
-     ],
-     "h": [
-      "平角看起來像一條直線。",
-      "等於 2 個直角。"
-     ],
-     "e": "平角 = 2 個直角 = 180°。"
-    },
-    {
-     "type": "choice",
-     "q": "一個三角形的三個角加起來是幾度？",
-     "a": "180°",
-     "w": [
-      "90°",
-      "270°",
-      "360°"
-     ],
-     "h": [
-      "把三個角撕下來拼在一起。",
-      "會拼成一個平角。"
-     ],
-     "e": "任何三角形的三個內角和都是 180°。"
-    },
-    {
-     "type": "choice",
-     "q": "時鐘 3 點整，時針和分針的夾角是幾度？",
-     "a": "90°",
-     "w": [
-      "30°",
-      "60°",
-      "180°"
-     ],
-     "h": [
-      "分針指 12，時針指 3。",
-      "相鄰兩個數字之間是 30°。"
-     ],
-     "e": "從 12 到 3 有 3 格，3 × 30° = 90°。"
-    },
-    {
-     "type": "choice",
-     "q": "「三千零五萬」寫成數字是多少？",
-     "a": "30050000",
-     "w": [
-      "3005000",
-      "30500000",
-      "300050000"
-     ],
-     "h": [
-      "先寫「三千零五」= 3005。",
-      "「萬」表示後面還有四個 0。"
-     ],
-     "e": "三千零五萬 = 3005 萬 = 30050000。"
-    }
-   ]
-  },
-  {
-   "id": "math.g4.perimeter-practice",
-   "grade": 4,
-   "unit": "周長與面積（程式出題）",
-   "title": "長方形與正方形周長",
-   "summary": "周長是圖形外圍一圈的長度：長方形 (長＋寬)×2，正方形 邊長×4。",
-   "generator": {
-    "id": "perimeter",
-    "difficulties": [
-     "easy",
-     "medium"
-    ]
-   }
-  },
-  {
-   "id": "math.g4.rectangle-area",
-   "grade": 4,
-   "unit": "周長與面積（程式出題）",
-   "title": "長方形面積",
-   "summary": "長方形面積＝長×寬，單位是平方公分。",
-   "generator": {
-    "id": "area",
-    "difficulties": [
-     "easy"
-    ]
-   }
-  }
+  {"id": "math.g4.big-numbers", "grade": 4, "unit": "大數與概數", "title": "億以內的數", "summary": "從右邊每四位一組：個、萬、億。中間有 0 要讀「零」，連續的 0 只讀一個。", "generator": {"id": "g4BigNumbers", "difficulties": ["read", "place", "compare"]}},
+  {"id": "math.g4.rounding", "grade": 4, "unit": "大數與概數", "title": "概數", "summary": "四捨五入、無條件捨去、無條件進入，用在不需要精確數字的時候。", "generator": {"id": "g4Rounding", "difficulties": ["round"]}, "prerequisites": ["math.g4.big-numbers"]},
+  {"id": "math.g4.multiply-2digit", "grade": 4, "unit": "整數乘除", "title": "乘以二位數", "summary": "先乘個位，再乘十位（往左移一位），最後相加。", "generator": {"id": "g4Multiply", "difficulties": ["2x2", "3x2"]}},
+  {"id": "math.g4.divide-1digit", "grade": 4, "unit": "整數乘除", "title": "多位數除以一位數", "summary": "從最高位開始一位一位除，不夠除的那一位商要寫 0。", "generator": {"id": "g4Divide", "difficulties": ["by1"]}},
+  {"id": "math.g4.divide-2digit", "grade": 4, "unit": "整數乘除", "title": "除以二位數", "summary": "先估商，再調整；每一步的餘數都要比除數小。", "generator": {"id": "g4Divide", "difficulties": ["by2"]}, "prerequisites": ["math.g4.divide-1digit"]},
+  {"id": "math.g4.order-of-operations", "grade": 4, "unit": "整數乘除", "title": "四則運算", "summary": "先算括號，再算乘除，最後算加減；同一級從左算到右。", "generator": {"id": "g4OrderOps", "difficulties": ["mixed"]}},
+  {"id": "math.g4.fraction-mixed", "grade": 4, "unit": "分數", "title": "假分數與帶分數", "summary": "分子比分母大的是假分數，可以寫成整數加真分數的帶分數。", "generator": {"id": "g4Fraction", "difficulties": ["convert"]}},
+  {"id": "math.g4.fraction-add-sub", "grade": 4, "unit": "分數", "title": "帶分數加減", "summary": "整數加減整數、分數加減分數；分子超過分母要進位，不夠減要借 1。", "generator": {"id": "g4Fraction", "difficulties": ["add-sub"]}, "prerequisites": ["math.g4.fraction-mixed"]},
+  {"id": "math.g4.fraction-times-whole", "grade": 4, "unit": "分數", "title": "整數乘以分數", "summary": "幾個一樣的分數相加，就是整數乘以分數：分母不變，分子乘以整數。", "generator": {"id": "g4Fraction", "difficulties": ["times"]}, "prerequisites": ["math.g4.fraction-mixed"]},
+  {"id": "math.g4.decimals-2place", "grade": 4, "unit": "小數", "title": "二位小數", "summary": "小數點右邊第二位是百分位，1 裡面有 100 個 0.01。", "generator": {"id": "g4Decimal", "difficulties": ["place", "compare"]}},
+  {"id": "math.g4.decimals-add-sub", "grade": 4, "unit": "小數", "title": "二位小數加減", "summary": "小數點一定要對齊；位數不一樣時，後面補 0 再算。", "generator": {"id": "g4Decimal", "difficulties": ["add-sub"]}, "prerequisites": ["math.g4.decimals-2place"]},
+  {"id": "math.g4.decimals-times", "grade": 4, "unit": "小數", "title": "小數乘以整數", "summary": "先當成整數相乘，再看原來有幾位小數，把小數點點回去。", "generator": {"id": "g4Decimal", "difficulties": ["times"]}, "prerequisites": ["math.g4.decimals-2place"]},
+  {"id": "math.g4.angles", "grade": 4, "unit": "角度與圖形", "title": "角度", "summary": "直角 90°、平角 180°、一圈 360°；三角形內角和 180°，四邊形 360°。", "generator": {"id": "g4Angle", "difficulties": ["triangle", "straight", "clock", "rotate"]}},
+  {"id": "math.g4.shapes", "grade": 4, "unit": "角度與圖形", "title": "三角形與四邊形", "summary": "依照角或邊來分類三角形；認識垂直、平行，以及梯形、平行四邊形和菱形。", "questions": [
+   {"type": "choice", "q": "三個角都小於 90° 的三角形叫做什麼？", "a": "銳角三角形", "w": ["直角三角形", "鈍角三角形", "正方形"], "h": ["比直角小的角叫銳角。"], "e": "三個角都是銳角（小於 90°）的是銳角三角形。"},
+   {"type": "choice", "q": "有一個角大於 90° 的三角形叫做什麼？", "a": "鈍角三角形", "w": ["銳角三角形", "直角三角形", "正三角形"], "h": ["比直角大的角叫鈍角。"], "e": "有一個鈍角的三角形是鈍角三角形。"},
+   {"type": "choice", "q": "三條邊都一樣長的三角形叫做什麼？", "a": "正三角形", "w": ["直角三角形", "鈍角三角形", "梯形"], "h": ["正方形四邊一樣長，三角形呢？"], "e": "三邊等長的是正三角形，它的三個角也都是 60°。"},
+   {"type": "choice", "q": "兩條直線相交成直角，這兩條線的關係叫做什麼？", "a": "互相垂直", "w": ["互相平行", "互相重疊", "沒有關係"], "h": ["像十字一樣。"], "e": "相交成 90° 的兩條線互相垂直。"},
+   {"type": "choice", "q": "兩條直線一直延長都不會相交，這兩條線的關係叫做什麼？", "a": "互相平行", "w": ["互相垂直", "互相交叉", "形成直角"], "h": ["像鐵軌一樣。"], "e": "永遠不會相交、距離一樣的兩條直線互相平行。"},
+   {"type": "choice", "q": "只有一組對邊互相平行的四邊形叫做什麼？", "a": "梯形", "w": ["平行四邊形", "長方形", "菱形"], "h": ["上下兩邊平行，左右兩邊不平行。"], "e": "只有一組對邊平行的四邊形是梯形。"},
+   {"type": "choice", "q": "兩組對邊都互相平行的四邊形叫做什麼？", "a": "平行四邊形", "w": ["梯形", "三角形", "圓形"], "h": ["上下平行、左右也平行。"], "e": "兩組對邊都平行的是平行四邊形，長方形、正方形、菱形都是特別的平行四邊形。"},
+   {"type": "choice", "q": "四條邊都一樣長的四邊形，一定是什麼？", "a": "菱形", "w": ["梯形", "長方形", "鈍角三角形"], "h": ["正方形也有這個特徵，但角不一定是直角。"], "e": "四邊等長的四邊形是菱形；如果四個角又都是直角，就是正方形。"},
+   {"type": "tf", "q": "正方形也是一種菱形。", "a": true, "h": ["菱形的條件是四邊一樣長。"], "e": "正方形四邊等長，符合菱形的條件，是四個角都是直角的特別菱形。"},
+   {"type": "tf", "q": "一個三角形可以有兩個直角。", "a": false, "h": ["三角形三個角加起來是 180°。"], "e": "兩個直角就已經 180° 了，第三個角變成 0°，所以不可能。"},
+   {"type": "choice", "q": "長方形相鄰的兩條邊是什麼關係？", "a": "互相垂直", "w": ["互相平行", "一樣長", "不會相交"], "h": ["長方形的角都是幾度？"], "e": "長方形的角都是直角，所以相鄰兩邊互相垂直；相對的兩邊互相平行。"},
+   {"type": "choice", "q": "平行四邊形相對的兩個角有什麼關係？", "a": "一樣大", "w": ["加起來是 90°", "一個一定是直角", "相差 180°"], "h": ["沿著對角畫一畫、比一比。"], "e": "平行四邊形的對角相等，相鄰兩個角加起來是 180°。"}
+  ]},
+  {"id": "math.g4.perimeter-practice", "grade": 4, "unit": "周長與面積", "title": "長方形與正方形周長", "summary": "周長是圖形外圍一圈的長度：長方形 (長＋寬)×2，正方形 邊長×4。", "generator": {"id": "perimeter", "difficulties": ["easy", "medium"]}},
+  {"id": "math.g4.rectangle-area", "grade": 4, "unit": "周長與面積", "title": "長方形面積", "summary": "長方形面積＝長×寬，單位是平方公分或平方公尺。", "generator": {"id": "area", "difficulties": ["easy"]}},
+  {"id": "math.g4.area-units", "grade": 4, "unit": "周長與面積", "title": "平方公尺", "summary": "1 平方公尺 = 10000 平方公分；面積和周長不一樣，單位也不一樣。", "generator": {"id": "g4AreaUnits", "difficulties": ["convert"]}, "prerequisites": ["math.g4.rectangle-area"]},
+  {"id": "math.g4.time-units", "grade": 4, "unit": "時間", "title": "時間的換算與計算", "summary": "1 日 = 24 小時，1 小時 = 60 分鐘；算經過時間時，分鐘不夠減要借 1 小時。", "generator": {"id": "g4Time", "difficulties": ["convert", "elapsed"]}}
  ]
 }
