@@ -7,7 +7,7 @@
    "grade": 3,
    "unit": "Words 單字起步",
    "title": "Colors & Numbers",
-   "summary": "顏色和數字是最常用的英文單字。按 🔊 可以聽發音。",
+   "summary": "顏色和數字是最常用的英文單字，生活中到處都看得到。",
    "questions": [
     {
      "type": "choice",
@@ -71,18 +71,115 @@
     },
     {
      "type": "choice",
-     "q": "🔊 聽一聽，選出你聽到的單字。",
-     "a": "yellow",
+     "q": "green 是什麼顏色？",
+     "a": "綠色",
      "w": [
-      "hello",
-      "pillow",
-      "purple"
+      "藍色",
+      "黃色",
+      "白色"
      ],
      "h": [
-      "這是一個顏色。",
-      "香蕉的顏色。"
+      "樹葉和草地的顏色。"
      ],
-     "e": "你聽到的是 yellow（黃色）。"
+     "e": "green 是綠色。"
+    },
+    {
+     "type": "choice",
+     "q": "「黑色」的英文是哪一個？",
+     "a": "black",
+     "w": [
+      "white",
+      "brown",
+      "pink"
+     ],
+     "h": [
+      "white 是白色，和黑色相反。"
+     ],
+     "e": "black 是黑色，white 是白色，brown 是咖啡色，pink 是粉紅色。"
+    },
+    {
+     "type": "choice",
+     "q": "🍎🍎🍎 How many apples?",
+     "a": "three",
+     "w": [
+      "two",
+      "four",
+      "five"
+     ],
+     "h": [
+      "數一數有幾個蘋果。"
+     ],
+     "e": "有 3 個蘋果，3 是 three。"
+    },
+    {
+     "type": "choice",
+     "q": "twelve 是數字幾？",
+     "a": "12",
+     "w": [
+      "20",
+      "11",
+      "2"
+     ],
+     "h": [
+      "eleven 是 11，下一個是？"
+     ],
+     "e": "twelve 是 12；eleven 是 11，twenty 是 20。"
+    },
+    {
+     "type": "choice",
+     "q": "「十五」的英文是哪一個？",
+     "a": "fifteen",
+     "w": [
+      "fifty",
+      "five",
+      "eleven"
+     ],
+     "h": [
+      "13 到 19 的結尾都是 -teen。"
+     ],
+     "e": "fifteen 是 15；fifty 是 50，five 是 5。"
+    },
+    {
+     "type": "choice",
+     "q": "下列哪一個單字是顏色？",
+     "a": "purple",
+     "w": [
+      "pencil",
+      "puppy",
+      "pizza"
+     ],
+     "h": [
+      "這四個字都是 p 開頭，哪一個是顏色？"
+     ],
+     "e": "purple 是紫色；pencil 是鉛筆，puppy 是小狗，pizza 是披薩。"
+    },
+    {
+     "type": "choice",
+     "q": "six + two = ？",
+     "a": "eight",
+     "w": [
+      "seven",
+      "nine",
+      "ten"
+     ],
+     "h": [
+      "6 + 2 = 8。"
+     ],
+     "e": "6 + 2 = 8，8 是 eight。"
+    },
+    {
+     "type": "choice",
+     "q": "orange 除了是柳橙，也可以是什麼顏色？",
+     "a": "橘色",
+     "w": [
+      "紅色",
+      "黃色",
+      "綠色"
+     ],
+     "h": [
+      "柳橙是什麼顏色？"
+     ],
+     "e": "orange 可以是柳橙，也可以是橘色。"
     }
    ]
   },
@@ -155,18 +252,1319 @@
     },
     {
      "type": "choice",
-     "q": "🔊 聽一聽，選出你聽到的單字。",
-     "a": "elephant",
+     "q": "cat 是什麼動物？",
+     "a": "貓",
      "w": [
-      "eleven",
-      "egg",
-      "eraser"
+      "狗",
+      "魚",
+      "鳥"
      ],
      "h": [
-      "這是一種動物。",
-      "鼻子很長、耳朵很大。"
+      "會喵喵叫的動物。"
      ],
-     "e": "你聽到的是 elephant（大象）。"
+     "e": "cat 是貓，dog 是狗。"
+    },
+    {
+     "type": "choice",
+     "q": "「香蕉」的英文是哪一個？",
+     "a": "banana",
+     "w": [
+      "apple",
+      "orange",
+      "grape"
+     ],
+     "h": [
+      "黃色、彎彎的水果。"
+     ],
+     "e": "banana 是香蕉。"
+    },
+    {
+     "type": "choice",
+     "q": "下列哪一個單字是水果？",
+     "a": "grape",
+     "w": [
+      "goat",
+      "girl",
+      "green"
+     ],
+     "h": [
+      "這四個字都是 g 開頭。"
+     ],
+     "e": "grape 是葡萄；goat 是山羊，girl 是女孩，green 是綠色。"
+    },
+    {
+     "type": "choice",
+     "q": "「It is a bird.」是什麼意思？",
+     "a": "牠是一隻鳥。",
+     "w": [
+      "牠是一條魚。",
+      "我是一隻鳥。",
+      "鳥在飛。"
+     ],
+     "h": [
+      "It is 是「它（牠）是」。"
+     ],
+     "e": "It is a bird. 是「牠是一隻鳥」。"
+    },
+    {
+     "type": "choice",
+     "q": "rabbit 是什麼動物？",
+     "a": "兔子",
+     "w": [
+      "老鼠",
+      "貓",
+      "熊"
+     ],
+     "h": [
+      "長耳朵、愛吃紅蘿蔔。"
+     ],
+     "e": "rabbit 是兔子。"
+    },
+    {
+     "type": "choice",
+     "q": "「I like oranges.」是什麼意思？",
+     "a": "我喜歡柳橙。",
+     "w": [
+      "我不喜歡柳橙。",
+      "我喜歡蘋果。",
+      "柳橙喜歡我。"
+     ],
+     "h": [
+      "I like 是「我喜歡」。"
+     ],
+     "e": "I like oranges. 是「我喜歡柳橙」。"
+    },
+    {
+     "type": "choice",
+     "q": "monkey 是什麼動物？",
+     "a": "猴子",
+     "w": [
+      "驢子",
+      "鴨子",
+      "獅子"
+     ],
+     "h": [
+      "很會爬樹、愛吃香蕉。"
+     ],
+     "e": "monkey 是猴子；donkey 是驢子，duck 是鴨子，lion 是獅子。"
+    },
+    {
+     "type": "choice",
+     "q": "「草莓」的英文是哪一個？",
+     "a": "strawberry",
+     "w": [
+      "watermelon",
+      "pineapple",
+      "lemon"
+     ],
+     "h": [
+      "紅紅的、表面有小小的籽。"
+     ],
+     "e": "strawberry 是草莓；watermelon 是西瓜，pineapple 是鳳梨，lemon 是檸檬。"
+    }
+   ]
+  },
+  {
+   "id": "english.g3.alphabet-order",
+   "grade": 3,
+   "unit": "Letters 字母",
+   "title": "ABC Order",
+   "summary": "26 個字母有固定的順序，大寫和小寫要配對好。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "字母 A 的下一個是哪一個？",
+     "a": "B",
+     "w": [
+      "C",
+      "D",
+      "Z"
+     ],
+     "h": [
+      "A, B, C……"
+     ],
+     "e": "字母順序是 A、B、C、D……，A 後面是 B。"
+    },
+    {
+     "type": "choice",
+     "q": "哪一個字母在 M 和 O 的中間？",
+     "a": "N",
+     "w": [
+      "L",
+      "P",
+      "Q"
+     ],
+     "h": [
+      "L, M, ?, O, P"
+     ],
+     "e": "M、N、O，所以中間是 N。"
+    },
+    {
+     "type": "choice",
+     "q": "小寫 g 的大寫是哪一個？",
+     "a": "G",
+     "w": [
+      "Q",
+      "C",
+      "J"
+     ],
+     "h": [
+      "C 加上一小橫。"
+     ],
+     "e": "g 的大寫是 G。"
+    },
+    {
+     "type": "choice",
+     "q": "大寫 R 的小寫是哪一個？",
+     "a": "r",
+     "w": [
+      "n",
+      "h",
+      "p"
+     ],
+     "h": [
+      "小寫很短，像一根拐杖。"
+     ],
+     "e": "R 的小寫是 r。"
+    },
+    {
+     "type": "order",
+     "q": "依照字母順序排好大寫字母。",
+     "a": [
+      "H",
+      "I",
+      "J",
+      "K"
+     ],
+     "h": [
+      "從 H 開始。"
+     ],
+     "e": "H、I、J、K。"
+    },
+    {
+     "type": "choice",
+     "q": "哪一個字母在 W 的前面？",
+     "a": "V",
+     "w": [
+      "X",
+      "U",
+      "Y"
+     ],
+     "h": [
+      "U, V, W, X, Y, Z"
+     ],
+     "e": "W 的前一個是 V。"
+    },
+    {
+     "type": "choice",
+     "q": "英文字母一共有幾個？",
+     "a": "26 個",
+     "w": [
+      "24 個",
+      "25 個",
+      "28 個"
+     ],
+     "h": [
+      "A 到 Z。"
+     ],
+     "e": "英文字母從 A 到 Z，一共 26 個。"
+    },
+    {
+     "type": "choice",
+     "q": "cat 的第一個字母是什麼？",
+     "a": "c",
+     "w": [
+      "a",
+      "t",
+      "k"
+     ],
+     "h": [
+      "最左邊的字母。"
+     ],
+     "e": "cat 是 c-a-t，第一個字母是 c。"
+    },
+    {
+     "type": "order",
+     "q": "依照字母順序排好小寫字母。",
+     "a": [
+      "p",
+      "q",
+      "r",
+      "s"
+     ],
+     "h": [
+      "從 p 開始。"
+     ],
+     "e": "p、q、r、s。"
+    },
+    {
+     "type": "tf",
+     "q": "小寫的 b 和 d 是同一個字母。",
+     "a": false,
+     "h": [
+      "一個肚子在右邊，一個肚子在左邊。"
+     ],
+     "e": "b 和 d 很像但方向相反，是不同的字母。"
+    },
+    {
+     "type": "choice",
+     "q": "依照字母順序，哪一個單字排在最前面？",
+     "a": "apple",
+     "w": [
+      "cat",
+      "dog",
+      "egg"
+     ],
+     "h": [
+      "比第一個字母：a、c、d、e。"
+     ],
+     "e": "a 在最前面，所以 apple 排第一。"
+    },
+    {
+     "type": "choice",
+     "q": "下列哪一個是母音字母？",
+     "a": "e",
+     "w": [
+      "b",
+      "k",
+      "t"
+     ],
+     "h": [
+      "母音字母有 a、e、i、o、u。"
+     ],
+     "e": "母音字母是 a、e、i、o、u，其他都是子音字母。"
+    }
+   ]
+  },
+  {
+   "id": "english.g3.digraphs",
+   "grade": 3,
+   "unit": "Phonics 發音",
+   "title": "sh / ch / th",
+   "summary": "兩個字母合在一起，會發出新的聲音：sh 像「噓」、ch 像「七」、th 要輕咬舌頭。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "ship（船）開頭是哪一個字母組合？",
+     "a": "sh",
+     "w": [
+      "ch",
+      "th",
+      "ph"
+     ],
+     "h": [
+      "發音像要大家安靜的「噓」。"
+     ],
+     "e": "ship 的 sh 發「噓」的音。"
+    },
+    {
+     "type": "choice",
+     "q": "chair（椅子）開頭是哪一個字母組合？",
+     "a": "ch",
+     "w": [
+      "sh",
+      "th",
+      "wh"
+     ],
+     "h": [
+      "發音有點像「去」。"
+     ],
+     "e": "chair 的開頭是 ch。"
+    },
+    {
+     "type": "choice",
+     "q": "three（三）開頭是哪一個字母組合？",
+     "a": "th",
+     "w": [
+      "sh",
+      "ch",
+      "tr"
+     ],
+     "h": [
+      "發音時舌頭要輕輕放在牙齒中間。"
+     ],
+     "e": "three 的開頭是 th，要輕咬舌頭吹氣。"
+    },
+    {
+     "type": "choice",
+     "q": "下列哪一個單字有 sh？",
+     "a": "fish",
+     "w": [
+      "chip",
+      "thin",
+      "rich"
+     ],
+     "h": [
+      "找找看哪個字裡有 s 和 h 連在一起。"
+     ],
+     "e": "fish（魚）結尾是 sh。"
+    },
+    {
+     "type": "choice",
+     "q": "chicken（雞）開頭是哪一個字母組合？",
+     "a": "ch",
+     "w": [
+      "sh",
+      "th",
+      "ck"
+     ],
+     "h": [
+      "看前兩個字母。"
+     ],
+     "e": "chicken 開頭是 ch。"
+    },
+    {
+     "type": "choice",
+     "q": "哪一個單字的開頭和 shoe（鞋子）一樣？",
+     "a": "sheep",
+     "w": [
+      "cheese",
+      "think",
+      "socks"
+     ],
+     "h": [
+      "找 sh 開頭的字。"
+     ],
+     "e": "sheep（綿羊）和 shoe 都是 sh 開頭。"
+    },
+    {
+     "type": "choice",
+     "q": "mother 的 th 在單字的哪裡？",
+     "a": "中間",
+     "w": [
+      "開頭",
+      "結尾",
+      "沒有 th"
+     ],
+     "h": [
+      "m-o-th-e-r"
+     ],
+     "e": "mother 的 th 在中間。"
+    },
+    {
+     "type": "tf",
+     "q": "lunch（午餐）的結尾是 ch。",
+     "a": true,
+     "h": [
+      "l-u-n-ch"
+     ],
+     "e": "lunch 的結尾是 ch。"
+    },
+    {
+     "type": "choice",
+     "q": "下列哪一個單字有 th？",
+     "a": "bath",
+     "w": [
+      "bus",
+      "bag",
+      "bat"
+     ],
+     "h": [
+      "找找 t 和 h 連在一起。"
+     ],
+     "e": "bath（洗澡）結尾是 th。"
+    },
+    {
+     "type": "choice",
+     "q": "「＿ip」前面加上哪一個組合，會變成「船」？",
+     "a": "sh",
+     "w": [
+      "ch",
+      "th",
+      "wh"
+     ],
+     "h": [
+      "船的英文是 ship。"
+     ],
+     "e": "sh + ip = ship（船）；ch + ip = chip（薯片）。"
+    },
+    {
+     "type": "choice",
+     "q": "teacher（老師）的中間是哪一個字母組合？",
+     "a": "ch",
+     "w": [
+      "sh",
+      "th",
+      "ph"
+     ],
+     "h": [
+      "t-e-a-ch-e-r"
+     ],
+     "e": "teacher 中間是 ch。"
+    },
+    {
+     "type": "choice",
+     "q": "哪一個單字的開頭和 cheese（起司）一樣？",
+     "a": "church",
+     "w": [
+      "shoes",
+      "three",
+      "sheep"
+     ],
+     "h": [
+      "找 ch 開頭的字。"
+     ],
+     "e": "church（教堂）和 cheese 都是 ch 開頭。"
+    }
+   ]
+  },
+  {
+   "id": "english.g3.school-things",
+   "grade": 3,
+   "unit": "Words 單字起步",
+   "title": "School Things",
+   "summary": "鉛筆、橡皮擦、書包……教室裡的東西用英文說說看。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "pencil 是什麼？",
+     "a": "鉛筆",
+     "w": [
+      "原子筆",
+      "橡皮擦",
+      "尺"
+     ],
+     "h": [
+      "寫錯可以擦掉的筆。"
+     ],
+     "e": "pencil 是鉛筆，pen 是原子筆。"
+    },
+    {
+     "type": "choice",
+     "q": "「書」的英文是哪一個？",
+     "a": "book",
+     "w": [
+      "bag",
+      "box",
+      "boy"
+     ],
+     "h": [
+      "b-o-o-k"
+     ],
+     "e": "book 是書；bag 是袋子、書包，box 是盒子，boy 是男孩。"
+    },
+    {
+     "type": "choice",
+     "q": "eraser 是什麼？",
+     "a": "橡皮擦",
+     "w": [
+      "剪刀",
+      "膠水",
+      "尺"
+     ],
+     "h": [
+      "寫錯字時用它。"
+     ],
+     "e": "eraser 是橡皮擦。"
+    },
+    {
+     "type": "choice",
+     "q": "ruler 是什麼？",
+     "a": "尺",
+     "w": [
+      "書包",
+      "鉛筆盒",
+      "膠水"
+     ],
+     "h": [
+      "用來量長度、畫直線。"
+     ],
+     "e": "ruler 是尺。"
+    },
+    {
+     "type": "choice",
+     "q": "「What's this?」「It's a pen.」這是什麼東西？",
+     "a": "原子筆",
+     "w": [
+      "鉛筆",
+      "書",
+      "筆記本"
+     ],
+     "h": [
+      "pen 是什麼？"
+     ],
+     "e": "It's a pen. 是「這是一枝原子筆」。"
+    },
+    {
+     "type": "choice",
+     "q": "「書包」的英文是哪一個？",
+     "a": "bag",
+     "w": [
+      "book",
+      "desk",
+      "chair"
+     ],
+     "h": [
+      "用來裝書的。"
+     ],
+     "e": "bag 是書包、袋子。"
+    },
+    {
+     "type": "choice",
+     "q": "desk 是什麼？",
+     "a": "書桌",
+     "w": [
+      "椅子",
+      "門",
+      "窗戶"
+     ],
+     "h": [
+      "寫功課時放課本的地方。"
+     ],
+     "e": "desk 是書桌，chair 是椅子。"
+    },
+    {
+     "type": "choice",
+     "q": "哪一個東西可以用來寫字？",
+     "a": "pencil",
+     "w": [
+      "eraser",
+      "bag",
+      "ruler"
+     ],
+     "h": [
+      "哪一個是筆？"
+     ],
+     "e": "pencil（鉛筆）可以寫字。"
+    },
+    {
+     "type": "choice",
+     "q": "scissors 是什麼？",
+     "a": "剪刀",
+     "w": [
+      "膠水",
+      "蠟筆",
+      "尺"
+     ],
+     "h": [
+      "用來剪紙。"
+     ],
+     "e": "scissors 是剪刀。"
+    },
+    {
+     "type": "order",
+     "q": "排出句子：這是一個橡皮擦。",
+     "a": [
+      "This",
+      "is",
+      "an",
+      "eraser."
+     ],
+     "h": [
+      "This is……"
+     ],
+     "e": "This is an eraser. eraser 是 e 開頭，前面用 an。"
+    },
+    {
+     "type": "tf",
+     "q": "「a eraser」是正確的說法。",
+     "a": false,
+     "h": [
+      "eraser 是母音 e 開頭。"
+     ],
+     "e": "母音開頭的字前面用 an：an eraser。"
+    },
+    {
+     "type": "choice",
+     "q": "「How many books?」是什麼意思？",
+     "a": "有幾本書？",
+     "w": [
+      "這是什麼書？",
+      "書在哪裡？",
+      "你喜歡書嗎？"
+     ],
+     "h": [
+      "How many 問的是數量。"
+     ],
+     "e": "How many 是「有多少個」，How many books? 是「有幾本書？」。"
+    }
+   ]
+  },
+  {
+   "id": "english.g3.self-intro",
+   "grade": 3,
+   "unit": "Talk 開口說",
+   "title": "Hello, I'm...",
+   "summary": "說出自己的名字、年紀，認識新朋友。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "「What's your name?」是什麼意思？",
+     "a": "你叫什麼名字？",
+     "w": [
+      "你幾歲？",
+      "你好嗎？",
+      "你住哪裡？"
+     ],
+     "h": [
+      "name 是名字。"
+     ],
+     "e": "What's your name? 問的是名字。"
+    },
+    {
+     "type": "choice",
+     "q": "「How old are you?」是什麼意思？",
+     "a": "你幾歲？",
+     "w": [
+      "你好嗎？",
+      "你叫什麼名字？",
+      "你多高？"
+     ],
+     "h": [
+      "old 和年紀有關。"
+     ],
+     "e": "How old are you? 問的是年紀。"
+    },
+    {
+     "type": "choice",
+     "q": "別人問「How old are you?」，哪一句回答最恰當？",
+     "a": "I'm nine.",
+     "w": [
+      "I'm fine.",
+      "I'm Amy.",
+      "I'm a boy."
+     ],
+     "h": [
+      "要回答幾歲。"
+     ],
+     "e": "I'm nine. 是「我九歲」。"
+    },
+    {
+     "type": "choice",
+     "q": "別人問「What's your name?」，哪一句回答最恰當？",
+     "a": "My name is Ben.",
+     "w": [
+      "I'm ten.",
+      "I'm good.",
+      "Nice to meet you."
+     ],
+     "h": [
+      "要回答名字。"
+     ],
+     "e": "My name is Ben. 是「我的名字是 Ben」。"
+    },
+    {
+     "type": "choice",
+     "q": "「Nice to meet you.」是什麼意思？",
+     "a": "很高興認識你。",
+     "w": [
+      "再見。",
+      "你好嗎？",
+      "謝謝你。"
+     ],
+     "h": [
+      "第一次見面時說的話。"
+     ],
+     "e": "Nice to meet you. 是認識新朋友時說的「很高興認識你」。"
+    },
+    {
+     "type": "choice",
+     "q": "別人問「How are you?」，哪一句回答最恰當？",
+     "a": "I'm fine, thank you.",
+     "w": [
+      "I'm ten.",
+      "My name is Tom.",
+      "Goodbye."
+     ],
+     "h": [
+      "How are you? 是問你好不好。"
+     ],
+     "e": "I'm fine, thank you. 是「我很好，謝謝」。"
+    },
+    {
+     "type": "order",
+     "q": "排出句子：我的名字是 Lily。",
+     "a": [
+      "My",
+      "name",
+      "is",
+      "Lily."
+     ],
+     "h": [
+      "My name is……"
+     ],
+     "e": "My name is Lily."
+    },
+    {
+     "type": "order",
+     "q": "排出句子：我八歲。",
+     "a": [
+      "I",
+      "am",
+      "eight",
+      "years old."
+     ],
+     "h": [
+      "I am……"
+     ],
+     "e": "I am eight years old."
+    },
+    {
+     "type": "choice",
+     "q": "「I'm a girl.」是什麼意思？",
+     "a": "我是女生。",
+     "w": [
+      "我是男生。",
+      "她是女生。",
+      "我喜歡女生。"
+     ],
+     "h": [
+      "girl 是女孩。"
+     ],
+     "e": "I'm a girl. 是「我是女生」；boy 是男生。"
+    },
+    {
+     "type": "tf",
+     "q": "「Goodbye.」是第一次見面打招呼時說的。",
+     "a": false,
+     "h": [
+      "Goodbye 是什麼時候說的？"
+     ],
+     "e": "Goodbye 是道別時說的「再見」，見面時說 Hello 或 Hi。"
+    },
+    {
+     "type": "choice",
+     "q": "早上見到老師，應該說哪一句？",
+     "a": "Good morning.",
+     "w": [
+      "Good night.",
+      "Goodbye.",
+      "Good afternoon."
+     ],
+     "h": [
+      "morning 是早上。"
+     ],
+     "e": "早上說 Good morning；下午說 Good afternoon；睡前說 Good night。"
+    },
+    {
+     "type": "choice",
+     "q": "「Where are you from?」是什麼意思？",
+     "a": "你是哪裡人？",
+     "w": [
+      "你要去哪裡？",
+      "你在哪裡？",
+      "你幾歲？"
+     ],
+     "h": [
+      "from 是「來自」。"
+     ],
+     "e": "Where are you from? 問的是你從哪裡來、是哪裡人。"
+    }
+   ]
+  },
+  {
+   "id": "english.g3.feelings",
+   "grade": 3,
+   "unit": "Talk 開口說",
+   "title": "How Do You Feel?",
+   "summary": "開心、難過、肚子餓、好累……用英文說出你的感覺。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "happy 是什麼意思？",
+     "a": "快樂的",
+     "w": [
+      "難過的",
+      "生氣的",
+      "累的"
+     ],
+     "h": [
+      "😊"
+     ],
+     "e": "happy 是快樂的。"
+    },
+    {
+     "type": "choice",
+     "q": "sad 是什麼意思？",
+     "a": "難過的",
+     "w": [
+      "快樂的",
+      "餓的",
+      "渴的"
+     ],
+     "h": [
+      "😢"
+     ],
+     "e": "sad 是難過的。"
+    },
+    {
+     "type": "choice",
+     "q": "「生氣的」英文是哪一個？",
+     "a": "angry",
+     "w": [
+      "hungry",
+      "happy",
+      "sleepy"
+     ],
+     "h": [
+      "😠"
+     ],
+     "e": "angry 是生氣的；hungry 是餓的，sleepy 是想睡的。"
+    },
+    {
+     "type": "choice",
+     "q": "hungry 是什麼意思？",
+     "a": "餓的",
+     "w": [
+      "生氣的",
+      "渴的",
+      "累的"
+     ],
+     "h": [
+      "肚子咕嚕咕嚕叫。"
+     ],
+     "e": "hungry 是肚子餓的。"
+    },
+    {
+     "type": "choice",
+     "q": "thirsty 是什麼意思？",
+     "a": "口渴的",
+     "w": [
+      "餓的",
+      "熱的",
+      "冷的"
+     ],
+     "h": [
+      "想喝水的時候。"
+     ],
+     "e": "thirsty 是口渴的。"
+    },
+    {
+     "type": "choice",
+     "q": "tired 是什麼意思？",
+     "a": "累的",
+     "w": [
+      "無聊的",
+      "害怕的",
+      "高興的"
+     ],
+     "h": [
+      "跑完步之後。"
+     ],
+     "e": "tired 是疲累的。"
+    },
+    {
+     "type": "choice",
+     "q": "想喝水的時候，要說哪一句？",
+     "a": "I'm thirsty.",
+     "w": [
+      "I'm hungry.",
+      "I'm sad.",
+      "I'm tall."
+     ],
+     "h": [
+      "口渴是哪一個字？"
+     ],
+     "e": "I'm thirsty. 是「我口渴了」。"
+    },
+    {
+     "type": "choice",
+     "q": "「I'm cold.」是什麼意思？",
+     "a": "我覺得冷。",
+     "w": [
+      "我覺得熱。",
+      "我生病了。",
+      "我很高。"
+     ],
+     "h": [
+      "cold 和 hot 是相反詞。"
+     ],
+     "e": "cold 是冷，hot 是熱。"
+    },
+    {
+     "type": "choice",
+     "q": "跑完步很累，別人問 How are you?，你可以怎麼回答？",
+     "a": "I'm tired.",
+     "w": [
+      "I'm ten.",
+      "I'm Tom.",
+      "I'm hungry and happy."
+     ],
+     "h": [
+      "說出你累了。"
+     ],
+     "e": "I'm tired. 是「我很累」。"
+    },
+    {
+     "type": "choice",
+     "q": "scared 是什麼意思？",
+     "a": "害怕的",
+     "w": [
+      "生氣的",
+      "開心的",
+      "想睡的"
+     ],
+     "h": [
+      "看到可怕的東西時。"
+     ],
+     "e": "scared 是害怕的。"
+    },
+    {
+     "type": "tf",
+     "q": "hot 的意思是「熱的」。",
+     "a": true,
+     "h": [
+      "夏天的天氣。"
+     ],
+     "e": "hot 是熱的，cold 是冷的。"
+    },
+    {
+     "type": "order",
+     "q": "排出句子：我非常開心。",
+     "a": [
+      "I",
+      "am",
+      "very",
+      "happy."
+     ],
+     "h": [
+      "very 放在 happy 前面。"
+     ],
+     "e": "I am very happy."
+    }
+   ]
+  },
+  {
+   "id": "english.g3.food",
+   "grade": 3,
+   "unit": "Words 單字起步",
+   "title": "Yummy Food",
+   "summary": "麵包、牛奶、蛋、麵……學會吃的和喝的，還會說「我想要」。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "bread 是什麼？",
+     "a": "麵包",
+     "w": [
+      "牛奶",
+      "蛋",
+      "米飯"
+     ],
+     "h": [
+      "早餐常吃，可以夾果醬。"
+     ],
+     "e": "bread 是麵包。"
+    },
+    {
+     "type": "choice",
+     "q": "「牛奶」的英文是哪一個？",
+     "a": "milk",
+     "w": [
+      "meat",
+      "juice",
+      "water"
+     ],
+     "h": [
+      "m 開頭的飲料。"
+     ],
+     "e": "milk 是牛奶；meat 是肉。"
+    },
+    {
+     "type": "choice",
+     "q": "egg 是什麼？",
+     "a": "蛋",
+     "w": [
+      "魚",
+      "雞肉",
+      "麵"
+     ],
+     "h": [
+      "母雞生的。"
+     ],
+     "e": "egg 是蛋。"
+    },
+    {
+     "type": "choice",
+     "q": "「水」的英文是哪一個？",
+     "a": "water",
+     "w": [
+      "juice",
+      "tea",
+      "milk"
+     ],
+     "h": [
+      "w 開頭。"
+     ],
+     "e": "water 是水；juice 是果汁，tea 是茶。"
+    },
+    {
+     "type": "choice",
+     "q": "「I want some juice.」是什麼意思？",
+     "a": "我想要一些果汁。",
+     "w": [
+      "我喜歡果汁。",
+      "我不要果汁。",
+      "果汁很好喝。"
+     ],
+     "h": [
+      "want 是「想要」。"
+     ],
+     "e": "I want…… 是「我想要……」。"
+    },
+    {
+     "type": "choice",
+     "q": "下列哪一個是飲料？",
+     "a": "tea",
+     "w": [
+      "cake",
+      "rice",
+      "noodles"
+     ],
+     "h": [
+      "哪一個是用喝的？"
+     ],
+     "e": "tea（茶）是飲料；cake 蛋糕、rice 米飯、noodles 麵是食物。"
+    },
+    {
+     "type": "choice",
+     "q": "noodles 是什麼？",
+     "a": "麵",
+     "w": [
+      "米飯",
+      "麵包",
+      "餅乾"
+     ],
+     "h": [
+      "長長的，常常加湯。"
+     ],
+     "e": "noodles 是麵條。"
+    },
+    {
+     "type": "choice",
+     "q": "「蛋糕」的英文是哪一個？",
+     "a": "cake",
+     "w": [
+      "cookie",
+      "candy",
+      "corn"
+     ],
+     "h": [
+      "生日時會吃。"
+     ],
+     "e": "cake 是蛋糕；cookie 是餅乾，candy 是糖果，corn 是玉米。"
+    },
+    {
+     "type": "choice",
+     "q": "「Do you like fish?」想回答「喜歡」，要說哪一句？",
+     "a": "Yes, I do.",
+     "w": [
+      "No, I don't.",
+      "Yes, I am.",
+      "No, I am."
+     ],
+     "h": [
+      "用 Do 問，就用 do 回答。"
+     ],
+     "e": "Do you……? 的肯定回答是 Yes, I do.。"
+    },
+    {
+     "type": "choice",
+     "q": "hamburger 是什麼？",
+     "a": "漢堡",
+     "w": [
+      "熱狗",
+      "披薩",
+      "三明治"
+     ],
+     "h": [
+      "兩片麵包夾肉排。"
+     ],
+     "e": "hamburger 是漢堡；hot dog 是熱狗。"
+    },
+    {
+     "type": "order",
+     "q": "排出句子：你喜歡蛋糕嗎？",
+     "a": [
+      "Do",
+      "you",
+      "like",
+      "cake?"
+     ],
+     "h": [
+      "問句用 Do 開頭。"
+     ],
+     "e": "Do you like cake?"
+    },
+    {
+     "type": "tf",
+     "q": "cookie 是一種飲料。",
+     "a": false,
+     "h": [
+      "cookie 是用喝的還是吃的？"
+     ],
+     "e": "cookie 是餅乾，是用吃的。"
+    }
+   ]
+  },
+  {
+   "id": "english.g3.classroom-commands",
+   "grade": 3,
+   "unit": "Talk 開口說",
+   "title": "Classroom Commands",
+   "summary": "上英文課時，聽得懂老師的指令：起立、坐下、打開書本。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "「Stand up.」是什麼意思？",
+     "a": "起立。",
+     "w": [
+      "坐下。",
+      "安靜。",
+      "舉手。"
+     ],
+     "h": [
+      "up 是向上。"
+     ],
+     "e": "Stand up. 是起立；Sit down. 是坐下。"
+    },
+    {
+     "type": "choice",
+     "q": "「Sit down.」是什麼意思？",
+     "a": "坐下。",
+     "w": [
+      "起立。",
+      "排隊。",
+      "過來。"
+     ],
+     "h": [
+      "down 是向下。"
+     ],
+     "e": "Sit down. 是坐下。"
+    },
+    {
+     "type": "choice",
+     "q": "「打開你的書。」英文怎麼說？",
+     "a": "Open your book.",
+     "w": [
+      "Close your book.",
+      "Open the door.",
+      "Look at me."
+     ],
+     "h": [
+      "open 是打開，close 是關上。"
+     ],
+     "e": "Open your book. 是打開你的書。"
+    },
+    {
+     "type": "choice",
+     "q": "「Close the door.」是什麼意思？",
+     "a": "關門。",
+     "w": [
+      "開門。",
+      "關窗戶。",
+      "關燈。"
+     ],
+     "h": [
+      "door 是門。"
+     ],
+     "e": "Close the door. 是把門關上。"
+    },
+    {
+     "type": "choice",
+     "q": "「Be quiet.」是什麼意思？",
+     "a": "安靜。",
+     "w": [
+      "快一點。",
+      "小心。",
+      "站好。"
+     ],
+     "h": [
+      "上課太吵時老師會說。"
+     ],
+     "e": "Be quiet. 是請安靜。"
+    },
+    {
+     "type": "choice",
+     "q": "「Raise your hand.」是什麼意思？",
+     "a": "舉手。",
+     "w": [
+      "握手。",
+      "洗手。",
+      "拍手。"
+     ],
+     "h": [
+      "想回答問題時要做的事。"
+     ],
+     "e": "Raise your hand. 是舉手。"
+    },
+    {
+     "type": "choice",
+     "q": "「Look at the board.」是什麼意思？",
+     "a": "看黑板。",
+     "w": [
+      "擦黑板。",
+      "在黑板上寫字。",
+      "摸黑板。"
+     ],
+     "h": [
+      "look at 是看。"
+     ],
+     "e": "Look at the board. 是看黑板（白板）。"
+    },
+    {
+     "type": "choice",
+     "q": "「Listen!」是什麼意思？",
+     "a": "仔細聽！",
+     "w": [
+      "大聲說！",
+      "看這裡！",
+      "寫下來！"
+     ],
+     "h": [
+      "用耳朵。"
+     ],
+     "e": "Listen! 是仔細聽。"
+    },
+    {
+     "type": "choice",
+     "q": "老師說「Line up.」，你應該做什麼？",
+     "a": "排隊",
+     "w": [
+      "回座位",
+      "打開書",
+      "舉手"
+     ],
+     "h": [
+      "line 是一條線。"
+     ],
+     "e": "Line up. 是排成一排、排隊。"
+    },
+    {
+     "type": "choice",
+     "q": "「Write your name.」是什麼意思？",
+     "a": "寫下你的名字。",
+     "w": [
+      "說出你的名字。",
+      "看你的名字。",
+      "你的名字很好聽。"
+     ],
+     "h": [
+      "write 是寫。"
+     ],
+     "e": "Write your name. 是寫下你的名字。"
+    },
+    {
+     "type": "tf",
+     "q": "「Come here.」的意思是「過來這裡」。",
+     "a": true,
+     "h": [
+      "come 是來，here 是這裡。"
+     ],
+     "e": "Come here. 是過來這裡。"
+    },
+    {
+     "type": "order",
+     "q": "排出句子：請打開窗戶。",
+     "a": [
+      "Please",
+      "open",
+      "the",
+      "window."
+     ],
+     "h": [
+      "Please 放在最前面。"
+     ],
+     "e": "Please open the window."
     }
    ]
   }

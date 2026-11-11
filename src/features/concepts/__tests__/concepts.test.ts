@@ -3,7 +3,10 @@ import { applyRound, addDays, type ConceptProgress } from '../srs';
 import { answerText, isCorrect, normalizeAnswer, pickQuestions, questionKey } from '../pickQuestions';
 import { generateQuestion, hasGenerator } from '../generators';
 import { CONCEPT_SUBJECTS, hasGradeContent, loadGradeConcepts } from '../loadConcepts';
-import { CONCEPT_GRADES, type Concept } from '../types';
+import { CONCEPT_GRADES, type Concept, type ConceptGrade } from '../types';
+
+/** 已經補齊份量的年級；補完一個年級就加進來 */
+const FULL_GRADES: ConceptGrade[] = [2, 3];
 
 const TODAY = '2026-11-10';
 const NOW = '2026-11-10T08:00:00.000Z';
@@ -126,7 +129,7 @@ describe('題庫內容', () => {
                 expect(texts.has(q.q), `${where} 題目重複：${q.q}`).toBe(false);
                 texts.add(q.q);
                 expect(q.e, `${where} 缺解析：${q.q}`).toBeTruthy();
-                if (c.grade === 2) expect(q.h?.length, `${where} 缺提示：${q.q}`).toBeGreaterThan(0);
+                if (FULL_GRADES.includes(c.grade)) expect(q.h?.length, `${where} 缺提示：${q.q}`).toBeGreaterThan(0);
                 if (q.type === 'order') expect(new Set(q.a).size, `${where} 排序題有重複的片段：${q.q}`).toBe(q.a.length);
                 if (q.type === 'choice') {
                     expect(q.w, `${where}：${q.q}`).toHaveLength(3);
@@ -139,10 +142,10 @@ describe('題庫內容', () => {
     });
 });
 
-// 第 2 階段完成標準：二年級每科至少 8 個概念，寫好的題目每個概念 12 題以上
-describe('二年級份量', () => {
-    it.each(CONCEPT_SUBJECTS)('%s 二年級至少 8 個概念、每個 12 題以上', async (subject) => {
-        const list = await loadGradeConcepts(subject, 2);
+// 完成標準：已補齊的年級，每科至少 8 個概念，寫好的題目每個概念 12 題以上，而且每題都有提示
+describe.each(FULL_GRADES)('%i 年級份量', (grade) => {
+    it.each(CONCEPT_SUBJECTS)('%s 至少 8 個概念、每個 12 題以上', async (subject) => {
+        const list = await loadGradeConcepts(subject, grade);
         expect(list.length).toBeGreaterThanOrEqual(8);
         for (const c of list) if (!c.generator) expect(c.questions?.length ?? 0, c.id).toBeGreaterThanOrEqual(12);
     });
