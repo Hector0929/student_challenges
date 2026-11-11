@@ -30,11 +30,13 @@ export const ShopModal: React.FC<ShopModalProps> = ({
         onGoHome,
     });
 
-    useEffect(() => {
-        if (isOpen) {
-            setActiveTab(initialTab);
-        }
-    }, [initialTab, isOpen]);
+    // 每次打開（或打開時指定的分頁改變）都回到指定分頁；在 render 中調整，避免多一次重繪
+    const openKey = isOpen ? initialTab : null;
+    const [prevOpenKey, setPrevOpenKey] = React.useState(openKey);
+    if (openKey !== prevOpenKey) {
+        setPrevOpenKey(openKey);
+        if (openKey) setActiveTab(openKey);
+    }
 
     useEffect(() => {
         if (!isOpen) {

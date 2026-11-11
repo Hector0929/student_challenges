@@ -101,7 +101,7 @@ export const FamilyOnboarding: React.FC = () => {
                     {/* Mascot & Header */}
                     <div className="text-center mb-6">
                         <img
-                            src="/mascot.png"
+                            src="/mascot.webp"
                             alt="QuestMon Mascot"
                             className="w-28 h-28 mx-auto mb-4 drop-shadow-lg"
                         />

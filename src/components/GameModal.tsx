@@ -370,7 +370,7 @@ export const GameModal: React.FC<GameModalProps> = ({
                 clearInterval(timerRef.current);
             }
         };
-    }, [isOpen, mode, gameId]);
+    }, [isOpen, mode, gameId, resetGuards]);
 
     // 2. Focus Management
     useEffect(() => {
@@ -462,6 +462,8 @@ export const GameModal: React.FC<GameModalProps> = ({
                 timerRef.current = null;
             }
         };
+        // timeRemaining 只在進入 playing 時讀一次當起點；放進依賴會讓計時器每秒重開
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [phase, gameId]);
 
     // Practice reward: every completed 3-minute learning round gives stars

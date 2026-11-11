@@ -46,8 +46,8 @@ interface AtmospherePreset {
 
 const ATMOSPHERE_PRESETS: Record<WorldTheme, AtmospherePreset> = {
     normal: {
-        shellBg: 'url(/images/backgrounds/bg_normal.png) center/cover no-repeat',
-        shellBgDusk: 'url(/images/backgrounds/bg_normal.png) center/cover no-repeat',
+        shellBg: 'url(/images/backgrounds/bg_normal.webp) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_normal.webp) center/cover no-repeat',
         ambientDay: 0.55, ambientDusk: 0.4,
         hemisphereSkyDay: '#dbeafe', hemisphereSkyDusk: '#fdba74',
         hemisphereGroundDay: '#9ca3af', hemisphereGroundDusk: '#7c3aed',
@@ -59,8 +59,8 @@ const ATMOSPHERE_PRESETS: Record<WorldTheme, AtmospherePreset> = {
         fireflyColor: '#fef08a', fireflyEmissive: '#fde047',
     },
     night: {
-        shellBg: 'url(/images/backgrounds/bg_night.png) center/cover no-repeat',
-        shellBgDusk: 'url(/images/backgrounds/bg_night.png) center/cover no-repeat',
+        shellBg: 'url(/images/backgrounds/bg_night.webp) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_night.webp) center/cover no-repeat',
         ambientDay: 0.25, ambientDusk: 0.2,
         hemisphereSkyDay: '#312e81', hemisphereSkyDusk: '#1e1b4b',
         hemisphereGroundDay: '#1e293b', hemisphereGroundDusk: '#0f172a',
@@ -73,8 +73,8 @@ const ATMOSPHERE_PRESETS: Record<WorldTheme, AtmospherePreset> = {
         particles: { color: '#e0e7ff', emissive: '#818cf8', count: 22, size: 0.02, speed: 0.28, fallSpeed: 0, spread: 5.5, usePlane: false },
     },
     sakura: {
-        shellBg: 'url(/images/backgrounds/bg_sakura.png) center/cover no-repeat',
-        shellBgDusk: 'url(/images/backgrounds/bg_sakura.png) center/cover no-repeat',
+        shellBg: 'url(/images/backgrounds/bg_sakura.webp) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_sakura.webp) center/cover no-repeat',
         ambientDay: 0.6, ambientDusk: 0.42,
         hemisphereSkyDay: '#fce7f3', hemisphereSkyDusk: '#f9a8d4',
         hemisphereGroundDay: '#f0abfc', hemisphereGroundDusk: '#86198f',
@@ -87,8 +87,8 @@ const ATMOSPHERE_PRESETS: Record<WorldTheme, AtmospherePreset> = {
         particles: { color: '#fbcfe8', emissive: '#f9a8d4', count: 20, size: 0.026, speed: 0.55, fallSpeed: 0.38, spread: 4.0, usePlane: true },
     },
     rainbow_dragon: {
-        shellBg: 'url(/images/backgrounds/bg_rainbow_dragon.png) center/cover no-repeat',
-        shellBgDusk: 'url(/images/backgrounds/bg_rainbow_dragon.png) center/cover no-repeat',
+        shellBg: 'url(/images/backgrounds/bg_rainbow_dragon.webp) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_rainbow_dragon.webp) center/cover no-repeat',
         ambientDay: 0.6, ambientDusk: 0.45,
         hemisphereSkyDay: '#fdf4ff', hemisphereSkyDusk: '#fbcfe8',
         hemisphereGroundDay: '#fae8ff', hemisphereGroundDusk: '#fce7f3',
@@ -100,8 +100,8 @@ const ATMOSPHERE_PRESETS: Record<WorldTheme, AtmospherePreset> = {
         fireflyColor: '#fae8ff', fireflyEmissive: '#f0abfc',
     },
     star_fairy: {
-        shellBg: 'url(/images/backgrounds/bg_star_fairy.png) center/cover no-repeat',
-        shellBgDusk: 'url(/images/backgrounds/bg_star_fairy.png) center/cover no-repeat',
+        shellBg: 'url(/images/backgrounds/bg_star_fairy.webp) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_star_fairy.webp) center/cover no-repeat',
         ambientDay: 0.55, ambientDusk: 0.4,
         hemisphereSkyDay: '#eff6ff', hemisphereSkyDusk: '#bfdbfe',
         hemisphereGroundDay: '#dbeafe', hemisphereGroundDusk: '#93c5fd',
@@ -113,8 +113,8 @@ const ATMOSPHERE_PRESETS: Record<WorldTheme, AtmospherePreset> = {
         fireflyColor: '#dbeafe', fireflyEmissive: '#93c5fd',
     },
     slime: {
-        shellBg: 'url(/images/backgrounds/bg_slime.png) center/cover no-repeat',
-        shellBgDusk: 'url(/images/backgrounds/bg_slime.png) center/cover no-repeat',
+        shellBg: 'url(/images/backgrounds/bg_slime.webp) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_slime.webp) center/cover no-repeat',
         ambientDay: 0.6, ambientDusk: 0.45,
         hemisphereSkyDay: '#f0fdf4', hemisphereSkyDusk: '#bbf7d0',
         hemisphereGroundDay: '#dcfce7', hemisphereGroundDusk: '#86efac',
@@ -126,8 +126,8 @@ const ATMOSPHERE_PRESETS: Record<WorldTheme, AtmospherePreset> = {
         fireflyColor: '#dcfce7', fireflyEmissive: '#86efac',
     },
     flame_bird: {
-        shellBg: 'url(/images/backgrounds/bg_flame_bird.png) center/cover no-repeat',
-        shellBgDusk: 'url(/images/backgrounds/bg_flame_bird.png) center/cover no-repeat',
+        shellBg: 'url(/images/backgrounds/bg_flame_bird.webp) center/cover no-repeat',
+        shellBgDusk: 'url(/images/backgrounds/bg_flame_bird.webp) center/cover no-repeat',
         ambientDay: 0.58, ambientDusk: 0.42,
         hemisphereSkyDay: '#fff7ed', hemisphereSkyDusk: '#fed7aa',
         hemisphereGroundDay: '#ffedd5', hemisphereGroundDusk: '#fdba74',
@@ -411,7 +411,7 @@ function TerrainBlock({
 // x/z are in the island's local coordinate system (parent group is at islandSurfaceY).
 // GroundedGLBModel auto-lifts each model so its mesh bottom = y=0; yOffset is an
 // additional fine-tune nudge on top of that (leave undefined / 0 for most models).
-export const DECORATION_CATALOG: Array<{
+const DECORATION_CATALOG: Array<{
     key: string;
     path: string;
     scale: number;
@@ -544,10 +544,6 @@ function PlotIsland({
         return box.max.y * 0.7; // base scale 0.7; the group scale handles growth
     }, [blockScene]);
 
-    if (!plot.unlocked) return null;
-
-    const cfg = PLOT_ISLAND_CONFIG[plot.type];
-
     const plotDecoration = useMemo(() => {
         const sy = surfaceY;
         switch (plot.type) {
@@ -604,6 +600,11 @@ function PlotIsland({
                 return null;
         }
     }, [plot.type, surfaceY]);
+
+    // 提前 return 必須放在所有 hook 之後，否則地塊解鎖時 hook 數量改變會讓畫面崩潰
+    if (!plot.unlocked) return null;
+
+    const cfg = PLOT_ISLAND_CONFIG[plot.type];
 
     return (
         <group

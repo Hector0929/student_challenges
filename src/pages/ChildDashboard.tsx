@@ -74,9 +74,12 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
 
     // Local state for immediate UI feedback — synced from DB on load
     const [localTheme, setLocalTheme] = useState<WorldTheme>('normal');
-    useEffect(() => {
-        if (persistedWorld?.worldLab?.worldTheme) setLocalTheme(persistedWorld.worldLab.worldTheme);
-    }, [persistedWorld?.worldLab?.worldTheme]);
+    const serverTheme = persistedWorld?.worldLab?.worldTheme;
+    const [syncedServerTheme, setSyncedServerTheme] = useState<WorldTheme | undefined>(undefined);
+    if (serverTheme !== syncedServerTheme) {
+        setSyncedServerTheme(serverTheme);
+        if (serverTheme) setLocalTheme(serverTheme);
+    }
 
     const handleThemeChange = (theme: WorldTheme) => {
         // Just update local state. The actual Supabase save is done inside

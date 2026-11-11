@@ -51,7 +51,7 @@ export function useWorldAdventure({
     pickEventType = defaultPickEventType,
 }: UseWorldAdventureOptions) {
     const [selectedMissionType, setSelectedMissionType] = useState<AdventureMissionType>('short');
-    const [adventureClockMs, setAdventureClockMs] = useState(Date.now());
+    const [adventureClockMs, setAdventureClockMs] = useState(() => Date.now());
     const [activeAdventure, setActiveAdventure] = useState<AdventureMission | null>(null);
     const [lastAdventureResult, setLastAdventureResult] = useState<AdventureClaimResult | null>(null);
 

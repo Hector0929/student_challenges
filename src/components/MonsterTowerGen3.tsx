@@ -603,7 +603,7 @@ export const MonsterTowerGen3: React.FC<MonsterTowerGen3Props> = ({ userId, isOp
                                                 className={`gen3-player-hop relative w-14 h-14 flex items-center justify-center filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)] ${isMoving ? '' : 'gen3-player-idle'}`}
                                             >
                                                 <img
-                                                    src="/images/tower-v2/player.png"
+                                                    src="/images/tower-v2/player.webp"
                                                     alt="player"
                                                     className="w-full h-full object-contain"
                                                     onError={(e) => {

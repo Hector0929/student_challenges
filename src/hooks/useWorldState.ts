@@ -215,19 +215,17 @@ export function useWorldState({ active, starBalance, onAdjustStars, exchangePric
             routeText: '冒險地塊 → 外部世界 / 遠征回收',
             resourceText: `角色戰力 ${worldLab.heroPower}`,
         },
-    ]), [marketMultiplier, storageCapacity.crystalCap, storageCapacity.offlineHoursCap, storageCapacity.stoneCap, storageCapacity.woodCap, worldLab.buildings.academy, worldLab.buildings.crystal, worldLab.buildings.forest, worldLab.buildings.market, worldLab.buildings.mine, worldLab.buildings.storage, worldLab.heroLevel, worldLab.heroPower, worldLab.islandLevel, worldRates.crystalPerHour, worldRates.stonePerHour, worldRates.woodPerHour]);
+    ]), [marketMultiplier, storageCapacity.crystalCap, storageCapacity.offlineHoursCap, storageCapacity.stoneCap, storageCapacity.woodCap, worldLab.buildings.academy, worldLab.buildings.crystal, worldLab.buildings.forest, worldLab.buildings.market, worldLab.buildings.mine, worldLab.buildings.storage, worldLab.heroLevel, worldLab.heroPower, worldRates.crystalPerHour, worldRates.stonePerHour, worldRates.woodPerHour]);
 
     const selectedPlot = plotDetails.find((plot) => plot.key === selectedPlotKey) ?? plotDetails[0];
     const selectedPlotType = selectedPlot.key.split('-')[0];
     const isSelectedPlotUnlocked = unlockedPlotSet.has(selectedPlotType as typeof unlockedPlotKeys[number]);
 
-    useEffect(() => {
-        if (!selectedPlot) return;
-        if (!isSelectedPlotUnlocked) {
-            const fallback = plotDetails.find((plot) => unlockedPlotSet.has(plot.key.split('-')[0] as typeof unlockedPlotKeys[number])) ?? plotDetails[0];
-            setSelectedPlotKey(fallback.key);
-        }
-    }, [isSelectedPlotUnlocked, plotDetails, selectedPlot, unlockedPlotSet, unlockedPlotKeys]);
+    // 選到未解鎖的地塊就改選第一個已解鎖的；在 render 中調整，避免多一次重繪
+    if (!isSelectedPlotUnlocked) {
+        const fallback = plotDetails.find((plot) => unlockedPlotSet.has(plot.key.split('-')[0] as typeof unlockedPlotKeys[number])) ?? plotDetails[0];
+        if (fallback.key !== selectedPlotKey) setSelectedPlotKey(fallback.key);
+    }
 
     const syncWorldProduction = useCallback(() => {
         setWorldLab((prev) => settleWorldState(prev, Date.now()));

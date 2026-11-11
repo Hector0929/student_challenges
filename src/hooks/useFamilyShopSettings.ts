@@ -143,7 +143,7 @@ export const useUpdateFamilyExchangeRates = () => {
 
             return data as FamilyExchangeRates;
         },
-        onSuccess: (_, __, ___) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ['family_exchange_rates'],
                 refetchType: 'all',
@@ -233,7 +233,7 @@ export const useUpdateFamilyBankSettings = () => {
 
             return data as FamilyBankSettings;
         },
-        onSuccess: (_, __, ___) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ['family_bank_settings'],
                 refetchType: 'all',

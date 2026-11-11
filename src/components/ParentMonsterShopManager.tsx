@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Store, Save } from 'lucide-react';
 import { ToggleSwitch } from './ToggleSwitch';
 import { useParentMonsterShop, useUpsertMonsterShopItem } from '../hooks/useMonsterShop';
@@ -14,11 +14,15 @@ type DraftItem = {
 };
 
 export const ParentMonsterShopManager: React.FC<ParentMonsterShopManagerProps> = ({ familyId }) => {
-    const { data: items = [], isLoading } = useParentMonsterShop(familyId);
+    const { data, isLoading } = useParentMonsterShop(familyId);
+    const items = useMemo(() => data ?? [], [data]);
     const upsertMutation = useUpsertMonsterShopItem();
     const [drafts, setDrafts] = useState<Record<string, DraftItem>>({});
 
-    useEffect(() => {
+    // 伺服器資料更新時重設草稿；在 render 中調整，避免多一次重繪
+    const [draftsSource, setDraftsSource] = useState<typeof data | null>(null);
+    if (draftsSource !== data) {
+        setDraftsSource(data);
         const next: Record<string, DraftItem> = {};
         items.forEach((item) => {
             next[item.monsterId] = {
@@ -27,7 +31,7 @@ export const ParentMonsterShopManager: React.FC<ParentMonsterShopManagerProps> =
             };
         });
         setDrafts(next);
-    }, [items]);
+    }
 
     const enabledCount = useMemo(
         () => Object.values(drafts).filter((d) => d.isEnabled).length,

@@ -212,7 +212,7 @@ export const ParentControl: React.FC = () => {
 
             {/* Decoration */}
             <div className="absolute -right-4 top-20 hidden lg:block pointer-events-none opacity-40">
-                <img src="/commander.png" alt="Commander" className="w-48 h-48 object-contain" />
+                <img src="/commander.webp" alt="Commander" className="w-48 h-48 object-contain" />
             </div>
 
             {/* Header Area */}

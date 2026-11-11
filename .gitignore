@@ -33,3 +33,10 @@ dist-ssr
 # 產圖原始檔（去背前），不部署
 public/images/monsters/_raw/
 public/images/monsters/*/_raw/
+
+# local build / test output
+build_log.txt
+error.txt
+playwright-report/
+test-results/
+__pycache__/

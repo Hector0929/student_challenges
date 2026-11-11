@@ -105,7 +105,7 @@ export const TowerCollectionPanel: React.FC<TowerCollectionPanelProps> = ({ user
                                 <div className="grid grid-cols-3 gap-3">
                                     {groupedEntries.map(([mId, count], idx) => {
                                         const info = MONSTERS[mId as MonsterId];
-                                        const isEvolved = (info as any)?.isEvolved;
+                                        const isEvolved = (info as { isEvolved?: boolean } | undefined)?.isEvolved;
                                         const canEvolve = !isEvolved && EVOLUTION_MAP[mId as MonsterId] && count >= EVOLUTION_COST;
                                         const isUpgrading = upgradingMonster === mId;
 
@@ -186,7 +186,7 @@ export const TowerCollectionPanel: React.FC<TowerCollectionPanelProps> = ({ user
                 const safeIdx = Math.min(lightboxIndex, lbEntries.length - 1);
                 const [mId, mCount] = lbEntries[safeIdx];
                 const info = MONSTERS[mId as MonsterId];
-                const isEvolved = (info as any)?.isEvolved;
+                const isEvolved = (info as { isEvolved?: boolean } | undefined)?.isEvolved;
 
                 // Touch swipe handlers
                 let touchStartX = 0;

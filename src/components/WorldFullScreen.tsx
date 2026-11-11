@@ -55,6 +55,8 @@ export const WorldFullScreen: React.FC<WorldFullScreenProps> = ({
     // Sync world state from persistence
     useEffect(() => {
         if (persistedWorldSnapshot?.worldLab) {
+            // 需要以「現在時間」結算離線產出，不能在 render 中做，所以留在 effect
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setWorldLab(settleWorldState(persistedWorldSnapshot.worldLab, Date.now()));
         }
     }, [persistedWorldSnapshot]);

@@ -107,8 +107,8 @@ async function persistWorldBankingSnapshot(userId: string, snapshot: WorldBankin
 export const useWorldBanking = ({ userId, starBalance, onAdjustStars, bankSettings, timeMode = 'simulated' }: UseWorldBankingOptions) => {
     const queryClient = useQueryClient();
     const lastHydratedAtRef = useRef(0);
-    const [bankNowMs, setBankNowMs] = useState(Date.now());
-    const [demandDepositAccount, setDemandDepositAccount] = useState<DemandDepositAccount>(createDefaultSnapshot().demandDepositAccount);
+    const [bankNowMs, setBankNowMs] = useState(() => Date.now());
+    const [demandDepositAccount, setDemandDepositAccount] = useState<DemandDepositAccount>(() => createDefaultSnapshot().demandDepositAccount);
     const [timeDeposits, setTimeDeposits] = useState<TimeDeposit[]>([]);
 
     const bankQuery = useQuery({
@@ -355,6 +355,8 @@ export const useWorldBanking = ({ userId, starBalance, onAdjustStars, bankSettin
     }, [bankNowMs, commitSnapshot, demandDepositAccount, timeDeposits, timeMode]);
 
     return {
+        // 真實時間模式刻意回傳這次畫面更新時的現在時間
+        // eslint-disable-next-line react-hooks/purity
         bankNowMs: timeMode === 'realtime' ? Date.now() : bankNowMs,
         demandDepositAccount,
         timeDeposits,

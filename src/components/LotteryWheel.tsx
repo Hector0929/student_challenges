@@ -252,7 +252,7 @@ export const LotteryWheel: React.FC<LotteryWheelProps> = ({ onComplete }) => {
                             {selectedPrize.type === 'monster' && selectedPrize.monsterId && (
                                 <div className="mb-4">
                                     <img
-                                        src={MONSTERS[selectedPrize.monsterId]?.image || '/images/monsters/slime.png'}
+                                        src={MONSTERS[selectedPrize.monsterId]?.image || '/images/monsters/slime_new.png'}
                                         alt={selectedPrize.name}
                                         className="w-20 h-20 mx-auto"
                                         style={{ animation: 'tv2-idle 1.2s ease-in-out infinite' }}

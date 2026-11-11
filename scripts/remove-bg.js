@@ -81,6 +81,6 @@ async function removeGrid(inputPath, outputPath) {
 
 // Run
 removeGrid(
-    '/Users/hectorliu/projects/student_challenges/public/images/tower-v2/player.png',
-    '/Users/hectorliu/projects/student_challenges/public/images/tower-v2/player.png' // Overwrite directly
+    '/Users/hectorliu/projects/student_challenges/public/images/tower-v2/player.webp',
+    '/Users/hectorliu/projects/student_challenges/public/images/tower-v2/player.webp' // Overwrite directly
 );

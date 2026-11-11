@@ -22,7 +22,7 @@ test.describe('NS Shaft (怪獸下樓梯) Regression & Smoke Tests', () => {
         await expect(page.locator('#floor-display')).toHaveText('第 1 層');
 
         const isRunning = await page.evaluate(() => {
-            const hook = (window as any).__shaft;
+            const hook = (window as unknown as { __shaft?: { state: { running: boolean } } }).__shaft;
             return hook && hook.state.running;
         });
         expect(isRunning).toBe(true);

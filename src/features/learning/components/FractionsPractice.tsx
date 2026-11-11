@@ -29,6 +29,8 @@ export const FractionsPractice: React.FC = () => {
     const [attemptCount, setAttemptCount] = useState(0);
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+    // questionIndex 用來在「下一題」時重新出題，所以雖然沒被讀取仍要放在依賴中
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const question = useMemo(() => generateFractionQuestion(difficulty), [difficulty, questionIndex]);
     const accuracy = attemptCount === 0 ? 100 : Math.round((correctCount / attemptCount) * 100);
 

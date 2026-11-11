@@ -12,7 +12,7 @@ export default defineConfig({
         manualChunks: {
           'vendor-react': ['react', 'react-dom'],
           'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-utils': ['@tanstack/react-query', '@line/liff', 'lucide-react'],
+          'vendor-utils': ['@tanstack/react-query', 'lucide-react'],
           'vendor-three': ['three'],
         },
       },
