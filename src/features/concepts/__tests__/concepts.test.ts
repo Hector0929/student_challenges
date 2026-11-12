@@ -6,7 +6,7 @@ import { CONCEPT_SUBJECTS, hasGradeContent, loadGradeConcepts } from '../loadCon
 import { CONCEPT_GRADES, type Concept, type ConceptGrade } from '../types';
 
 /** 已經補齊份量的年級；補完一個年級就加進來 */
-const FULL_GRADES: ConceptGrade[] = [2, 3, 4, 5];
+const FULL_GRADES: ConceptGrade[] = [2, 3, 4, 5, 6];
 
 const TODAY = '2026-11-10';
 const NOW = '2026-11-10T08:00:00.000Z';

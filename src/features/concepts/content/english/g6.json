@@ -83,6 +83,106 @@
       "tomorrow 和 next week 是未來。"
      ],
      "e": "last Sunday 上星期日（過去）；tomorrow 明天、next week 下星期（未來）。"
+    },
+    {
+     "type": "choice",
+     "q": "see 的過去式是哪一個？",
+     "a": "saw",
+     "w": [
+      "seed",
+      "seen",
+      "sees"
+     ],
+     "h": [
+      "see 是不規則動詞。",
+      "I ___ a rainbow yesterday."
+     ],
+     "e": "see → saw → seen。"
+    },
+    {
+     "type": "choice",
+     "q": "buy 的過去式是哪一個？",
+     "a": "bought",
+     "w": [
+      "buyed",
+      "brought",
+      "buys"
+     ],
+     "h": [
+      "buy 是不規則動詞。",
+      "brought 是 bring 的過去式喔。"
+     ],
+     "e": "buy → bought；bring → brought，兩個很像別搞混。"
+    },
+    {
+     "type": "choice",
+     "q": "She ___ to the park last Sunday.",
+     "a": "went",
+     "w": [
+      "goes",
+      "go",
+      "going"
+     ],
+     "h": [
+      "last Sunday 是過去的時間。",
+      "go 的過去式是……"
+     ],
+     "e": "說過去的事用過去式：go → went。"
+    },
+    {
+     "type": "choice",
+     "q": "I didn't ___ my homework yesterday.",
+     "a": "do",
+     "w": [
+      "did",
+      "does",
+      "done"
+     ],
+     "h": [
+      "didn't 後面要接什麼？",
+      "didn't 已經表示過去了。"
+     ],
+     "e": "didn't 後面接原形動詞：didn't do。"
+    },
+    {
+     "type": "choice",
+     "q": "「Where did you go yesterday?」最適合的回答是哪一個？",
+     "a": "I went to the zoo.",
+     "w": [
+      "I go to the zoo.",
+      "I going to the zoo.",
+      "I goes to the zoo."
+     ],
+     "h": [
+      "問的是 yesterday。",
+      "回答也要用過去式。"
+     ],
+     "e": "用 did 問過去的事，回答用過去式：I went to the zoo."
+    },
+    {
+     "type": "choice",
+     "q": "study 的過去式是哪一個？",
+     "a": "studied",
+     "w": [
+      "studyed",
+      "studys",
+      "studing"
+     ],
+     "h": [
+      "子音 + y 結尾的動詞……",
+      "要把 y 改成 i 再加 ed。"
+     ],
+     "e": "study → studied（y 改 i 加 ed）。"
+    },
+    {
+     "type": "tf",
+     "q": "stop 的過去式是 stoped。",
+     "a": false,
+     "h": [
+      "短母音 + 一個子音結尾……",
+      "要重複最後一個字母再加 ed。"
+     ],
+     "e": "stop → stopped，要重複 p 再加 ed。"
     }
    ]
   },
@@ -91,82 +191,1480 @@
    "grade": 6,
    "unit": "Reading 閱讀",
    "title": "短文閱讀",
-   "summary": "讀一篇短文，回答問題。可以按 🔊 聽整段。",
+   "summary": "先讀「」裡的短文，再回答問題；答案都藏在短文裡。",
    "questions": [
     {
      "type": "choice",
-     "q": "What is Lucky?",
-     "a": "A dog.",
-     "w": [
-      "A cat.",
-      "A ball.",
-      "A park."
-     ],
-     "h": [
-      "看第一句和第二句。",
-      "Mia has a pet ___."
-     ],
-     "e": "Mia has a pet dog. His name is Lucky. → Lucky 是一隻狗。"
-    },
-    {
-     "type": "choice",
-     "q": "What color is Lucky?",
+     "q": "「Mia has a dog. His name is Lucky. He is brown and white.」What color is Lucky?",
      "a": "Brown and white.",
      "w": [
-      "Black.",
-      "Yellow and white.",
-      "Brown and black."
+      "Black and white.",
+      "Brown and black.",
+      "All white."
      ],
      "h": [
-      "找 color 相關的句子。",
-      "Lucky is ___ and ___."
+      "找 color 相關的字。",
+      "He is ___ and ___."
      ],
-     "e": "Lucky is brown and white. 咖啡色和白色。"
+     "e": "He is brown and white. → Lucky 是咖啡色和白色。"
     },
     {
      "type": "choice",
-     "q": "When do Mia and Lucky go for a walk?",
-     "a": "Every morning.",
+     "q": "「Ben gets up at six. He rides his bike to school.」How does Ben go to school?",
+     "a": "By bike.",
      "w": [
-      "Every night.",
-      "Only on Sundays.",
-      "After dinner."
+      "By bus.",
+      "On foot.",
+      "By car."
      ],
      "h": [
-      "When 是問什麼時候。",
-      "找 go for a walk 那一句。"
+      "How 問的是方法。",
+      "He rides his ___ to school."
      ],
-     "e": "Every morning, Mia and Lucky go for a walk. 每天早上。"
+     "e": "He rides his bike to school. → 騎腳踏車上學。"
     },
     {
      "type": "choice",
-     "q": "What does Lucky like to do?",
-     "a": "Run after balls.",
+     "q": "「It is cold today. Amy wears a coat and a hat.」What is the weather like today?",
+     "a": "It's cold.",
      "w": [
-      "Sleep all day.",
-      "Eat apples.",
-      "Swim in the river."
+      "It's hot.",
+      "It's rainy.",
+      "It's windy."
      ],
      "h": [
-      "找 likes 這個字。",
-      "Lucky likes to ___."
+      "找第一句。",
+      "所以 Amy 穿了外套。"
      ],
-     "e": "Lucky likes to run after balls. 喜歡追球。"
+     "e": "It is cold today. → 今天很冷。"
     },
     {
      "type": "choice",
-     "q": "「Mia loves Lucky very much.」是什麼意思？",
-     "a": "Mia 非常愛 Lucky。",
+     "q": "「Kevin's birthday is on May 5. He wants a new ball.」When is Kevin's birthday?",
+     "a": "On May 5.",
      "w": [
-      "Mia 很想念 Lucky。",
-      "Lucky 非常愛玩球。",
-      "Mia 想要養一隻狗。"
+      "On March 5.",
+      "On May 15.",
+      "On May 25."
      ],
      "h": [
-      "love 是「愛」。",
-      "very much 是「非常」。"
+      "When 問時間。",
+      "May 是五月。"
      ],
-     "e": "love 愛、very much 非常：Mia 非常愛 Lucky。"
+     "e": "Kevin's birthday is on May 5. → 五月五日。"
+    },
+    {
+     "type": "choice",
+     "q": "「Lily likes fruit. She eats an apple every morning.」What does Lily eat every morning?",
+     "a": "An apple.",
+     "w": [
+      "A banana.",
+      "Some bread.",
+      "An egg."
+     ],
+     "h": [
+      "找 every morning 那一句。",
+      "She eats ___ every morning."
+     ],
+     "e": "She eats an apple every morning. → 每天早上吃一顆蘋果。"
+    },
+    {
+     "type": "choice",
+     "q": "「There are four people in my family: my dad, my mom, my brother and me.」How many people are there in the family?",
+     "a": "Four.",
+     "w": [
+      "Three.",
+      "Five.",
+      "Two."
+     ],
+     "h": [
+      "How many 問數量。",
+      "數一數冒號後面有幾個人。"
+     ],
+     "e": "爸爸、媽媽、哥哥（或弟弟）和我，一共四個人。"
+    },
+    {
+     "type": "choice",
+     "q": "「Last Sunday, Jack went to the zoo. He saw a big elephant.」Where did Jack go last Sunday?",
+     "a": "To the zoo.",
+     "w": [
+      "To the park.",
+      "To the beach.",
+      "To school."
+     ],
+     "h": [
+      "Where 問地點。",
+      "went to the ___."
+     ],
+     "e": "Jack went to the zoo. → 去了動物園。"
+    },
+    {
+     "type": "choice",
+     "q": "「Sara is good at drawing. She wants to be an artist.」What does Sara want to be?",
+     "a": "An artist.",
+     "w": [
+      "A singer.",
+      "A teacher.",
+      "A doctor."
+     ],
+     "h": [
+      "找 wants to be。",
+      "她很會畫畫。"
+     ],
+     "e": "She wants to be an artist. → 她想當畫家。"
+    },
+    {
+     "type": "choice",
+     "q": "「The bookstore opens at nine in the morning and closes at eight at night.」When does the bookstore close?",
+     "a": "At eight at night.",
+     "w": [
+      "At nine at night.",
+      "At nine in the morning.",
+      "At eight in the morning."
+     ],
+     "h": [
+      "close 是關門。",
+      "opens 是開門，別看錯。"
+     ],
+     "e": "closes at eight at night → 晚上八點關門。"
+    },
+    {
+     "type": "choice",
+     "q": "「Tom was sick yesterday, so he stayed home.」Why did Tom stay home?",
+     "a": "Because he was sick.",
+     "w": [
+      "Because it was rainy.",
+      "Because he was busy.",
+      "Because he was happy."
+     ],
+     "h": [
+      "Why 問原因。",
+      "so 前面就是原因。"
+     ],
+     "e": "Tom was sick, so he stayed home. → 因為生病所以待在家。"
+    },
+    {
+     "type": "choice",
+     "q": "「My sister is ten. I am twelve. My brother is eight.」Who is the youngest?",
+     "a": "My brother.",
+     "w": [
+      "My sister.",
+      "I am.",
+      "My mother."
+     ],
+     "h": [
+      "youngest 是年紀最小的。",
+      "比比看三個人的年紀。"
+     ],
+     "e": "8 歲最小，所以 my brother 最年輕。"
+    },
+    {
+     "type": "choice",
+     "q": "「Peter likes music. He plays the piano after dinner.」What does Peter do after dinner?",
+     "a": "He plays the piano.",
+     "w": [
+      "He plays basketball.",
+      "He reads a book.",
+      "He watches TV."
+     ],
+     "h": [
+      "找 after dinner。",
+      "He ___ the piano."
+     ],
+     "e": "He plays the piano after dinner. → 晚餐後彈鋼琴。"
+    }
+   ]
+  },
+  {
+   "id": "english.g6.was-were",
+   "grade": 6,
+   "unit": "Grammar 文法",
+   "title": "was 和 were",
+   "summary": "am、is 的過去式是 was；are 的過去式是 were。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "I ___ at home yesterday.",
+     "a": "was",
+     "w": [
+      "were",
+      "am",
+      "are"
+     ],
+     "h": [
+      "yesterday 是過去。",
+      "I 搭配 am，am 的過去式是……"
+     ],
+     "e": "I + was，說昨天在家。"
+    },
+    {
+     "type": "choice",
+     "q": "They ___ happy last night.",
+     "a": "were",
+     "w": [
+      "was",
+      "is",
+      "are"
+     ],
+     "h": [
+      "last night 是過去。",
+      "They 搭配 are，過去式是……"
+     ],
+     "e": "They + were。"
+    },
+    {
+     "type": "choice",
+     "q": "She ___ sick last week.",
+     "a": "was",
+     "w": [
+      "were",
+      "is",
+      "be"
+     ],
+     "h": [
+      "last week 是過去。",
+      "She 搭配 is，過去式是……"
+     ],
+     "e": "She + was。"
+    },
+    {
+     "type": "choice",
+     "q": "___ you at school yesterday?",
+     "a": "Were",
+     "w": [
+      "Was",
+      "Are",
+      "Did"
+     ],
+     "h": [
+      "you 搭配 are。",
+      "改成過去式，放到句首。"
+     ],
+     "e": "you 的過去 be 動詞是 were：Were you at school yesterday?"
+    },
+    {
+     "type": "choice",
+     "q": "「Was he tired?」如果是，要怎麼回答？",
+     "a": "Yes, he was.",
+     "w": [
+      "Yes, he were.",
+      "Yes, he did.",
+      "Yes, he is."
+     ],
+     "h": [
+      "用 Was 問，就用 was 答。",
+      "he 搭配 was。"
+     ],
+     "e": "Was he ...? → Yes, he was. / No, he wasn't."
+    },
+    {
+     "type": "choice",
+     "q": "We ___ in Tainan last summer.",
+     "a": "were",
+     "w": [
+      "was",
+      "are",
+      "did"
+     ],
+     "h": [
+      "last summer 是過去。",
+      "We 搭配 are，過去式是……"
+     ],
+     "e": "We + were。"
+    },
+    {
+     "type": "choice",
+     "q": "am 和 is 的過去式是哪一個？",
+     "a": "was",
+     "w": [
+      "were",
+      "be",
+      "been"
+     ],
+     "h": [
+      "I am → I ___。",
+      "He is → He ___。"
+     ],
+     "e": "am、is → was；are → were。"
+    },
+    {
+     "type": "choice",
+     "q": "are 的過去式是哪一個？",
+     "a": "were",
+     "w": [
+      "was",
+      "is",
+      "be"
+     ],
+     "h": [
+      "They are → They ___。",
+      "you、we、they 都用它。"
+     ],
+     "e": "are → were。"
+    },
+    {
+     "type": "choice",
+     "q": "The weather ___ sunny yesterday.",
+     "a": "was",
+     "w": [
+      "were",
+      "is",
+      "are"
+     ],
+     "h": [
+      "The weather 是單數。",
+      "yesterday 是過去。"
+     ],
+     "e": "單數主詞 + was：The weather was sunny."
+    },
+    {
+     "type": "choice",
+     "q": "「Were they at the park?」如果不是，要怎麼回答？",
+     "a": "No, they weren't.",
+     "w": [
+      "No, they wasn't.",
+      "No, they didn't.",
+      "No, they aren't."
+     ],
+     "h": [
+      "用 Were 問，就用 were 答。",
+      "were not 縮寫成 weren't。"
+     ],
+     "e": "Were they ...? → No, they weren't."
+    },
+    {
+     "type": "tf",
+     "q": "「I were late this morning.」這句話文法正確。",
+     "a": false,
+     "h": [
+      "I 搭配 am。",
+      "am 的過去式是 was。"
+     ],
+     "e": "應該是 I was late this morning."
+    },
+    {
+     "type": "choice",
+     "q": "My shoes ___ dirty after the game.",
+     "a": "were",
+     "w": [
+      "was",
+      "is",
+      "be"
+     ],
+     "h": [
+      "shoes 是複數。",
+      "比賽後（過去）。"
+     ],
+     "e": "複數主詞 + were：My shoes were dirty."
+    }
+   ]
+  },
+  {
+   "id": "english.g6.future",
+   "grade": 6,
+   "unit": "Grammar 文法",
+   "title": "未來式 will／be going to",
+   "summary": "說未來要做的事：will + 原形動詞，或 be going to + 原形動詞。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "I ___ visit my grandma tomorrow.",
+     "a": "will",
+     "w": [
+      "did",
+      "was",
+      "am"
+     ],
+     "h": [
+      "tomorrow 是未來。",
+      "後面接原形動詞 visit。"
+     ],
+     "e": "will + 原形動詞，表示未來：I will visit my grandma."
+    },
+    {
+     "type": "choice",
+     "q": "We are going to ___ a movie tonight.",
+     "a": "watch",
+     "w": [
+      "watched",
+      "watching",
+      "watches"
+     ],
+     "h": [
+      "be going to 後面接什麼？",
+      "要用原形動詞。"
+     ],
+     "e": "be going to + 原形動詞：are going to watch。"
+    },
+    {
+     "type": "choice",
+     "q": "She ___ going to swim this weekend.",
+     "a": "is",
+     "w": [
+      "are",
+      "am",
+      "will"
+     ],
+     "h": [
+      "She 搭配哪個 be 動詞？",
+      "be going to 的 be 要跟主詞變化。"
+     ],
+     "e": "She is going to swim."
+    },
+    {
+     "type": "choice",
+     "q": "下列哪一個是表示「未來」的時間？",
+     "a": "next Monday",
+     "w": [
+      "yesterday",
+      "last night",
+      "two days ago"
+     ],
+     "h": [
+      "next 是下一個。",
+      "last、ago 都是過去。"
+     ],
+     "e": "next Monday 下星期一（未來）。"
+    },
+    {
+     "type": "choice",
+     "q": "「Will it rain tomorrow?」如果會，要怎麼回答？",
+     "a": "Yes, it will.",
+     "w": [
+      "Yes, it is.",
+      "Yes, it does.",
+      "Yes, it rains."
+     ],
+     "h": [
+      "用 Will 問，就用 will 答。",
+      "主詞是 it。"
+     ],
+     "e": "Will it ...? → Yes, it will. / No, it won't."
+    },
+    {
+     "type": "choice",
+     "q": "「What are you going to do this weekend?」最適合的回答是哪一個？",
+     "a": "I'm going to read books.",
+     "w": [
+      "I read books yesterday.",
+      "I'm reading books now.",
+      "I was reading books."
+     ],
+     "h": [
+      "問的是 this weekend 要做什麼。",
+      "回答也要用 be going to。"
+     ],
+     "e": "用 be going to 問，就用 be going to 答。"
+    },
+    {
+     "type": "choice",
+     "q": "won't 是哪兩個字的縮寫？",
+     "a": "will not",
+     "w": [
+      "want not",
+      "would not",
+      "was not"
+     ],
+     "h": [
+      "和未來式有關。",
+      "I won't go. = I ___ go."
+     ],
+     "e": "won't = will not。"
+    },
+    {
+     "type": "choice",
+     "q": "I want to be a doctor ___.",
+     "a": "in the future",
+     "w": [
+      "yesterday",
+      "last year",
+      "just now"
+     ],
+     "h": [
+      "想當醫生是以後的事。",
+      "表示「將來」。"
+     ],
+     "e": "in the future 將來。"
+    },
+    {
+     "type": "tf",
+     "q": "「He will goes to school tomorrow.」這句話文法正確。",
+     "a": false,
+     "h": [
+      "will 後面接什麼？",
+      "要用原形動詞。"
+     ],
+     "e": "will 後面接原形動詞：He will go to school tomorrow."
+    },
+    {
+     "type": "choice",
+     "q": "「明天我要去爬山。」英文要怎麼說？",
+     "a": "I'm going to climb a mountain tomorrow.",
+     "w": [
+      "I climbed a mountain tomorrow.",
+      "I'm climb a mountain tomorrow.",
+      "I going to climb a mountain tomorrow."
+     ],
+     "h": [
+      "明天是未來。",
+      "be going to + 原形動詞，be 動詞別漏掉。"
+     ],
+     "e": "I'm going to + 原形動詞 + tomorrow。"
+    },
+    {
+     "type": "choice",
+     "q": "「What will you do tomorrow?」「I ___ clean my room.」",
+     "a": "will",
+     "w": [
+      "was",
+      "did",
+      "am"
+     ],
+     "h": [
+      "用 will 問。",
+      "回答也用 will。"
+     ],
+     "e": "I will clean my room. 明天會打掃房間。"
+    },
+    {
+     "type": "choice",
+     "q": "Tom ___ going to buy a new bike next month.",
+     "a": "is",
+     "w": [
+      "are",
+      "will",
+      "was"
+     ],
+     "h": [
+      "Tom 是單數。",
+      "next month 是未來，用 be going to。"
+     ],
+     "e": "Tom is going to buy a new bike."
+    }
+   ]
+  },
+  {
+   "id": "english.g6.superlatives",
+   "grade": 6,
+   "unit": "Grammar 文法",
+   "title": "最高級",
+   "summary": "三個以上比較，用 the + 最高級：tall → the tallest。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "tall 的最高級是哪一個？",
+     "a": "tallest",
+     "w": [
+      "taller",
+      "tallst",
+      "most tall"
+     ],
+     "h": [
+      "短的形容詞加 est。",
+      "taller 是比較級。"
+     ],
+     "e": "tall → taller → tallest。"
+    },
+    {
+     "type": "choice",
+     "q": "big 的最高級是哪一個？",
+     "a": "biggest",
+     "w": [
+      "bigest",
+      "bigger",
+      "most big"
+     ],
+     "h": [
+      "短母音 + 一個子音結尾。",
+      "要重複最後一個字母。"
+     ],
+     "e": "big → bigger → biggest。"
+    },
+    {
+     "type": "choice",
+     "q": "happy 的最高級是哪一個？",
+     "a": "happiest",
+     "w": [
+      "happyest",
+      "most happy",
+      "happier"
+     ],
+     "h": [
+      "子音 + y 結尾。",
+      "y 改 i 再加 est。"
+     ],
+     "e": "happy → happier → happiest。"
+    },
+    {
+     "type": "choice",
+     "q": "good 的最高級是哪一個？",
+     "a": "best",
+     "w": [
+      "goodest",
+      "better",
+      "most good"
+     ],
+     "h": [
+      "good 是不規則變化。",
+      "good → better → ?"
+     ],
+     "e": "good → better → best。"
+    },
+    {
+     "type": "choice",
+     "q": "beautiful 的最高級是哪一個？",
+     "a": "most beautiful",
+     "w": [
+      "beautifulest",
+      "more beautiful",
+      "beautifuller"
+     ],
+     "h": [
+      "長的形容詞不加 est。",
+      "前面加一個字。"
+     ],
+     "e": "長的形容詞用 the most：the most beautiful。"
+    },
+    {
+     "type": "choice",
+     "q": "Tom is the ___ boy in our class.",
+     "a": "tallest",
+     "w": [
+      "tall",
+      "taller",
+      "more tall"
+     ],
+     "h": [
+      "in our class 是全班比較。",
+      "前面有 the。"
+     ],
+     "e": "全班三人以上比較，用 the + 最高級。"
+    },
+    {
+     "type": "choice",
+     "q": "The elephant is the ___ of the three animals.",
+     "a": "biggest",
+     "w": [
+      "big",
+      "bigger",
+      "most big"
+     ],
+     "h": [
+      "of the three 是三個比較。",
+      "big 的最高級要重複 g。"
+     ],
+     "e": "三個比較用最高級：the biggest。"
+    },
+    {
+     "type": "choice",
+     "q": "「Who is the youngest in your family?」最適合的回答是哪一個？",
+     "a": "My little sister is.",
+     "w": [
+      "My grandpa is.",
+      "Yes, she is.",
+      "I'm twelve."
+     ],
+     "h": [
+      "youngest 是年紀最小的。",
+      "用「誰」來回答。"
+     ],
+     "e": "問誰最年輕，回答 My little sister is."
+    },
+    {
+     "type": "choice",
+     "q": "bad 的最高級是哪一個？",
+     "a": "worst",
+     "w": [
+      "baddest",
+      "worse",
+      "most bad"
+     ],
+     "h": [
+      "bad 是不規則變化。",
+      "bad → worse → ?"
+     ],
+     "e": "bad → worse → worst。"
+    },
+    {
+     "type": "choice",
+     "q": "Which is the ___ of the three: a bike, a car or a plane?",
+     "a": "fastest",
+     "w": [
+      "fast",
+      "faster",
+      "most fast"
+     ],
+     "h": [
+      "三種比較。",
+      "fast 的最高級加 est。"
+     ],
+     "e": "三者比較用最高級：the fastest（飛機最快）。"
+    },
+    {
+     "type": "tf",
+     "q": "兩個東西比較用比較級，三個以上比較用最高級。",
+     "a": true,
+     "h": [
+      "taller than 是兩個比。",
+      "the tallest 是三個以上比。"
+     ],
+     "e": "兩者比較用比較級（-er than），三者以上用最高級（the -est）。"
+    },
+    {
+     "type": "choice",
+     "q": "This is the ___ day of my life!",
+     "a": "best",
+     "w": [
+      "good",
+      "better",
+      "goodest"
+     ],
+     "h": [
+      "the ... of my life，是一生中最……",
+      "good 的最高級。"
+     ],
+     "e": "the best day of my life 我這輩子最棒的一天。"
+    }
+   ]
+  },
+  {
+   "id": "english.g6.directions",
+   "grade": 6,
+   "unit": "Daily Life 生活",
+   "title": "問路與指路",
+   "summary": "turn left、go straight、next to、between……學會問路和指路。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "「向左轉」英文要怎麼說？",
+     "a": "turn left",
+     "w": [
+      "turn right",
+      "go straight",
+      "go back"
+     ],
+     "h": [
+      "left 是左邊。",
+      "turn 是轉彎。"
+     ],
+     "e": "turn left 左轉；turn right 右轉。"
+    },
+    {
+     "type": "choice",
+     "q": "go straight 是什麼意思？",
+     "a": "直走",
+     "w": [
+      "左轉",
+      "右轉",
+      "回頭"
+     ],
+     "h": [
+      "straight 是直的。",
+      "一直往前走。"
+     ],
+     "e": "go straight 直直往前走。"
+    },
+    {
+     "type": "choice",
+     "q": "next to 是什麼意思？",
+     "a": "在……旁邊",
+     "w": [
+      "在……對面",
+      "在……後面",
+      "在……上面"
+     ],
+     "h": [
+      "next 有「緊鄰的」意思。",
+      "The bank is next to the park."
+     ],
+     "e": "next to 在……旁邊。"
+    },
+    {
+     "type": "choice",
+     "q": "The bank is ___ the park and the school.",
+     "a": "between",
+     "w": [
+      "next",
+      "on",
+      "in"
+     ],
+     "h": [
+      "銀行在公園和學校中間。",
+      "between A and B。"
+     ],
+     "e": "between A and B 在 A 和 B 之間。"
+    },
+    {
+     "type": "choice",
+     "q": "across from 是什麼意思？",
+     "a": "在……對面",
+     "w": [
+      "在……旁邊",
+      "在……裡面",
+      "在……中間"
+     ],
+     "h": [
+      "across 是橫越。",
+      "過馬路就到了。"
+     ],
+     "e": "across from 在……對面。"
+    },
+    {
+     "type": "choice",
+     "q": "「Excuse me. How can I get to the post office?」最適合的回答是哪一個？",
+     "a": "Go straight and turn right.",
+     "w": [
+      "I'm fine, thank you.",
+      "It's ten o'clock.",
+      "I like the post office."
+     ],
+     "h": [
+      "對方在問路。",
+      "要告訴他怎麼走。"
+     ],
+     "e": "How can I get to ...? 是問路，回答走法：直走再右轉。"
+    },
+    {
+     "type": "choice",
+     "q": "The library is ___ Main Street.",
+     "a": "on",
+     "w": [
+      "at",
+      "under",
+      "of"
+     ],
+     "h": [
+      "在某條街上。",
+      "on + 街道名稱。"
+     ],
+     "e": "在某條街上用 on：on Main Street。"
+    },
+    {
+     "type": "choice",
+     "q": "near 是什麼意思？",
+     "a": "在……附近",
+     "w": [
+      "在……遠方",
+      "在……裡面",
+      "在……下面"
+     ],
+     "h": [
+      "The station is near my home.",
+      "離得不遠。"
+     ],
+     "e": "near 在附近；far from 離……很遠。"
+    },
+    {
+     "type": "choice",
+     "q": "hospital 是什麼地方？",
+     "a": "醫院",
+     "w": [
+      "郵局",
+      "銀行",
+      "圖書館"
+     ],
+     "h": [
+      "生病要去的地方。",
+      "醫生在那裡工作。"
+     ],
+     "e": "hospital 醫院；post office 郵局；bank 銀行；library 圖書館。"
+    },
+    {
+     "type": "choice",
+     "q": "Where can you buy medicine?",
+     "a": "At the drugstore.",
+     "w": [
+      "At the bookstore.",
+      "At the zoo.",
+      "At the bakery."
+     ],
+     "h": [
+      "medicine 是藥。",
+      "drug 也是藥的意思。"
+     ],
+     "e": "drugstore 藥局，可以買藥。"
+    },
+    {
+     "type": "tf",
+     "q": "turn right 的意思是「向右轉」。",
+     "a": true,
+     "h": [
+      "right 是右邊。",
+      "turn 是轉彎。"
+     ],
+     "e": "turn right 右轉。"
+    },
+    {
+     "type": "choice",
+     "q": "「The museum is behind the park.」博物館在公園的哪裡？",
+     "a": "後面",
+     "w": [
+      "前面",
+      "旁邊",
+      "對面"
+     ],
+     "h": [
+      "behind 的意思是……",
+      "in front of 是前面。"
+     ],
+     "e": "behind 在……後面；in front of 在……前面。"
+    }
+   ]
+  },
+  {
+   "id": "english.g6.health",
+   "grade": 6,
+   "unit": "Daily Life 生活",
+   "title": "身體不舒服",
+   "summary": "What's wrong? I have a headache. 學會說哪裡不舒服、該怎麼做。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "「What's wrong?」最適合的回答是哪一個？",
+     "a": "I have a headache.",
+     "w": [
+      "I'm twelve.",
+      "It's sunny.",
+      "I like apples."
+     ],
+     "h": [
+      "What's wrong? 是問「怎麼了」。",
+      "說說哪裡不舒服。"
+     ],
+     "e": "What's wrong? 怎麼了？→ I have a headache. 我頭痛。"
+    },
+    {
+     "type": "choice",
+     "q": "headache 是什麼意思？",
+     "a": "頭痛",
+     "w": [
+      "牙痛",
+      "肚子痛",
+      "喉嚨痛"
+     ],
+     "h": [
+      "head 是頭。",
+      "ache 是痛。"
+     ],
+     "e": "head（頭）+ ache（痛）= 頭痛。"
+    },
+    {
+     "type": "choice",
+     "q": "stomachache 是什麼意思？",
+     "a": "肚子痛",
+     "w": [
+      "頭痛",
+      "牙痛",
+      "發燒"
+     ],
+     "h": [
+      "stomach 是胃、肚子。",
+      "ache 是痛。"
+     ],
+     "e": "stomach（肚子）+ ache（痛）= 肚子痛。"
+    },
+    {
+     "type": "choice",
+     "q": "I have a toothache. I should see a ___.",
+     "a": "dentist",
+     "w": [
+      "farmer",
+      "cook",
+      "pilot"
+     ],
+     "h": [
+      "toothache 是牙痛。",
+      "看牙齒的醫生。"
+     ],
+     "e": "牙痛要去看牙醫 dentist。"
+    },
+    {
+     "type": "choice",
+     "q": "「I have a cold.」是什麼意思？",
+     "a": "我感冒了。",
+     "w": [
+      "我很冷。",
+      "我有一杯冷飲。",
+      "我很熱。"
+     ],
+     "h": [
+      "have a cold 是一種小病。",
+      "會流鼻水、打噴嚏。"
+     ],
+     "e": "have a cold 感冒；I'm cold 才是我很冷。"
+    },
+    {
+     "type": "choice",
+     "q": "fever 是什麼意思？",
+     "a": "發燒",
+     "w": [
+      "咳嗽",
+      "流鼻水",
+      "頭痛"
+     ],
+     "h": [
+      "體溫變得很高。",
+      "要量體溫。"
+     ],
+     "e": "fever 發燒；cough 咳嗽。"
+    },
+    {
+     "type": "choice",
+     "q": "You have a fever. You should ___ more water.",
+     "a": "drink",
+     "w": [
+      "eat",
+      "drive",
+      "draw"
+     ],
+     "h": [
+      "水要用「喝」的。",
+      "should 後面接原形動詞。"
+     ],
+     "e": "發燒要多喝水：drink more water。"
+    },
+    {
+     "type": "choice",
+     "q": "「You should see a doctor.」是什麼意思？",
+     "a": "你應該去看醫生。",
+     "w": [
+      "你應該當醫生。",
+      "你看到醫生了。",
+      "醫生在看你。"
+     ],
+     "h": [
+      "should 是「應該」。",
+      "see a doctor 是看醫生。"
+     ],
+     "e": "You should see a doctor. 你應該去看醫生。"
+    },
+    {
+     "type": "choice",
+     "q": "「I feel sick.」是什麼意思？",
+     "a": "我覺得不舒服。",
+     "w": [
+      "我覺得很開心。",
+      "我覺得很餓。",
+      "我覺得很無聊。"
+     ],
+     "h": [
+      "sick 是生病的。",
+      "feel 是感覺。"
+     ],
+     "e": "I feel sick. 我覺得不舒服。"
+    },
+    {
+     "type": "choice",
+     "q": "「Take some medicine and get some rest.」是在建議對方做什麼？",
+     "a": "吃藥並好好休息",
+     "w": [
+      "多運動",
+      "去上學",
+      "吃很多糖果"
+     ],
+     "h": [
+      "medicine 是藥。",
+      "rest 是休息。"
+     ],
+     "e": "take medicine 吃藥；get some rest 休息一下。"
+    },
+    {
+     "type": "choice",
+     "q": "Don't eat too much candy, or you'll get a ___.",
+     "a": "toothache",
+     "w": [
+      "fever",
+      "cold",
+      "cough"
+     ],
+     "h": [
+      "吃太多糖，哪裡會痛？",
+      "tooth 是牙齒。"
+     ],
+     "e": "吃太多糖會蛀牙、牙痛：toothache。"
+    },
+    {
+     "type": "tf",
+     "q": "「I have a cough.」的意思是「我在咳嗽」。",
+     "a": true,
+     "h": [
+      "cough 是咳嗽。",
+      "have a cough 有咳嗽的症狀。"
+     ],
+     "e": "I have a cough. 我咳嗽。"
+    }
+   ]
+  },
+  {
+   "id": "english.g6.jobs",
+   "grade": 6,
+   "unit": "Daily Life 生活",
+   "title": "職業與夢想",
+   "summary": "What do you want to be? 認識各種職業，說說自己的夢想。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "teacher 是什麼職業？",
+     "a": "老師",
+     "w": [
+      "學生",
+      "司機",
+      "廚師"
+     ],
+     "h": [
+      "teach 是教。",
+      "在學校教書的人。"
+     ],
+     "e": "teach（教）+ er = teacher 老師。"
+    },
+    {
+     "type": "choice",
+     "q": "Where does a doctor work?",
+     "a": "In a hospital.",
+     "w": [
+      "On a farm.",
+      "In a bakery.",
+      "At a gas station."
+     ],
+     "h": [
+      "醫生在哪裡看病人？",
+      "hospital 是醫院。"
+     ],
+     "e": "醫生在醫院工作：in a hospital。"
+    },
+    {
+     "type": "choice",
+     "q": "Who grows rice and vegetables?",
+     "a": "A farmer.",
+     "w": [
+      "A pilot.",
+      "A dentist.",
+      "A singer."
+     ],
+     "h": [
+      "grow 是種植。",
+      "在農場工作的人。"
+     ],
+     "e": "farmer 農夫，種稻米和蔬菜。"
+    },
+    {
+     "type": "choice",
+     "q": "police officer 是什麼職業？",
+     "a": "警察",
+     "w": [
+      "郵差",
+      "護理師",
+      "消防員"
+     ],
+     "h": [
+      "police 是警方。",
+      "維護治安的人。"
+     ],
+     "e": "police officer 警察。"
+    },
+    {
+     "type": "choice",
+     "q": "Who cooks food in a restaurant?",
+     "a": "A cook.",
+     "w": [
+      "A nurse.",
+      "A farmer.",
+      "A vet."
+     ],
+     "h": [
+      "cook 當動詞是煮。",
+      "當名詞就是煮飯的人。"
+     ],
+     "e": "cook 也可以當名詞：廚師。"
+    },
+    {
+     "type": "choice",
+     "q": "firefighter 是什麼職業？",
+     "a": "消防員",
+     "w": [
+      "警察",
+      "飛行員",
+      "司機"
+     ],
+     "h": [
+      "fire 是火。",
+      "fight 是對抗。"
+     ],
+     "e": "firefighter 和火災對抗的人：消防員。"
+    },
+    {
+     "type": "choice",
+     "q": "「What does your father do?」最適合的回答是哪一個？",
+     "a": "He's a bus driver.",
+     "w": [
+      "He's forty.",
+      "He's at home.",
+      "He's tall."
+     ],
+     "h": [
+      "What does ... do? 是問職業。",
+      "回答他做什麼工作。"
+     ],
+     "e": "What does he do? 問職業 → He's a bus driver. 他是公車司機。"
+    },
+    {
+     "type": "choice",
+     "q": "「What do you want to be?」最適合的回答是哪一個？",
+     "a": "I want to be a pilot.",
+     "w": [
+      "I want an apple.",
+      "I want to go home.",
+      "I am twelve."
+     ],
+     "h": [
+      "問你想成為什麼。",
+      "want to be + 職業。"
+     ],
+     "e": "What do you want to be? 你將來想當什麼？→ I want to be a pilot."
+    },
+    {
+     "type": "choice",
+     "q": "A pilot ___ airplanes.",
+     "a": "flies",
+     "w": [
+      "cooks",
+      "grows",
+      "teaches"
+     ],
+     "h": [
+      "pilot 是飛行員。",
+      "fly 的第三人稱單數。"
+     ],
+     "e": "pilot 飛行員駕駛飛機：flies airplanes。"
+    },
+    {
+     "type": "choice",
+     "q": "nurse 是什麼職業？",
+     "a": "護理師",
+     "w": [
+      "醫生",
+      "老師",
+      "農夫"
+     ],
+     "h": [
+      "在醫院照顧病人。",
+      "協助醫生工作。"
+     ],
+     "e": "nurse 護理師，照顧病人、協助醫生。"
+    },
+    {
+     "type": "choice",
+     "q": "My dog is sick. I take him to see a ___.",
+     "a": "vet",
+     "w": [
+      "dentist",
+      "cook",
+      "farmer"
+     ],
+     "h": [
+      "誰幫動物看病？",
+      "動物醫生。"
+     ],
+     "e": "vet 獸醫，幫動物看病。"
+    },
+    {
+     "type": "choice",
+     "q": "Who brings letters to your home?",
+     "a": "A mail carrier.",
+     "w": [
+      "A firefighter.",
+      "A cook.",
+      "A pilot."
+     ],
+     "h": [
+      "mail 是信件。",
+      "carry 是攜帶、運送。"
+     ],
+     "e": "mail carrier 郵差，把信送到家。"
+    }
+   ]
+  },
+  {
+   "id": "english.g6.frequency",
+   "grade": 6,
+   "unit": "Grammar 文法",
+   "title": "頻率副詞",
+   "summary": "always > usually > sometimes > never，說說你多常做一件事。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "always 是什麼意思？",
+     "a": "總是",
+     "w": [
+      "從不",
+      "有時候",
+      "很少"
+     ],
+     "h": [
+      "每一次都這樣做。",
+      "頻率最高。"
+     ],
+     "e": "always 總是（100%）。"
+    },
+    {
+     "type": "choice",
+     "q": "never 是什麼意思？",
+     "a": "從不",
+     "w": [
+      "總是",
+      "通常",
+      "有時候"
+     ],
+     "h": [
+      "一次都沒有。",
+      "頻率最低。"
+     ],
+     "e": "never 從不（0%）。"
+    },
+    {
+     "type": "choice",
+     "q": "sometimes 是什麼意思？",
+     "a": "有時候",
+     "w": [
+      "總是",
+      "從不",
+      "每天"
+     ],
+     "h": [
+      "偶爾會做。",
+      "some + times。"
+     ],
+     "e": "sometimes 有時候。"
+    },
+    {
+     "type": "choice",
+     "q": "usually 是什麼意思？",
+     "a": "通常",
+     "w": [
+      "從不",
+      "很少",
+      "昨天"
+     ],
+     "h": [
+      "大部分的時候都這樣。",
+      "比 always 少一點。"
+     ],
+     "e": "usually 通常。"
+    },
+    {
+     "type": "choice",
+     "q": "下列哪一個頻率最高？",
+     "a": "always",
+     "w": [
+      "usually",
+      "sometimes",
+      "never"
+     ],
+     "h": [
+      "每一次都做。",
+      "100%。"
+     ],
+     "e": "always > usually > sometimes > never。"
+    },
+    {
+     "type": "choice",
+     "q": "我每天睡前都刷牙：I ___ brush my teeth before bed.",
+     "a": "always",
+     "w": [
+      "never",
+      "sometimes",
+      "seldom"
+     ],
+     "h": [
+      "每天都刷。",
+      "頻率是 100%。"
+     ],
+     "e": "每天都做用 always。"
+    },
+    {
+     "type": "choice",
+     "q": "「How often do you play basketball?」最適合的回答是哪一個？",
+     "a": "Twice a week.",
+     "w": [
+      "At the park.",
+      "With my brother.",
+      "Yes, I do."
+     ],
+     "h": [
+      "How often 是問多常。",
+      "回答次數。"
+     ],
+     "e": "How often 問頻率 → Twice a week. 一週兩次。"
+    },
+    {
+     "type": "choice",
+     "q": "once a week 是什麼意思？",
+     "a": "一週一次",
+     "w": [
+      "一週兩次",
+      "一天一次",
+      "一個月一次"
+     ],
+     "h": [
+      "once 是一次。",
+      "a week 是每週。"
+     ],
+     "e": "once 一次、twice 兩次；once a week 一週一次。"
+    },
+    {
+     "type": "choice",
+     "q": "下列哪一句的詞序正確？",
+     "a": "She always gets up early.",
+     "w": [
+      "She gets always up early.",
+      "She early always gets up.",
+      "She gets up always early."
+     ],
+     "h": [
+      "頻率副詞通常放在一般動詞前面。",
+      "always + gets。"
+     ],
+     "e": "頻率副詞放在一般動詞前面、be 動詞後面。"
+    },
+    {
+     "type": "choice",
+     "q": "「I never eat breakfast.」是什麼意思？",
+     "a": "我從不吃早餐。",
+     "w": [
+      "我總是吃早餐。",
+      "我有時吃早餐。",
+      "我現在在吃早餐。"
+     ],
+     "h": [
+      "never 是從不。",
+      "eat breakfast 是吃早餐。"
+     ],
+     "e": "never 從不：我從來不吃早餐。"
+    },
+    {
+     "type": "choice",
+     "q": "He is ___ late for school. He gets up very early.",
+     "a": "never",
+     "w": [
+      "always",
+      "usually",
+      "often"
+     ],
+     "h": [
+      "他很早起床。",
+      "所以他會遲到嗎？"
+     ],
+     "e": "很早起床，所以從不遲到：He is never late."
+    },
+    {
+     "type": "tf",
+     "q": "sometimes 的意思是「每一次都」。",
+     "a": false,
+     "h": [
+      "每一次都是 always。",
+      "sometimes 是偶爾。"
+     ],
+     "e": "sometimes 是有時候；每一次都是 always。"
     }
    ]
   }

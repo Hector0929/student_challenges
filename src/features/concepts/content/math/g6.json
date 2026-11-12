@@ -2,186 +2,40 @@
  "subject": "math",
  "grade": 6,
  "concepts": [
-  {
-   "id": "math.g6.ratio-rate",
-   "grade": 6,
-   "unit": "比、速率與圓",
-   "title": "比與速率",
-   "summary": "比例尺、速率都是比的應用。",
-   "questions": [
-    {
-     "type": "choice",
-     "q": "6：9 化成最簡單整數比是多少？",
-     "a": "2：3",
-     "w": [
-      "3：2",
-      "1：3",
-      "3：4"
-     ],
-     "h": [
-      "前項和後項同除以最大公因數。",
-      "6 和 9 的最大公因數是 3。"
-     ],
-     "e": "6 ÷ 3 = 2，9 ÷ 3 = 3，所以是 2：3。"
-    },
-    {
-     "type": "choice",
-     "q": "3：5 的比值是多少？",
-     "a": "0.6",
-     "w": [
-      "0.35",
-      "1.6",
-      "0.53"
-     ],
-     "h": [
-      "比值 = 前項 ÷ 後項。",
-      "3 ÷ 5 = ？"
-     ],
-     "e": "3 ÷ 5 = 0.6。"
-    },
-    {
-     "type": "choice",
-     "q": "汽車時速 60 公里，開了 3 小時，一共開了多遠？",
-     "a": "180 公里",
-     "w": [
-      "63 公里",
-      "20 公里",
-      "120 公里"
-     ],
-     "h": [
-      "距離 = 速率 × 時間。",
-      "每小時 60 公里，開 3 小時。"
-     ],
-     "e": "60 × 3 = 180 公里。"
-    },
-    {
-     "type": "choice",
-     "q": "地圖的比例尺是 1：1000，圖上 5 公分，實際距離是多少？",
-     "a": "50 公尺",
-     "w": [
-      "5 公尺",
-      "500 公尺",
-      "5000 公尺"
-     ],
-     "h": [
-      "實際 = 圖上 × 1000 = 5000 公分。",
-      "100 公分 = 1 公尺。"
-     ],
-     "e": "5 × 1000 = 5000 公分 = 50 公尺。"
-    },
-    {
-     "type": "choice",
-     "q": "小明走 120 公尺用了 40 秒，他的秒速是多少？",
-     "a": "3 公尺",
-     "w": [
-      "4 公尺",
-      "80 公尺",
-      "160 公尺"
-     ],
-     "h": [
-      "速率 = 距離 ÷ 時間。",
-      "120 ÷ 40 = ？"
-     ],
-     "e": "120 ÷ 40 = 3，秒速 3 公尺。"
-    }
-   ]
-  },
-  {
-   "id": "math.g6.circles",
-   "grade": 6,
-   "unit": "比、速率與圓",
-   "title": "圓",
-   "summary": "圓周率一律用 3.14。",
-   "questions": [
-    {
-     "type": "choice",
-     "q": "半徑 5 公分的圓，直徑是多少？",
-     "a": "10 公分",
-     "w": [
-      "2.5 公分",
-      "15 公分",
-      "25 公分"
-     ],
-     "h": [
-      "直徑通過圓心。",
-      "直徑 = 半徑 × 2。"
-     ],
-     "e": "5 × 2 = 10 公分。"
-    },
-    {
-     "type": "choice",
-     "q": "圓周率大約是多少？",
-     "a": "3.14",
-     "w": [
-      "2.14",
-      "3.41",
-      "31.4"
-     ],
-     "h": [
-      "圓周長大約是直徑的 3 倍多一點。",
-      "π ≈ 3.14159……"
-     ],
-     "e": "圓周率 π ≈ 3.14，表示圓周長是直徑的 3.14 倍。"
-    },
-    {
-     "type": "choice",
-     "q": "直徑 10 公分的圓，圓周長是多少？",
-     "a": "31.4 公分",
-     "w": [
-      "15.7 公分",
-      "62.8 公分",
-      "78.5 公分"
-     ],
-     "h": [
-      "圓周長 = 直徑 × 3.14。",
-      "10 × 3.14 = ？"
-     ],
-     "e": "10 × 3.14 = 31.4 公分。"
-    },
-    {
-     "type": "choice",
-     "q": "半徑 10 公分的圓，面積是多少？",
-     "a": "314 平方公分",
-     "w": [
-      "31.4 平方公分",
-      "62.8 平方公分",
-      "628 平方公分"
-     ],
-     "h": [
-      "圓面積 = 半徑 × 半徑 × 3.14。",
-      "10 × 10 = 100。"
-     ],
-     "e": "10 × 10 × 3.14 = 314 平方公分。"
-    },
-    {
-     "type": "choice",
-     "q": "半徑 4 公分的圓，面積是半徑 2 公分的圓的幾倍？",
-     "a": "4 倍",
-     "w": [
-      "2 倍",
-      "8 倍",
-      "16 倍"
-     ],
-     "h": [
-      "4 × 4 = 16，2 × 2 = 4。",
-      "16 是 4 的幾倍？"
-     ],
-     "e": "半徑變 2 倍，面積變 2 × 2 = 4 倍。"
-    }
-   ]
-  },
-  {
-   "id": "math.g6.volume-missing-side",
-   "grade": 6,
-   "unit": "體積（程式出題）",
-   "title": "由體積求邊長",
-   "summary": "已知體積和其中兩邊，用除法求出另一邊。",
-   "generator": {
-    "id": "volume",
-    "difficulties": [
-     "hard"
-    ]
-   }
-  }
+  {"id": "math.g6.prime-factorization", "grade": 6, "unit": "質因數分解", "title": "質因數分解", "summary": "把一個數拆成質數相乘，例如 60 = 2 × 2 × 3 × 5；從最小的質數開始除。", "generator": {"id": "g6Prime", "difficulties": ["factorize"]}},
+  {"id": "math.g6.coprime", "grade": 6, "unit": "質因數分解", "title": "互質", "summary": "兩個數的公因數只有 1，就叫互質；互質的兩數，最小公倍數就是兩數相乘。", "generator": {"id": "g6Prime", "difficulties": ["coprime"]}, "prerequisites": ["math.g6.prime-factorization"]},
+  {"id": "math.g6.fraction-divide", "grade": 6, "unit": "分數除法", "title": "分數除以分數", "summary": "除以一個分數，等於乘以它的倒數：a/b ÷ c/d = a/b × d/c。", "generator": {"id": "g6FracDiv", "difficulties": ["frac-frac"]}},
+  {"id": "math.g6.fraction-divide-whole", "grade": 6, "unit": "分數除法", "title": "整數和分數互除", "summary": "整數 ÷ 分數，乘以分數的倒數；分數 ÷ 整數，分母乘上除數。", "generator": {"id": "g6FracDiv", "difficulties": ["whole-frac", "frac-whole"]}, "prerequisites": ["math.g6.fraction-divide"]},
+  {"id": "math.g6.fraction-divide-word", "grade": 6, "unit": "分數除法", "title": "分數除法應用題", "summary": "「可以分成幾份」「每份是多少」都用除法；先列式，再乘以倒數。", "generator": {"id": "g6FracDiv", "difficulties": ["word"]}, "prerequisites": ["math.g6.fraction-divide"]},
+  {"id": "math.g6.decimal-divide", "grade": 6, "unit": "小數除法", "title": "小數除以小數", "summary": "除數和被除數的小數點同時往右移，讓除數變成整數，商不變。", "generator": {"id": "g6DecDiv", "difficulties": ["div"]}},
+  {"id": "math.g6.quotient-rounding", "grade": 6, "unit": "小數除法", "title": "商的近似值", "summary": "除不盡時，要取到小數第一位，就算到小數第二位再四捨五入。", "generator": {"id": "g6DecDiv", "difficulties": ["round"]}, "prerequisites": ["math.g6.decimal-divide"]},
+  {"id": "math.g6.ratio-rate", "grade": 6, "unit": "比與比值", "title": "比與比值", "summary": "比值 = 前項 ÷ 後項；前項和後項同除以最大公因數，就得到最簡單整數比。", "generator": {"id": "g6Ratio", "difficulties": ["simplify", "value"]}},
+  {"id": "math.g6.equivalent-ratio", "grade": 6, "unit": "比與比值", "title": "相等的比", "summary": "前項和後項同乘或同除以同一個數（不是 0），比值不變。", "generator": {"id": "g6Ratio", "difficulties": ["missing"]}, "prerequisites": ["math.g6.ratio-rate"]},
+  {"id": "math.g6.ratio-share", "grade": 6, "unit": "比與比值", "title": "按比例分配", "summary": "按 a：b 分配，就是把全部分成 a + b 份，先算一份是多少。", "generator": {"id": "g6Ratio", "difficulties": ["share"]}, "prerequisites": ["math.g6.ratio-rate"]},
+  {"id": "math.g6.scale", "grade": 6, "unit": "比與比值", "title": "比例尺", "summary": "比例尺 1：1000 表示圖上 1 公分是實際的 1000 公分；記得換成公尺或公里。", "generator": {"id": "g6Scale", "difficulties": ["map-to-real", "real-to-map"]}, "prerequisites": ["math.g6.ratio-rate"]},
+  {"id": "math.g6.enlarge-reduce", "grade": 6, "unit": "比與比值", "title": "放大圖與縮圖", "summary": "放大或縮小時，形狀不變：對應角相等，對應邊都乘上同一個倍數。", "questions": [
+   {"type": "choice", "q": "把一個圖形放大成 2 倍，對應角的大小會怎樣？", "a": "不變", "w": ["變成 2 倍", "變成一半", "變成 4 倍"], "h": ["放大圖的形狀和原圖一樣。", "角度決定形狀。"], "e": "放大或縮小時形狀不變，所以對應角大小都不變。"},
+   {"type": "choice", "q": "長 4 公分、寬 3 公分的長方形放大成 3 倍，新的長是多少？", "a": "12 公分", "w": ["7 公分", "4 公分", "36 公分"], "h": ["每一條邊都乘以 3。", "4 × 3 = ？"], "e": "邊長放大 3 倍：4 × 3 = 12 公分。"},
+   {"type": "choice", "q": "邊長 6 公分的正方形，縮小成 1/2 的縮圖，縮圖邊長是多少？", "a": "3 公分", "w": ["12 公分", "6 公分", "1.5 公分"], "h": ["縮成 1/2，就是邊長乘以 1/2。", "6 × 1/2 = ？"], "e": "6 × 1/2 = 3 公分。"},
+   {"type": "choice", "q": "一個長方形放大成 2 倍後，面積變成原來的幾倍？", "a": "4 倍", "w": ["2 倍", "3 倍", "8 倍"], "h": ["長變 2 倍，寬也變 2 倍。", "面積 = 長 × 寬。"], "e": "長和寬都變 2 倍，面積變 2 × 2 = 4 倍。"},
+   {"type": "tf", "q": "把長方形的長放大 2 倍、寬放大 3 倍，得到的是原圖的放大圖。", "a": false, "h": ["放大圖的每一條邊要乘上同一個倍數。", "形狀有沒有改變？"], "e": "長和寬放大的倍數不同，形狀變了，不是放大圖。"},
+   {"type": "choice", "q": "三角形的三邊是 3、4、5 公分，它的 2 倍放大圖三邊是多少？", "a": "6、8、10 公分", "w": ["5、6、7 公分", "6、8、5 公分", "9、16、25 公分"], "h": ["每一邊都乘以 2。", "不是加 2，也不是平方。"], "e": "3 × 2 = 6、4 × 2 = 8、5 × 2 = 10。"},
+   {"type": "tf", "q": "所有的正方形都可以看成彼此的放大圖或縮圖。", "a": true, "h": ["正方形的角都是 90 度。", "四邊都一樣長，只差在大小。"], "e": "正方形的角都相等、邊長比都相同，所以任兩個正方形都是放大或縮小的關係。"},
+   {"type": "choice", "q": "原圖一邊長 10 公分，縮圖的對應邊長 2 公分，縮圖是原圖的幾分之幾？", "a": "1/5", "w": ["1/2", "1/8", "5 倍"], "h": ["縮圖邊長 ÷ 原圖邊長。", "2 ÷ 10 = ？"], "e": "2 ÷ 10 = 1/5，縮圖是原圖的 1/5。"},
+   {"type": "choice", "q": "原圖一邊長 4 公分，放大後對應邊長 10 公分，放大了幾倍？", "a": "2.5 倍", "w": ["6 倍", "2 倍", "40 倍"], "h": ["放大後 ÷ 原來。", "10 ÷ 4 = ？"], "e": "10 ÷ 4 = 2.5，放大成 2.5 倍。"},
+   {"type": "choice", "q": "影印機設定「放大 150%」，原本 2 公分的線會印成多長？", "a": "3 公分", "w": ["152 公分", "2.5 公分", "300 公分"], "h": ["150% 就是 1.5 倍。", "2 × 1.5 = ？"], "e": "150% = 1.5 倍，2 × 1.5 = 3 公分。"},
+   {"type": "choice", "q": "地圖就是實際地形的什麼？", "a": "縮圖", "w": ["放大圖", "展開圖", "立體圖"], "h": ["地圖比實際的土地大還是小？", "比例尺告訴我們縮小了多少。"], "e": "地圖把實際的距離按比例縮小，是一種縮圖。"},
+   {"type": "choice", "q": "邊長 2 公分的正方形放大成 3 倍，面積是多少？", "a": "36 平方公分", "w": ["12 平方公分", "6 平方公分", "18 平方公分"], "h": ["先算放大後的邊長。", "2 × 3 = 6，再算 6 × 6。"], "e": "放大後邊長 6 公分，面積 6 × 6 = 36 平方公分（是原來的 9 倍）。"}
+  ]},
+  {"id": "math.g6.speed", "grade": 6, "unit": "速率", "title": "速率、距離與時間", "summary": "速率 = 距離 ÷ 時間；距離 = 速率 × 時間；時間 = 距離 ÷ 速率。", "generator": {"id": "g6Speed", "difficulties": ["distance", "speed", "time"]}},
+  {"id": "math.g6.speed-units", "grade": 6, "unit": "速率", "title": "時速、分速、秒速", "summary": "1 小時 = 60 分鐘 = 3600 秒；1 公里 = 1000 公尺。換算時一步一步來。", "generator": {"id": "g6Speed", "difficulties": ["units"]}, "prerequisites": ["math.g6.speed"]},
+  {"id": "math.g6.circles", "grade": 6, "unit": "圓", "title": "圓周長", "summary": "圓周長 = 直徑 × 3.14；反過來，直徑 = 圓周長 ÷ 3.14。", "generator": {"id": "g6Circle", "difficulties": ["circumference", "reverse"]}},
+  {"id": "math.g6.circle-area", "grade": 6, "unit": "圓", "title": "圓面積與扇形", "summary": "圓面積 = 半徑 × 半徑 × 3.14；半圓是一半，四分之一圓是 1/4。", "generator": {"id": "g6Circle", "difficulties": ["area", "sector"]}, "prerequisites": ["math.g6.circles"]},
+  {"id": "math.g6.prism-volume", "grade": 6, "unit": "柱體", "title": "柱體與圓柱的體積", "summary": "所有柱體的體積都是「底面積 × 高」，圓柱的底面積是半徑 × 半徑 × 3.14。", "generator": {"id": "g6Solid", "difficulties": ["prism", "cylinder"]}, "prerequisites": ["math.g6.circle-area"]},
+  {"id": "math.g6.surface-area", "grade": 6, "unit": "柱體", "title": "表面積", "summary": "表面積是所有面的面積加起來；長方體 = (長×寬 + 寬×高 + 高×長) × 2。", "generator": {"id": "g6Solid", "difficulties": ["surface"]}},
+  {"id": "math.g6.volume-missing-side", "grade": 6, "unit": "柱體", "title": "由體積求邊長", "summary": "已知體積和其中兩邊，用除法求出另一邊。", "generator": {"id": "volume", "difficulties": ["hard"]}},
+  {"id": "math.g6.equation", "grade": 6, "unit": "代數", "title": "解簡易方程式", "summary": "等號兩邊同時加、減、乘、除同一個數（除數不是 0），等式仍然成立。", "generator": {"id": "g6Equation", "difficulties": ["add-sub", "mul-div"]}},
+  {"id": "math.g6.equation-word", "grade": 6, "unit": "代數", "title": "列式解應用題", "summary": "把「某數」寫成 x，照題目列出算式，再一步一步倒推回去。", "generator": {"id": "g6Equation", "difficulties": ["two-step"]}, "prerequisites": ["math.g6.equation"]},
+  {"id": "math.g6.base-quantity", "grade": 6, "unit": "代數", "title": "基準量與比較量", "summary": "比較量 = 基準量 × 幾分之幾；已知比較量求基準量，就用除法。", "generator": {"id": "g6Base", "difficulties": ["compare", "base"]}, "prerequisites": ["math.g6.fraction-divide"]}
  ]
 }
