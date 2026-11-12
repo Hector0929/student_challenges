@@ -10,10 +10,11 @@ import type { ChoiceQuestion, GeneratorRef } from '../types';
 import { GRADE2_GENERATORS } from './grade2';
 import { GRADE3_GENERATORS } from './grade3';
 import { GRADE4_GENERATORS } from './grade4';
+import { GRADE5_GENERATORS } from './grade5';
 import type { LocalGenerator } from './shared';
 
 /** 各年級自己寫的產生器，直接回傳選擇題 */
-const LOCAL_GENERATORS: Record<string, LocalGenerator> = { ...GRADE2_GENERATORS, ...GRADE3_GENERATORS, ...GRADE4_GENERATORS };
+const LOCAL_GENERATORS: Record<string, LocalGenerator> = { ...GRADE2_GENERATORS, ...GRADE3_GENERATORS, ...GRADE4_GENERATORS, ...GRADE5_GENERATORS };
 
 interface GeneratedLike {
     type: string;

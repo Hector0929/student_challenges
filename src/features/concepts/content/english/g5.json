@@ -83,6 +83,104 @@
       "用 Is 問，就用 is 答。"
      ],
      "e": "Is this ...? 回答用 Yes, it is. / No, it isn't."
+    },
+    {
+     "type": "choice",
+     "q": "I ___ a student.",
+     "a": "am",
+     "w": [
+      "is",
+      "are",
+      "be"
+     ],
+     "h": [
+      "I 後面固定用哪一個？"
+     ],
+     "e": "I 搭配 am：I am a student."
+    },
+    {
+     "type": "choice",
+     "q": "We ___ good friends.",
+     "a": "are",
+     "w": [
+      "am",
+      "is",
+      "be"
+     ],
+     "h": [
+      "we 是複數。"
+     ],
+     "e": "we、you、they 和複數名詞都用 are。"
+    },
+    {
+     "type": "choice",
+     "q": "The dog ___ under the table.",
+     "a": "is",
+     "w": [
+      "am",
+      "are",
+      "be"
+     ],
+     "h": [
+      "一隻狗是單數。"
+     ],
+     "e": "單數的 he、she、it 和單數名詞用 is。"
+    },
+    {
+     "type": "choice",
+     "q": "one man → two ___",
+     "a": "men",
+     "w": [
+      "mans",
+      "mens",
+      "manes"
+     ],
+     "h": [
+      "這是不規則的複數。"
+     ],
+     "e": "man 的複數是 men，不加 s。"
+    },
+    {
+     "type": "choice",
+     "q": "one tooth → many ___",
+     "a": "teeth",
+     "w": [
+      "tooths",
+      "toothes",
+      "teeths"
+     ],
+     "h": [
+      "oo 變成 ee。"
+     ],
+     "e": "tooth 的複數是 teeth；foot 的複數是 feet。"
+    },
+    {
+     "type": "choice",
+     "q": "「Are they your shoes?」如果不是，要怎麼回答？",
+     "a": "No, they aren't.",
+     "w": [
+      "No, it isn't.",
+      "No, I'm not.",
+      "No, they don't."
+     ],
+     "h": [
+      "用 Are they 問，就用 they 回答。"
+     ],
+     "e": "Are they……? 的否定回答是 No, they aren't."
+    },
+    {
+     "type": "choice",
+     "q": "one leaf → two ___",
+     "a": "leaves",
+     "w": [
+      "leafs",
+      "leafes",
+      "leaf"
+     ],
+     "h": [
+      "f 結尾常改成 v 再加 es。"
+     ],
+     "e": "leaf 的複數是 leaves；knife → knives 也一樣。"
     }
    ]
   },
@@ -167,6 +265,1303 @@
       "sunny 是晴天。"
      ],
      "e": "rainy 下雨的、sunny 晴朗的、windy 颳風的、snowy 下雪的。"
+    },
+    {
+     "type": "choice",
+     "q": "They are ___ in the pool.",
+     "a": "swimming",
+     "w": [
+      "swiming",
+      "swim",
+      "swims"
+     ],
+     "h": [
+      "短母音 + 一個子音結尾，要重複子音再加 ing。"
+     ],
+     "e": "swim → swimming，要重複 m。"
+    },
+    {
+     "type": "choice",
+     "q": "「What are you doing?」是什麼意思？",
+     "a": "你正在做什麼？",
+     "w": [
+      "你會做什麼？",
+      "你喜歡做什麼？",
+      "你做了什麼？"
+     ],
+     "h": [
+      "are……doing 是現在進行式。"
+     ],
+     "e": "What are you doing? 問的是現在正在做的事。"
+    },
+    {
+     "type": "choice",
+     "q": "She is ___ a cake.",
+     "a": "making",
+     "w": [
+      "makeing",
+      "make",
+      "makes"
+     ],
+     "h": [
+      "e 結尾要先去 e 再加 ing。"
+     ],
+     "e": "make → making，去掉 e 再加 ing。"
+    },
+    {
+     "type": "choice",
+     "q": "「我會說英文。」英文怎麼說？",
+     "a": "I can speak English.",
+     "w": [
+      "I can speaks English.",
+      "I can to speak English.",
+      "I cans speak English."
+     ],
+     "h": [
+      "can 後面接原形動詞。"
+     ],
+     "e": "can 後面接原形動詞：I can speak English."
+    },
+    {
+     "type": "choice",
+     "q": "He can ___ fast.",
+     "a": "run",
+     "w": [
+      "runs",
+      "running",
+      "ran"
+     ],
+     "h": [
+      "can 後面的動詞不加 s。"
+     ],
+     "e": "can 後面一律接原形動詞：He can run fast."
+    },
+    {
+     "type": "tf",
+     "q": "「Look! The baby is sleeping.」是在說嬰兒現在正在睡覺。",
+     "a": true,
+     "h": [
+      "is sleeping 是進行式。"
+     ],
+     "e": "be 動詞 + V-ing 表示現在正在進行的動作。"
+    },
+    {
+     "type": "order",
+     "q": "排出句子：我的媽媽正在煮晚餐。",
+     "a": [
+      "My mother",
+      "is",
+      "cooking",
+      "dinner."
+     ],
+     "h": [
+      "主詞 + is + V-ing。"
+     ],
+     "e": "My mother is cooking dinner."
+    }
+   ]
+  },
+  {
+   "id": "english.g5.present-simple",
+   "grade": 5,
+   "unit": "Sentences 句型",
+   "title": "He Likes, She Plays",
+   "summary": "說習慣或常常做的事用現在式；主詞是 he、she、it 時，動詞要加 s 或 es。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "He ___ soccer every day.",
+     "a": "plays",
+     "w": [
+      "play",
+      "playing",
+      "is play"
+     ],
+     "h": [
+      "he 是第三人稱單數。"
+     ],
+     "e": "主詞是 he、she、it 時，現在式動詞加 s：plays。"
+    },
+    {
+     "type": "choice",
+     "q": "I ___ milk in the morning.",
+     "a": "drink",
+     "w": [
+      "drinks",
+      "drinking",
+      "am drink"
+     ],
+     "h": [
+      "I 後面的動詞要不要加 s？"
+     ],
+     "e": "I、you、we、they 後面的動詞用原形：I drink milk."
+    },
+    {
+     "type": "choice",
+     "q": "She ___ TV after dinner.",
+     "a": "watches",
+     "w": [
+      "watchs",
+      "watch",
+      "watching"
+     ],
+     "h": [
+      "ch 結尾要加 es。"
+     ],
+     "e": "s、x、sh、ch、o 結尾的動詞加 es：watches。"
+    },
+    {
+     "type": "choice",
+     "q": "My brother ___ to school by bus.",
+     "a": "goes",
+     "w": [
+      "go",
+      "gos",
+      "going"
+     ],
+     "h": [
+      "o 結尾要加 es。"
+     ],
+     "e": "go → goes。"
+    },
+    {
+     "type": "choice",
+     "q": "She ___ like spiders.",
+     "a": "doesn't",
+     "w": [
+      "don't",
+      "isn't",
+      "not"
+     ],
+     "h": [
+      "she 的否定用哪一個助動詞？"
+     ],
+     "e": "第三人稱單數的否定用 doesn't，後面動詞用原形。"
+    },
+    {
+     "type": "choice",
+     "q": "「Does he like apples?」如果是，要怎麼回答？",
+     "a": "Yes, he does.",
+     "w": [
+      "Yes, he is.",
+      "Yes, he likes.",
+      "Yes, he do."
+     ],
+     "h": [
+      "用 Does 問，就用 does 回答。"
+     ],
+     "e": "Does he……? 的肯定回答是 Yes, he does."
+    },
+    {
+     "type": "choice",
+     "q": "The baby ___ a lot.",
+     "a": "cries",
+     "w": [
+      "crys",
+      "cry",
+      "cryes"
+     ],
+     "h": [
+      "子音 + y 結尾，y 改 i 再加 es。"
+     ],
+     "e": "cry → cries。"
+    },
+    {
+     "type": "choice",
+     "q": "___ you like music?",
+     "a": "Do",
+     "w": [
+      "Does",
+      "Are",
+      "Is"
+     ],
+     "h": [
+      "主詞是 you。"
+     ],
+     "e": "主詞是 I、you、we、they 時，問句用 Do。"
+    },
+    {
+     "type": "tf",
+     "q": "「Tom have a dog.」是正確的句子。",
+     "a": false,
+     "h": [
+      "Tom 是第三人稱單數。"
+     ],
+     "e": "have 遇到第三人稱單數要變 has：Tom has a dog."
+    },
+    {
+     "type": "choice",
+     "q": "We ___ English on Monday.",
+     "a": "study",
+     "w": [
+      "studies",
+      "studys",
+      "studying"
+     ],
+     "h": [
+      "we 是複數。"
+     ],
+     "e": "we 後面的動詞用原形：We study English."
+    },
+    {
+     "type": "order",
+     "q": "排出句子：她每天早上都會跑步。",
+     "a": [
+      "She",
+      "runs",
+      "every",
+      "morning."
+     ],
+     "h": [
+      "She + 動詞加 s。"
+     ],
+     "e": "She runs every morning."
+    },
+    {
+     "type": "choice",
+     "q": "「My father doesn't drink coffee.」是什麼意思？",
+     "a": "我爸爸不喝咖啡。",
+     "w": [
+      "我爸爸喜歡咖啡。",
+      "我爸爸在喝咖啡。",
+      "我爸爸煮了咖啡。"
+     ],
+     "h": [
+      "doesn't 是否定。"
+     ],
+     "e": "doesn't drink 是「不喝」。"
+    }
+   ]
+  },
+  {
+   "id": "english.g5.wh-questions",
+   "grade": 5,
+   "unit": "Sentences 句型",
+   "title": "Who, What, Where, When, How",
+   "summary": "問人用 who，問東西用 what，問地點用 where，問時間用 when，問方式或狀況用 how。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "___ is that girl? She is my cousin.",
+     "a": "Who",
+     "w": [
+      "What",
+      "Where",
+      "When"
+     ],
+     "h": [
+      "回答的是一個人。"
+     ],
+     "e": "問「誰」用 Who。"
+    },
+    {
+     "type": "choice",
+     "q": "___ is your bag? It's on the chair.",
+     "a": "Where",
+     "w": [
+      "Who",
+      "What",
+      "How"
+     ],
+     "h": [
+      "回答的是位置。"
+     ],
+     "e": "問地點、位置用 Where。"
+    },
+    {
+     "type": "choice",
+     "q": "___ is your birthday? It's in July.",
+     "a": "When",
+     "w": [
+      "Where",
+      "Who",
+      "What color"
+     ],
+     "h": [
+      "回答的是時間。"
+     ],
+     "e": "問時間用 When。"
+    },
+    {
+     "type": "choice",
+     "q": "___ do you go to school? By bike.",
+     "a": "How",
+     "w": [
+      "What",
+      "Where",
+      "Who"
+     ],
+     "h": [
+      "回答的是方式。"
+     ],
+     "e": "問方法、方式用 How。"
+    },
+    {
+     "type": "choice",
+     "q": "___ do you have in your hand? A ball.",
+     "a": "What",
+     "w": [
+      "Who",
+      "Where",
+      "When"
+     ],
+     "h": [
+      "回答的是東西。"
+     ],
+     "e": "問「什麼東西」用 What。"
+    },
+    {
+     "type": "choice",
+     "q": "___ are you sad? Because I lost my dog.",
+     "a": "Why",
+     "w": [
+      "What",
+      "How",
+      "Where"
+     ],
+     "h": [
+      "回答用 Because。"
+     ],
+     "e": "問原因用 Why，回答常用 Because。"
+    },
+    {
+     "type": "choice",
+     "q": "「How many students are there in your class?」問的是什麼？",
+     "a": "班上有幾個學生",
+     "w": [
+      "學生是誰",
+      "學生在哪裡",
+      "學生幾歲"
+     ],
+     "h": [
+      "How many 問數量。"
+     ],
+     "e": "How many 問可數名詞的數量。"
+    },
+    {
+     "type": "choice",
+     "q": "「How much is this pen?」問的是什麼？",
+     "a": "這枝筆多少錢",
+     "w": [
+      "這枝筆有幾枝",
+      "這枝筆是誰的",
+      "這枝筆在哪裡"
+     ],
+     "h": [
+      "買東西時常問。"
+     ],
+     "e": "How much is……? 問價錢。"
+    },
+    {
+     "type": "choice",
+     "q": "「Whose book is this?」問的是什麼？",
+     "a": "這是誰的書",
+     "w": [
+      "這是什麼書",
+      "書在哪裡",
+      "書多少錢"
+     ],
+     "h": [
+      "whose 是「誰的」。"
+     ],
+     "e": "Whose 問東西屬於誰。"
+    },
+    {
+     "type": "tf",
+     "q": "「Where do you live?」可以回答「I live in Taichung.」",
+     "a": true,
+     "h": [
+      "where 問地點。"
+     ],
+     "e": "問住在哪裡，回答地點 I live in Taichung. 是正確的。"
+    },
+    {
+     "type": "choice",
+     "q": "___ color is your bike? It's blue.",
+     "a": "What",
+     "w": [
+      "How",
+      "Who",
+      "Where"
+     ],
+     "h": [
+      "What color 是一組。"
+     ],
+     "e": "問顏色用 What color。"
+    },
+    {
+     "type": "order",
+     "q": "排出問句：你什麼時候起床？",
+     "a": [
+      "When",
+      "do",
+      "you",
+      "get up?"
+     ],
+     "h": [
+      "疑問詞放最前面。"
+     ],
+     "e": "When do you get up?"
+    }
+   ]
+  },
+  {
+   "id": "english.g5.there-is",
+   "grade": 5,
+   "unit": "Sentences 句型",
+   "title": "There Is / There Are",
+   "summary": "說「某地方有某東西」用 there is（單數）或 there are（複數）。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "There ___ a cat on the sofa.",
+     "a": "is",
+     "w": [
+      "are",
+      "am",
+      "be"
+     ],
+     "h": [
+      "a cat 是一隻。"
+     ],
+     "e": "後面是單數名詞，用 There is。"
+    },
+    {
+     "type": "choice",
+     "q": "There ___ three books on the desk.",
+     "a": "are",
+     "w": [
+      "is",
+      "am",
+      "be"
+     ],
+     "h": [
+      "three books 是複數。"
+     ],
+     "e": "後面是複數名詞，用 There are。"
+    },
+    {
+     "type": "choice",
+     "q": "「There is a park near my house.」是什麼意思？",
+     "a": "我家附近有一座公園。",
+     "w": [
+      "我家在公園裡。",
+      "公園裡有我家。",
+      "我要去公園。"
+     ],
+     "h": [
+      "there is 是「有」。"
+     ],
+     "e": "There is……near…… 是「……附近有……」。"
+    },
+    {
+     "type": "choice",
+     "q": "「Is there a bank on this street?」如果有，要怎麼回答？",
+     "a": "Yes, there is.",
+     "w": [
+      "Yes, it is.",
+      "Yes, there are.",
+      "Yes, I do."
+     ],
+     "h": [
+      "用 Is there 問，就用 there is 回答。"
+     ],
+     "e": "Is there……? 的肯定回答是 Yes, there is."
+    },
+    {
+     "type": "choice",
+     "q": "「Are there any apples in the box?」如果沒有，要怎麼回答？",
+     "a": "No, there aren't.",
+     "w": [
+      "No, there isn't.",
+      "No, they don't.",
+      "No, it isn't."
+     ],
+     "h": [
+      "apples 是複數。"
+     ],
+     "e": "Are there……? 的否定回答是 No, there aren't."
+    },
+    {
+     "type": "choice",
+     "q": "There ___ some water in the bottle.",
+     "a": "is",
+     "w": [
+      "are",
+      "am",
+      "were"
+     ],
+     "h": [
+      "water 是不可數名詞。"
+     ],
+     "e": "不可數名詞（water、milk、rice）用 There is。"
+    },
+    {
+     "type": "tf",
+     "q": "「There are a pencil in my bag.」是正確的句子。",
+     "a": false,
+     "h": [
+      "a pencil 是單數。"
+     ],
+     "e": "應該說 There is a pencil in my bag."
+    },
+    {
+     "type": "choice",
+     "q": "「教室裡有二十個學生。」英文怎麼說？",
+     "a": "There are twenty students in the classroom.",
+     "w": [
+      "There is twenty students in the classroom.",
+      "Twenty students have in the classroom.",
+      "The classroom are twenty students."
+     ],
+     "h": [
+      "二十個學生是複數。"
+     ],
+     "e": "複數用 There are。"
+    },
+    {
+     "type": "choice",
+     "q": "「How many birds are there in the tree?」問的是什麼？",
+     "a": "樹上有幾隻鳥",
+     "w": [
+      "鳥在哪棵樹上",
+      "鳥是什麼顏色",
+      "樹有多高"
+     ],
+     "h": [
+      "How many 問數量。"
+     ],
+     "e": "How many……are there……? 問某地方有多少個。"
+    },
+    {
+     "type": "order",
+     "q": "排出句子：桌上有一個蘋果。",
+     "a": [
+      "There",
+      "is",
+      "an apple",
+      "on the table."
+     ],
+     "h": [
+      "There is + 東西 + 地點。"
+     ],
+     "e": "There is an apple on the table."
+    },
+    {
+     "type": "choice",
+     "q": "There ___ a lot of people in the park yesterday.",
+     "a": "were",
+     "w": [
+      "is",
+      "are",
+      "was"
+     ],
+     "h": [
+      "yesterday 是過去；people 是複數。"
+     ],
+     "e": "過去式複數用 There were。"
+    },
+    {
+     "type": "choice",
+     "q": "There isn't ___ milk in the fridge.",
+     "a": "any",
+     "w": [
+      "some",
+      "a",
+      "many"
+     ],
+     "h": [
+      "否定句常用哪一個？"
+     ],
+     "e": "否定句和問句常用 any；肯定句用 some。"
+    }
+   ]
+  },
+  {
+   "id": "english.g5.possessives",
+   "grade": 5,
+   "unit": "Grammar 文法",
+   "title": "My, Your, His, Her",
+   "summary": "所有格表示「誰的」：my、your、his、her、its、our、their，名字後面加 's。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "This is Amy. ___ hair is long.",
+     "a": "Her",
+     "w": [
+      "His",
+      "She",
+      "Hers"
+     ],
+     "h": [
+      "Amy 是女生，「她的」。"
+     ],
+     "e": "她的用 her：Her hair is long."
+    },
+    {
+     "type": "choice",
+     "q": "That is Tom. ___ bike is new.",
+     "a": "His",
+     "w": [
+      "He",
+      "Her",
+      "Him"
+     ],
+     "h": [
+      "Tom 是男生，「他的」。"
+     ],
+     "e": "他的用 his：His bike is new."
+    },
+    {
+     "type": "choice",
+     "q": "We love ___ school.",
+     "a": "our",
+     "w": [
+      "we",
+      "us",
+      "ours"
+     ],
+     "h": [
+      "「我們的」學校。"
+     ],
+     "e": "我們的用 our。"
+    },
+    {
+     "type": "choice",
+     "q": "「這是 Ben 的帽子。」英文怎麼說？",
+     "a": "This is Ben's cap.",
+     "w": [
+      "This is Ben cap.",
+      "This is Bens cap.",
+      "This is cap Ben."
+     ],
+     "h": [
+      "名字後面加 's。"
+     ],
+     "e": "人名的所有格加 's：Ben's cap。"
+    },
+    {
+     "type": "choice",
+     "q": "The dog is wagging ___ tail.",
+     "a": "its",
+     "w": [
+      "it's",
+      "it",
+      "his"
+     ],
+     "h": [
+      "「牠的」尾巴。"
+     ],
+     "e": "its 是「牠的、它的」；it's 是 it is 的縮寫。"
+    },
+    {
+     "type": "choice",
+     "q": "The children are playing with ___ toys.",
+     "a": "their",
+     "w": [
+      "they",
+      "there",
+      "them"
+     ],
+     "h": [
+      "「他們的」玩具。"
+     ],
+     "e": "他們的用 their；there 是那裡。"
+    },
+    {
+     "type": "choice",
+     "q": "Is this ___ pencil, Mary?",
+     "a": "your",
+     "w": [
+      "you",
+      "yours",
+      "you're"
+     ],
+     "h": [
+      "「你的」鉛筆。"
+     ],
+     "e": "你的用 your。"
+    },
+    {
+     "type": "tf",
+     "q": "「it's」和「its」意思一樣。",
+     "a": false,
+     "h": [
+      "it's = it is。"
+     ],
+     "e": "it's 是 it is；its 是「它的」。"
+    },
+    {
+     "type": "choice",
+     "q": "「Whose bag is this?」「It's ___.」（是我的）",
+     "a": "mine",
+     "w": [
+      "my",
+      "me",
+      "I"
+     ],
+     "h": [
+      "後面沒有名詞時，用「我的東西」。"
+     ],
+     "e": "後面不接名詞時用所有格代名詞：mine、yours、his、hers。"
+    },
+    {
+     "type": "choice",
+     "q": "My sister's name is Lily. 這句話的意思是？",
+     "a": "我姊姊（妹妹）的名字是 Lily。",
+     "w": [
+      "我的名字是 Lily。",
+      "Lily 是我的姊姊的朋友。",
+      "Lily 有一個姊姊。"
+     ],
+     "h": [
+      "sister's 是「姊妹的」。"
+     ],
+     "e": "my sister's name 是「我姊姊（妹妹）的名字」。"
+    },
+    {
+     "type": "order",
+     "q": "排出句子：他們的老師很和善。",
+     "a": [
+      "Their",
+      "teacher",
+      "is",
+      "kind."
+     ],
+     "h": [
+      "Their 放在名詞前面。"
+     ],
+     "e": "Their teacher is kind."
+    },
+    {
+     "type": "choice",
+     "q": "I have a cat. ___ name is Mimi.",
+     "a": "Its",
+     "w": [
+      "It's",
+      "It",
+      "Her's"
+     ],
+     "h": [
+      "「牠的」名字。"
+     ],
+     "e": "Its name is Mimi. its 是「牠的」。"
+    }
+   ]
+  },
+  {
+   "id": "english.g5.daily-routine",
+   "grade": 5,
+   "unit": "Talk 開口說",
+   "title": "My Day",
+   "summary": "起床、刷牙、上學、做功課、睡覺……用英文說說你的一天。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "get up 是什麼意思？",
+     "a": "起床",
+     "w": [
+      "睡覺",
+      "站起來唱歌",
+      "上樓"
+     ],
+     "h": [
+      "早上鬧鐘響了。"
+     ],
+     "e": "get up 是起床。"
+    },
+    {
+     "type": "choice",
+     "q": "brush my teeth 是什麼意思？",
+     "a": "刷牙",
+     "w": [
+      "洗臉",
+      "梳頭",
+      "洗澡"
+     ],
+     "h": [
+      "teeth 是牙齒。"
+     ],
+     "e": "brush my teeth 是刷牙。"
+    },
+    {
+     "type": "choice",
+     "q": "「我七點去上學。」英文怎麼說？",
+     "a": "I go to school at seven.",
+     "w": [
+      "I go to school in seven.",
+      "I go to the school seven.",
+      "I goes to school at seven."
+     ],
+     "h": [
+      "幾點用 at。"
+     ],
+     "e": "時刻前面用 at：at seven。"
+    },
+    {
+     "type": "choice",
+     "q": "do my homework 是什麼意思？",
+     "a": "做我的功課",
+     "w": [
+      "打掃房子",
+      "玩電動",
+      "看電視"
+     ],
+     "h": [
+      "homework 是回家作業。"
+     ],
+     "e": "do my homework 是寫功課。"
+    },
+    {
+     "type": "choice",
+     "q": "take a shower 是什麼意思？",
+     "a": "淋浴、洗澡",
+     "w": [
+      "拿一把傘",
+      "看表演",
+      "搭公車"
+     ],
+     "h": [
+      "shower 是蓮蓬頭。"
+     ],
+     "e": "take a shower 是淋浴。"
+    },
+    {
+     "type": "choice",
+     "q": "「What time do you go to bed?」是什麼意思？",
+     "a": "你幾點睡覺？",
+     "w": [
+      "你幾點起床？",
+      "你的床在哪裡？",
+      "你喜歡睡覺嗎？"
+     ],
+     "h": [
+      "go to bed 是上床睡覺。"
+     ],
+     "e": "What time 問幾點，go to bed 是睡覺。"
+    },
+    {
+     "type": "order",
+     "q": "依照一天的順序排好。",
+     "a": [
+      "get up",
+      "eat breakfast",
+      "go to school",
+      "go to bed"
+     ],
+     "h": [
+      "從早上到晚上。"
+     ],
+     "e": "起床、吃早餐、上學、睡覺。"
+    },
+    {
+     "type": "choice",
+     "q": "「I usually walk to school.」中，usually 是什麼意思？",
+     "a": "通常",
+     "w": [
+      "從不",
+      "昨天",
+      "很快地"
+     ],
+     "h": [
+      "表示頻率。"
+     ],
+     "e": "usually 是通常；always 總是，sometimes 有時，never 從不。"
+    },
+    {
+     "type": "tf",
+     "q": "「I never eat breakfast.」的意思是「我總是吃早餐」。",
+     "a": false,
+     "h": [
+      "never 是從不。"
+     ],
+     "e": "never 是從不，這句是「我從不吃早餐」。"
+    },
+    {
+     "type": "choice",
+     "q": "在晚上要說「我在晚上看書」，要用哪一個？",
+     "a": "in the evening",
+     "w": [
+      "at the evening",
+      "on the evening",
+      "in evening"
+     ],
+     "h": [
+      "早上、下午、晚上前面用同一個介系詞。"
+     ],
+     "e": "in the morning / in the afternoon / in the evening。"
+    },
+    {
+     "type": "choice",
+     "q": "「She takes the bus to school.」她怎麼上學？",
+     "a": "搭公車",
+     "w": [
+      "走路",
+      "騎腳踏車",
+      "搭捷運"
+     ],
+     "h": [
+      "bus 是公車。"
+     ],
+     "e": "take the bus 是搭公車。"
+    },
+    {
+     "type": "choice",
+     "q": "「After school, I play basketball.」是什麼時候打籃球？",
+     "a": "放學後",
+     "w": [
+      "上學前",
+      "午餐時",
+      "上課時"
+     ],
+     "h": [
+      "after 是在……之後。"
+     ],
+     "e": "after school 是放學後。"
+    }
+   ]
+  },
+  {
+   "id": "english.g5.shopping",
+   "grade": 5,
+   "unit": "Talk 開口說",
+   "title": "How Much Is It?",
+   "summary": "去商店買東西：問價錢、說想要什麼、付錢道謝。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "「How much is it?」是什麼意思？",
+     "a": "它多少錢？",
+     "w": [
+      "它有幾個？",
+      "它是什麼？",
+      "它在哪裡？"
+     ],
+     "h": [
+      "買東西時問的。"
+     ],
+     "e": "How much is it? 問價錢。"
+    },
+    {
+     "type": "choice",
+     "q": "「It's fifty dollars.」是多少錢？",
+     "a": "五十元",
+     "w": [
+      "十五元",
+      "五元",
+      "五百元"
+     ],
+     "h": [
+      "fifty 是幾？"
+     ],
+     "e": "fifty 是 50，fifteen 是 15。"
+    },
+    {
+     "type": "choice",
+     "q": "店員說「Can I help you?」，是什麼意思？",
+     "a": "需要幫忙嗎？",
+     "w": [
+      "你可以幫我嗎？",
+      "我可以走了嗎？",
+      "你要付錢嗎？"
+     ],
+     "h": [
+      "店員主動詢問。"
+     ],
+     "e": "Can I help you? 是店員問「有什麼需要嗎？」"
+    },
+    {
+     "type": "choice",
+     "q": "想說「我想要一個漢堡」，最有禮貌的是哪一句？",
+     "a": "I'd like a hamburger, please.",
+     "w": [
+      "Give me hamburger.",
+      "Hamburger, now.",
+      "I want hamburger no."
+     ],
+     "h": [
+      "I'd like 是 I would like。"
+     ],
+     "e": "I'd like……, please. 是有禮貌的點餐說法。"
+    },
+    {
+     "type": "choice",
+     "q": "「How much are these socks?」為什麼用 are？",
+     "a": "因為 socks 是複數",
+     "w": [
+      "因為 socks 是單數",
+      "因為問的是時間",
+      "因為 how much 一定接 are"
+     ],
+     "h": [
+      "一雙襪子用複數。"
+     ],
+     "e": "主詞 these socks 是複數，所以用 are。"
+    },
+    {
+     "type": "choice",
+     "q": "「That's too expensive.」是什麼意思？",
+     "a": "那太貴了。",
+     "w": [
+      "那很便宜。",
+      "那很好看。",
+      "那太大了。"
+     ],
+     "h": [
+      "expensive 和 cheap 相反。"
+     ],
+     "e": "expensive 是昂貴的，cheap 是便宜的。"
+    },
+    {
+     "type": "choice",
+     "q": "店員把東西交給你時說「Here you are.」，你可以怎麼回答？",
+     "a": "Thank you.",
+     "w": [
+      "You're welcome.",
+      "I'm sorry.",
+      "Excuse me."
+     ],
+     "h": [
+      "拿到東西要道謝。"
+     ],
+     "e": "收到東西時說 Thank you."
+    },
+    {
+     "type": "tf",
+     "q": "「cheap」的意思是「便宜的」。",
+     "a": true,
+     "h": [
+      "和 expensive 相反。"
+     ],
+     "e": "cheap 是便宜的。"
+    },
+    {
+     "type": "choice",
+     "q": "一枝筆 20 元，買三枝要多少錢？「They are ___ dollars.」",
+     "a": "sixty",
+     "w": [
+      "sixteen",
+      "twenty",
+      "thirty"
+     ],
+     "h": [
+      "20 × 3 = ?"
+     ],
+     "e": "20 × 3 = 60，sixty。"
+    },
+    {
+     "type": "order",
+     "q": "排出問句：這件 T 恤多少錢？",
+     "a": [
+      "How much",
+      "is",
+      "this",
+      "T-shirt?"
+     ],
+     "h": [
+      "How much 放最前面。"
+     ],
+     "e": "How much is this T-shirt?"
+    },
+    {
+     "type": "choice",
+     "q": "「Do you have a bigger one?」是什麼意思？",
+     "a": "你們有大一點的嗎？",
+     "w": [
+      "你有比較便宜的嗎？",
+      "你們有別的顏色嗎？",
+      "這個很大嗎？"
+     ],
+     "h": [
+      "bigger 是比較大的。"
+     ],
+     "e": "bigger 是 big 的比較級，「大一點的」。"
+    },
+    {
+     "type": "choice",
+     "q": "「I'll take it.」在商店裡是什麼意思？",
+     "a": "我要買這個。",
+     "w": [
+      "我要拿走不付錢。",
+      "我要再看看。",
+      "我不要這個。"
+     ],
+     "h": [
+      "決定購買時說的。"
+     ],
+     "e": "I'll take it. 是「我要買了」。"
+    }
+   ]
+  },
+  {
+   "id": "english.g5.adjectives",
+   "grade": 5,
+   "unit": "Grammar 文法",
+   "title": "Big & Small",
+   "summary": "形容詞描寫人和東西的樣子；學會一組一組的相反詞，記得更快。",
+   "questions": [
+    {
+     "type": "choice",
+     "q": "tall 的相反詞是哪一個？",
+     "a": "short",
+     "w": [
+      "long",
+      "big",
+      "small"
+     ],
+     "h": [
+      "形容人的身高。"
+     ],
+     "e": "tall（高）↔ short（矮）。"
+    },
+    {
+     "type": "choice",
+     "q": "old 的相反詞可以是哪一個？",
+     "a": "young",
+     "w": [
+      "new",
+      "old",
+      "tall"
+     ],
+     "h": [
+      "形容人的年紀。"
+     ],
+     "e": "形容人：old（老）↔ young（年輕）；形容東西：old（舊）↔ new（新）。"
+    },
+    {
+     "type": "choice",
+     "q": "heavy 是什麼意思？",
+     "a": "重的",
+     "w": [
+      "輕的",
+      "大的",
+      "長的"
+     ],
+     "h": [
+      "和 light 相反。"
+     ],
+     "e": "heavy（重）↔ light（輕）。"
+    },
+    {
+     "type": "choice",
+     "q": "「這隻大象很大。」英文怎麼說？",
+     "a": "The elephant is big.",
+     "w": [
+      "The elephant is small.",
+      "The big is elephant.",
+      "Elephant big is."
+     ],
+     "h": [
+      "主詞 + is + 形容詞。"
+     ],
+     "e": "The elephant is big."
+    },
+    {
+     "type": "choice",
+     "q": "fast 的相反詞是哪一個？",
+     "a": "slow",
+     "w": [
+      "quick",
+      "fat",
+      "low"
+     ],
+     "h": [
+      "烏龜爬得很……"
+     ],
+     "e": "fast（快）↔ slow（慢）。"
+    },
+    {
+     "type": "choice",
+     "q": "「a beautiful flower」中，beautiful 是什麼意思？",
+     "a": "美麗的",
+     "w": [
+      "香的",
+      "紅色的",
+      "小的"
+     ],
+     "h": [
+      "形容花很好看。"
+     ],
+     "e": "beautiful 是美麗的。"
+    },
+    {
+     "type": "choice",
+     "q": "Tom is tall, but Ben is ___ than Tom.",
+     "a": "taller",
+     "w": [
+      "tall",
+      "tallest",
+      "more tall"
+     ],
+     "h": [
+      "兩個人比較，用比較級。"
+     ],
+     "e": "兩者比較用比較級，短的形容詞加 er：taller than。"
+    },
+    {
+     "type": "choice",
+     "q": "A mouse is ___ than a cat.",
+     "a": "smaller",
+     "w": [
+      "small",
+      "smallest",
+      "more small"
+     ],
+     "h": [
+      "和貓比。"
+     ],
+     "e": "small → smaller。"
+    },
+    {
+     "type": "tf",
+     "q": "「clean」的相反詞是「dirty」。",
+     "a": true,
+     "h": [
+      "乾淨和髒。"
+     ],
+     "e": "clean（乾淨）↔ dirty（髒）。"
+    },
+    {
+     "type": "choice",
+     "q": "happy 的相反詞是哪一個？",
+     "a": "sad",
+     "w": [
+      "glad",
+      "busy",
+      "kind"
+     ],
+     "h": [
+      "心情不好。"
+     ],
+     "e": "happy（快樂）↔ sad（難過）。"
+    },
+    {
+     "type": "order",
+     "q": "排出句子：我的房間很乾淨。",
+     "a": [
+      "My room",
+      "is",
+      "very",
+      "clean."
+     ],
+     "h": [
+      "very 放在形容詞前面。"
+     ],
+     "e": "My room is very clean."
+    },
+    {
+     "type": "choice",
+     "q": "Summer is ___ than winter.",
+     "a": "hotter",
+     "w": [
+      "hoter",
+      "hot",
+      "more hot"
+     ],
+     "h": [
+      "短母音 + 一個子音，要重複子音再加 er。"
+     ],
+     "e": "hot → hotter，要重複 t。"
     }
    ]
   }

@@ -2,240 +2,36 @@
  "subject": "math",
  "grade": 5,
  "concepts": [
-  {
-   "id": "math.g5.factors-multiples",
-   "grade": 5,
-   "unit": "因倍數與面積",
-   "title": "因數與倍數",
-   "summary": "因數和倍數，是約分和通分的祕密武器。",
-   "questions": [
-    {
-     "type": "choice",
-     "q": "12 有幾個因數？",
-     "a": "6 個",
-     "w": [
-      "4 個",
-      "5 個",
-      "12 個"
-     ],
-     "h": [
-      "一對一對找：1 × 12、2 × 6……",
-      "還有 3 × 4。"
-     ],
-     "e": "12 的因數：1、2、3、4、6、12，共 6 個。"
-    },
-    {
-     "type": "choice",
-     "q": "8 和 12 的最大公因數是多少？",
-     "a": "4",
-     "w": [
-      "2",
-      "8",
-      "24"
-     ],
-     "h": [
-      "8 的因數：1、2、4、8。",
-      "哪些也是 12 的因數？最大的是哪個？"
-     ],
-     "e": "公因數有 1、2、4，最大公因數是 4。"
-    },
-    {
-     "type": "choice",
-     "q": "4 和 6 的最小公倍數是多少？",
-     "a": "12",
-     "w": [
-      "24",
-      "2",
-      "10"
-     ],
-     "h": [
-      "4 的倍數：4、8、12……",
-      "6 的倍數：6、12……"
-     ],
-     "e": "兩數共同的倍數中，最小的是 12。"
-    },
-    {
-     "type": "choice",
-     "q": "下列哪一個是質數？",
-     "a": "13",
-     "w": [
-      "15",
-      "21",
-      "27"
-     ],
-     "h": [
-      "質數只有 1 和自己兩個因數。",
-      "15 = 3 × 5，21 = 3 × 7。"
-     ],
-     "e": "13 只有 1 和 13 兩個因數，是質數；其他都可以被 3 整除。"
-    },
-    {
-     "type": "choice",
-     "q": "A 公車每 6 分鐘一班，B 公車每 8 分鐘一班。兩車同時發車後，至少再過幾分鐘會再同時發車？",
-     "a": "24 分鐘",
-     "w": [
-      "14 分鐘",
-      "48 分鐘",
-      "12 分鐘"
-     ],
-     "h": [
-      "要找 6 和 8 共同的倍數。",
-      "最小的那一個。"
-     ],
-     "e": "6 和 8 的最小公倍數是 24，所以 24 分鐘後再同時發車。"
-    }
-   ]
-  },
-  {
-   "id": "math.g5.area",
-   "grade": 5,
-   "unit": "因倍數與面積",
-   "title": "面積",
-   "summary": "長方形、三角形、平行四邊形、梯形，面積公式一起複習。",
-   "questions": [
-    {
-     "type": "choice",
-     "q": "長 8 公分、寬 5 公分的長方形，面積是多少？",
-     "a": "40 平方公分",
-     "w": [
-      "26 平方公分",
-      "13 平方公分",
-      "80 平方公分"
-     ],
-     "h": [
-      "長方形面積 = 長 × 寬。",
-      "26 是周長喔。"
-     ],
-     "e": "8 × 5 = 40 平方公分。"
-    },
-    {
-     "type": "choice",
-     "q": "底 10 公分、高 6 公分的三角形，面積是多少？",
-     "a": "30 平方公分",
-     "w": [
-      "60 平方公分",
-      "16 平方公分",
-      "32 平方公分"
-     ],
-     "h": [
-      "三角形是平行四邊形的一半。",
-      "底 × 高 ÷ 2。"
-     ],
-     "e": "10 × 6 ÷ 2 = 30 平方公分。"
-    },
-    {
-     "type": "choice",
-     "q": "底 7 公分、高 4 公分的平行四邊形，面積是多少？",
-     "a": "28 平方公分",
-     "w": [
-      "14 平方公分",
-      "22 平方公分",
-      "11 平方公分"
-     ],
-     "h": [
-      "平行四邊形可以剪拼成長方形。",
-      "底 × 高。"
-     ],
-     "e": "7 × 4 = 28 平方公分。"
-    },
-    {
-     "type": "choice",
-     "q": "上底 3 公分、下底 7 公分、高 4 公分的梯形，面積是多少？",
-     "a": "20 平方公分",
-     "w": [
-      "40 平方公分",
-      "14 平方公分",
-      "84 平方公分"
-     ],
-     "h": [
-      "（上底 + 下底）× 高 ÷ 2。",
-      "3 + 7 = 10。"
-     ],
-     "e": "(3 + 7) × 4 ÷ 2 = 20 平方公分。"
-    },
-    {
-     "type": "choice",
-     "q": "周長 20 公分的正方形，面積是多少？",
-     "a": "25 平方公分",
-     "w": [
-      "20 平方公分",
-      "16 平方公分",
-      "100 平方公分"
-     ],
-     "h": [
-      "正方形有 4 條一樣長的邊。",
-      "先求邊長：20 ÷ 4。"
-     ],
-     "e": "邊長 20 ÷ 4 = 5 公分，面積 5 × 5 = 25 平方公分。"
-    }
-   ]
-  },
-  {
-   "id": "math.g5.fraction-simplify",
-   "grade": 5,
-   "unit": "分數（程式出題）",
-   "title": "約分",
-   "summary": "分子分母同時除以它們的公因數，約到不能再約就是最簡分數。",
-   "generator": {
-    "id": "fractions",
-    "difficulties": [
-     "medium"
-    ]
-   }
-  },
-  {
-   "id": "math.g5.factors-practice",
-   "grade": 5,
-   "unit": "因倍數（程式出題）",
-   "title": "因數判斷",
-   "summary": "如果 a 能被 b 整除，b 就是 a 的因數。",
-   "generator": {
-    "id": "factorsMultiples",
-    "difficulties": [
-     "easy",
-     "medium"
-    ]
-   }
-  },
-  {
-   "id": "math.g5.gcf-lcm",
-   "grade": 5,
-   "unit": "因倍數（程式出題）",
-   "title": "最大公因數與最小公倍數",
-   "summary": "兩數共同的因數中最大的叫最大公因數；共同的倍數中最小的叫最小公倍數。",
-   "generator": {
-    "id": "factorsMultiples",
-    "difficulties": [
-     "hard"
-    ]
-   }
-  },
-  {
-   "id": "math.g5.triangle-area",
-   "grade": 5,
-   "unit": "周長與面積（程式出題）",
-   "title": "三角形面積",
-   "summary": "三角形面積＝底×高÷2。",
-   "generator": {
-    "id": "area",
-    "difficulties": [
-     "hard"
-    ]
-   }
-  },
-  {
-   "id": "math.g5.volume-practice",
-   "grade": 5,
-   "unit": "體積（程式出題）",
-   "title": "長方體與正方體體積",
-   "summary": "長方體體積＝長×寬×高；正方體體積＝邊長×邊長×邊長，單位是立方公分。",
-   "generator": {
-    "id": "volume",
-    "difficulties": [
-     "easy",
-     "medium"
-    ]
-   }
-  }
+  {"id": "math.g5.factors", "grade": 5, "unit": "因數與倍數", "title": "因數", "summary": "能把一個數整除的數就是它的因數；一對一對找，才不會漏掉。", "generator": {"id": "g5Factors", "difficulties": ["factor"]}},
+  {"id": "math.g5.primes", "grade": 5, "unit": "因數與倍數", "title": "質數與合數", "summary": "只有 1 和自己兩個因數的是質數；有三個以上因數的是合數；1 兩者都不是。", "generator": {"id": "g5Factors", "difficulties": ["prime"]}, "prerequisites": ["math.g5.factors"]},
+  {"id": "math.g5.gcf-lcm", "grade": 5, "unit": "因數與倍數", "title": "公因數與公倍數", "summary": "剪成一樣長、分成一樣多用最大公因數；再次相遇、同時發生用最小公倍數。", "generator": {"id": "g5Factors", "difficulties": ["gcf-lcm", "word"]}, "prerequisites": ["math.g5.factors"]},
+  {"id": "math.g5.fraction-simplify", "grade": 5, "unit": "分數", "title": "約分與擴分", "summary": "分子分母同時乘（擴分）或同時除以（約分）同一個數，分數的大小不變。", "generator": {"id": "g5Fraction", "difficulties": ["simplify", "equivalent"]}, "prerequisites": ["math.g5.gcf-lcm"]},
+  {"id": "math.g5.fraction-compare", "grade": 5, "unit": "分數", "title": "異分母分數比大小", "summary": "分母不同時先通分，分母一樣了再比分子。", "generator": {"id": "g5Fraction", "difficulties": ["compare"]}, "prerequisites": ["math.g5.fraction-simplify"]},
+  {"id": "math.g5.fraction-add-sub", "grade": 5, "unit": "分數", "title": "異分母分數加減", "summary": "先用最小公倍數通分，再加減分子，最後約成最簡分數。", "generator": {"id": "g5Fraction", "difficulties": ["add-sub"]}, "prerequisites": ["math.g5.fraction-compare"]},
+  {"id": "math.g5.fraction-multiply", "grade": 5, "unit": "分數", "title": "分數乘法", "summary": "分子乘分子、分母乘分母，能約分的先約分。", "generator": {"id": "g5Fraction", "difficulties": ["multiply"]}, "prerequisites": ["math.g5.fraction-simplify"]},
+  {"id": "math.g5.fraction-division", "grade": 5, "unit": "分數", "title": "整數相除的商", "summary": "整數除以整數除不盡時，商可以用分數表示：a ÷ b = a/b。", "generator": {"id": "g5Fraction", "difficulties": ["divide-whole"]}},
+  {"id": "math.g5.fraction-decimal", "grade": 5, "unit": "小數", "title": "分數與小數互換", "summary": "分數就是分子除以分母；小數可以寫成分母是 10、100、1000 的分數再約分。", "generator": {"id": "g5Decimal", "difficulties": ["convert"]}, "prerequisites": ["math.g5.fraction-simplify"]},
+  {"id": "math.g5.decimal-multiply", "grade": 5, "unit": "小數", "title": "小數乘以小數", "summary": "先當成整數相乘，兩個數的小數位數加起來，就是答案的小數位數。", "generator": {"id": "g5Decimal", "difficulties": ["mul"]}},
+  {"id": "math.g5.decimal-divide", "grade": 5, "unit": "小數", "title": "小數除以整數", "summary": "商的小數點和被除數的小數點對齊，再用乘法驗算。", "generator": {"id": "g5Decimal", "difficulties": ["div"]}},
+  {"id": "math.g5.polygon-area", "grade": 5, "unit": "面積與體積", "title": "多邊形面積", "summary": "平行四邊形 = 底 × 高；三角形 = 底 × 高 ÷ 2；梯形 = (上底 + 下底) × 高 ÷ 2。", "generator": {"id": "g5Area", "difficulties": ["parallelogram", "triangle", "trapezoid"]}},
+  {"id": "math.g5.area-missing", "grade": 5, "unit": "面積與體積", "title": "從面積找高", "summary": "把面積公式倒過來用：知道面積和底，就能求出高。", "generator": {"id": "g5Area", "difficulties": ["missing"]}, "prerequisites": ["math.g5.polygon-area"]},
+  {"id": "math.g5.volume", "grade": 5, "unit": "面積與體積", "title": "長方體和正方體的體積", "summary": "體積 = 長 × 寬 × 高，單位是立方公分；正方體是邊長 × 邊長 × 邊長。", "generator": {"id": "g5Volume", "difficulties": ["cuboid"]}},
+  {"id": "math.g5.volume-capacity", "grade": 5, "unit": "面積與體積", "title": "體積單位與容積", "summary": "1 立方公尺 = 1000000 立方公分；1 公升 = 1000 立方公分。", "generator": {"id": "g5Volume", "difficulties": ["units", "capacity"]}, "prerequisites": ["math.g5.volume"]},
+  {"id": "math.g5.percent", "grade": 5, "unit": "百分率", "title": "百分率", "summary": "百分率就是分母是 100 的分數：35% = 35/100 = 0.35。", "generator": {"id": "g5Percent", "difficulties": ["convert", "of"]}, "prerequisites": ["math.g5.fraction-decimal"]},
+  {"id": "math.g5.discount", "grade": 5, "unit": "百分率", "title": "打折", "summary": "打八折是原價的 80%，打七五折是原價的 75%。", "generator": {"id": "g5Percent", "difficulties": ["discount"]}, "prerequisites": ["math.g5.percent"]},
+  {"id": "math.g5.symmetry", "grade": 5, "unit": "圖形", "title": "線對稱圖形", "summary": "沿著一條線對折，兩邊能完全重合，就是線對稱圖形，這條線叫對稱軸。", "questions": [
+   {"type": "choice", "q": "把一個圖形沿著一條直線對折，兩邊完全重合，這條直線叫做什麼？", "a": "對稱軸", "w": ["對角線", "高", "半徑"], "h": ["圖形對稱的那條線。"], "e": "線對稱圖形對折後兩邊重合，折痕所在的直線就是對稱軸。"},
+   {"type": "choice", "q": "正方形有幾條對稱軸？", "a": "4 條", "w": ["1 條", "2 條", "無數條"], "h": ["直的、橫的、兩條斜的。"], "e": "正方形有 2 條通過對邊中點的對稱軸、2 條對角線，共 4 條。"},
+   {"type": "choice", "q": "長方形（不是正方形）有幾條對稱軸？", "a": "2 條", "w": ["4 條", "1 條", "0 條"], "h": ["沿對角線折，兩邊會重合嗎？"], "e": "長方形沿對角線對折不會重合，只有直、橫 2 條對稱軸。"},
+   {"type": "choice", "q": "圓形有幾條對稱軸？", "a": "無數條", "w": ["1 條", "2 條", "4 條"], "h": ["任何一條通過圓心的直線都可以。"], "e": "通過圓心的每一條直線都是圓的對稱軸，所以有無數條。"},
+   {"type": "choice", "q": "正三角形有幾條對稱軸？", "a": "3 條", "w": ["1 條", "2 條", "6 條"], "h": ["從每個頂點往對邊中點畫線。"], "e": "正三角形從三個頂點到對邊中點各有一條，共 3 條。"},
+   {"type": "tf", "q": "一般的平行四邊形（不是長方形或菱形）是線對稱圖形。", "a": false, "h": ["剪一個試試看，能不能對折重合？"], "e": "一般的平行四邊形找不到對折後完全重合的直線，不是線對稱圖形。"},
+   {"type": "choice", "q": "線對稱圖形中，兩個對稱點到對稱軸的距離有什麼關係？", "a": "一樣遠", "w": ["左邊比較遠", "右邊比較遠", "沒有關係"], "h": ["對折後兩點會重合。"], "e": "對稱點到對稱軸的距離相等，而且連線和對稱軸互相垂直。"},
+   {"type": "choice", "q": "等腰三角形有幾條對稱軸？", "a": "1 條", "w": ["2 條", "3 條", "0 條"], "h": ["從頂角往底邊中點畫線。"], "e": "等腰三角形（不是正三角形）只有 1 條對稱軸。"},
+   {"type": "choice", "q": "下列哪一個國字是線對稱的？", "a": "中", "w": ["你", "我", "好"], "h": ["左右兩邊一樣嗎？"], "e": "「中」沿中間直線對折，左右可以重合。"},
+   {"type": "choice", "q": "菱形有幾條對稱軸？", "a": "2 條", "w": ["4 條", "1 條", "0 條"], "h": ["沿著兩條對角線對折看看。"], "e": "菱形的兩條對角線都是對稱軸（正方形則有 4 條）。"},
+   {"type": "tf", "q": "線對稱圖形中，對稱軸兩邊的對應邊一樣長、對應角一樣大。", "a": true, "h": ["對折後會完全重合。"], "e": "對折能完全重合，所以對應邊等長、對應角相等。"},
+   {"type": "choice", "q": "蝴蝶的翅膀常被用來說明什麼？", "a": "線對稱", "w": ["平行", "垂直", "比例尺"], "h": ["左右兩邊的花紋一樣。"], "e": "很多蝴蝶左右翅膀的形狀和花紋對稱，是線對稱的好例子。"}
+  ]}
  ]
 }
