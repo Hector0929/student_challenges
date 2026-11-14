@@ -252,6 +252,32 @@ img { -webkit-user-drag: none; }
 .dex button:disabled { cursor: default; }
 .dex b { font-size: 11px; text-align: center; line-height: 1.2; }
 .dex small { font-size: 11px; color: var(--gold); -webkit-text-stroke: 0.6px var(--line); letter-spacing: 1px; }
+
+/* ---------- 出發前複習 / 暖身配對 ---------- */
+.node .kn { margin-top: 1px; padding: 0 6px; border-radius: 8px; background: rgba(255, 250, 242, 0.9); font-size: 11px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.prep { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; background: linear-gradient(180deg, var(--sky1), var(--sky2)); padding: 12px; display: grid; gap: 10px; align-content: start; }
+.prep-head { padding: 10px 14px; border-radius: 16px; border: 2.5px solid var(--line); background: rgba(255, 250, 242, 0.95); box-shadow: 0 4px 0 var(--line); }
+.prep-head b { font: 700 19px var(--round); display: block; }
+.prep-head small { color: var(--muted); font-size: 13px; line-height: 1.5; display: block; }
+.wcards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.wcard { position: relative; display: grid; justify-items: center; gap: 2px; padding: 12px 6px 10px; border-radius: 14px; border: 2.5px solid var(--line); background: #fff; box-shadow: 0 3px 0 var(--line); text-align: center; }
+.wcard:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.wcard .emo { font-size: 30px; line-height: 1.1; min-height: 33px; }
+.wcard b { font: 700 22px var(--round); line-height: 1.2; word-break: break-word; }
+.wcard span { font-size: 14px; color: var(--muted); }
+.wcard em { position: absolute; left: 6px; top: 5px; font-style: normal; font-size: 11px; font-weight: 900; }
+.wcard em.new { color: #4a7fe0; }
+.wcard em.again { color: var(--bad); }
+.wcard em.ok { color: var(--good); }
+.prep-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.prep .ghost-btn { width: 100%; font-size: 15px; padding: 10px; }
+.match { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.match .col { display: grid; gap: 8px; align-content: start; }
+.mt { min-height: 54px; padding: 8px 6px; border-radius: 12px; border: 2.5px solid var(--line); background: #fff; box-shadow: 0 3px 0 var(--line); font-weight: 900; font-size: 16px; line-height: 1.25; }
+.mt.en { font: 700 20px var(--round); }
+.mt.sel { background: color-mix(in srgb, var(--gold) 45%, #fff); }
+.mt.bad { background: #ffd9d2; border-color: var(--bad); animation: hit 0.35s; }
+.mt.done { background: #d8f5dc; border-color: var(--good); box-shadow: none; opacity: 0.55; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition: none !important; } }
 </style>
 </head>
@@ -368,7 +394,7 @@ function loadP() {
   p = obj(p);
   /* v1 的 stages 是「表現星數」，當時的玩法就是騎士等級：打過的關卡換算成騎士通過 */
   let stages = obj(p.stages);
-  if (p.v !== 2) stages = Object.fromEntries(Object.entries(stages).filter(([, v]) => Number(v) > 0).map(([k]) => [k, 2]));
+  if (!(Number(p.v) >= 2)) stages = Object.fromEntries(Object.entries(stages).filter(([, v]) => Number(v) > 0).map(([k]) => [k, 2]));
   /* 怪獸收集：{ id: { star: 0–3（0 = 還沒收服）, evo: 是否進化, shards: 碎片 } } */
   const mons = {};
   for (const [id, v] of Object.entries(obj(p.mons))) {
@@ -396,6 +422,7 @@ function loadP() {
     stages,
     wrong: obj(p.wrong),
     known: obj(p.known),
+    met: obj(p.met), // 戰鬥中一次答對過（含見習選擇題）＝認識
     world: Number.isFinite(p.world) ? clamp(p.world, 0, WORLDS.length) : 0,
     sound: p.sound !== false,
   };
@@ -500,13 +527,22 @@ function pickVoice() {
   enVoice = vs.find((v) => /en[-_]US/i.test(v.lang) && v.localService) || vs.find((v) => /en[-_]US/i.test(v.lang)) || vs[0] || null;
 }
 if (tts) { pickVoice(); speechSynthesis.addEventListener?.("voiceschanged", pickVoice); }
-function speak(text, force = false) {
-  if (!tts || !text || (!P.sound && !force)) return;
-  speechSynthesis.cancel();
+function utter(text) {
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "en-US"; u.rate = 0.85;
   if (enVoice) u.voice = enVoice;
-  speechSynthesis.speak(u);
+  return u;
+}
+function speak(text, force = false) {
+  if (!tts || !text || (!P.sound && !force)) return;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter(text));
+}
+/* 依序唸一串單字（玩家按下才會唸，所以不看音效開關） */
+function speakAll(list) {
+  if (!tts || !list.length) return;
+  speechSynthesis.cancel();
+  list.forEach((t) => speechSynthesis.speak(utter(t)));
 }
 
 /* ---------- 資料 ---------- */
@@ -629,6 +665,7 @@ function renderMap() {
             ${kind === "boss" ? `${monImg(w.boss, "boss-face", "drop-shadow(0 4px 4px rgba(0,0,0,.3))")}` : `<span class="num">${ok ? n : "🔒"}</span>`}
             <span class="lbl">${kind === "boss" ? "👑 " : ""}${KIND_LABEL[kind]}</span>
             <span class="st">${[1, 2, 3].map((s) => `<i class="${s <= st ? "on" : ""}">★</i>`).join("")}</span>
+            ${kind === "word" && ok ? (() => { const pool = stagePool(wi, n); return `<span class="kn">📖 ${pool.filter((x) => metOf(x.en)).length}/${pool.length}</span>`; })() : ""}
           </button>`;
         }).join("")}
         ${eliteMon ? `<button class="node elite" style="left:${ELITE_POS[0]}%;top:${ELITE_POS[1]}%" data-elite aria-label="精英怪">
@@ -657,9 +694,11 @@ function pickTier(wi, n) {
   const kind = w.custom ? "custom" : STAGE_KIND[n - 1];
   const done = P.stages[stageKey(w.id, n)] || 0;
   const rec = Math.min(done + 1, 3);
+  const pool = SET_SIZE[kind] ? stagePool(wi, n) : null;
+  const metN = pool ? pool.filter((x) => metOf(x.en)).length : 0;
   showOverlay(`
     <h2>第 ${n} 關 · ${kind === "boss" ? "👑 " : ""}${KIND_LABEL[kind]}</h2>
-    <p>選擇挑戰等級</p>
+    <p>${pool ? `這關的單字：已認識 <b>${metN}</b> / ${pool.length}<br>出發前會先複習這場要考的 ${SET_SIZE[kind]} 個字<br>` : ""}選擇挑戰等級</p>
     <div class="tiers">${TIERS.map((t, i) => {
       const lv = i + 1, ok = lv <= done + 1;
       return `<button class="tier ${lv === rec ? "rec" : ""}" data-o="t${lv}" data-tier="${lv}" ${ok ? "" : "disabled"}>
@@ -775,6 +814,147 @@ function makeWordPicker(pool) {
     return { type: "word", ...w, pool };
   };
 }
+/* ---------- 出發前複習：每場先決定一小組要考的字 ---------- */
+const SET_SIZE = { word: 6, mix: 7, boss: 8 };
+const metOf = (en) => !!(P.met[en] || P.known[en]);
+function stagePool(wi, n) {
+  const w = WORLDS[wi];
+  return wordPool(STAGE_KIND[n - 1] === "word" ? [w.topics[n - 1]] : w.topics, MAX_LEN[wi]);
+}
+/* 挑字順序：拼錯過的（最多一半）→ 還不認識的新字 → 已認識的；avoid 是「換一組」時先避開的字 */
+function chooseSet(pool, size, avoid = new Set()) {
+  const out = [];
+  const take = (list, max = size) => {
+    for (const x of list) { if (out.length >= size || max <= 0) break; if (!out.includes(x)) { out.push(x); max--; } }
+  };
+  const fresh = pool.filter((x) => !avoid.has(x.en));
+  take(shuffle(fresh.filter((x) => P.wrong[x.en] > 0)).sort((a, b) => P.wrong[b.en] - P.wrong[a.en]), Math.ceil(size / 2));
+  take(shuffle(fresh.filter((x) => !metOf(x.en))));
+  take(shuffle(fresh.filter((x) => metOf(x.en) && !P.known[x.en])));
+  take(shuffle(fresh));
+  take(shuffle(pool)); // 主題字太少、避不開時，用剛剛那組補滿
+  return out;
+}
+/* 戰鬥只考這組字：洗牌出完一輪再重洗，不會連續出同一個字 */
+function makeSetPicker(set, pool) {
+  let bag = [], last = null;
+  return () => {
+    if (!bag.length) { bag = shuffle(set); if (bag.length > 1 && bag[bag.length - 1] === last) bag.unshift(bag.pop()); }
+    last = bag.pop();
+    return { type: "word", ...last, pool };
+  };
+}
+function wordTag(x) {
+  if (P.wrong[x.en] > 0) return `<em class="again">😵 再練</em>`;
+  if (!metOf(x.en)) return `<em class="new">🆕 新字</em>`;
+  return `<em class="ok">✔ 認識</em>`;
+}
+function renderPrep(st) {
+  const { w, wi, n, tier, kind, set } = st;
+  keyHandler = null;
+  setTheme(w);
+  const T = TIERS[tier - 1];
+  app.innerHTML = `
+    <div class="topbar">
+      <button class="pill" data-p="back">↩ 地圖</button>
+      <span class="pill world-pick"><span>${w.icon} 第 ${n} 關 · ${KIND_LABEL[kind]} · ${T.icon}${T.name}</span></span>
+    </div>
+    <div class="prep">
+      <div class="prep-head"><b>📖 出發前複習</b><small>這場會考下面 ${set.length} 個字${kind === "word" ? "" : "，另外還有句子題"}。點卡片聽發音，記住拼法再出發！</small></div>
+      <div class="wcards">${set.map((x, k) => `<button class="wcard" data-w="${k}">${wordTag(x)}<span class="emo">${x.emoji || ""}</span><b>${esc(x.en)}</b><span>${esc(x.zh)}</span></button>`).join("")}</div>
+      <div class="prep-tools">
+        <button class="ghost-btn" data-p="all">🔊 全部唸一次</button>
+        <button class="ghost-btn" data-p="reroll">🔄 換一組</button>
+      </div>
+      <button class="ghost-btn" data-p="warm">🧩 暖身配對（完成後必殺 +1）</button>
+      <button class="big-btn" data-p="go">⚔️ 準備好了，出發！</button>
+    </div>`;
+  app.querySelectorAll("[data-w]").forEach((b) => b.addEventListener("click", () => speak(set[+b.dataset.w].en, true)));
+  const act = {
+    back: () => { if (tts) speechSynthesis.cancel(); tab = "map"; render(); },
+    all: () => speakAll(set.map((x) => x.en)),
+    reroll: () => renderPrep({ ...st, set: chooseSet(st.pool, set.length, new Set(set.map((x) => x.en))) }),
+    warm: () => renderWarmup(st),
+    go: () => { if (tts) speechSynthesis.cancel(); launchStage(st, false); },
+  };
+  app.querySelectorAll("[data-p]").forEach((b) => b.addEventListener("click", () => { SFX.tap(); act[b.dataset.p](); }));
+  keyHandler = (e) => { if (e.key === "Enter") act.go(); else if (e.key === "Escape") act.back(); };
+}
+/* 暖身：中文和英文配對，配錯沒有懲罰 */
+function renderWarmup(st) {
+  const { w, set } = st;
+  keyHandler = null;
+  setTheme(w);
+  const left = shuffle(set), right = shuffle(set);
+  let selL = null, selR = null, done = 0, busy = false;
+  app.innerHTML = `
+    <div class="topbar">
+      <button class="pill" data-p="back">↩ 複習</button>
+      <span class="pill world-pick"><span>🧩 暖身配對</span></span>
+    </div>
+    <div class="prep">
+      <div class="prep-head"><b>把中文和英文配成一對</b><small data-msg>先點左邊的中文，再點右邊的英文。全部配對完成，戰鬥一開始就有 1 格必殺！</small></div>
+      <div class="match">
+        <div class="col">${left.map((x, k) => `<button class="mt" data-l="${k}">${x.emoji ? x.emoji + " " : ""}${esc(x.zh)}</button>`).join("")}</div>
+        <div class="col">${right.map((x, k) => `<button class="mt en" data-r="${k}">${esc(x.en)}</button>`).join("")}</div>
+      </div>
+      <button class="ghost-btn" data-p="skip">略過暖身，直接出發</button>
+    </div>`;
+  const msg = $("[data-msg]");
+  const lb = [...app.querySelectorAll("[data-l]")], rb = [...app.querySelectorAll("[data-r]")];
+  async function check() {
+    if (selL === null || selR === null) return;
+    const a = lb[selL], b = rb[selR];
+    if (left[selL] === right[selR]) {
+      a.classList.remove("sel"); b.classList.remove("sel");
+      a.classList.add("done"); b.classList.add("done");
+      a.disabled = b.disabled = true;
+      SFX.hit();
+      speak(left[selL].en, true);
+      selL = selR = null;
+      if (++done === set.length) {
+        SFX.win();
+        msg.textContent = "全部配對完成！戰鬥一開始必殺 +1";
+        const skip = $('[data-p="skip"]');
+        skip.className = "big-btn";
+        skip.textContent = "⚔️ 出發！（必殺 +1）";
+        skip.dataset.p = "fight";
+      }
+    } else {
+      busy = true;
+      SFX.bad();
+      msg.textContent = `「${right[selR].en}」不是「${left[selL].zh}」，再試試看！`;
+      a.classList.add("bad"); b.classList.add("bad");
+      await wait(450);
+      a.classList.remove("bad", "sel"); b.classList.remove("bad", "sel");
+      selL = selR = null;
+      busy = false;
+    }
+  }
+  lb.forEach((b, k) => b.addEventListener("click", () => {
+    if (busy || b.disabled) return;
+    SFX.tap();
+    lb.forEach((x) => x.classList.remove("sel"));
+    selL = k; b.classList.add("sel");
+    check();
+  }));
+  rb.forEach((b, k) => b.addEventListener("click", () => {
+    if (busy || b.disabled) return;
+    SFX.tap();
+    rb.forEach((x) => x.classList.remove("sel"));
+    selR = k; b.classList.add("sel");
+    speak(right[k].en);
+    check();
+  }));
+  app.querySelectorAll("[data-p]").forEach((b) => b.addEventListener("click", () => {
+    SFX.tap();
+    const a = b.dataset.p;
+    if (a === "back") renderPrep(st);
+    else { if (tts) speechSynthesis.cancel(); launchStage(st, a === "fight"); }
+  }));
+  keyHandler = (e) => { if (e.key === "Escape") renderPrep(st); };
+}
+
 function makeSentencePicker(list) {
   let bag = [];
   return () => {
@@ -785,7 +965,8 @@ function makeSentencePicker(list) {
 }
 
 /* ---------- 開始戰鬥 ---------- */
-function startStage(wi, n, tier = 2) {
+/* keepSet：輸了再挑戰、或升級挑戰時沿用同一組字，一樣先複習 */
+function startStage(wi, n, tier = 2, keepSet = null) {
   const w = worldList()[wi];
   if (w.custom) {
     return battle({
@@ -795,11 +976,16 @@ function startStage(wi, n, tier = 2) {
     });
   }
   const kind = STAGE_KIND[n - 1];
-  const topics = kind === "word" ? [w.topics[n - 1]] : w.topics;
-  const next = { word: makeWordPicker(wordPool(topics, MAX_LEN[wi])), sentence: makeSentencePicker(SENTENCES[w.id] || []) };
+  if (!SET_SIZE[kind]) return launchStage({ w, wi, n, tier, kind, pool: [], set: [] }, false);
+  const pool = stagePool(wi, n);
+  const set = keepSet?.length && keepSet.every((x) => pool.includes(x)) ? keepSet : chooseSet(pool, SET_SIZE[kind]);
+  renderPrep({ w, wi, n, tier, kind, pool, set });
+}
+function launchStage({ w, wi, n, tier, kind, pool, set }, warm) {
+  const next = { word: makeSetPicker(set, pool), sentence: makeSentencePicker(SENTENCES[w.id] || []) };
   const order = kind === "word" ? ["word"] : kind === "sentence" ? ["sentence"] : kind === "mix" ? ["word", "word", "sentence"] : ["word", "sentence"];
   const enemy = kind === "boss" ? { ...w.boss, boss: true } : { ...w.enemies[(n - 1) % 4] };
-  battle({ w, wi, n, tier, kind, key: stageKey(w.id, n), enemy, next, order });
+  battle({ w, wi, n, tier, kind, key: stageKey(w.id, n), enemy, next, order, set, warm });
 }
 function startTraining() {
   const pool = Object.keys(P.wrong).map((k) => WORD_MAP.get(k)).filter(Boolean);
@@ -831,6 +1017,7 @@ function battle(cfg) {
     mistakes: 0, defends: 0, turn: 0, busy: false, over: false, rage: false,
     potionsUsed: 0,
   };
+  if (cfg.warm) B.gauge = Math.min(B.gaugeMax, B.gauge + 1);
   const enemyName = (cfg.enemy.elite ? "精英·" : ENEMY_PREFIX[tier - 1]) + cfg.enemy.name;
   const glow = cfg.enemy.elite ? "drop-shadow(0 0 7px #ffcf3d) drop-shadow(0 0 3px #fff3b0)" : tier === 3 ? "drop-shadow(0 0 7px #ff4b3b) drop-shadow(0 0 3px #ff9a3d)" : "";
   const tierText = kind === "train" || kind === "elite" ? "" : ` · ${T.icon}${T.name}`;
@@ -1042,6 +1229,7 @@ function battle(cfg) {
         B.busy = true; keyHandler = null;
         b.classList.add("ok");
         if (miss) recordWord(q.en, false);
+        else if (!defending) { P.met[q.en] = 1; save(); }
         panel.querySelector(".log").textContent = miss ? "找到了！" : "答對了！";
         speak(q.en);
         await wait(300);
@@ -1190,6 +1378,7 @@ function battle(cfg) {
   function recordWord(en, perfect) {
     if (perfect) {
       P.known[en] = 1;
+      P.met[en] = 1;
       if (P.wrong[en]) { P.wrong[en]--; if (P.wrong[en] <= 0) delete P.wrong[en]; }
     } else {
       P.wrong[en] = (P.wrong[en] || 0) + 1;
@@ -1277,7 +1466,7 @@ function battle(cfg) {
       ${cfg.key && tier < 3 ? `<button class="big-btn" data-o="up" style="width:100%;background:#ffb5a3">${TIERS[tier].icon} 挑戰${TIERS[tier].name}等級</button>` : ""}
       ${kind === "elite" ? "" : `<button class="ghost-btn" data-o="again" style="width:100%">再打一次</button>`}`, {
       next: () => startStage(wi, nextStage, Math.min(tier, (P.stages[stageKey(w.id, nextStage)] || 0) + 1)),
-      up: () => startStage(wi, cfg.n, tier + 1),
+      up: () => startStage(wi, cfg.n, tier + 1, cfg.set),
       map: () => { tab = "map"; render(); },
       again: () => (kind === "train" ? startTraining() : startStage(wi, cfg.n, tier)),
     });
@@ -1292,13 +1481,13 @@ function battle(cfg) {
       <h2>${esc(p.name)}累倒了…</h2>
       <p>沒關係！不確定的單字可以先用「🛡️ 防禦」${tier === 3 ? "看提示" : "看著答案"}作答，受到的傷害也會減半。${tier > 1 && cfg.key ? `<br>也可以先回到「${TIERS[tier - 2].name}」等級多練幾次。` : ""}</p>
       <div class="row two"><button class="big-btn" data-o="again">再挑戰</button><button class="ghost-btn" data-o="map">回到地圖</button></div>`, {
-      again: () => (kind === "train" ? startTraining() : kind === "elite" ? startElite(wi, cfg.enemy) : startStage(wi, cfg.n, tier)),
+      again: () => (kind === "train" ? startTraining() : kind === "elite" ? startElite(wi, cfg.enemy) : startStage(wi, cfg.n, tier, cfg.set)),
       map: () => { tab = "map"; render(); },
     }), 700);
   }
 
   paintBars();
-  panel.innerHTML = `<div class="say-line" style="justify-content:center;font-size:18px">${cfg.enemy.boss ? "👑 魔王" : "野生的"}「${esc(enemyName)}」出現了！</div>`;
+  panel.innerHTML = `<div class="say-line" style="justify-content:center;font-size:18px">${cfg.enemy.boss ? "👑 魔王" : "野生的"}「${esc(enemyName)}」出現了！</div>${cfg.warm ? `<div class="log">🧩 暖身完成，必殺 +1</div>` : ""}`;
   B.busy = true;
   setTimeout(() => { B.busy = false; menu(); }, 900);
 }
