@@ -4,6 +4,7 @@ import { ArrowLeft, Home, Store, Star } from 'lucide-react';
 import { ChildMonsterShop } from './ChildMonsterShop';
 import { ChildWorldShopStreet } from './ChildWorldShopStreet';
 import { useGameWindowController } from '../hooks/useGameWindowController';
+import { formatStars } from '../lib/formatStars';
 
 interface ShopModalProps {
     isOpen: boolean;
@@ -81,7 +82,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
 
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-100 border-2 border-yellow-300">
                         <Star size={16} className="text-yellow-500" fill="currentColor" />
-                        <span className="font-pixel text-sm text-amber-700">{starBalance}</span>
+                        <span className="font-pixel text-sm text-amber-700">{formatStars(starBalance)}</span>
                     </div>
 
                     <div className="flex items-center gap-1 sm:gap-2">

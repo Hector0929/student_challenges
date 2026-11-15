@@ -5,6 +5,7 @@ import { useRewardGamePlay } from '../hooks/useRewardGamePlay';
 import { GAME_COST } from '../lib/constants';
 import { useFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
 import { FUN_GAMES, getFunGameColors, type FunGame } from '../lib/gameConfig';
+import { formatStars } from '../lib/formatStars';
 
 interface RewardTimeProps {
     isUnlocked: boolean;
@@ -121,7 +122,7 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
                             {/* Star Balance Display */}
                             <div className="inline-flex items-center gap-2 clay-star px-4 py-2">
                                 <Star fill="currentColor" size={20} />
-                                <span className="text-xl font-bold">{starBalance}</span>
+                                <span className="text-xl font-bold">{formatStars(starBalance)}</span>
                                 <span className="text-sm">可用星幣</span>
                             </div>
                         </div>

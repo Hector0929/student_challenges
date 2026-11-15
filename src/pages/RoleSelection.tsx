@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import type { Profile } from '../types/database';
 import { useUser } from '../contexts/UserContext';
 import { feedText, useFamilyWordFeed } from '../features/englishHarbour/useWordProgress';
+import { needsPinSetup } from '../lib/pin';
 
 interface RoleSelectionProps {
     /** 點頭像 → 儀表板；點「進入我的群島」→ 群島 */
@@ -23,7 +24,7 @@ const ISLAND_COLORS: Array<[string, string]> = [
 ];
 
 export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, onParentAuthenticated }) => {
-    const { loginAsParent, familyName, logout } = useUser();
+    const { loginAsParent, familyName, session } = useUser();
     const [showParentDialog, setShowParentDialog] = useState(false);
     const [parentPassword, setParentPassword] = useState('');
     const [error, setError] = useState('');
@@ -43,13 +44,28 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
         },
     });
 
-    const handleParentClick = () => {
+    const handleParentClick = async () => {
         const isParentAuth = sessionStorage.getItem('parent-auth') === 'verified';
         if (isParentAuth) {
             onParentAuthenticated();
-        } else {
-            setShowParentDialog(true);
+            return;
         }
+        // 還在用預設 PIN（或沒有 PIN）：不必輸入，直接進家長模式，會先跳出「設定新 PIN」
+        try {
+            if (session?.user?.id) {
+                const { data } = await supabase.from('profiles').select('pin_code').eq('id', session.user.id).maybeSingle();
+                const pin = (data?.pin_code as string | null | undefined) ?? null;
+                if (needsPinSetup(pin)) {
+                    await loginAsParent(pin?.trim() ?? '');
+                    sessionStorage.setItem('parent-auth', 'verified');
+                    onParentAuthenticated();
+                    return;
+                }
+            }
+        } catch (err) {
+            console.error('檢查家長 PIN 失敗:', err);
+        }
+        setShowParentDialog(true);
     };
 
     const handleParentLogin = async (e: React.FormEvent) => {
@@ -59,8 +75,9 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
             sessionStorage.setItem('parent-auth', 'verified');
             setShowParentDialog(false);
             onParentAuthenticated();
-        } catch {
+        } catch (err) {
             setParentPassword('');
+            setError(err instanceof Error && /[\u4e00-\u9fff]/.test(err.message) ? err.message : 'PIN 碼錯誤，請再試一次');
         }
     };
 
@@ -99,7 +116,7 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                     <div className="flex items-center gap-2">
                         <span className="text-2xl">🏠</span>
                         <span className="font-heading font-bold text-lg" style={{ color: 'var(--color-text)' }}>
-                            {familyName || 'HA family'}
+                            {familyName || '我們家'}
                         </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -113,17 +130,6 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                             }}
                         >
                             👨‍👩‍👧 家長模式
-                        </button>
-                        <button
-                            onClick={() => logout()}
-                            className="flex items-center gap-2 px-4 py-2 rounded-full font-heading text-sm transition-all cursor-pointer hover:opacity-80"
-                            style={{
-                                backgroundColor: 'var(--bg-card)',
-                                color: 'var(--color-text)',
-                                border: '2px solid var(--border-soft)',
-                            }}
-                        >
-                            登出系統
                         </button>
                     </div>
                 </div>
@@ -241,8 +247,7 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
 
                         <form onSubmit={handleParentLogin} className="space-y-4">
                             <p className="font-body text-center" style={{ color: 'var(--color-text-light)' }}>
-                                請輸入家長密碼以進入管理介面
-                                <span className="block text-sm mt-1 opacity-60">(預設 0000)</span>
+                                請輸入 4 位數的家長 PIN
                             </p>
 
                             <div className="relative">

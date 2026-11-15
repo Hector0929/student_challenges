@@ -4,6 +4,7 @@ import { X, Star, Clock, Play, PauseCircle, ArrowLeft, Home, Square } from 'luci
 import { RPGDialog } from './RPGDialog';
 import { GAME_COST, GAME_DURATION_SECONDS } from '../lib/constants';
 import { useGameWindowController } from '../hooks/useGameWindowController';
+import { formatStars } from '../lib/formatStars';
 
 // Session persistence: preserve remaining paid game time across modal open/close
 const getSessionKey = (gameId: string) => `gameSession_${gameId}`;
@@ -202,7 +203,7 @@ const TimeUpOverlay = ({
                     </div>
                     <div className="mt-4 pt-4 border-t border-indigo-100 flex justify-between px-4 text-sm">
                         <span style={{ color: 'var(--color-text-muted)' }}>目前餘額</span>
-                        <span className="font-pixel text-yellow-600">{starBalance} ⭐</span>
+                        <span className="font-pixel text-yellow-600">{formatStars(starBalance)} ⭐</span>
                     </div>
                 </div>
 
@@ -673,7 +674,7 @@ export const GameModal: React.FC<GameModalProps> = ({
                                 <div className="flex justify-center gap-8 mb-8 text-sm font-bold">
                                     <div className="text-center">
                                         <div className="text-gray-400 text-xs mb-1">目前擁有</div>
-                                        <div className="font-pixel text-xl text-yellow-500">{starBalance}</div>
+                                        <div className="font-pixel text-xl text-yellow-500">{formatStars(starBalance)}</div>
                                     </div>
                                     <div className="w-px bg-gray-200"></div>
                                     <div className="text-center">
@@ -734,7 +735,7 @@ export const GameModal: React.FC<GameModalProps> = ({
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>擁有</span>
-                                <span className="font-pixel" style={{ color: 'var(--color-text)' }}>{starBalance} ⭐</span>
+                                <span className="font-pixel" style={{ color: 'var(--color-text)' }}>{formatStars(starBalance)} ⭐</span>
                             </div>
                         </div>
 

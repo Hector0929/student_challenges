@@ -8,6 +8,10 @@ import { useRealtimeSubscription } from './hooks/useRealtime';
 import { LogOut, ArrowLeft, Lock, LayoutDashboard, Briefcase, Users, Settings, Bug, Map, BookOpen } from 'lucide-react';
 import type { Profile } from './types/database';
 import { FloatingEncouragement } from './components/FloatingEncouragement';
+import { ForcePinSetup } from './components/ForcePinSetup';
+import { needsPinSetup } from './lib/pin';
+import { ResetPassword } from './pages/ResetPassword';
+import { supabase } from './lib/supabase';
 import './index.css';
 
 // 各頁面分開打包：孩子端不會下載家長頁，家長端也不會下載 3D 群島與怪獸塔
@@ -52,6 +56,29 @@ function AppContent() {
 
   // Enable global realtime updates
   useRealtimeSubscription(user?.id);
+
+  // 從「重設密碼」信件連結回來：Supabase 會送出 PASSWORD_RECOVERY，先讓家長設定新密碼
+  const [recovering, setRecovering] = useState(() => {
+    try {
+      return /type=recovery/.test(window.location.hash);
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setRecovering(true);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+  const finishRecovery = () => {
+    setRecovering(false);
+    try {
+      window.history.replaceState(null, '', window.location.pathname);
+    } catch {
+      /* 無法改網址就算了 */
+    }
+  };
 
   const [view, setView] = useState<'dashboard' | 'control' | 'children' | 'concepts' | 'settings' | 'debug'>('dashboard');
   const [childView, setChildViewState] = useState<ChildView>(readChildView);
@@ -116,6 +143,11 @@ function AppContent() {
         <div className="text-xl font-pixel animate-pulse">Loading...</div>
       </div>
     );
+  }
+
+  // 0. 重設密碼
+  if (recovering && session) {
+    return <ResetPassword onDone={finishRecovery} />;
   }
 
   // 1. Not Authenticated
@@ -199,7 +231,8 @@ function AppContent() {
             <span>{user.role === 'parent' ? '保持登入' : '切換角色'}</span>
           </button>
 
-          {/* Logout (Sign out from Family) */}
+          {/* 登出整個家庭帳號：只在家長模式出現，孩子的畫面不放 */}
+          {user.role === 'parent' && (
           <button
             onClick={() => logout()}
             className="flex items-center gap-2 px-3 py-1 bg-red-100 border-2 border-deep-black hover:bg-red-200 transition-colors font-pixel text-xs text-red-600"
@@ -208,6 +241,7 @@ function AppContent() {
             <LogOut size={14} />
             <span>登出系統</span>
           </button>
+          )}
         </div>
       </div>
 
@@ -264,6 +298,8 @@ function AppContent() {
               </button>
             </div>
           </div>
+
+          {needsPinSetup(user.pin_code) && <ForcePinSetup />}
 
           <Suspense fallback={<PageLoading />}>
           {view === 'dashboard' ? (

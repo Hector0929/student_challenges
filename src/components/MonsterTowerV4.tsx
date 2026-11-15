@@ -12,6 +12,7 @@ import { ROLE_META } from './tower/roleMeta';
 import { prefersReducedMotion, useTowerGame } from './tower/useTowerGame';
 import { TowerScene } from './tower/v4/TowerScene';
 import { ZONE_ICONS, ZONE_STYLES } from './tower/v4/zoneStyles';
+import { formatStars } from '../lib/formatStars';
 
 const STEP_MS = 230;
 const DICE_FACES = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
@@ -126,7 +127,7 @@ export const MonsterTowerV4: React.FC<MonsterTowerV4Props> = ({ userId, isOpen, 
                     </div>
                 </div>
                 <div className="flex items-center gap-2 pointer-events-auto">
-                    <span className="px-3 py-2 rounded-2xl bg-white/90 shadow-lg text-sm font-black text-amber-600 tabular-nums">⭐ {starBalance}</span>
+                    <span className="px-3 py-2 rounded-2xl bg-white/90 shadow-lg text-sm font-black text-amber-600 tabular-nums">⭐ {formatStars(starBalance)}</span>
                     <span className="px-3 py-2 rounded-2xl bg-white/90 shadow-lg text-sm font-black text-sky-600 tabular-nums" data-testid="v4-dice-count">
                         🎲 {diceCount}
                     </span>

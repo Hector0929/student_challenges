@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Lock, Home, Coins, Plus, Minus, X, MessageCircle, ArrowRightLeft, Gamepad2, BookOpen } from 'lucide-react';
+import { Save, Lock, Home, Coins, Plus, Minus, X, MessageCircle, ArrowRightLeft, Gamepad2, BookOpen, Wrench, LogOut, Trash2 } from 'lucide-react';
 import { ToggleSwitch } from '../components/ToggleSwitch';
 import { useUser } from '../contexts/UserContext';
 import { supabase } from '../lib/supabase';
+import { clearDeviceData } from '../lib/clearDeviceData';
 import type { Profile } from '../types/database';
 import { useAdjustStars, useStarBalance } from '../hooks/useQuests';
 import { useFamilySettings, useUpdateFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
@@ -94,7 +95,9 @@ const ChildStarRow = ({ child, onAdjust }: { child: Profile; onAdjust: (child: P
 };
 
 export const ParentSettings: React.FC = () => {
-    const { user, setUser } = useUser();
+    const { user, setUser, logout } = useUser();
+    // 疑難排解：清除這台裝置的資料前，先在畫面上確認一次
+    const [confirmClear, setConfirmClear] = useState(false);
     const [familyName, setFamilyName] = useState('');
     const [userName, setUserName] = useState('');
     const [pin, setPin] = useState('');
@@ -236,6 +239,11 @@ export const ParentSettings: React.FC = () => {
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
+        const trimmedPin = pin.trim();
+        if (!/^\d{4}$/.test(trimmedPin) || trimmedPin === '0000') {
+            setMessage({ text: 'PIN 碼要是 4 位數字，而且不能是 0000。', type: 'error' });
+            return;
+        }
         setLoading(true);
         setMessage({ text: '', type: '' });
 
@@ -743,10 +751,10 @@ export const ParentSettings: React.FC = () => {
                                 value={pin}
                                 onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
                                 className="w-full px-3 py-2 border-2 border-deep-black text-sm tracking-widest text-lg font-pixel"
-                                placeholder="未設定 (直接登入)"
+                                placeholder="● ● ● ●"
                             />
                             <p className="text-xs text-gray-500 mt-1">
-                                若留空，則不需要輸入 PIN 碼即可切換到家長模式。
+                                請設定孩子猜不到的 4 位數字，不能使用 0000。
                             </p>
                         </div>
                     </div>
@@ -768,6 +776,38 @@ export const ParentSettings: React.FC = () => {
                         </button>
                     </div>
                 </form>
+            </div>
+
+            {/* 疑難排解：原本放在孩子儀表板上的「清除快取」與家庭登出，搬到這裡 */}
+            <div className="clay-card p-6 mt-6" style={{ borderRadius: '20px' }}>
+                <h3 className="font-pixel text-lg mb-2 flex items-center gap-2">
+                    <Wrench size={20} />
+                    疑難排解
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                    畫面怪怪的、資料沒更新時再使用。這兩個動作只影響這台裝置。
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="p-4 rounded-2xl border-2 border-orange-200 bg-orange-50">
+                        <p className="font-bold text-orange-800 flex items-center gap-2"><Trash2 size={16} />清除這台裝置的資料</p>
+                        <p className="text-xs text-orange-700 mt-1 mb-3">
+                            會清掉快取、登入狀態，以及小遊戲存在這台裝置上的進度（例如怪獸單字闖關），無法復原；清除後需要重新登入。
+                        </p>
+                        {confirmClear ? (
+                            <div className="flex gap-2">
+                                <button type="button" onClick={() => setConfirmClear(false)} className="flex-1 clay-btn-secondary py-2 text-sm cursor-pointer">取消</button>
+                                <button type="button" onClick={() => void clearDeviceData()} className="flex-1 py-2 text-sm rounded-xl bg-orange-500 text-white font-bold cursor-pointer">確定清除</button>
+                            </div>
+                        ) : (
+                            <button type="button" onClick={() => setConfirmClear(true)} className="w-full py-2 text-sm rounded-xl border-2 border-orange-300 bg-white text-orange-700 font-bold cursor-pointer">清除資料…</button>
+                        )}
+                    </div>
+                    <div className="p-4 rounded-2xl border-2 border-red-200 bg-red-50">
+                        <p className="font-bold text-red-700 flex items-center gap-2"><LogOut size={16} />登出家庭帳號</p>
+                        <p className="text-xs text-red-600 mt-1 mb-3">登出後，下次要用家長的 Email 和密碼重新登入。</p>
+                        <button type="button" onClick={() => void logout()} className="w-full py-2 text-sm rounded-xl border-2 border-red-300 bg-white text-red-700 font-bold cursor-pointer">登出家庭帳號</button>
+                    </div>
+                </div>
             </div>
 
             {/* Adjustment Dialog */}

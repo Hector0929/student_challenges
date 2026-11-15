@@ -3,7 +3,7 @@ import { ParentsMessageCard, ExchangeRateCard } from '../components/ChildDashboa
 import { ExchangeRequestDialog } from '../components/ExchangeRequestDialog';
 import { TowerV4Preview } from '../components/TowerV4Preview';
 
-import { Star, ChevronDown, ChevronUp, RefreshCw, Trash2, Check, Store } from 'lucide-react';
+import { Star, ChevronDown, ChevronUp, Check, Store } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
 import { ProgressBar } from '../components/ProgressBar';
 import { RPGDialog } from '../components/RPGDialog';
@@ -102,54 +102,13 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     const [isIslandOpen, setIsIslandOpen] = useState(false);
     const [islandRequested, setIslandRequested] = useState(false);
     const [shopInitialTab, setShopInitialTab] = useState<'monster' | 'world'>('monster');
+    // 完成任務失敗時，在今日挑戰卡片上顯示（取代原本的 alert）
+    const [questError, setQuestError] = useState<string | null>(null);
 
     const questTarget = Math.max(0, progress.total_quests > 0 ? Math.min(progress.total_quests, DAILY_QUEST_TARGET) : DAILY_QUEST_TARGET);
     const isUnlocked = progress.completed_quests >= questTarget && progress.total_quests > 0;
     const remainingQuests = Math.max(0, questTarget - progress.completed_quests);
     const isAllQuestsCompleted = progress.completed_quests === progress.total_quests && progress.total_quests > 0;
-
-    const handleRefreshData = () => {
-        console.log('🔄 Manually refreshing data...');
-        window.location.reload();
-    };
-
-    const handleClearAllCache = async () => {
-        if (!confirm('⚠️ 這將清除所有快取資料和登入狀態，需要重新登入。\n\n確定要繼續嗎？')) {
-            return;
-        }
-
-        console.log('🗑️ Clearing all caches...');
-
-        try {
-            // 1. Clear localStorage
-            localStorage.clear();
-            console.log('✅ localStorage cleared');
-
-            // 2. Clear sessionStorage
-            sessionStorage.clear();
-            console.log('✅ sessionStorage cleared');
-
-            // 3. Clear Service Worker caches
-            if ('caches' in window) {
-                const cacheNames = await caches.keys();
-                await Promise.all(cacheNames.map(name => caches.delete(name)));
-                console.log('✅ Service Worker caches cleared');
-            }
-
-            // 4. Unregister Service Worker
-            if ('serviceWorker' in navigator) {
-                const registrations = await navigator.serviceWorker.getRegistrations();
-                await Promise.all(registrations.map(reg => reg.unregister()));
-                console.log('✅ Service Worker unregistered');
-            }
-
-            alert('✅ 所有快取已清除！\n\n頁面將重新載入。');
-            window.location.href = '/';
-        } catch (error) {
-            console.error('❌ Error clearing cache:', error);
-            alert('清除快取時發生錯誤，請手動重新整理頁面');
-        }
-    };
 
     const handleOpenDialog = () => setIsDialogOpen(true);
 
@@ -230,15 +189,13 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
             setConfirmDialogOpen(false);
             setSelectedQuestId(null);
 
-            // Show user-friendly error message
             const errorMessage = error instanceof Error ? error.message : String(error);
-            if (errorMessage.includes('任務不存在')) {
-                alert('❌ 任務不存在\n\n資料庫中找不到這個任務，可能已被刪除。\n請重新整理頁面（按 F5）。');
-                // Force reload after user dismisses alert
-                setTimeout(() => window.location.reload(), 500);
-            } else {
-                alert(`❌ 完成任務失敗\n\n${errorMessage}\n\n請重試或聯絡管理員`);
-            }
+            setQuestError(
+                errorMessage.includes('任務不存在')
+                    ? '這個任務已經被爸爸媽媽拿掉了，畫面會重新整理。'
+                    : '沒有送出成功，請再按一次「確定完成」。如果一直失敗，請找爸爸媽媽幫忙。',
+            );
+            if (errorMessage.includes('任務不存在')) setTimeout(() => window.location.reload(), 2500);
         }
     };
 
@@ -330,22 +287,6 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                         {isUnlocked && <div className="clay-check"><Check size={14} strokeWidth={3} /></div>}
                     </div>
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={handleRefreshData}
-                            className="p-2 rounded-full transition-all cursor-pointer hover:opacity-80"
-                            style={{ backgroundColor: 'var(--bg-card)', border: '2px solid var(--border-soft)' }}
-                            title="重新整理"
-                        >
-                            <RefreshCw size={18} style={{ color: 'var(--color-text-light)' }} />
-                        </button>
-                        <button
-                            onClick={handleClearAllCache}
-                            className="p-2 rounded-full transition-all cursor-pointer hover:opacity-80"
-                            style={{ backgroundColor: '#FFF3E0', border: '2px solid #FFB74D' }}
-                            title="清除快取"
-                        >
-                            <Trash2 size={18} style={{ color: '#E65100' }} />
-                        </button>
                         {!isAllQuestsCompleted && (
                             <button
                                 onClick={handleOpenDialog}
@@ -367,6 +308,12 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                     </div>
                 </div>
 
+                {questError && (
+                    <div role="alert" className="mb-4 p-3 rounded-xl font-body text-sm flex items-start gap-2" style={{ backgroundColor: '#FEF2F2', color: 'var(--color-danger)', border: '2px solid var(--color-danger)' }}>
+                        <span className="flex-1">{questError}</span>
+                        <button type="button" onClick={() => setQuestError(null)} className="font-bold cursor-pointer" aria-label="關閉提示">✕</button>
+                    </div>
+                )}
                 {!isQuestSectionCollapsed && (
                     <>
                         {/* Progress Section */}
@@ -391,7 +338,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                                 <div className="text-3xl mb-2">⭐</div>
                                 <div className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>可用星幣</div>
                                 <div className="font-heading text-2xl font-bold" style={{ color: 'var(--color-cta)' }}>
-                                    {starBalance || 0}
+                                    {(starBalance || 0).toLocaleString('zh-TW')}
                                 </div>
                                 {familySettings?.exchange_rate_enabled && (starBalance || 0) > 0 && (
                                     <button

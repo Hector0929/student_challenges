@@ -16,6 +16,7 @@ import { IslandScene, type IslandSceneCallbacks, type Selection } from './engine
 import { GAME_ISLAND_ID, QUEST_ISLAND_ID, hhmm, structureKey, toTaipei, tourEnd, type FeatureDef, type IslandChallenge, type IslandDef, type TodayEvent } from './model';
 import { useChallengeIslandModel } from './useChallengeIsland';
 import './challengeIsland.css';
+import { formatStars } from '../../lib/formatStars';
 
 interface ChallengeIslandFullScreenProps {
     isOpen: boolean;
@@ -913,7 +914,7 @@ const IslandView: React.FC<IslandViewProps> = ({ mode: viewMode, userId, starBal
                         <div className="ci-stat">
                             <b>
                                 <Star size={13} fill="currentColor" style={{ display: 'inline', color: '#e0a23a', marginRight: 2 }} />
-                                {starBalance}
+                                {formatStars(starBalance)}
                             </b>
                             <span>星幣</span>
                         </div>

@@ -197,19 +197,6 @@ export const ParentControl: React.FC = () => {
 
     return (
         <div className="max-w-6xl mx-auto relative px-2">
-            {/* PIN Warning Banner */}
-            {user?.pin_code === '0000' && (
-                <div className="clay-card mb-6 p-4 border-yellow-400 bg-yellow-50 flex justify-between items-center animate-bounce-in" style={{ borderRadius: '16px' }}>
-                    <div className="flex items-center gap-3">
-                        <span className="text-2xl">⚠️</span>
-                        <div>
-                            <p className="font-heading font-bold text-yellow-800">安全提醒</p>
-                            <p className="text-sm text-yellow-700">您目前使用的是預設 PIN 碼 (0000)。為了帳號安全，請前往「⚙️ 設定」修改您的 PIN 碼。</p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Decoration */}
             <div className="absolute -right-4 top-20 hidden lg:block pointer-events-none opacity-40">
                 <img src="/commander.webp" alt="Commander" className="w-48 h-48 object-contain" />

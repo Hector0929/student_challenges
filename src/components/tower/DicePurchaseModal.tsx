@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { usePurchaseDice } from '../../hooks/useTowerProgress';
 import { useStarBalance } from '../../hooks/useQuests';
+import { formatStars } from '../../lib/formatStars';
 
 /** Purchase dice modal — shared between Monster Tower V2 and Gen3 */
 export const DicePurchaseModal: React.FC<{ userId: string; onClose: () => void }> = ({ userId, onClose }) => {
@@ -20,7 +21,7 @@ export const DicePurchaseModal: React.FC<{ userId: string; onClose: () => void }
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-cyan-300"><ShoppingCart size={22} /> 購買骰子</h3>
                 <div className="mb-4 text-sm space-y-1 text-slate-300">
                     <p>優惠方案: <span className="font-bold text-cyan-300">5 ⭐ / 2 顆</span></p>
-                    <p>你的星幣: <span className="font-bold text-cyan-300">{starBalance} ⭐</span></p>
+                    <p>你的星幣: <span className="font-bold text-cyan-300">{formatStars(starBalance)} ⭐</span></p>
                 </div>
                 <div className="flex items-center justify-center gap-6 mb-4">
                     <button onClick={() => setPacks(Math.max(1, packs - 1))} className="w-12 h-12 rounded-2xl bg-slate-700 hover:bg-slate-600 text-2xl font-bold transition-colors active:scale-95 text-slate-200">−</button>
