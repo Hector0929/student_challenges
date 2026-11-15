@@ -5,9 +5,8 @@ import { FamilyOnboarding } from './pages/FamilyOnboarding';
 import { RoleSelection } from './pages/RoleSelection';
 import { HomeButton } from './components/HomeButton';
 import { useRealtimeSubscription } from './hooks/useRealtime';
-import { LogOut, ArrowLeft, Lock, LayoutDashboard, Briefcase, Users, Settings, Bug, Map, BookOpen } from 'lucide-react';
+import { LogOut, ArrowLeft, Lock, LayoutDashboard, Briefcase, Users, Settings, Bug, BookOpen } from 'lucide-react';
 import type { Profile } from './types/database';
-import { FloatingEncouragement } from './components/FloatingEncouragement';
 import { ForcePinSetup } from './components/ForcePinSetup';
 import { needsPinSetup } from './lib/pin';
 import { ResetPassword } from './pages/ResetPassword';
@@ -16,7 +15,6 @@ import './index.css';
 
 // 各頁面分開打包：孩子端不會下載家長頁，家長端也不會下載 3D 群島與怪獸塔
 const ChildDashboard = lazy(() => import('./pages/ChildDashboard').then((m) => ({ default: m.ChildDashboard })));
-const ChildHome = lazy(() => import('./pages/ChildHome').then((m) => ({ default: m.ChildHome })));
 const ParentControl = lazy(() => import('./pages/ParentControl').then((m) => ({ default: m.ParentControl })));
 const ParentApproval = lazy(() => import('./pages/ParentApproval').then((m) => ({ default: m.ParentApproval })));
 const ChildManagement = lazy(() => import('./pages/ChildManagement').then((m) => ({ default: m.ChildManagement })));
@@ -29,18 +27,6 @@ const PageLoading = () => (
     <div className="text-xl font-pixel animate-pulse">Loading...</div>
   </div>
 );
-
-// 小孩進來後看哪一頁：使用者清單上點頭像 → 儀表板；點「進入我的群島」→ 群島。
-// 記在 sessionStorage，同一個分頁重新整理會停在原本那頁。
-type ChildView = 'dashboard' | 'island';
-const CHILD_VIEW_KEY = 'questmon-child-view';
-const readChildView = (): ChildView => {
-  try {
-    return sessionStorage.getItem(CHILD_VIEW_KEY) === 'island' ? 'island' : 'dashboard';
-  } catch {
-    return 'dashboard';
-  }
-};
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,19 +67,9 @@ function AppContent() {
   };
 
   const [view, setView] = useState<'dashboard' | 'control' | 'children' | 'concepts' | 'settings' | 'debug'>('dashboard');
-  const [childView, setChildViewState] = useState<ChildView>(readChildView);
-  const setChildView = (next: ChildView) => {
-    setChildViewState(next);
-    try {
-      sessionStorage.setItem(CHILD_VIEW_KEY, next);
-    } catch {
-      /* 無法儲存就只在這次有效 */
-    }
-  };
-
   // Handler for child selection
-  const handleChildSelected = async (child: Profile, destination: ChildView) => {
-    setChildView(destination);
+  // 孩子的主首頁是儀表板；群島從儀表板的入口列進去
+  const handleChildSelected = async (child: Profile) => {
     await loginAsChild(child.id);
   };
 
@@ -165,20 +141,10 @@ function AppContent() {
     );
   }
 
-  // 3. Child -> 自己的學習挑戰群島（整頁）
-  if (user.role === 'child' && childView === 'island') {
-    return (
-      <Suspense fallback={<PageLoading />}>
-        <ChildHome userId={user.id} onSwitchProfile={exitProfile} onClassic={() => setChildView('dashboard')} />
-      </Suspense>
-    );
-  }
-
-  // 4. Parent, or child who chose the classic dashboard
+  // 3. Parent, or child dashboard
   return (
     <div className="min-h-screen py-8 px-4 relative overflow-hidden"
       style={{ background: 'linear-gradient(180deg, #B8E0F6 0%, #E8F4FC 100%)' }}>
-      {user && <FloatingEncouragement userName={user.name} />}
       {/* Header / Logout Area */}
       <div className="max-w-6xl mx-auto mb-4 flex justify-between items-center bg-white/80 p-2 rounded-lg border-2 border-deep-black shadow-md sticky top-2 z-50">
         <div className="font-pixel text-sm flex items-center gap-2">
@@ -207,17 +173,6 @@ function AppContent() {
             >
               <Lock size={14} />
               <span>登出家長</span>
-            </button>
-          )}
-
-          {user.role === 'child' && (
-            <button
-              onClick={() => setChildView('island')}
-              className="flex items-center gap-2 px-3 py-1 bg-sky-100 border-2 border-deep-black hover:bg-sky-200 transition-colors font-pixel text-xs"
-              title="回到學習挑戰群島"
-            >
-              <Map size={14} />
-              <span>回到群島</span>
             </button>
           )}
 

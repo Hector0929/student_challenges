@@ -14,11 +14,6 @@ const useStarBalanceMock = vi.fn();
 const useFamilySettingsMock = vi.fn();
 const useUserMock = vi.fn();
 
-vi.mock('../components/ChildDashboardWidgets', () => ({
-    ParentsMessageCard: () => <div>Parents Message Widget</div>,
-    ExchangeRateCard: () => <div>Exchange Rate Widget</div>,
-}));
-
 vi.mock('../components/ExchangeRequestDialog', () => ({
     ExchangeRequestDialog: ({ isOpen }: { isOpen: boolean }) => isOpen ? <div>Exchange Request Dialog</div> : null,
 }));
@@ -27,16 +22,8 @@ vi.mock('../components/MonsterTowerV4', () => ({
     MonsterTowerV4: ({ isOpen }: { isOpen: boolean }) => isOpen ? <div>Monster Tower Modal</div> : null,
 }));
 
-vi.mock('../components/TowerV4Preview', () => ({
-    TowerV4Preview: ({ onClick }: { onClick: () => void }) => <button onClick={onClick}>Open Tower Preview</button>,
-}));
-
 vi.mock('../components/QuestCard', () => ({
-    QuestCard: () => <div>Quest Card</div>,
-}));
-
-vi.mock('../components/ProgressBar', () => ({
-    ProgressBar: ({ current, total }: { current: number; total: number }) => <div>{current}/{total}</div>,
+    QuestCard: ({ quest }: { quest: { title: string } }) => <div>{quest.title}</div>,
 }));
 
 vi.mock('../components/RPGDialog', () => ({
@@ -54,7 +41,7 @@ vi.mock('../components/RewardTime', () => ({
 }));
 
 vi.mock('../components/LearningArea', () => ({
-    LearningArea: () => <div>Learning Area</div>,
+    LearningArea: ({ middle }: { middle?: React.ReactNode }) => <div>Learning Area{middle}</div>,
 }));
 
 vi.mock('../components/World3D', () => ({
@@ -84,9 +71,11 @@ vi.mock('../hooks/useQuests', () => ({
     useCreateQuest: () => useCreateQuestMock(),
     useUpdateQuestAssignments: () => useUpdateQuestAssignmentsMock(),
     useStarBalance: (...args: unknown[]) => useStarBalanceMock(...args),
+    isQuestVisibleToChild: () => true,
 }));
 
-vi.mock('../hooks/useFamilySettings', () => ({
+vi.mock('../hooks/useFamilySettings', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../hooks/useFamilySettings')>()),
     useFamilySettings: () => useFamilySettingsMock(),
 }));
 
@@ -133,5 +122,49 @@ describe('ChildDashboard', () => {
         fireEvent.click(screen.getByRole('button', { name: /世界商店街/i }));
         expect(screen.getByText('World Shop Street Content')).toBeInTheDocument();
         expect(screen.queryByText('Monster Shop Content')).not.toBeInTheDocument();
+    });
+
+    const quest = (id: string) => ({ id, title: `任務${id}`, reward_points: 10, quest_assignments: [] });
+
+    it('今日進度直接說出下一步，未完成任務只先顯示 3 個，已完成的收起來', () => {
+        useQuestsMock.mockReturnValue({ data: ['1', '2', '3', '4', '5', '6'].map(quest), isLoading: false });
+        useDailyLogsMock.mockReturnValue({ data: [{ quest_id: '1', status: 'completed' }], isLoading: false });
+        useDailyProgressMock.mockReturnValue({ completed_quests: 1, total_quests: 6, earned_points: 0 });
+
+        render(<TestWrapper><ChildDashboard userId="child-1" /></TestWrapper>);
+
+        expect(screen.getByText('再 3 個任務，就能玩遊戲')).toBeInTheDocument();
+        expect(screen.getByText('任務2')).toBeInTheDocument();
+        expect(screen.getByText('任務4')).toBeInTheDocument();
+        expect(screen.queryByText('任務5')).not.toBeInTheDocument();
+        expect(screen.queryByText('任務1')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: /還有 2 個/ }));
+        expect(screen.getByText('任務6')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /已完成 1 個/ }));
+        expect(screen.getByText('任務1')).toBeInTheDocument();
+    });
+
+    it('遊戲還沒解鎖時，入口顯示還差幾個，點了給提示', () => {
+        useQuestsMock.mockReturnValue({ data: ['1', '2', '3', '4'].map(quest), isLoading: false });
+        useDailyProgressMock.mockReturnValue({ completed_quests: 1, total_quests: 4, earned_points: 0 });
+        useFamilySettingsMock.mockReturnValue({ data: { fun_games_enabled: true, exchange_rate_enabled: false } });
+
+        render(<TestWrapper><ChildDashboard userId="child-1" /></TestWrapper>);
+
+        expect(screen.queryByText('Reward Time')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: '遊戲' }));
+        expect(screen.getByText('再完成 3 個任務，遊戲時間就會解鎖喔！')).toBeInTheDocument();
+    });
+
+    it('達到門檻後顯示獎勵時間', () => {
+        useQuestsMock.mockReturnValue({ data: ['1', '2', '3', '4', '5'].map(quest), isLoading: false });
+        useDailyProgressMock.mockReturnValue({ completed_quests: 4, total_quests: 5, earned_points: 0 });
+        useFamilySettingsMock.mockReturnValue({ data: { fun_games_enabled: true, exchange_rate_enabled: false } });
+
+        render(<TestWrapper><ChildDashboard userId="child-1" /></TestWrapper>);
+
+        expect(screen.getByText('遊戲時間解鎖了 🎮')).toBeInTheDocument();
+        expect(screen.getByText('Reward Time')).toBeInTheDocument();
     });
 });

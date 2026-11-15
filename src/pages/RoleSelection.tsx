@@ -6,10 +6,12 @@ import type { Profile } from '../types/database';
 import { useUser } from '../contexts/UserContext';
 import { feedText, useFamilyWordFeed } from '../features/englishHarbour/useWordProgress';
 import { needsPinSetup } from '../lib/pin';
+import { isQuestVisibleToChild, useDailyLogs, useQuests, useStarBalance } from '../hooks/useQuests';
+import { computeTodayProgress } from '../lib/todayProgress';
+import { formatStars } from '../lib/formatStars';
 
 interface RoleSelectionProps {
-    /** 點頭像 → 儀表板；點「進入我的群島」→ 群島 */
-    onChildSelected: (child: Profile, destination: 'dashboard' | 'island') => void;
+    onChildSelected: (child: Profile) => void;
     onParentAuthenticated: () => void;
 }
 
@@ -138,69 +140,25 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
             {/* Main Selection Card */}
             <div className="flex flex-col items-center justify-center relative z-10">
                 <div
-                    className="clay-card max-w-2xl w-full animate-bounce-in p-8"
+                    className="clay-card max-w-4xl w-full animate-bounce-in p-5 sm:p-8"
                     style={{ borderRadius: '32px' }}
                 >
-                    <div className="text-center mb-8">
-                        <div className="text-6xl mb-4 animate-float">🏝️</div>
+                    <div className="text-center mb-6">
+                        <div className="text-5xl mb-3 animate-float">🏝️</div>
                         <h1 className="font-heading text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-                            選擇你的群島
+                            今天誰要出發？
                         </h1>
                         <p className="font-body" style={{ color: 'var(--color-text-light)' }}>
-                            點頭像看個人頁面，點「進入我的群島」直接到你的學習挑戰群島！
+                            點自己的頭像，看看今天的任務。
                         </p>
                     </div>
 
-                    {/* Children Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                    {/* Children Grid：手機兩欄、平板三欄、桌機四欄 */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                         {children && children.length > 0 ? (
-                            children.map((child, i) => {
-                                const [ground, sea] = ISLAND_COLORS[i % ISLAND_COLORS.length];
-                                return (
-                                    <div
-                                        key={child.id}
-                                        className="clay-card p-4 flex flex-col items-center gap-2 min-w-0"
-                                        style={{ borderRadius: '20px', background: `linear-gradient(180deg, #ffffff 0%, ${sea} 100%)` }}
-                                    >
-                                        {/* 點頭像／名字 → 原本的儀表板 */}
-                                        <button
-                                            type="button"
-                                            onClick={() => onChildSelected(child, 'dashboard')}
-                                            className="group flex flex-col items-center gap-2 min-w-0 max-w-full cursor-pointer hover:-translate-y-1 transition-transform"
-                                            title={`${child.name} 的個人頁面`}
-                                            data-testid={`child-dashboard-${child.id}`}
-                                        >
-                                            {/* 小島：六角形地面 + 頭像 */}
-                                            <div className="relative w-24 h-24 flex items-center justify-center">
-                                                <div
-                                                    className="absolute inset-0 shadow-lg group-hover:scale-105 transition-transform"
-                                                    style={{ background: ground, clipPath: 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)' }}
-                                                />
-                                                <div
-                                                    className="absolute inset-2"
-                                                    style={{ background: 'rgba(255,255,255,0.35)', clipPath: 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)' }}
-                                                />
-                                                <span className="relative text-5xl drop-shadow">{child.avatar_url || '👦'}</span>
-                                            </div>
-                                            <span
-                                                className="font-heading font-bold text-base sm:text-lg leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
-                                                style={{ color: 'var(--color-text)' }}
-                                            >
-                                                {child.name}
-                                            </span>
-                                        </button>
-                                        {/* 直接進群島 */}
-                                        <button
-                                            type="button"
-                                            onClick={() => onChildSelected(child, 'island')}
-                                            className="text-xs font-bold text-sky-700 hover:text-sky-900 hover:underline underline-offset-2 px-2 py-1 rounded-lg hover:bg-white/60 cursor-pointer"
-                                            data-testid={`child-island-${child.id}`}
-                                        >
-                                            進入我的群島 →
-                                        </button>
-                                    </div>
-                                );
-                            })
+                            children.map((child, i) => (
+                                <ChildCard key={child.id} child={child} colors={ISLAND_COLORS[i % ISLAND_COLORS.length]} onSelect={() => onChildSelected(child)} />
+                            ))
                         ) : (
                             <div className="col-span-full text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
                                 <p className="font-heading text-lg">尚無註冊的孩子</p>
@@ -314,3 +272,59 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
         </div>
     );
 };
+
+const HEX = 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)';
+
+/** 一張孩子卡＝一個點擊目標；卡上顯示今天還差幾個任務和星幣，兼當家庭總覽 */
+function ChildCard({ child, colors, onSelect }: { child: Profile; colors: [string, string]; onSelect: () => void }) {
+    const [ground, sea] = colors;
+    const { data: quests, isLoading: questsLoading } = useQuests('active', child.family_id);
+    const { data: logs, isLoading: logsLoading } = useDailyLogs(child.id);
+    const loading = questsLoading || logsLoading;
+    const { data: stars } = useStarBalance(child.id);
+    const total = (quests ?? []).filter((q) => isQuestVisibleToChild(q, child.id)).length;
+    const done = (logs ?? []).filter((l) => l.status === 'completed' || l.status === 'verified').length;
+    const p = computeTodayProgress(done, total);
+    const r = 46;
+    const c = 2 * Math.PI * r;
+    const pct = p.total > 0 ? Math.min(1, p.done / p.goal) : 0;
+
+    return (
+        <button
+            type="button"
+            onClick={onSelect}
+            className="group clay-card p-4 flex flex-col items-center gap-1.5 min-w-0 cursor-pointer hover:-translate-y-1 transition-transform"
+            style={{ borderRadius: '20px', background: `linear-gradient(180deg, #ffffff 0%, ${sea} 100%)` }}
+            title={`${child.name} 的首頁`}
+            data-testid={`child-dashboard-${child.id}`}
+        >
+            {/* 小島頭像＋今日進度環（以解鎖遊戲的門檻為滿） */}
+            <div className="relative w-24 h-24 flex items-center justify-center">
+                <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full" aria-hidden="true">
+                    <circle cx="50" cy="50" r={r} fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="6" />
+                    <circle
+                        cx="50"
+                        cy="50"
+                        r={r}
+                        fill="none"
+                        stroke={p.unlocked ? 'var(--color-primary)' : 'var(--color-cta)'}
+                        strokeWidth="6"
+                        strokeLinecap="round"
+                        strokeDasharray={`${c * pct} ${c}`}
+                        transform="rotate(-90 50 50)"
+                        style={{ transition: 'stroke-dasharray .5s ease' }}
+                    />
+                </svg>
+                <div className="absolute inset-[14%] group-hover:scale-105 transition-transform" style={{ background: ground, clipPath: HEX }} />
+                <span className="relative text-4xl drop-shadow">{child.avatar_url || '👦'}</span>
+            </div>
+            <span className="font-heading font-bold text-base sm:text-lg leading-tight truncate max-w-full" style={{ color: 'var(--color-text)' }}>
+                {child.name}
+            </span>
+            <span className="font-body text-xs font-bold" style={{ color: p.total === 0 ? 'var(--color-text-muted)' : p.allDone || p.unlocked ? 'var(--color-primary-dark)' : '#B45309' }}>
+                {loading ? '　' : p.total === 0 ? '今天還沒有任務' : p.allDone ? '今天完成了 🎉' : p.unlocked ? '遊戲時間解鎖 🎮' : `還差 ${p.left} 個任務`}
+            </span>
+            <span className="font-body text-xs tabular-nums" style={{ color: 'var(--color-text-light)' }}>⭐ {formatStars(stars)}</span>
+        </button>
+    );
+}

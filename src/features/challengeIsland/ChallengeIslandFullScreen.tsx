@@ -17,6 +17,7 @@ import { GAME_ISLAND_ID, QUEST_ISLAND_ID, hhmm, structureKey, toTaipei, tourEnd,
 import { useChallengeIslandModel } from './useChallengeIsland';
 import './challengeIsland.css';
 import { formatStars } from '../../lib/formatStars';
+import { computeTodayProgress } from '../../lib/todayProgress';
 
 interface ChallengeIslandFullScreenProps {
     isOpen: boolean;
@@ -904,6 +905,8 @@ const IslandView: React.FC<IslandViewProps> = ({ mode: viewMode, userId, starBal
                     <p className="ci-kicker">CHALLENGE ARCHIPELAGO</p>
                     <h1>一格挑戰，一座相連的群島</h1>
                     <p className="ci-lede">每日任務、學習與遊戲都在這片群島上，今天做過的事會亮起來。</p>
+                    {/* 與孩子首頁共用同一句今日進度（lib/todayProgress） */}
+                    <p className="ci-lede" style={{ fontWeight: 700, marginTop: 6 }}>{computeTodayProgress(stats.questsDone, stats.questsTotal).headline}</p>
                     <div className="ci-stats">
                         <div className={`ci-stat ${stats.questsTotal > 0 && stats.questsDone >= stats.questsTotal ? 'is-good' : 'is-hl'}`}>
                             <b>

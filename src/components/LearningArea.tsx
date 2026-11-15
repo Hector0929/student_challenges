@@ -1,78 +1,139 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { GameModal } from './GameModal';
 import { useFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
-import type { LearningItem } from '../features/learning/types/learning';
+import type { LearningItem, LearningSubjectId } from '../features/learning/types/learning';
 import { LEARNING_ITEMS } from '../features/learning/config/learningItems';
-import { getVisibleLearningItems } from '../features/learning/utils/learningFilters';
-import { toLearningModalPayload } from '../features/learning/utils/learningAdapters';
-import { LearningHub } from '../features/learning/components/LearningHub';
+import { getVisibleLearningItems, groupLearningItemsBySubject } from '../features/learning/utils/learningFilters';
+import { toLearningModalPayload, getLearningItemDisplayName } from '../features/learning/utils/learningAdapters';
+import { SubjectSection } from '../features/learning/components/SubjectSection';
 import { getLearningEmbeddedContent } from '../features/learning/components/reactLearningRegistry';
 import { usePracticeReward } from '../features/learning/hooks/usePracticeReward';
+import { recommendLearning, weeklySubjectCounts } from '../features/learning/utils/learningRecommendations';
+import { useIslandActivity } from '../features/challengeIsland/useChallengeIsland';
 
 interface LearningAreaProps {
     userId: string;
     onGoHome?: () => void;
+    /** 放在「今天推薦」與「全部學習」之間的內容（孩子首頁用來放遊戲入口列） */
+    middle?: React.ReactNode;
 }
 
-export const LearningArea: React.FC<LearningAreaProps> = ({ userId, onGoHome }) => {
+/**
+ * 學習書桌：先推薦，再全部。
+ * - 今天推薦 2–3 個（上次練過的、這週練最少的科目）
+ * - 全部學習預設收合，依科目分頁，每科顯示本週練習次數
+ */
+export const LearningArea: React.FC<LearningAreaProps> = ({ userId, onGoHome, middle }) => {
     const [selectedItem, setSelectedItem] = useState<LearningItem | null>(null);
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [showAll, setShowAll] = useState(false);
+    const [subject, setSubject] = useState<LearningSubjectId | null>(null);
     const grantPracticeReward = usePracticeReward(userId);
+    const { data: records } = useIslandActivity(userId);
 
-    // Fetch family settings for learning area permissions
     const { data: familySettings } = useFamilySettings();
     const learningAreaEnabled = familySettings?.learning_area_enabled ?? DEFAULT_FAMILY_SETTINGS.learning_area_enabled;
     const disabledGames = familySettings?.disabled_games ?? DEFAULT_FAMILY_SETTINGS.disabled_games;
 
-    const learningItems = getVisibleLearningItems(LEARNING_ITEMS, disabledGames);
+    const learningItems = useMemo(() => getVisibleLearningItems(LEARNING_ITEMS, disabledGames), [disabledGames]);
+    const groups = useMemo(() => groupLearningItemsBySubject(learningItems), [learningItems]);
+    const recommendations = useMemo(() => recommendLearning(learningItems, records ?? []), [learningItems, records]);
+    const weekly = useMemo(() => weeklySubjectCounts(learningItems, records ?? []), [learningItems, records]);
+
     const modalPayload = selectedItem ? toLearningModalPayload(selectedItem) : null;
     const embeddedContent = selectedItem ? getLearningEmbeddedContent(selectedItem, userId) : null;
 
-    // If learning area is disabled by parent, don't show at all
-    if (!learningAreaEnabled) {
-        return null;
+    if (!learningAreaEnabled || learningItems.length === 0) {
+        return <>{middle}</>;
     }
 
+    const activeSubject = subject ?? groups[0]?.subject.id ?? null;
+    const activeGroup = groups.find((g) => g.subject.id === activeSubject);
     const handlePracticeComplete = (stars: number) => grantPracticeReward(selectedItem, stars);
 
     return (
-        <div className="clay-card mb-6 p-5 animate-bounce-in" style={{ borderRadius: '20px' }}>
-            {/* Section Header */}
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                        style={{ backgroundColor: 'var(--pastel-blue-bg)', border: '3px solid var(--pastel-blue-border)' }}
-                    >
-                        <BookOpen size={24} style={{ color: 'var(--pastel-blue-text)' }} />
+        <>
+            {/* 今天推薦 */}
+            <section aria-label="今天推薦的學習" className="clay-card p-5 animate-bounce-in" style={{ borderRadius: '20px' }}>
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: 'var(--pastel-blue-bg)', border: '2px solid var(--pastel-blue-border)' }}>
+                        <BookOpen size={20} style={{ color: 'var(--pastel-blue-text)' }} />
                     </div>
                     <div>
-                        <h2 className="font-heading text-xl font-bold" style={{ color: 'var(--color-text)' }}>
-                            學習書桌
-                        </h2>
-                        <p className="font-body text-xs" style={{ color: 'var(--color-text-light)' }}>
-                            隨時都可以練習，不需要星幣喔！
-                        </p>
+                        <h2 className="font-heading text-lg font-bold" style={{ color: 'var(--color-text)' }}>今天推薦的學習</h2>
+                        <p className="font-body text-xs" style={{ color: 'var(--color-text-light)' }}>練滿 3 分鐘可以拿星幣，不需要先完成任務</p>
                     </div>
                 </div>
+                {/* 手機：左右滑；平板以上：並排 */}
+                <div className="flex gap-3 overflow-x-auto snap-x pb-1 -mx-1 px-1 sm:grid sm:grid-cols-3 sm:overflow-visible">
+                    {recommendations.map(({ item, reason }) => (
+                        <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setSelectedItem(item)}
+                            className="snap-start shrink-0 w-[70%] sm:w-auto text-left rounded-2xl p-3 border-2 cursor-pointer transition-transform hover:-translate-y-0.5"
+                            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className="text-2xl">{item.icon}</span>
+                                <span className="font-heading font-bold truncate" style={{ color: 'var(--color-text)' }}>{getLearningItemDisplayName(item)}</span>
+                            </div>
+                            <p className="font-body text-xs mt-1" style={{ color: 'var(--color-primary-dark)' }}>{reason}</p>
+                        </button>
+                    ))}
+                </div>
+            </section>
+
+            {middle}
+
+            {/* 全部學習：預設收合，依科目分頁 */}
+            <section aria-label="全部學習" className="clay-card p-5 md:col-span-2" style={{ borderRadius: '20px' }}>
                 <button
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="p-2 rounded-full transition-all cursor-pointer hover:opacity-80"
-                    style={{ backgroundColor: 'var(--bg-card)', border: '2px solid var(--border-soft)' }}
+                    type="button"
+                    onClick={() => setShowAll((v) => !v)}
+                    aria-expanded={showAll}
+                    className="w-full flex items-center justify-between gap-3 cursor-pointer"
                 >
-                    {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+                    <span className="font-heading text-lg font-bold" style={{ color: 'var(--color-text)' }}>
+                        全部學習 <span className="font-body text-sm font-normal" style={{ color: 'var(--color-text-light)' }}>（{learningItems.length} 個）</span>
+                    </span>
+                    {showAll ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                 </button>
-            </div>
 
-            {!isCollapsed && (
-                <LearningHub
-                    items={learningItems}
-                    onSelectItem={setSelectedItem}
-                />
-            )}
+                <div role="tablist" aria-label="科目" className="flex flex-wrap gap-2 mt-3">
+                    {groups.map((g) => {
+                        const on = showAll && g.subject.id === activeSubject;
+                        return (
+                            <button
+                                key={g.subject.id}
+                                type="button"
+                                role="tab"
+                                aria-selected={on}
+                                onClick={() => {
+                                    setSubject(g.subject.id);
+                                    setShowAll(true);
+                                }}
+                                className="px-3 py-1.5 rounded-full border-2 font-body text-sm cursor-pointer transition-colors"
+                                style={{
+                                    backgroundColor: on ? 'var(--color-cta)' : 'var(--bg-card)',
+                                    borderColor: on ? 'var(--color-cta)' : 'var(--border-soft)',
+                                    color: on ? '#fff' : 'var(--color-text)',
+                                }}
+                            >
+                                {g.subject.icon} {g.subject.name.replace('學習', '')}
+                                <span className="ml-1 text-xs opacity-80">本週 {weekly[g.subject.id] ?? 0}</span>
+                            </button>
+                        );
+                    })}
+                </div>
 
-            {/* Game Modal in Practice Mode */}
+                {showAll && activeGroup && (
+                    <div className="mt-5">
+                        <SubjectSection group={activeGroup} onSelectItem={setSelectedItem} />
+                    </div>
+                )}
+            </section>
+
             {selectedItem && modalPayload && (
                 <GameModal
                     isOpen={!!selectedItem}
@@ -82,15 +143,15 @@ export const LearningArea: React.FC<LearningAreaProps> = ({ userId, onGoHome }) 
                     gameName={modalPayload.gameName}
                     gameId={modalPayload.gameId}
                     userId={userId}
-                    starBalance={0} // Not used in practice mode
-                    onSpendStars={async () => true} // Always succeed
-                    onRefreshBalance={() => { }} // No-op
+                    starBalance={0}
+                    onSpendStars={async () => true}
+                    onRefreshBalance={() => { }}
                     mode="practice"
                     practiceRewardStars={10}
                     onPracticeComplete={handlePracticeComplete}
                     embeddedContent={embeddedContent}
                 />
             )}
-        </div>
+        </>
     );
 };

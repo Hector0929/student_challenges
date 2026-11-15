@@ -1,33 +1,26 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { ParentsMessageCard, ExchangeRateCard } from '../components/ChildDashboardWidgets';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { ExchangeRequestDialog } from '../components/ExchangeRequestDialog';
-import { TowerV4Preview } from '../components/TowerV4Preview';
-
-import { Star, ChevronDown, ChevronUp, Check, Store } from 'lucide-react';
 import { QuestCard } from '../components/QuestCard';
-import { ProgressBar } from '../components/ProgressBar';
 import { RPGDialog } from '../components/RPGDialog';
 import { RPGButton } from '../components/RPGButton';
 import { RewardTime } from '../components/RewardTime';
 import { WishQuestDialog } from '../components/WishQuestDialog';
 import { LearningArea } from '../components/LearningArea';
-import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useStarBalance } from '../hooks/useQuests';
-import { useFamilySettings } from '../hooks/useFamilySettings';
-import { WorldPreviewCard } from '../components/WorldPreviewCard';
+import { TodayProgressCard } from '../components/TodayProgressCard';
+import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useStarBalance, isQuestVisibleToChild } from '../hooks/useQuests';
+import { useFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
 import { useWorldPersistence } from '../hooks/useWorldPersistence';
-import { ChallengeIslandPreviewCard } from '../features/challengeIsland/ChallengeIslandPreviewCard';
+import { useUser } from '../contexts/UserContext';
 import type { WorldTheme } from '../hooks/useWorldState';
-
-import { DAILY_QUEST_TARGET } from '../lib/constants';
+import type { Quest } from '../types/database';
+import { computeTodayProgress } from '../lib/todayProgress';
 import { useMountOnFirstOpen } from '../hooks/useMountOnFirstOpen';
 
-// 怪獸塔、世界島、商店都是第一次打開時才下載（見 useMountOnFirstOpen）
+// 怪獸塔、世界島、商店、3D 群島都是第一次打開時才下載（見 useMountOnFirstOpen）
 const MonsterTowerV4 = lazy(() => import('../components/MonsterTowerV4').then((m) => ({ default: m.MonsterTowerV4 })));
 const WorldFullScreen = lazy(() => import('../components/WorldFullScreen').then((m) => ({ default: m.WorldFullScreen })));
 const ShopModal = lazy(() => import('../components/ShopModal').then((m) => ({ default: m.ShopModal })));
-
-
-// 3D 群島第一次打開時才下載
 const ChallengeIslandFullScreen = lazy(() =>
     import('../features/challengeIsland/ChallengeIslandFullScreen').then((m) => ({ default: m.ChallengeIslandFullScreen })),
 );
@@ -37,34 +30,26 @@ interface ChildDashboardProps {
     onGoHome?: () => void;
 }
 
+/** 未完成的任務預設只顯示幾個，其餘收起來 */
+const VISIBLE_TODO = 3;
 
+const greetingByHour = () => {
+    const h = new Date().getHours();
+    if (h < 11) return '早安';
+    if (h < 14) return '午安';
+    if (h < 18) return '下午好';
+    return '晚安';
+};
+
+/**
+ * 孩子首頁（主首頁）：越靠近「今天要做的事」越往上放。
+ * 手機單欄：問候 → 今日進度 → 未完成任務 → 今天推薦的學習 → 遊戲入口 → 全部學習。
+ * 平板以上兩欄：左欄任務、右欄學習與入口；全部學習橫跨兩欄。
+ */
 export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome }) => {
-    // Log current user ID for debugging cross-browser issues
-    useEffect(() => {
-        console.log('👤 ChildDashboard mounted with userId:', userId);
-        console.log('📅 Today Date:', new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' }));
-    }, [userId]);
-
+    const { user } = useUser();
     const { data: allQuests, isLoading: questsLoading } = useQuests();
-
-    // Filter quests: Show if (Global/No assignments) OR (Assigned to current user)
-    const quests = allQuests?.filter(quest => {
-        // If undefined or empty array, it's global
-        if (!quest.quest_assignments || quest.quest_assignments.length === 0) {
-            return true;
-        }
-        // Check if assigned to this user
-        if (quest.quest_assignments.some(qa => qa.child_id === userId)) {
-            return true;
-        }
-
-        // Backward compatibility:
-        // some legacy approved wishes were mistakenly assigned only to created_by.
-        // If every assignment equals created_by, treat as global so child can still see it.
-        const assignedOnlyToCreator = !!quest.created_by
-            && quest.quest_assignments.every((qa) => qa.child_id === quest.created_by);
-        return assignedOnlyToCreator;
-    });
+    const quests = allQuests?.filter((quest) => isQuestVisibleToChild(quest, userId)) ?? [];
     const { data: logs, isLoading: logsLoading } = useDailyLogs(userId);
     const progress = useDailyProgress(userId);
     const { data: starBalance } = useStarBalance(userId);
@@ -72,7 +57,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     const { data: familySettings } = useFamilySettings();
     const { data: persistedWorld } = useWorldPersistence(userId);
 
-    // Local state for immediate UI feedback — synced from DB on load
+    // 家園背景：本地狀態立刻反映，存檔由 WorldFullScreen 自己處理
     const [localTheme, setLocalTheme] = useState<WorldTheme>('normal');
     const serverTheme = persistedWorld?.worldLab?.worldTheme;
     const [syncedServerTheme, setSyncedServerTheme] = useState<WorldTheme | undefined>(undefined);
@@ -81,140 +66,96 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
         if (serverTheme) setLocalTheme(serverTheme);
     }
 
-    const handleThemeChange = (theme: WorldTheme) => {
-        // Just update local state. The actual Supabase save is done inside
-        // WorldFullScreen using its fresh local worldLab, which avoids
-        // overwriting resource inventory with stale server-cache data.
-        setLocalTheme(theme);
-    };
-
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isQuestSectionCollapsed, setIsQuestSectionCollapsed] = useState(false);
     const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
     const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
     const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false);
     const [isTowerOpen, setIsTowerOpen] = useState(false);
     const [isShopOpen, setIsShopOpen] = useState(false);
     const [isWorldOpen, setIsWorldOpen] = useState(false);
+    const [isIslandOpen, setIsIslandOpen] = useState(false);
     const towerMounted = useMountOnFirstOpen(isTowerOpen);
     const shopMounted = useMountOnFirstOpen(isShopOpen);
     const worldMounted = useMountOnFirstOpen(isWorldOpen);
-    const [isIslandOpen, setIsIslandOpen] = useState(false);
-    const [islandRequested, setIslandRequested] = useState(false);
-    const [shopInitialTab, setShopInitialTab] = useState<'monster' | 'world'>('monster');
-    // 完成任務失敗時，在今日挑戰卡片上顯示（取代原本的 alert）
+    const islandMounted = useMountOnFirstOpen(isIslandOpen);
+    const [showAllTodo, setShowAllTodo] = useState(false);
+    const [showDone, setShowDone] = useState(false);
     const [questError, setQuestError] = useState<string | null>(null);
+    const [lockedHint, setLockedHint] = useState(false);
+    const [celebrate, setCelebrate] = useState<string | null>(null);
+    const rewardRef = useRef<HTMLDivElement>(null);
 
-    const questTarget = Math.max(0, progress.total_quests > 0 ? Math.min(progress.total_quests, DAILY_QUEST_TARGET) : DAILY_QUEST_TARGET);
-    const isUnlocked = progress.completed_quests >= questTarget && progress.total_quests > 0;
-    const remainingQuests = Math.max(0, questTarget - progress.completed_quests);
-    const isAllQuestsCompleted = progress.completed_quests === progress.total_quests && progress.total_quests > 0;
+    const today = computeTodayProgress(progress.completed_quests, progress.total_quests);
+    const funGamesEnabled = familySettings?.fun_games_enabled ?? DEFAULT_FAMILY_SETTINGS.fun_games_enabled;
+    const exchangeEnabled = !!familySettings?.exchange_rate_enabled;
+    const parentMessage = familySettings?.parent_message_enabled ? familySettings.parent_message || DEFAULT_FAMILY_SETTINGS.parent_message : null;
 
-    const handleOpenDialog = () => setIsDialogOpen(true);
-
-    const handleCloseDialog = () => setIsDialogOpen(false);
-
-
-    const handleCompleteQuest = async (questId: string) => {
-        // Prevent double submission - check if already completed
-        if (isQuestCompleted(questId)) {
-            console.log('Quest already marked as completed in UI');
-            return;
+    // 慶祝只在「這次打開期間」剛解鎖／剛全部完成時出現一次（取代原本一直漂浮的背景文字）
+    // 在 render 時比對上一次的狀態（第一次載入不算），提示 4 秒後自動消失
+    const dataReady = !questsLoading && !logsLoading;
+    const [seen, setSeen] = useState<{ unlocked: boolean; allDone: boolean } | null>(null);
+    if (dataReady && (!seen || seen.unlocked !== today.unlocked || seen.allDone !== today.allDone)) {
+        if (seen) {
+            if (today.allDone && !seen.allDone) setCelebrate('今天的任務全部完成！🎉');
+            else if (today.unlocked && !seen.unlocked) setCelebrate('遊戲時間解鎖了！🎮');
         }
+        setSeen({ unlocked: today.unlocked, allDone: today.allDone });
+    }
+    useEffect(() => {
+        if (!celebrate) return;
+        const t = setTimeout(() => setCelebrate(null), 4000);
+        return () => clearTimeout(t);
+    }, [celebrate]);
 
-        // Only auto-approve if the user is CURRENTLY a parent
-        // Note: Children completing quests should always go to 'completed' status
-        // Parent approval should only happen through the ParentApproval page
-        const isParentApproved = false; // Children always need parent approval
-
-        try {
-            await completeQuestMutation.mutateAsync({
-                userId,
-                questId,
-                isParentApproved,
-            });
-        } catch (error) {
-            // 409 means already completed - this shouldn't happen due to UI check above
-            // but handle it gracefully just in case
-            const msg = error instanceof Error ? error.message : '';
-            const code = (error as { code?: string })?.code;
-
-            if (msg.includes('409') || code === '23505') {
-                console.log('Quest already completed today (409 conflict)');
-                return;
-            }
-            console.error('Failed to complete quest:', error);
-        }
+    const getQuestStatus = (questId: string): 'pending' | 'completed' | 'verified' => {
+        const log = logs?.find((l) => l.quest_id === questId);
+        return log?.status || 'pending';
     };
+    const isQuestCompleted = (questId: string) => getQuestStatus(questId) !== 'pending';
 
     const handleQuestClick = (questId: string) => {
-        // Double check the quest is not already completed before opening dialog
-        if (isQuestCompleted(questId)) {
-            console.log('⚠️ Quest already completed, blocking dialog:', questId.substring(0, 8));
-            return;
-        }
-
-        console.log('🎯 Opening confirmation dialog for quest:', questId.substring(0, 8));
+        if (isQuestCompleted(questId)) return;
         setSelectedQuestId(questId);
         setConfirmDialogOpen(true);
     };
 
+    const closeConfirm = () => {
+        setConfirmDialogOpen(false);
+        setSelectedQuestId(null);
+    };
+
     const handleConfirmComplete = async () => {
-        if (!selectedQuestId) return;
-
-        // Prevent duplicate clicks while mutation is in progress
-        if (completeQuestMutation.isPending) {
-            console.log('⏳ Mutation already in progress, ignoring click');
-            return;
-        }
-
-        // Final check before submitting
-        if (isQuestCompleted(selectedQuestId)) {
-            console.log('⚠️ Quest already completed, closing dialog:', selectedQuestId.substring(0, 8));
-            setConfirmDialogOpen(false);
-            setSelectedQuestId(null);
-            return;
-        }
-
-        console.log('🚀 Submitting quest completion:', selectedQuestId.substring(0, 8));
-
+        if (!selectedQuestId || completeQuestMutation.isPending) return;
+        if (isQuestCompleted(selectedQuestId)) return closeConfirm();
         try {
-            await handleCompleteQuest(selectedQuestId);
-            // Small delay to allow cache invalidation and refetch to complete
-            await new Promise(resolve => setTimeout(resolve, 150));
-            setConfirmDialogOpen(false);
-            setSelectedQuestId(null);
+            await completeQuestMutation.mutateAsync({ userId, questId: selectedQuestId, isParentApproved: false });
+            setQuestError(null);
         } catch (error) {
-            console.error('❌ Failed to complete quest:', error);
-            setConfirmDialogOpen(false);
-            setSelectedQuestId(null);
-
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            setQuestError(
-                errorMessage.includes('任務不存在')
-                    ? '這個任務已經被爸爸媽媽拿掉了，畫面會重新整理。'
-                    : '沒有送出成功，請再按一次「確定完成」。如果一直失敗，請找爸爸媽媽幫忙。',
-            );
-            if (errorMessage.includes('任務不存在')) setTimeout(() => window.location.reload(), 2500);
+            const msg = error instanceof Error ? error.message : String(error);
+            const code = (error as { code?: string })?.code;
+            // 409／23505：今天已經完成過，當作成功
+            if (!(msg.includes('409') || code === '23505')) {
+                console.error('Failed to complete quest:', error);
+                setQuestError(
+                    msg.includes('任務不存在')
+                        ? '這個任務已經被爸爸媽媽拿掉了，畫面會重新整理。'
+                        : '沒有送出成功，請再按一次「確定完成」。如果一直失敗，請找爸爸媽媽幫忙。',
+                );
+                if (msg.includes('任務不存在')) setTimeout(() => window.location.reload(), 2500);
+            }
         }
+        // 等快取更新再關閉，避免對話框關掉時任務還沒變成「已完成」
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        closeConfirm();
     };
 
-    const isQuestCompleted = (questId: string): boolean => {
-        const completed = logs?.some(
-            log => log.quest_id === questId && (log.status === 'completed' || log.status === 'verified')
-        ) || false;
-
-        if (completed) {
-            console.log(`✅ Quest ${questId.substring(0, 8)}... is completed/verified`);
+    const openGames = () => {
+        if (!today.unlocked) {
+            setLockedHint(true);
+            setTimeout(() => setLockedHint(false), 3000);
+            return;
         }
-
-        return completed;
-    };
-
-    const getQuestStatus = (questId: string): 'pending' | 'completed' | 'verified' => {
-        const log = logs?.find(log => log.quest_id === questId);
-        const status = log?.status || 'pending';
-        return status;
+        rewardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
     if (questsLoading || logsLoading) {
@@ -228,84 +169,95 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
         );
     }
 
+    const todo = quests.filter((q) => getQuestStatus(q.id) === 'pending');
+    const done = quests
+        .filter((q) => getQuestStatus(q.id) !== 'pending')
+        // 等爸媽確認的放前面，已核准的放後面
+        .sort((a, b) => (getQuestStatus(a.id) === 'completed' ? 0 : 1) - (getQuestStatus(b.id) === 'completed' ? 0 : 1));
+    const visibleTodo = showAllTodo ? todo : todo.slice(0, VISIBLE_TODO);
+    const hiddenTodo = todo.length - visibleTodo.length;
+
+    const renderQuest = (quest: Quest) => (
+        <QuestCard
+            key={quest.id}
+            quest={quest}
+            isCompleted={isQuestCompleted(quest.id)}
+            status={getQuestStatus(quest.id)}
+            onComplete={handleQuestClick}
+            disabled={completeQuestMutation.isPending}
+        />
+    );
+
+    const entries = (
+        <section aria-label="遊戲入口" className="clay-card p-4" style={{ borderRadius: '20px' }}>
+            <div className={`grid gap-2 ${funGamesEnabled ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-4'}`}>
+                <EntryTile icon="🏝️" label="群島" onClick={() => setIsIslandOpen(true)} />
+                <EntryTile icon="🗼" label="怪獸塔" onClick={() => setIsTowerOpen(true)} />
+                <EntryTile icon="🏡" label="家園" sub={persistedWorld?.worldLab?.islandLevel ? `Lv.${persistedWorld.worldLab.islandLevel}` : undefined} onClick={() => setIsWorldOpen(true)} />
+                <EntryTile icon="🏪" label="商店街" onClick={() => setIsShopOpen(true)} />
+                {funGamesEnabled && (
+                    <EntryTile
+                        icon={today.unlocked ? '🎮' : '🔒'}
+                        label="遊戲"
+                        sub={today.unlocked ? '已解鎖' : `還差 ${today.left} 個`}
+                        locked={!today.unlocked}
+                        onClick={openGames}
+                    />
+                )}
+            </div>
+            {lockedHint && (
+                <p role="status" className="font-body text-sm mt-3 text-center" style={{ color: 'var(--color-text-light)' }}>
+                    再完成 {today.left} 個任務，遊戲時間就會解鎖喔！
+                </p>
+            )}
+        </section>
+    );
+
     return (
-        <div className="max-w-4xl mx-auto">
-            {/* Widgets Section */}
-            <div className="grid gap-4 mb-6 md:grid-cols-[2fr_1fr_160px] items-stretch">
-                <ParentsMessageCard />
-                <ExchangeRateCard />
-                <button
-                    type="button"
-                    onClick={() => {
-                        setShopInitialTab('monster');
-                        setIsShopOpen(true);
-                    }}
-                    className="bg-white border-4 border-deep-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[1px] transition-all flex flex-col items-center justify-center gap-2 min-h-[96px]"
-                >
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-purple-100 border-2 border-purple-300">
-                        <Store size={24} className="text-purple-700" />
-                    </div>
-                    <span className="font-pixel text-sm text-deep-black">商店街</span>
-                </button>
-            </div>
+        <div className="max-w-5xl mx-auto grid gap-5 md:grid-cols-2 md:items-start">
+            {/* 問候＋父母的叮嚀 */}
+            <section aria-label="問候" className="clay-card p-5 flex items-start gap-4 md:self-stretch" style={{ borderRadius: '20px' }}>
+                <span className="w-14 h-14 shrink-0 rounded-full flex items-center justify-center text-3xl" style={{ backgroundColor: 'var(--bg-card)', border: '3px solid var(--border-soft)' }}>
+                    {user?.avatar_url || '👦'}
+                </span>
+                <div className="min-w-0 flex-1">
+                    <h1 className="font-heading text-xl font-bold" style={{ color: 'var(--color-text)' }}>
+                        {greetingByHour()}，{user?.name || '冒險家'}！
+                    </h1>
+                    {parentMessage ? (
+                        <p className="font-body text-sm mt-1 leading-relaxed" style={{ color: 'var(--color-text-light)' }}>
+                            <span aria-hidden="true">💬 </span>
+                            <span className="sr-only">父母的叮嚀：</span>
+                            {parentMessage}
+                        </p>
+                    ) : (
+                        <p className="font-body text-sm mt-1" style={{ color: 'var(--color-text-light)' }}>今天也一起加油吧！</p>
+                    )}
+                    {exchangeEnabled && (
+                        <p className="font-body text-xs mt-2" style={{ color: 'var(--color-text-muted)' }}>
+                            1 ⭐ = {familySettings?.star_to_twd_rate ?? DEFAULT_FAMILY_SETTINGS.star_to_twd_rate} 元
+                        </p>
+                    )}
+                </div>
+            </section>
 
-            {/* 學習挑戰群島 — 每日任務與學習進度的 3D 地圖 */}
-            <div className="mb-6">
-                <ChallengeIslandPreviewCard
-                    completedQuests={progress.completed_quests}
-                    totalQuests={progress.total_quests}
-                    onClick={() => {
-                        setIslandRequested(true);
-                        setIsIslandOpen(true);
-                    }}
-                />
-            </div>
+            <TodayProgressCard
+                done={progress.completed_quests}
+                total={progress.total_quests}
+                starBalance={starBalance || 0}
+                onExchange={exchangeEnabled ? () => setIsExchangeDialogOpen(true) : undefined}
+            />
 
-            {/* Monster Tower Preview — 3D 螺旋怪獸塔 V4（V3 仍可從 DebugPage 開啟） */}
-            <div className="mb-6">
-                <TowerV4Preview userId={userId} onClick={() => setIsTowerOpen(true)} />
-            </div>
-
-            {/* 3D World Preview Card */}
-            <div className="mb-6">
-                <WorldPreviewCard
-                    islandLevel={persistedWorld?.worldLab?.islandLevel}
-                    heroLevel={persistedWorld?.worldLab?.heroLevel}
-                    timeOfDay={persistedWorld?.worldLab?.timeOfDay}
-                    unlockedPlots={Math.max(0, Math.min(6, (persistedWorld?.worldLab?.islandLevel ?? 1) - 1))}
-                    totalPlots={6}
-                    onClick={() => setIsWorldOpen(true)}
-                />
-            </div>
-
-            {/* Header Section */}
-            <div className="clay-card mb-6 p-5 animate-bounce-in" style={{ borderRadius: '20px' }}>
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        <span className="text-3xl">🎯</span>
-                        <h2 className="font-heading text-xl font-bold" style={{ color: 'var(--color-text)' }}>今日挑戰</h2>
-                        {isUnlocked && <div className="clay-check"><Check size={14} strokeWidth={3} /></div>}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {!isAllQuestsCompleted && (
-                            <button
-                                onClick={handleOpenDialog}
-                                className="clay-btn py-2 px-4 text-sm cursor-pointer flex items-center gap-1"
-                                style={{ borderRadius: '12px' }}
-                            >
-                                ✨ 想要新任務
-                            </button>
-                        )}
-                        {isAllQuestsCompleted && (
-                            <button
-                                onClick={() => setIsQuestSectionCollapsed(!isQuestSectionCollapsed)}
-                                className="p-2 rounded-full transition-all cursor-pointer hover:opacity-80"
-                                style={{ backgroundColor: 'var(--bg-card)', border: '2px solid var(--border-soft)' }}
-                            >
-                                {isQuestSectionCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-                            </button>
-                        )}
-                    </div>
+            {/* 今日任務：未完成在前，已完成收起來 */}
+            <section aria-label="今日任務" className="clay-card p-5 md:row-span-2" style={{ borderRadius: '20px' }}>
+                <div className="flex items-center justify-between gap-3 mb-4">
+                    <h2 className="font-heading text-lg font-bold" style={{ color: 'var(--color-text)' }}>
+                        🎯 今日任務
+                        {todo.length > 0 && <span className="font-body text-sm font-normal ml-2" style={{ color: 'var(--color-text-light)' }}>還有 {todo.length} 個</span>}
+                    </h2>
+                    <button type="button" onClick={() => setIsDialogOpen(true)} className="clay-btn py-2 px-3 text-sm cursor-pointer whitespace-nowrap" style={{ borderRadius: '12px' }}>
+                        ✨ 想要新任務
+                    </button>
                 </div>
 
                 {questError && (
@@ -314,189 +266,87 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                         <button type="button" onClick={() => setQuestError(null)} className="font-bold cursor-pointer" aria-label="關閉提示">✕</button>
                     </div>
                 )}
-                {!isQuestSectionCollapsed && (
-                    <>
-                        {/* Progress Section */}
-                        <div className="mb-4">
-                            <ProgressBar
-                                current={progress.completed_quests}
-                                total={questTarget}
-                                label={`每日目標`}
-                            />
-                        </div>
 
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="clay-card p-4 text-center" style={{ borderRadius: '16px' }}>
-                                <div className="text-3xl mb-2">🎯</div>
-                                <div className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>已完成</div>
-                                <div className="font-heading text-xl font-bold" style={{ color: 'var(--color-primary)' }}>
-                                    {progress.completed_quests}/{progress.total_quests}
-                                </div>
+                {quests.length === 0 ? (
+                    <div className="text-center py-6">
+                        <div className="text-5xl mb-3">😴</div>
+                        <p className="font-heading" style={{ color: 'var(--color-text)' }}>目前沒有任務</p>
+                        <p className="font-body text-sm mt-1" style={{ color: 'var(--color-text-light)' }}>請爸爸媽媽新增每日任務</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {todo.length === 0 && (
+                            <p className="font-body text-center py-3" style={{ color: 'var(--color-primary-dark)' }}>今天的任務都做完了，好棒！</p>
+                        )}
+                        {visibleTodo.map(renderQuest)}
+                        {hiddenTodo > 0 && (
+                            <button type="button" onClick={() => setShowAllTodo(true)} className="w-full py-2 rounded-xl font-body text-sm cursor-pointer flex items-center justify-center gap-1" style={{ backgroundColor: 'var(--bg-card)', border: '2px dashed var(--border-soft)', color: 'var(--color-text-light)' }}>
+                                還有 {hiddenTodo} 個 <ChevronDown size={16} />
+                            </button>
+                        )}
+                        {done.length > 0 && (
+                            <div className="pt-2">
+                                <button type="button" onClick={() => setShowDone((v) => !v)} aria-expanded={showDone} className="w-full flex items-center justify-between font-body text-sm cursor-pointer py-1" style={{ color: 'var(--color-text-light)' }}>
+                                    <span>已完成 {done.length} 個（送給爸爸媽媽確認）</span>
+                                    {showDone ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                </button>
+                                {showDone && <div className="space-y-3 mt-2">{done.map(renderQuest)}</div>}
                             </div>
-                            <div className="clay-card p-4 text-center" style={{ borderRadius: '16px' }}>
-                                <div className="text-3xl mb-2">⭐</div>
-                                <div className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>可用星幣</div>
-                                <div className="font-heading text-2xl font-bold" style={{ color: 'var(--color-cta)' }}>
-                                    {(starBalance || 0).toLocaleString('zh-TW')}
-                                </div>
-                                {familySettings?.exchange_rate_enabled && (starBalance || 0) > 0 && (
-                                    <button
-                                        onClick={() => setIsExchangeDialogOpen(true)}
-                                        className="mt-2 clay-btn w-full py-2 text-sm cursor-pointer"
-                                        style={{ borderRadius: '12px' }}
-                                    >
-                                        兌換
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </>
+                        )}
+                    </div>
                 )}
-            </div>
+            </section>
 
-            {/* Quest List */}
-            {!isQuestSectionCollapsed && (
-                <div className="space-y-4 mb-6">
-                    {quests && quests.length > 0 ? (
-                        quests.map((quest) => (
-                            <div key={quest.id} className="animate-bounce-in">
-                                <QuestCard
-                                    quest={quest}
-                                    isCompleted={isQuestCompleted(quest.id)}
-                                    status={getQuestStatus(quest.id)}
-                                    onComplete={handleQuestClick}
-                                    disabled={completeQuestMutation.isPending}
-                                />
-                            </div>
-                        ))
-                    ) : (
-                        <div className="clay-card text-center py-8" style={{ borderRadius: '20px' }}>
-                            <div className="text-6xl mb-4">😴</div>
-                            <p className="font-heading text-lg" style={{ color: 'var(--color-text)' }}>目前沒有任務</p>
-                            <p className="font-body text-sm mt-2" style={{ color: 'var(--color-text-light)' }}>請家長新增每日任務</p>
-                        </div>
-                    )}
+            {/* 今天推薦的學習 → 遊戲入口 → 全部學習（全部學習在 LearningArea 裡橫跨兩欄） */}
+            <LearningArea userId={userId} onGoHome={onGoHome} middle={entries} />
+
+            {funGamesEnabled && today.unlocked && (
+                <div ref={rewardRef} className="md:col-span-2 scroll-mt-24">
+                    <RewardTime isUnlocked remainingQuests={today.left} totalQuests={today.goal} userId={userId} onGoHome={onGoHome} />
                 </div>
             )}
 
-            {/* Learning Area Section (Always Visible) */}
-            <LearningArea userId={userId} onGoHome={onGoHome} />
+            {celebrate && (
+                <div role="status" className="fixed left-1/2 -translate-x-1/2 bottom-8 z-[60] px-6 py-3 rounded-full shadow-xl font-heading text-lg animate-bounce-in" style={{ backgroundColor: 'var(--color-cta)', color: '#fff' }}>
+                    {celebrate}
+                </div>
+            )}
 
-            {/* Reward Time Section */}
-            <RewardTime
-                isUnlocked={isUnlocked}
-                remainingQuests={remainingQuests}
-                totalQuests={questTarget}
-                userId={userId}
-                onGoHome={onGoHome}
-            />
+            <WishQuestDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} userId={userId} />
 
-            {/* Completion Message */}
-            {
-                progress.completed_quests === progress.total_quests && progress.total_quests > 0 && !isQuestSectionCollapsed && (
-                    <div
-                        className="clay-card mt-6 text-center py-8 animate-bounce-in"
-                        style={{ borderRadius: '20px', backgroundColor: '#FFF9E8' }}
-                    >
-                        <div className="text-6xl mb-4">🎉</div>
-                        <h3 className="font-heading text-xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-                            太棒了！
-                        </h3>
-                        <p className="font-body" style={{ color: 'var(--color-text-light)' }}>
-                            你已經完成今天所有的任務！
-                        </p>
-                        <div className="mt-4 flex items-center justify-center gap-2">
-                            <Star style={{ color: 'var(--color-cta)' }} fill="currentColor" />
-                            <span className="font-heading text-2xl font-bold" style={{ color: 'var(--color-cta)' }}>
-                                +{progress.earned_points}
-                            </span>
-                            <Star style={{ color: 'var(--color-cta)' }} fill="currentColor" />
-                        </div>
-                    </div>
-                )
-            }
-            {/* Create Quest Dialog */}
-            <WishQuestDialog isOpen={isDialogOpen} onClose={handleCloseDialog} userId={userId} />
-
-            {/* Confirmation Dialog */}
             <RPGDialog
                 isOpen={confirmDialogOpen}
-                onClose={() => {
-                    setConfirmDialogOpen(false);
-                    setSelectedQuestId(null); // 清除选中的任务ID
-                }}
+                onClose={closeConfirm}
                 title="確定完成了嗎？"
                 footer={
                     <div className="flex gap-3 justify-end">
-                        <RPGButton
-                            onClick={() => {
-                                setConfirmDialogOpen(false);
-                                setSelectedQuestId(null); // 清除选中的任务ID
-                            }}
-                            variant="secondary"
-                        >
-                            取消
-                        </RPGButton>
-                        <RPGButton
-                            onClick={handleConfirmComplete}
-                            disabled={completeQuestMutation.isPending}
-                        >
+                        <RPGButton onClick={closeConfirm} variant="secondary">取消</RPGButton>
+                        <RPGButton onClick={handleConfirmComplete} disabled={completeQuestMutation.isPending}>
                             {completeQuestMutation.isPending ? '送出中...' : '確定完成！'}
                         </RPGButton>
                     </div>
                 }
             >
-                <p className="text-sm text-gray-700">
-                    完成後將送出給爸爸媽媽審核喔！
-                </p>
+                <p className="text-sm text-gray-700">完成後將送出給爸爸媽媽審核喔！</p>
             </RPGDialog>
 
-            {/* Exchange Request Dialog */}
-            <ExchangeRequestDialog
-                isOpen={isExchangeDialogOpen}
-                onClose={() => setIsExchangeDialogOpen(false)}
-            />
+            <ExchangeRequestDialog isOpen={isExchangeDialogOpen} onClose={() => setIsExchangeDialogOpen(false)} />
 
-            {/* Monster Tower Gen3 Modal (2.5D 新版) */}
             {towerMounted && (
                 <Suspense fallback={null}>
-                    <MonsterTowerV4
-                        userId={userId}
-                        isOpen={isTowerOpen}
-                        onClose={() => setIsTowerOpen(false)}
-                    />
+                    <MonsterTowerV4 userId={userId} isOpen={isTowerOpen} onClose={() => setIsTowerOpen(false)} />
                 </Suspense>
             )}
-
-            {/* Monster Shop Modal */}
             {shopMounted && (
                 <Suspense fallback={null}>
-                    <ShopModal
-                        isOpen={isShopOpen}
-                        onClose={() => setIsShopOpen(false)}
-                        onGoHome={onGoHome}
-                        userId={userId}
-                        starBalance={starBalance || 0}
-                        initialTab={shopInitialTab}
-                    />
+                    <ShopModal isOpen={isShopOpen} onClose={() => setIsShopOpen(false)} onGoHome={onGoHome} userId={userId} starBalance={starBalance || 0} initialTab="monster" />
                 </Suspense>
             )}
-
-            {/* 學習挑戰群島 Full Screen */}
-            {islandRequested && (
+            {islandMounted && (
                 <Suspense fallback={null}>
-                    <ChallengeIslandFullScreen
-                        isOpen={isIslandOpen}
-                        onClose={() => setIsIslandOpen(false)}
-                        onGoHome={onGoHome}
-                        userId={userId}
-                        starBalance={starBalance || 0}
-                    />
+                    <ChallengeIslandFullScreen isOpen={isIslandOpen} onClose={() => setIsIslandOpen(false)} onGoHome={onGoHome} userId={userId} starBalance={starBalance || 0} />
                 </Suspense>
             )}
-
-            {/* World Full Screen Modal */}
             {worldMounted && (
                 <Suspense fallback={null}>
                     <WorldFullScreen
@@ -506,10 +356,30 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                         userId={userId}
                         starBalance={starBalance || 0}
                         worldTheme={localTheme}
-                        onThemeChange={handleThemeChange}
+                        onThemeChange={setLocalTheme}
                     />
                 </Suspense>
             )}
-        </div >
+        </div>
     );
 };
+
+function EntryTile({ icon, label, sub, locked, onClick }: { icon: string; label: string; sub?: string; locked?: boolean; onClick: () => void }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            aria-label={label}
+            className="flex flex-col items-center justify-center gap-1 rounded-2xl py-3 px-1 border-2 cursor-pointer transition-transform hover:-translate-y-0.5 min-w-0"
+            style={{
+                backgroundColor: locked ? 'var(--border-soft)' : 'var(--bg-card)',
+                borderColor: 'var(--border-soft)',
+                opacity: locked ? 0.85 : 1,
+            }}
+        >
+            <span className="text-2xl leading-none" aria-hidden="true">{icon}</span>
+            <span className="font-heading text-sm font-bold truncate max-w-full" style={{ color: 'var(--color-text)' }}>{label}</span>
+            {sub && <span className="font-body text-[11px] truncate max-w-full" style={{ color: 'var(--color-text-light)' }}>{sub}</span>}
+        </button>
+    );
+}

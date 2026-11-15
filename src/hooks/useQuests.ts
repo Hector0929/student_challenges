@@ -4,9 +4,10 @@ import type { Quest, DailyLog, DailyProgress } from '../types/database';
 import { useUser } from '../contexts/UserContext';
 
 // Fetch all active quests
-export const useQuests = (status: 'active' | 'pending' | 'archived' = 'active') => {
+/** familyIdOverride：還沒選定使用者時（例如選角色頁）可直接指定家庭 */
+export const useQuests = (status: 'active' | 'pending' | 'archived' = 'active', familyIdOverride?: string | null) => {
     const { user } = useUser();
-    const familyId = user?.family_id;
+    const familyId = familyIdOverride ?? user?.family_id;
 
     return useQuery({
         queryKey: ['quests', status, familyId],
