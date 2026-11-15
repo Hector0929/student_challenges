@@ -246,7 +246,7 @@ const FLOWS: FlowDef[] = [
     { id: 'f12', from: 'english_harbour', to: 'sentence', label: '從字到句', note: '認得單字後，練習把它們排成句子。' },
     { id: 'f13', from: 'idiom', to: 'sentence', label: '語感', note: '中英文的語序練習互相幫忙。' },
     { id: 'f14', from: 'othello', to: '2048_cyber', label: '策略思考', note: '都要先想好下一步。' },
-    { id: 'f15', from: 'shooting', to: 'akila', label: '心算速度', note: '射擊遊戲考的是心算反應。' },
+    { id: 'f15', from: 'shooting', to: 'akila', label: '心算速度', note: '乘法射擊考的是心算反應。' },
     { id: 'f16', from: 'memory_matrix', to: 'english_harbour', label: '記憶力', note: '記住格子位置，也幫助記住字母順序。' },
 ];
 

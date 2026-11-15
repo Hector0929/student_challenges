@@ -38,6 +38,10 @@ interface GameModalProps {
     onClose: () => void;
     gameUrl: string;
     gameName: string;
+    /** 遊戲封面截圖：確認畫面用來取代 🎮 */
+    gameCover?: string;
+    /** 一句話說明怎麼玩 */
+    gameDescription?: string;
     gameId: string;
     userId: string;
     starBalance: number;
@@ -239,6 +243,8 @@ export const GameModal: React.FC<GameModalProps> = ({
     onGoHome,
     gameUrl,
     gameName,
+    gameCover,
+    gameDescription,
     gameId,
     userId,
     starBalance,
@@ -647,16 +653,18 @@ export const GameModal: React.FC<GameModalProps> = ({
 
                 return (
                     <div className="text-center py-6 px-4">
-                        <div className="relative inline-block mb-6">
-                            <div className="absolute inset-0 bg-blue-200 rounded-full blur-xl opacity-50 animate-pulse"></div>
-                            <div className="relative text-7xl transform hover:scale-110 transition-transform duration-300 cursor-pointer">
-                                🎮
+                        {gameCover ? (
+                            <img src={gameCover} alt={`${gameName} 遊戲畫面`} className="w-full max-w-sm mx-auto aspect-[16/10] object-cover rounded-card border-2 border-line shadow-soft mb-5" />
+                        ) : (
+                            <div className="relative inline-block mb-6">
+                                <div className="absolute inset-0 bg-blue-200 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                                <div className="relative text-7xl transform hover:scale-110 transition-transform duration-300 cursor-pointer">🎮</div>
                             </div>
-                        </div>
+                        )}
 
-                        <h3 className="font-heading text-2xl mb-2" style={{ color: 'var(--pastel-indigo-text)' }}>{gameName}</h3>
-                        <p className="text-sm mb-8 font-heading text-ink-soft">
-                            {isPractice ? '準備好開始學習了嗎？加油！' : '準備好開始挑戰了嗎？'}
+                        <h3 className="font-heading text-2xl font-bold mb-1 text-ink">{gameName}</h3>
+                        <p className="text-sm mb-6 font-body text-ink-soft">
+                            {gameDescription ?? (isPractice ? '準備好開始學習了嗎？加油！' : '準備好開始挑戰了嗎？')}
                         </p>
 
                         {!isPractice && (

@@ -30,141 +30,176 @@ export const LOTTERY_PRIZES: Prize[] = [
 // Fun Games Configuration
 // ============================================
 
+/** 遊戲目錄的三個分區 */
+export type FunGameCategory = 'adventure' | 'action' | 'puzzle';
+
+export const FUN_GAME_CATEGORIES: Array<{ id: FunGameCategory; name: string; icon: string; hint: string }> = [
+    { id: 'adventure', name: '冒險闖關', icon: '⚔️', hint: '有關卡可以一關一關挑戰' },
+    { id: 'action', name: '反應動作', icon: '⚡', hint: '手眼要快' },
+    { id: 'puzzle', name: '動腦益智', icon: '🧩', hint: '想一想再動手' },
+];
+
 export interface FunGame {
     id: string;
     name: string;
     icon: string;
+    /** 一句話說明怎麼玩 */
     description: string;
     url: string;
     color: string;
+    category: FunGameCategory;
+    /** 遊戲畫面截圖（scripts/capture-game-covers.mjs 產生） */
+    cover: string;
+    /** 卡片上的小標籤，最多兩個 */
+    tags?: string[];
+    /** 過關會把星幣發回來 */
+    earnsStars?: boolean;
 }
 
+const cover = (id: string) => `/games/covers/${id}.jpg`;
+
 export const FUN_GAMES: FunGame[] = [
+    // ── 冒險闖關 ──
     {
         id: 'parkour',
         name: '方塊衝刺',
-        icon: '🔲',
-        description: '怪獸塔大冒險・五大區域 15 關',
+        icon: '🏃',
+        description: '跳過障礙衝到終點，五大區域一路闖',
         url: '/games/parkour_game_v3.html',
-        color: 'bg-violet-500 hover:bg-violet-600'
-    },
-    {
-        id: 'shooting',
-        name: '射擊遊戲',
-        icon: '🎯',
-        description: '反應力訓練',
-        url: '/games/shooting_game.html',
-        color: 'bg-orange-400 hover:bg-orange-500'
-    },
-    {
-        id: 'tetris',
-        name: '俄羅斯方塊',
-        icon: '🧱',
-        description: '經典益智遊戲',
-        url: '/games/Tetris.html',
-        color: 'bg-green-400 hover:bg-green-500'
-    },
-    {
-        id: 'snake',
-        name: '貪食蛇',
-        icon: '🐍',
-        description: '經典霓虹挑戰',
-        url: '/games/snake_game.html',
-        color: 'bg-cyan-400 hover:bg-cyan-500'
-    },
-    {
-        id: 'ns_shaft',
-        name: '小朋友下樓梯',
-        icon: '🧗',
-        description: '是男人就下100層',
-        url: '/games/ns_shaft.html',
-        color: 'bg-purple-400 hover:bg-purple-500'
-    },
-    {
-        id: 'neon_breaker',
-        name: '霓虹打磚塊',
-        icon: '🧱',
-        description: '經典撞擊挑戰',
-        url: '/games/neon_breaker.html',
-        color: 'bg-pink-500 hover:bg-pink-600'
-    },
-    {
-        id: 'memory_matrix',
-        name: '記憶矩陣',
-        icon: '🧠',
-        description: '極限腦力訓練',
-        url: '/games/memory_matrix.html',
-        color: 'bg-cyan-500 hover:bg-cyan-600'
-    },
-    {
-        id: 'neon_slicer',
-        name: '光劍切切樂',
-        icon: '⚔️',
-        description: '反應力極限',
-        url: '/games/neon_slicer.html',
-        color: 'bg-amber-500 hover:bg-amber-600'
-    },
-    {
-        id: '2048_cyber',
-        name: '2048 Cyber',
-        icon: '🔢',
-        description: '邏輯方塊合成',
-        url: '/games/2048_cyber.html',
-        color: 'bg-blue-500 hover:bg-blue-600'
-    },
-    {
-        id: 'bubble_shooter',
-        name: '霓虹泡泡龍',
-        icon: '🔴',
-        description: '射擊消除挑戰',
-        url: '/games/bubble_shooter.html',
-        color: 'bg-red-500 hover:bg-red-600'
-    },
-    {
-        id: 'monster_bomber',
-        name: '怪獸塔爆爆冒險',
-        icon: '💣',
-        description: '手機滑動炸彈闖關',
-        url: '/games/monster_bomber.html',
-        color: 'bg-sky-500 hover:bg-sky-600'
+        color: 'bg-violet-500 hover:bg-violet-600',
+        category: 'adventure',
+        cover: cover('parkour'),
+        tags: ['15 關'],
+        earnsStars: true,
     },
     {
         id: 'monster_survivor',
         name: '怪獸生存戰',
         icon: '🧛',
-        description: '6 張地圖・3 位夥伴・關卡＋無盡模式',
+        description: '帶著夥伴擋住怪獸大軍，撐到時間結束',
         url: '/games/monster_survivor.html',
-        color: 'bg-violet-600 hover:bg-violet-700'
+        color: 'bg-violet-600 hover:bg-violet-700',
+        category: 'adventure',
+        cover: cover('monster_survivor'),
+        tags: ['6 張地圖'],
+        earnsStars: true,
     },
     {
         id: 'ember_corridor',
         name: '銀河守衛',
         icon: '🛩️',
-        description: '三機編隊射擊・6 大星域打怪獸魔王',
+        description: '駕駛戰機編隊，打倒每個星域的魔王',
         url: '/games/ember_corridor.html',
-        color: 'bg-amber-600 hover:bg-amber-700'
-    }
+        color: 'bg-amber-600 hover:bg-amber-700',
+        category: 'adventure',
+        cover: cover('ember_corridor'),
+        tags: ['6 大星域'],
+        earnsStars: true,
+    },
+    {
+        id: 'ns_shaft',
+        name: '小朋友下樓梯',
+        icon: '🧗',
+        description: '踩著平台往下跳，小心天花板的尖刺',
+        url: '/games/ns_shaft.html',
+        color: 'bg-purple-400 hover:bg-purple-500',
+        category: 'adventure',
+        cover: cover('ns_shaft'),
+        tags: ['100 層'],
+        earnsStars: true,
+    },
+    {
+        id: 'monster_bomber',
+        name: '怪獸塔爆爆冒險',
+        icon: '💣',
+        description: '放炸彈炸開磚牆，打倒怪獸找到出口',
+        url: '/games/monster_bomber.html',
+        color: 'bg-sky-500 hover:bg-sky-600',
+        category: 'adventure',
+        cover: cover('monster_bomber'),
+        tags: ['10 關'],
+    },
+    // ── 反應動作 ──
+    {
+        id: 'shooting',
+        name: '乘法射擊',
+        icon: '🎯',
+        description: '看算式，射中正確的答案',
+        url: '/games/shooting_game.html',
+        color: 'bg-orange-400 hover:bg-orange-500',
+        category: 'action',
+        cover: cover('shooting'),
+        tags: ['九九乘法'],
+    },
+    {
+        id: 'neon_slicer',
+        name: '光劍切切樂',
+        icon: '⚔️',
+        description: '揮動光劍切開飛出來的圖形',
+        url: '/games/neon_slicer.html',
+        color: 'bg-amber-500 hover:bg-amber-600',
+        category: 'action',
+        cover: cover('neon_slicer'),
+    },
+    {
+        id: 'neon_breaker',
+        name: '霓虹打磚塊',
+        icon: '🏓',
+        description: '用板子接住小球，打碎每一排磚塊',
+        url: '/games/neon_breaker.html',
+        color: 'bg-pink-500 hover:bg-pink-600',
+        category: 'action',
+        cover: cover('neon_breaker'),
+    },
+    {
+        id: 'bubble_shooter',
+        name: '霓虹泡泡龍',
+        icon: '🫧',
+        description: '射出泡泡，三顆同色就會消掉',
+        url: '/games/bubble_shooter.html',
+        color: 'bg-red-500 hover:bg-red-600',
+        category: 'action',
+        cover: cover('bubble_shooter'),
+    },
+    {
+        id: 'snake',
+        name: '貪食蛇',
+        icon: '🐍',
+        description: '吃掉能量方塊，讓蛇越來越長',
+        url: '/games/snake_game.html',
+        color: 'bg-cyan-400 hover:bg-cyan-500',
+        category: 'action',
+        cover: cover('snake'),
+    },
+    // ── 動腦益智 ──
+    {
+        id: 'tetris',
+        name: '俄羅斯方塊',
+        icon: '🧱',
+        description: '轉動方塊，排滿一整行就消除',
+        url: '/games/Tetris.html',
+        color: 'bg-green-400 hover:bg-green-500',
+        category: 'puzzle',
+        cover: cover('tetris'),
+    },
+    {
+        id: '2048_cyber',
+        name: '2048 合成',
+        icon: '🔢',
+        description: '滑動合併相同數字，挑戰合出 2048',
+        url: '/games/2048_cyber.html',
+        color: 'bg-blue-500 hover:bg-blue-600',
+        category: 'puzzle',
+        cover: cover('2048_cyber'),
+    },
+    {
+        id: 'memory_matrix',
+        name: '記憶矩陣',
+        icon: '🧠',
+        description: '記住卡片的位置，翻出成對的圖案',
+        url: '/games/memory_matrix.html',
+        color: 'bg-cyan-500 hover:bg-cyan-600',
+        category: 'puzzle',
+        cover: cover('memory_matrix'),
+    },
 ];
-
-// Pastel color mapping for fun games
-export const FUN_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-    'parkour': { bg: 'var(--pastel-purple-bg)', border: 'var(--pastel-purple-border)', text: 'var(--pastel-purple-text)' },
-    'shooting': { bg: 'var(--pastel-orange-bg)', border: 'var(--pastel-orange-border)', text: 'var(--pastel-orange-text)' },
-    'tetris': { bg: 'var(--pastel-green-bg)', border: 'var(--pastel-green-border)', text: 'var(--pastel-green-text)' },
-    'snake': { bg: 'var(--pastel-cyan-bg)', border: 'var(--pastel-cyan-border)', text: 'var(--pastel-cyan-text)' },
-    'ns_shaft': { bg: 'var(--pastel-purple-bg)', border: 'var(--pastel-purple-border)', text: 'var(--pastel-purple-text)' },
-    'neon_breaker': { bg: 'var(--pastel-pink-bg)', border: 'var(--pastel-pink-border)', text: 'var(--pastel-pink-text)' },
-    'neon_slicer': { bg: 'var(--pastel-orange-bg)', border: 'var(--pastel-orange-border)', text: 'var(--pastel-orange-text)' },
-    'bubble_shooter': { bg: 'var(--pastel-pink-bg)', border: 'var(--pastel-pink-border)', text: 'var(--pastel-pink-text)' },
-    'monster_bomber': { bg: 'var(--pastel-cyan-bg)', border: 'var(--pastel-cyan-border)', text: 'var(--pastel-cyan-text)' },
-    'monster_survivor': { bg: 'var(--pastel-purple-bg)', border: 'var(--pastel-purple-border)', text: 'var(--pastel-purple-text)' },
-    'ember_corridor': { bg: 'var(--pastel-orange-bg)', border: 'var(--pastel-orange-border)', text: 'var(--pastel-orange-text)' },
-};
-
-export const getFunGameColors = (gameId: string) => {
-    return FUN_COLORS[gameId] || {
-        bg: 'var(--pastel-orange-bg)',
-        border: 'var(--pastel-orange-border)',
-        text: 'var(--pastel-orange-text)'
-    };
-};
