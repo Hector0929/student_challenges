@@ -76,7 +76,7 @@ const ChildStarRow = ({ child, onAdjust }: { child: Profile; onAdjust: (child: P
             <div className="flex items-center gap-3">
                 <div className="clay-icon-circle bg-white text-2xl" style={{ width: '52px', height: '52px', borderRadius: '14px' }}>{child.avatar_url || '👦'}</div>
                 <div>
-                    <div className="font-heading font-bold text-base" style={{ color: 'var(--color-text)' }}>{child.name}</div>
+                    <div className="font-heading font-bold text-base text-ink">{child.name}</div>
                     <div className="text-xs text-yellow-600 font-bold flex items-center gap-1">
                         <Coins size={12} />
                         {isLoading ? '...' : balance} 星幣
@@ -356,17 +356,17 @@ export const ParentSettings: React.FC = () => {
                         <Lock className="text-primary-dark" size={28} />
                     </div>
                     <div>
-                        <h2 className="font-heading text-3xl font-bold" style={{ color: 'var(--color-text)' }}>家長設定</h2>
-                        <p className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>帳號、星幣、遊戲與學習偏好設定</p>
+                        <h2 className="font-heading text-3xl font-bold text-ink">家長設定</h2>
+                        <p className="font-body text-sm text-ink-soft">帳號、星幣、遊戲與學習偏好設定</p>
                     </div>
                 </div>
             </div>
 
-            <div className="clay-card animate-bounce-in p-6" style={{ borderRadius: '24px' }}>
+            <div className="clay-card animate-bounce-in p-6 rounded-card">
                 <form onSubmit={handleUpdateProfile} className="space-y-6">
                     {/* User Name Section */}
                     <div className="border-b-2 border-dashed border-gray-300 pb-6">
-                        <h3 className="font-pixel text-lg mb-4 flex items-center gap-2">
+                        <h3 className="font-heading text-lg mb-4 flex items-center gap-2">
                             <div className="bg-blue-100 p-1 rounded">👤</div>
                             家長暱稱
                         </h3>
@@ -378,7 +378,7 @@ export const ParentSettings: React.FC = () => {
                                 type="text"
                                 value={userName}
                                 onChange={(e) => setUserName(e.target.value)}
-                                className="w-full px-3 py-2 border-2 border-deep-black text-sm"
+                                className="ui-field text-sm"
                                 placeholder="例如：超級媽媽"
                                 required
                             />
@@ -387,7 +387,7 @@ export const ParentSettings: React.FC = () => {
 
                     {/* Family Name Section */}
                     <div className="border-b-2 border-dashed border-gray-300 pb-6">
-                        <h3 className="font-pixel text-lg mb-4 flex items-center gap-2">
+                        <h3 className="font-heading text-lg mb-4 flex items-center gap-2">
                             <Home size={20} />
                             家庭名稱
                         </h3>
@@ -399,7 +399,7 @@ export const ParentSettings: React.FC = () => {
                                 type="text"
                                 value={familyName}
                                 onChange={(e) => setFamilyName(e.target.value)}
-                                className="w-full px-3 py-2 border-2 border-deep-black text-sm"
+                                className="ui-field text-sm"
                                 placeholder="例如：陳家大冒險"
                                 required
                             />
@@ -408,7 +408,7 @@ export const ParentSettings: React.FC = () => {
 
                     {/* Parent Message & Exchange Rate Section */}
                     <div className="border-b-2 border-dashed border-gray-300 pb-6">
-                        <h3 className="font-pixel text-lg mb-4 flex items-center gap-2">
+                        <h3 className="font-heading text-lg mb-4 flex items-center gap-2">
                             <div className="bg-purple-100 p-1 rounded text-purple-600">
                                 <MessageCircle size={20} />
                             </div>
@@ -416,7 +416,7 @@ export const ParentSettings: React.FC = () => {
                         </h3>
                         <div className="space-y-6">
                             {/* Parent Message Toggle */}
-                            <div className="bg-white border-2 border-deep-black p-4 rounded-lg">
+                            <div className="bg-white border-2 border-line p-4 rounded-lg">
                                 <ToggleSwitch
                                     enabled={parentMessageEnabled}
                                     onChange={setParentMessageEnabled}
@@ -428,7 +428,7 @@ export const ParentSettings: React.FC = () => {
                                         <textarea
                                             value={parentMessage}
                                             onChange={(e) => setParentMessage(e.target.value)}
-                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm resize-none"
+                                            className="ui-field text-sm resize-none"
                                             rows={2}
                                             placeholder="例如：今天也要加油嗎！"
                                             maxLength={100}
@@ -441,7 +441,7 @@ export const ParentSettings: React.FC = () => {
                             </div>
 
                             {/* Exchange Rate Toggle */}
-                            <div className="bg-white border-2 border-deep-black p-4 rounded-lg">
+                            <div className="bg-white border-2 border-line p-4 rounded-lg">
                                 <ToggleSwitch
                                     enabled={exchangeRateEnabled}
                                     onChange={setExchangeRateEnabled}
@@ -450,9 +450,9 @@ export const ParentSettings: React.FC = () => {
                                 />
                                 {exchangeRateEnabled && (
                                     <div className="mt-4 flex items-center gap-3">
-                                        <div className="flex items-center gap-2 bg-yellow-100 px-3 py-2 border-2 border-deep-black">
+                                        <div className="flex items-center gap-2 bg-yellow-100 px-3 py-2 border-2 border-line">
                                             <span className="text-xl">⭐</span>
-                                            <span className="font-pixel">1 星</span>
+                                            <span className="font-heading">1 星</span>
                                         </div>
                                         <ArrowRightLeft size={20} className="text-gray-400" />
                                         <div className="flex items-center gap-2">
@@ -474,11 +474,11 @@ export const ParentSettings: React.FC = () => {
                                                         setStarToTwdRate(parseFloat(String(starToTwdRate)));
                                                     }
                                                 }}
-                                                className="w-20 px-2 py-2 border-2 border-deep-black text-sm font-pixel text-center"
+                                                className="ui-field !w-20 !px-2 text-sm font-heading text-center"
                                                 min="0.01"
                                                 step="0.01"
                                             />
-                                            <span className="font-pixel text-sm">TWD</span>
+                                            <span className="font-heading text-sm">TWD</span>
                                         </div>
                                     </div>
                                 )}
@@ -488,7 +488,7 @@ export const ParentSettings: React.FC = () => {
 
                     {/* Star Management Section */}
                     <div className="border-b-2 border-dashed border-gray-300 pb-6">
-                        <h3 className="font-pixel text-lg mb-4 flex items-center gap-2">
+                        <h3 className="font-heading text-lg mb-4 flex items-center gap-2">
                             <div className="bg-yellow-100 p-1 rounded text-yellow-600">
                                 <Coins size={20} />
                             </div>
@@ -509,7 +509,7 @@ export const ParentSettings: React.FC = () => {
                     </div>
 
                     <div className="border-b-2 border-dashed border-gray-300 pb-6">
-                        <h3 className="font-pixel text-lg mb-4 flex items-center gap-2">
+                        <h3 className="font-heading text-lg mb-4 flex items-center gap-2">
                             <div className="bg-emerald-100 p-1 rounded text-emerald-600">🏬</div>
                             商店街設定
                         </h3>
@@ -521,7 +521,7 @@ export const ParentSettings: React.FC = () => {
                             <div className="bg-emerald-50 border-2 border-emerald-200 p-4 rounded-lg">
                                 <div className="flex items-center gap-2 mb-3">
                                     <span className="text-lg">🏪</span>
-                                    <span className="font-pixel text-sm text-emerald-800">兌換店價格</span>
+                                    <span className="font-heading text-sm text-emerald-800">兌換店價格</span>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                     <div className="bg-white border border-emerald-100 rounded-xl p-3">
@@ -533,7 +533,7 @@ export const ParentSettings: React.FC = () => {
                                             value={woodRate}
                                             onChange={(e) => handleDecimalInput(e.target.value, setWoodRate)}
                                             onBlur={() => setWoodRate(normalizeDecimalInput(woodRate, DEFAULT_FAMILY_EXCHANGE_RATES.wood_rate, { min: 0 }))}
-                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm font-pixel"
+                                            className="ui-field text-sm font-heading"
                                         />
                                         <p className="text-xs text-gray-500 mt-2">每 1 單位木頭可換得的基準星幣</p>
                                     </div>
@@ -546,7 +546,7 @@ export const ParentSettings: React.FC = () => {
                                             value={stoneRate}
                                             onChange={(e) => handleDecimalInput(e.target.value, setStoneRate)}
                                             onBlur={() => setStoneRate(normalizeDecimalInput(stoneRate, DEFAULT_FAMILY_EXCHANGE_RATES.stone_rate, { min: 0 }))}
-                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm font-pixel"
+                                            className="ui-field text-sm font-heading"
                                         />
                                         <p className="text-xs text-gray-500 mt-2">市場倍率會在孩子端額外乘上去</p>
                                     </div>
@@ -559,7 +559,7 @@ export const ParentSettings: React.FC = () => {
                                             value={crystalRate}
                                             onChange={(e) => handleDecimalInput(e.target.value, setCrystalRate)}
                                             onBlur={() => setCrystalRate(normalizeDecimalInput(crystalRate, DEFAULT_FAMILY_EXCHANGE_RATES.crystal_rate, { min: 0 }))}
-                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm font-pixel"
+                                            className="ui-field text-sm font-heading"
                                         />
                                         <p className="text-xs text-gray-500 mt-2">適合拿來調整稀有資源的獎勵感</p>
                                     </div>
@@ -569,7 +569,7 @@ export const ParentSettings: React.FC = () => {
                             <div className="bg-sky-50 border-2 border-sky-200 p-4 rounded-lg">
                                 <div className="flex items-center gap-2 mb-3">
                                     <span className="text-lg">🏦</span>
-                                    <span className="font-pixel text-sm text-sky-800">銀行利率與規則</span>
+                                    <span className="font-heading text-sm text-sky-800">銀行利率與規則</span>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <div className="bg-white border border-sky-100 rounded-xl p-3">
@@ -581,7 +581,7 @@ export const ParentSettings: React.FC = () => {
                                             value={demandDailyRate}
                                             onChange={(e) => handleDecimalInput(e.target.value, setDemandDailyRate)}
                                             onBlur={() => setDemandDailyRate(normalizeDecimalInput(demandDailyRate, DEFAULT_FAMILY_BANK_SETTINGS.demand_daily_rate, { min: 0 }))}
-                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm font-pixel"
+                                            className="ui-field text-sm font-heading"
                                         />
                                         <p className="text-xs text-gray-500 mt-2">目前約 {(normalizeDecimalInput(demandDailyRate, DEFAULT_FAMILY_BANK_SETTINGS.demand_daily_rate, { min: 0 }) * 100).toFixed(2)}%</p>
                                     </div>
@@ -594,7 +594,7 @@ export const ParentSettings: React.FC = () => {
                                             value={timeDepositDailyRate}
                                             onChange={(e) => handleDecimalInput(e.target.value, setTimeDepositDailyRate)}
                                             onBlur={() => setTimeDepositDailyRate(normalizeDecimalInput(timeDepositDailyRate, DEFAULT_FAMILY_BANK_SETTINGS.time_deposit_daily_rate, { min: 0 }))}
-                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm font-pixel"
+                                            className="ui-field text-sm font-heading"
                                         />
                                         <p className="text-xs text-gray-500 mt-2">目前約 {(normalizeDecimalInput(timeDepositDailyRate, DEFAULT_FAMILY_BANK_SETTINGS.time_deposit_daily_rate, { min: 0 }) * 100).toFixed(2)}%</p>
                                     </div>
@@ -607,7 +607,7 @@ export const ParentSettings: React.FC = () => {
                                             value={minTimeDepositDays}
                                             onChange={(e) => setMinTimeDepositDays(e.target.value.replace(/[^0-9]/g, ''))}
                                             onBlur={() => setMinTimeDepositDays(normalizeIntegerInput(minTimeDepositDays, DEFAULT_FAMILY_BANK_SETTINGS.min_time_deposit_days))}
-                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm font-pixel"
+                                            className="ui-field text-sm font-heading"
                                         />
                                         <p className="text-xs text-gray-500 mt-2">孩子建立定存時至少要鎖定這麼多天</p>
                                     </div>
@@ -620,7 +620,7 @@ export const ParentSettings: React.FC = () => {
                                             value={earlyWithdrawPenaltyRate}
                                             onChange={(e) => handleDecimalInput(e.target.value, setEarlyWithdrawPenaltyRate)}
                                             onBlur={() => setEarlyWithdrawPenaltyRate(normalizeDecimalInput(earlyWithdrawPenaltyRate, DEFAULT_FAMILY_BANK_SETTINGS.early_withdraw_penalty_rate, { min: 0, max: 1 }))}
-                                            className="w-full px-3 py-2 border-2 border-deep-black text-sm font-pixel"
+                                            className="ui-field text-sm font-heading"
                                         />
                                         <p className="text-xs text-gray-500 mt-2">目前約 {(normalizeDecimalInput(earlyWithdrawPenaltyRate, DEFAULT_FAMILY_BANK_SETTINGS.early_withdraw_penalty_rate, { min: 0, max: 1 }) * 100).toFixed(2)}%</p>
                                     </div>
@@ -631,7 +631,7 @@ export const ParentSettings: React.FC = () => {
 
                     {/* Game & Learning Management Section */}
                     <div className="border-b-2 border-dashed border-gray-300 pb-6">
-                        <h3 className="font-pixel text-lg mb-4 flex items-center gap-2">
+                        <h3 className="font-heading text-lg mb-4 flex items-center gap-2">
                             <div className="bg-green-100 p-1 rounded text-green-600">
                                 <Gamepad2 size={20} />
                             </div>
@@ -646,7 +646,7 @@ export const ParentSettings: React.FC = () => {
                             <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-lg">
                                 <div className="flex items-center gap-2 mb-3">
                                     <Gamepad2 size={18} className="text-orange-600" />
-                                    <span className="font-pixel text-sm text-orange-800">獎勵遊戲</span>
+                                    <span className="font-heading text-sm text-orange-800">獎勵遊戲</span>
                                 </div>
                                 <ToggleSwitch
                                     enabled={funGamesEnabled}
@@ -679,7 +679,7 @@ export const ParentSettings: React.FC = () => {
                             <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-lg">
                                 <div className="flex items-center gap-2 mb-3">
                                     <BookOpen size={18} className="text-blue-600" />
-                                    <span className="font-pixel text-sm text-blue-800">學習書桌</span>
+                                    <span className="font-heading text-sm text-blue-800">學習書桌</span>
                                 </div>
                                 <ToggleSwitch
                                     enabled={learningAreaEnabled}
@@ -718,7 +718,7 @@ export const ParentSettings: React.FC = () => {
 
                     {/* Monster Shop Section */}
                     <div className="border-b-2 border-dashed border-gray-300 pb-6">
-                        <h3 className="font-pixel text-lg mb-4 flex items-center gap-2">
+                        <h3 className="font-heading text-lg mb-4 flex items-center gap-2">
                             <div className="bg-purple-100 p-1 rounded text-purple-600">🛍️</div>
                             怪獸商店管理
                         </h3>
@@ -737,7 +737,7 @@ export const ParentSettings: React.FC = () => {
 
                     {/* PIN Section */}
                     <div>
-                        <h3 className="font-pixel text-lg mb-4 flex items-center gap-2">
+                        <h3 className="font-heading text-lg mb-4 flex items-center gap-2">
                             <Lock size={20} />
                             PIN 碼設定
                         </h3>
@@ -750,7 +750,7 @@ export const ParentSettings: React.FC = () => {
                                 maxLength={4}
                                 value={pin}
                                 onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                                className="w-full px-3 py-2 border-2 border-deep-black text-sm tracking-widest text-lg font-pixel"
+                                className="ui-field text-sm tracking-widest text-lg font-heading"
                                 placeholder="● ● ● ●"
                             />
                             <p className="text-xs text-gray-500 mt-1">
@@ -779,8 +779,8 @@ export const ParentSettings: React.FC = () => {
             </div>
 
             {/* 疑難排解：原本放在孩子儀表板上的「清除快取」與家庭登出，搬到這裡 */}
-            <div className="clay-card p-6 mt-6" style={{ borderRadius: '20px' }}>
-                <h3 className="font-pixel text-lg mb-2 flex items-center gap-2">
+            <div className="clay-card p-6 mt-6 rounded-card">
+                <h3 className="font-heading text-lg mb-2 flex items-center gap-2">
                     <Wrench size={20} />
                     疑難排解
                 </h3>
@@ -835,7 +835,7 @@ export const ParentSettings: React.FC = () => {
                 <form onSubmit={handleAdjustSubmit} className="space-y-4">
                     <div className="text-center mb-4">
                         <div className="text-4xl mb-2">{adjustChild?.avatar_url}</div>
-                        <p className="font-pixel">
+                        <p className="font-heading">
                             正在調整 <span className="text-blue-600">{adjustChild?.name}</span> 的錢包
                         </p>
                     </div>
@@ -844,7 +844,7 @@ export const ParentSettings: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => setAdjustType('add')}
-                            className={`flex-1 py-3 border-2 border-deep-black rounded-lg font-pixel transition-colors flex flex-col items-center gap-1 ${adjustType === 'add' ? 'bg-yellow-400' : 'bg-gray-100 hover:bg-gray-200'
+                            className={`flex-1 py-3 border-2 border-line rounded-lg font-heading transition-colors flex flex-col items-center gap-1 ${adjustType === 'add' ? 'bg-yellow-400' : 'bg-gray-100 hover:bg-gray-200'
                                 }`}
                         >
                             <Plus size={24} />
@@ -853,7 +853,7 @@ export const ParentSettings: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => setAdjustType('remove')}
-                            className={`flex-1 py-3 border-2 border-deep-black rounded-lg font-pixel transition-colors flex flex-col items-center gap-1 ${adjustType === 'remove' ? 'bg-red-400 text-white' : 'bg-gray-100 hover:bg-gray-200'
+                            className={`flex-1 py-3 border-2 border-line rounded-lg font-heading transition-colors flex flex-col items-center gap-1 ${adjustType === 'remove' ? 'bg-red-400 text-white' : 'bg-gray-100 hover:bg-gray-200'
                                 }`}
                         >
                             <Minus size={24} />
@@ -862,7 +862,7 @@ export const ParentSettings: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block font-pixel text-xs mb-2">
+                        <label className="block font-heading text-xs mb-2">
                             數量
                         </label>
                         <input
@@ -881,20 +881,20 @@ export const ParentSettings: React.FC = () => {
                                     setAdjustAmount(1);
                                 }
                             }}
-                            className="w-full px-3 py-2 border-2 border-deep-black text-center font-pixel text-xl"
+                            className="ui-field text-center font-heading text-xl"
                             min="1"
                         />
                     </div>
 
                     <div>
-                        <label className="block font-pixel text-xs mb-2">
+                        <label className="block font-heading text-xs mb-2">
                             原因 (選填)
                         </label>
                         <input
                             type="text"
                             value={adjustReason}
                             onChange={(e) => setAdjustReason(e.target.value)}
-                            className="w-full px-3 py-2 border-2 border-deep-black text-sm"
+                            className="ui-field text-sm"
                             placeholder={adjustType === 'add' ? "例如：幫忙做家事" : "例如：沒收玩具"}
                         />
                     </div>

@@ -181,14 +181,14 @@ export const HomeButton: React.FC<HomeButtonProps> = ({
             className={`
                 fixed right-4 z-40
                 w-14 h-14 
-                bg-pokeball-red hover:bg-red-700
-                border-4 border-deep-black
-                shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
+                rounded-full
+                bg-surface border-2 border-line text-ink
+                shadow-soft
                 ${isDragging
-                    ? 'scale-110 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] cursor-grabbing'
-                    : 'hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] cursor-grab'
+                    ? 'scale-110 shadow-soft-hover cursor-grabbing'
+                    : 'hover:shadow-soft-hover hover:-translate-y-0.5 cursor-grab'
                 }
-                active:shadow-none active:translate-x-1 active:translate-y-1
+                active:translate-y-0.5
                 transition-all ${isDragging ? 'duration-0' : 'duration-150'}
                 flex items-center justify-center
                 group
@@ -205,12 +205,12 @@ export const HomeButton: React.FC<HomeButtonProps> = ({
         >
             <Home
                 size={24}
-                className={`text-white transition-transform ${isDragging ? 'scale-90' : 'group-hover:scale-110'}`}
+                className={`text-primary-dark transition-transform ${isDragging ? 'scale-90' : 'group-hover:scale-110'}`}
             />
 
             {/* Drag indicator - shows briefly on first render or when dragging */}
             {isDragging && (
-                <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-6 bg-white/50 rounded-full" />
+                <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-6 bg-line rounded-full" />
             )}
         </button>
     );

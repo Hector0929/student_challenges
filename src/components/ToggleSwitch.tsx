@@ -26,10 +26,10 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
             {(label || description) && (
                 <div className="flex-1">
                     {label && (
-                        <span className="font-pixel text-sm block">{label}</span>
+                        <span className="font-heading text-sm block">{label}</span>
                     )}
                     {description && (
-                        <span className="text-xs text-gray-500 block mt-1">{description}</span>
+                        <span className="text-xs text-ink-soft block mt-1">{description}</span>
                     )}
                 </div>
             )}
@@ -40,10 +40,10 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
                 disabled={disabled}
                 onClick={handleClick}
                 className={`
-                    relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer 
-                    border-2 border-deep-black transition-colors duration-200 ease-in-out
-                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400
-                    ${enabled ? 'bg-hp-green' : 'bg-gray-300'}
+                    relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full
+                    border-2 border-transparent transition-colors duration-200 ease-in-out
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary
+                    ${enabled ? 'bg-primary' : 'bg-line'}
                     ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
             >
@@ -51,7 +51,7 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
                 <span
                     className={`
                         pointer-events-none inline-block h-5 w-5 
-                        transform border-2 border-deep-black bg-white shadow-sm
+                        transform rounded-full bg-white shadow-soft
                         transition duration-200 ease-in-out
                         ${enabled ? 'translate-x-5' : 'translate-x-0'}
                         mt-[2px] ml-[2px]

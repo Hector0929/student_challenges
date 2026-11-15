@@ -102,25 +102,25 @@ export const WishQuestDialog: React.FC<WishQuestDialogProps> = ({ isOpen, onClos
             >
                 <form id="create-quest-form" onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block font-pixel text-xs mb-2">我想做什麼...</label>
+                        <label className="block font-heading text-xs mb-2">我想做什麼...</label>
                         <input
                             type="text"
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                            className="w-full px-3 py-2 border-2 border-deep-black text-sm"
+                            className="ui-field text-sm"
                             placeholder="例：幫忙摺衣服"
                             required
                         />
                     </div>
                     <div>
-                        <label className="block font-pixel text-xs mb-2">選個圖案</label>
+                        <label className="block font-heading text-xs mb-2">選個圖案</label>
                         <div className="grid grid-cols-6 gap-2">
                             {COMMON_EMOJIS.map((emoji) => (
                                 <button
                                     key={emoji}
                                     type="button"
                                     onClick={() => setFormData({ ...formData, icon: emoji })}
-                                    className={`text-xl p-2 border-2 border-deep-black hover:bg-gray-100 transition-colors ${formData.icon === emoji ? 'bg-yellow-200' : 'bg-white'
+                                    className={`text-xl p-2 border-2 border-line hover:bg-gray-100 transition-colors ${formData.icon === emoji ? 'bg-yellow-200' : 'bg-white'
                                         }`}
                                 >
                                     {emoji}

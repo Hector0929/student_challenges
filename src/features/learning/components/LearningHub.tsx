@@ -18,10 +18,10 @@ export const LearningHub: React.FC<LearningHubProps> = ({ items, onSelectItem })
                 style={{ backgroundColor: 'var(--bg-card)', border: '2px dashed var(--border-soft)' }}
             >
                 <div className="text-5xl mb-3">📚</div>
-                <h3 className="font-heading text-lg font-bold" style={{ color: 'var(--color-text)' }}>
+                <h3 className="font-heading text-lg font-bold text-ink">
                     目前沒有可用的學習項目
                 </h3>
-                <p className="font-body text-sm mt-2" style={{ color: 'var(--color-text-light)' }}>
+                <p className="font-body text-sm mt-2 text-ink-soft">
                     請稍後再試，或請家長確認學習設定。
                 </p>
             </div>

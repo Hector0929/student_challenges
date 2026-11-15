@@ -19,7 +19,7 @@ export const RPGButton = ({
     className = '',
     form,
 }: RPGButtonProps) => {
-    const baseStyles = 'px-6 py-3 font-pixel text-sm rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transform active:translate-y-1';
+    const baseStyles = 'px-6 py-3 font-heading text-sm rounded-control transition-all disabled:opacity-50 disabled:cursor-not-allowed';
 
     const variantStyles = {
         primary: 'clay-btn',

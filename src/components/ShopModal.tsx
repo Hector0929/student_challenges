@@ -74,7 +74,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                         >
                             <ArrowLeft size={18} />
                         </button>
-                        <span className="font-pixel text-indigo-900 text-xs sm:text-sm truncate max-w-[140px] sm:max-w-[240px] flex items-center gap-2">
+                        <span className="font-heading text-indigo-900 text-xs sm:text-sm truncate max-w-[140px] sm:max-w-[240px] flex items-center gap-2">
                             <Store size={16} />
                             {title}
                         </span>
@@ -82,7 +82,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
 
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-100 border-2 border-yellow-300">
                         <Star size={16} className="text-yellow-500" fill="currentColor" />
-                        <span className="font-pixel text-sm text-amber-700">{formatStars(starBalance)}</span>
+                        <span className="font-heading text-sm text-amber-700">{formatStars(starBalance)}</span>
                     </div>
 
                     <div className="flex items-center gap-1 sm:gap-2">

@@ -15,10 +15,10 @@ export const StageSection: React.FC<StageSectionProps> = ({ group, onSelectItem 
     return (
         <div className="rounded-3xl p-4" style={{ backgroundColor: 'var(--bg-card)', border: '2px dashed var(--border-soft)' }}>
             <div className="mb-3">
-                <h4 className="font-heading text-lg font-bold" style={{ color: 'var(--color-text)' }}>
+                <h4 className="font-heading text-lg font-bold text-ink">
                     {group.stage.name}
                 </h4>
-                <p className="font-body text-xs" style={{ color: 'var(--color-text-light)' }}>
+                <p className="font-body text-xs text-ink-soft">
                     {group.stage.description}
                 </p>
             </div>

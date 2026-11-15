@@ -48,8 +48,8 @@ export const ChildMonsterShop: React.FC<ChildMonsterShopProps> = ({ userId, star
                     <Store size={24} style={{ color: 'var(--pastel-purple-text)' }} />
                 </div>
                 <div>
-                    <h2 className="font-heading text-xl font-bold" style={{ color: 'var(--color-text)' }}>怪獸商店</h2>
-                    <p className="font-body text-xs" style={{ color: 'var(--color-text-light)' }}>
+                    <h2 className="font-heading text-xl font-bold text-ink">怪獸商店</h2>
+                    <p className="font-body text-xs text-ink-soft">
                         家長上架的怪獸可以在這裡購買
                     </p>
                 </div>
@@ -66,7 +66,7 @@ export const ChildMonsterShop: React.FC<ChildMonsterShopProps> = ({ userId, star
             ) : items.length === 0 ? (
                 <div className="text-center py-6">
                     <div className="text-4xl mb-2">🛍️</div>
-                    <p className="font-heading text-sm" style={{ color: 'var(--color-text-light)' }}>目前沒有上架商品</p>
+                    <p className="font-heading text-sm text-ink-soft">目前沒有上架商品</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -91,7 +91,7 @@ export const ChildMonsterShop: React.FC<ChildMonsterShopProps> = ({ userId, star
                                     )}
                                 </div>
 
-                                <h4 className="font-heading text-sm font-bold text-center mb-1" style={{ color: 'var(--color-text)' }}>
+                                <h4 className="font-heading text-sm font-bold text-center mb-1 text-ink">
                                     {item.name}
                                 </h4>
                                 <p className="text-[11px] text-center text-gray-500 mb-2">{item.zone}</p>

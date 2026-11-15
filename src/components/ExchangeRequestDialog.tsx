@@ -80,12 +80,12 @@ export const ExchangeRequestDialog: React.FC<ExchangeRequestDialogProps> = ({
             <RPGDialog isOpen={isOpen} onClose={handleClose} title="🎉 申請已送出">
                 <div className="text-center py-4">
                     <div className="text-6xl mb-4 animate-bounce">📨</div>
-                    <p className="font-pixel text-lg mb-2">兌換申請已送出！</p>
+                    <p className="font-heading text-lg mb-2">兌換申請已送出！</p>
                     <p className="text-sm text-gray-600 mb-4">
                         等待爸爸媽媽審核後，星幣就會扣除囉～
                     </p>
                     <div className="bg-yellow-50 border-4 border-yellow-200 rounded-2xl p-4 inline-block shadow-inner">
-                        <p className="font-pixel" style={{ color: 'var(--color-cta)' }}>
+                        <p className="font-heading text-accent">
                             ⭐ {starAmount} 星 → 💰 {twdAmount.toFixed(0)} 元
                         </p>
                     </div>
@@ -104,8 +104,8 @@ export const ExchangeRequestDialog: React.FC<ExchangeRequestDialogProps> = ({
             <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Current Balance */}
                 <div className="bg-white/80 border-2 border-indigo-100 rounded-2xl p-4 flex items-center justify-between shadow-clay">
-                    <span className="font-pixel text-xs" style={{ color: 'var(--color-text-muted)' }}>目前餘額</span>
-                    <span className="font-pixel text-lg flex items-center gap-1" style={{ color: 'var(--color-text)' }}>
+                    <span className="font-heading text-xs text-ink-muted">目前餘額</span>
+                    <span className="font-heading text-lg flex items-center gap-1 text-ink">
                         <Coins size={16} className="text-yellow-500" />
                         {balance} 星幣
                     </span>
@@ -113,14 +113,14 @@ export const ExchangeRequestDialog: React.FC<ExchangeRequestDialogProps> = ({
 
                 {/* Exchange Rate Info */}
                 <div className="bg-yellow-50 border-4 border-dashed border-yellow-200 rounded-2xl p-3 text-center">
-                    <span className="font-pixel text-xs" style={{ color: 'var(--color-cta)' }}>
+                    <span className="font-heading text-xs text-accent">
                         目前匯率：⭐ 1 星 = 💰 {exchangeRate} 元
                     </span>
                 </div>
 
                 {/* Amount Input */}
                 <div>
-                    <label className="block font-pixel text-sm mb-2">
+                    <label className="block font-heading text-sm mb-2">
                         想兌換多少星幣？
                     </label>
                     <input
@@ -139,7 +139,7 @@ export const ExchangeRequestDialog: React.FC<ExchangeRequestDialogProps> = ({
                                 setStarAmount(1);
                             }
                         }}
-                        className="w-full px-4 py-3 border-4 border-indigo-100 rounded-2xl text-center text-2xl font-pixel outline-none focus:border-indigo-300 transition-colors shadow-inner"
+                        className="w-full px-4 py-3 border-4 border-indigo-100 rounded-2xl text-center text-2xl font-heading outline-none focus:border-indigo-300 transition-colors shadow-inner"
                         min={1}
                         max={balance}
                     />
@@ -150,7 +150,7 @@ export const ExchangeRequestDialog: React.FC<ExchangeRequestDialogProps> = ({
                                 key={value}
                                 type="button"
                                 onClick={() => setStarAmount(value)}
-                                className={`flex-1 py-2 border-4 rounded-xl font-pixel text-xs transition-all active:scale-95 ${starAmount === value
+                                className={`flex-1 py-2 border-4 rounded-xl font-heading text-xs transition-all active:scale-95 ${starAmount === value
                                     ? 'bg-yellow-400 border-yellow-500 text-white'
                                     : 'bg-white border-indigo-50 text-indigo-400 hover:bg-indigo-50'
                                     }`}
@@ -161,7 +161,7 @@ export const ExchangeRequestDialog: React.FC<ExchangeRequestDialogProps> = ({
                         <button
                             type="button"
                             onClick={() => setStarAmount(balance)}
-                            className={`flex-1 py-2 border-4 rounded-xl font-pixel text-xs transition-all active:scale-95 ${starAmount === balance
+                            className={`flex-1 py-2 border-4 rounded-xl font-heading text-xs transition-all active:scale-95 ${starAmount === balance
                                 ? 'bg-yellow-400 border-yellow-500 text-white'
                                 : 'bg-white border-indigo-50 text-indigo-400 hover:bg-indigo-50'
                                 }`}
@@ -175,14 +175,14 @@ export const ExchangeRequestDialog: React.FC<ExchangeRequestDialogProps> = ({
                 <div className="bg-white/80 border-4 border-indigo-50 rounded-3xl p-6 flex items-center justify-center gap-6 shadow-inner">
                     <div className="text-center">
                         <div className="text-3xl mb-1">⭐</div>
-                        <div className="font-pixel text-xl" style={{ color: 'var(--color-text)' }}>{starAmount}</div>
-                        <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>星幣</div>
+                        <div className="font-heading text-xl text-ink">{starAmount}</div>
+                        <div className="text-xs text-ink-muted">星幣</div>
                     </div>
                     <ArrowRight size={24} className="text-indigo-200" />
                     <div className="text-center">
                         <div className="text-3xl mb-1">💰</div>
-                        <div className="font-pixel text-xl" style={{ color: 'var(--color-primary)' }}>{twdAmount.toFixed(0)}</div>
-                        <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>元</div>
+                        <div className="font-heading text-xl text-primary">{twdAmount.toFixed(0)}</div>
+                        <div className="text-xs text-ink-muted">元</div>
                     </div>
                 </div>
 
@@ -190,7 +190,7 @@ export const ExchangeRequestDialog: React.FC<ExchangeRequestDialogProps> = ({
                 {error && (
                     <div className="bg-red-100 border-2 border-red-400 p-3 flex items-center gap-2 text-red-600">
                         <AlertCircle size={16} />
-                        <span className="font-pixel text-sm">{error}</span>
+                        <span className="font-heading text-sm">{error}</span>
                     </div>
                 )}
 

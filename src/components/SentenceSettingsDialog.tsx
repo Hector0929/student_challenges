@@ -54,7 +54,7 @@ export const SentenceSettingsDialog: React.FC<SentenceSettingsDialogProps> = ({
             <div className="space-y-4 max-h-[60vh] overflow-y-auto">
                 {/* Add new sentence */}
                 <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
-                    <h3 className="font-pixel text-sm mb-3 text-blue-700">新增練習句子</h3>
+                    <h3 className="font-heading text-sm mb-3 text-blue-700">新增練習句子</h3>
 
                     <div className="space-y-2">
                         <div>
@@ -107,7 +107,7 @@ export const SentenceSettingsDialog: React.FC<SentenceSettingsDialogProps> = ({
 
                 {/* Sentence list */}
                 <div>
-                    <h3 className="font-pixel text-sm mb-2">目前句子 ({sentences.length})</h3>
+                    <h3 className="font-heading text-sm mb-2">目前句子 ({sentences.length})</h3>
 
                     {isLoading ? (
                         <div className="text-center py-4 text-gray-500">

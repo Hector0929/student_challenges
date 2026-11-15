@@ -24,7 +24,7 @@ const DebugPage = lazy(() => import('./pages/DebugPage').then((m) => ({ default:
 
 const PageLoading = () => (
   <div className="min-h-[40vh] flex items-center justify-center">
-    <div className="text-xl font-pixel animate-pulse">Loading...</div>
+    <div className="text-xl font-heading text-ink-soft animate-pulse">載入中…</div>
   </div>
 );
 
@@ -115,8 +115,8 @@ function AppContent() {
   if (loading) {
     // ... loading UI
     return (
-      <div className="min-h-screen bg-pink-50 flex items-center justify-center">
-        <div className="text-xl font-pixel animate-pulse">Loading...</div>
+      <div className="min-h-screen bg-surface-page flex items-center justify-center">
+        <div className="text-xl font-heading text-ink-soft animate-pulse">載入中…</div>
       </div>
     );
   }
@@ -144,22 +144,22 @@ function AppContent() {
   // 3. Parent, or child dashboard
   return (
     <div className="min-h-screen py-8 px-4 relative overflow-hidden"
-      style={{ background: 'linear-gradient(180deg, #B8E0F6 0%, #E8F4FC 100%)' }}>
+      style={{ background: 'var(--bg-sky)' }}>
       {/* Header / Logout Area */}
-      <div className="max-w-6xl mx-auto mb-4 flex justify-between items-center bg-white/80 p-2 rounded-lg border-2 border-deep-black shadow-md sticky top-2 z-50">
-        <div className="font-pixel text-sm flex items-center gap-2">
+      <div className="max-w-5xl mx-auto mb-4 flex flex-wrap justify-between items-center gap-2 bg-surface px-3 py-2 rounded-card border-2 border-line shadow-soft sticky top-2 z-50">
+        <div className="font-heading text-sm flex items-center gap-2">
           {/* Header Text Logic */}
           {user.role === 'parent' ? (
             <div className="flex items-center gap-2">
               <span className="text-xl">🛡️</span>
               <span className="font-bold">{user.name}</span>
-              <span className="text-gray-500 text-xs">(家長)</span>
+              <span className="text-ink-muted text-xs font-body">(家長)</span>
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <span className="text-xl">{user.avatar_url || '👦'}</span>
               <span className="font-bold">{user.name}</span>
-              <span className="text-gray-500 text-xs">(小小冒險家)</span>
+              <span className="text-ink-muted text-xs font-body">(小小冒險家)</span>
             </div>
           )}
         </div>
@@ -168,7 +168,7 @@ function AppContent() {
           {user.role === 'parent' && (
             <button
               onClick={lockParent}
-              className="flex items-center gap-2 px-3 py-1 bg-yellow-100 border-2 border-deep-black hover:bg-yellow-200 transition-colors font-pixel text-xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-control border-2 transition-colors font-heading text-xs cursor-pointer bg-amber-50 border-amber-200 text-ink hover:bg-amber-100"
               title="登出家長 (需要重新輸入PIN)"
             >
               <Lock size={14} />
@@ -179,7 +179,7 @@ function AppContent() {
           {/* Exit Profile (Back to Role Selection) */}
           <button
             onClick={exitProfile}
-            className="flex items-center gap-2 px-3 py-1 bg-white border-2 border-deep-black hover:bg-gray-100 transition-colors font-pixel text-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-control border-2 transition-colors font-heading text-xs cursor-pointer bg-white border-line text-ink hover:bg-surface"
             title={user.role === 'parent' ? '保持登入並切換' : '切換角色'}
           >
             <ArrowLeft size={14} />
@@ -190,7 +190,7 @@ function AppContent() {
           {user.role === 'parent' && (
           <button
             onClick={() => logout()}
-            className="flex items-center gap-2 px-3 py-1 bg-red-100 border-2 border-deep-black hover:bg-red-200 transition-colors font-pixel text-xs text-red-600"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-control border-2 transition-colors font-heading text-xs cursor-pointer bg-white border-red-200 text-danger-dark hover:bg-red-50"
             title="登出系統"
           >
             <LogOut size={14} />

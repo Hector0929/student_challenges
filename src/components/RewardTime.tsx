@@ -54,11 +54,11 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
                     >
                         <Lock size={28} style={{ color: 'var(--color-text-muted)' }} />
                     </div>
-                    <h3 className="font-heading text-lg mb-2" style={{ color: 'var(--color-text-light)' }}>
+                    <h3 className="font-heading text-lg mb-2 text-ink-soft">
                         🔒 獎勵時間（未解鎖）
                     </h3>
-                    <p className="font-body text-base mb-4" style={{ color: 'var(--color-text)' }}>
-                        還差 <span className="font-heading text-2xl font-bold" style={{ color: 'var(--color-cta)' }}>{remainingQuests}</span> 個任務就能玩遊戲囉！
+                    <p className="font-body text-base mb-4 text-ink">
+                        還差 <span className="font-heading text-2xl font-bold text-accent">{remainingQuests}</span> 個任務就能玩遊戲囉！
                     </p>
                     <div className="max-w-md mx-auto">
                         <div className="clay-progress">
@@ -67,7 +67,7 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
                                 style={{ width: `${progressPercentage}%` }}
                             />
                         </div>
-                        <p className="font-body text-sm mt-2" style={{ color: 'var(--color-text-light)' }}>
+                        <p className="font-body text-sm mt-2 text-ink-soft">
                             {Math.round(progressPercentage)}% 完成
                         </p>
                     </div>
@@ -79,7 +79,7 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
     // Unlocked state - Claymorphism style
     return (
         <>
-            <div className="clay-card mt-6 p-5 animate-bounce-in" style={{ borderRadius: '20px' }}>
+            <div className="clay-card mt-6 p-5 animate-bounce-in rounded-card">
                 {/* Section Header */}
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -90,10 +90,10 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
                             <Gamepad2 size={24} style={{ color: 'var(--pastel-orange-text)' }} />
                         </div>
                         <div>
-                            <h2 className="font-heading text-xl font-bold" style={{ color: 'var(--color-text)' }}>
+                            <h2 className="font-heading text-xl font-bold text-ink">
                                 獎勵時間
                             </h2>
-                            <p className="font-body text-xs" style={{ color: 'var(--color-text-light)' }}>
+                            <p className="font-body text-xs text-ink-soft">
                                 已解鎖，盡情玩樂吧！
                             </p>
                         </div>
@@ -112,10 +112,10 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
                         {/* Celebration & Star Balance */}
                         <div className="text-center mb-6">
                             <div className="text-5xl mb-2 animate-float">🎉</div>
-                            <h3 className="font-heading text-lg mb-2" style={{ color: 'var(--color-cta)' }}>
+                            <h3 className="font-heading text-lg mb-2 text-accent">
                                 獎勵時間解鎖！
                             </h3>
-                            <p className="font-body text-sm mb-4" style={{ color: 'var(--color-text-light)' }}>
+                            <p className="font-body text-sm mb-4 text-ink-soft">
                                 選一個遊戲放鬆一下吧 🎮
                             </p>
 
@@ -171,7 +171,7 @@ export const RewardTime: React.FC<RewardTimeProps> = ({
                         </div>
 
                         <div className="mt-4 text-center">
-                            <div className="flex items-center justify-center gap-2" style={{ color: 'var(--color-text-light)' }}>
+                            <div className="flex items-center justify-center gap-2 text-ink-soft">
                                 <Gamepad2 size={16} />
                                 <span className="font-body text-xs">每次遊戲 {GAME_COST} 星幣 / 3分鐘</span>
                             </div>

@@ -28,7 +28,7 @@ export const RPGDialog: React.FC<RPGDialogProps> = ({
         <div className="fixed inset-0 z-[70] overflow-y-auto touch-pan-y">
             {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-black bg-opacity-50"
+                className="fixed inset-0 bg-black/40"
                 onClick={onClose}  // Will do nothing if onClose is undefined
             />
 
@@ -37,13 +37,13 @@ export const RPGDialog: React.FC<RPGDialogProps> = ({
             {/* Dialog */}
             <div className={`relative clay-dialog max-w-2xl w-full max-h-[calc(100dvh-0.75rem)] sm:max-h-[90vh] overflow-y-auto animate-bounce-in p-4 sm:p-6 my-1 sm:my-2 ${dialogClassName || ''}`}>
                 {/* Header */}
-                <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-deep-black">
-                    <h2 className="text-lg font-pixel">{title}</h2>
+                <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-line">
+                    <h2 className="text-lg font-heading font-bold text-ink">{title}</h2>
                     {onClose && (
                         <button
                             onClick={onClose}
-                            className="p-2 hover:bg-gray-100 transition-colors"
-                            aria-label="Close"
+                            className="p-2 rounded-full text-ink-soft hover:bg-line transition-colors cursor-pointer"
+                            aria-label="關閉"
                         >
                             <X size={20} />
                         </button>
@@ -57,7 +57,7 @@ export const RPGDialog: React.FC<RPGDialogProps> = ({
 
                 {/* Footer */}
                 {footer && (
-                    <div className="pt-3 border-t-2 border-deep-black">
+                    <div className="pt-3 border-t-2 border-line">
                         {footer}
                     </div>
                 )}

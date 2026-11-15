@@ -365,8 +365,8 @@ export const DebugPage: React.FC = () => {
                         <Bug className="text-primary-dark" size={28} />
                     </div>
                     <div>
-                        <h1 className="font-heading text-3xl font-bold" style={{ color: 'var(--color-text)' }}>Developer Dashboard</h1>
-                        <p className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>快速驗證遊戲與查看系統狀態</p>
+                        <h1 className="font-heading text-3xl font-bold text-ink">Developer Dashboard</h1>
+                        <p className="font-body text-sm text-ink-soft">快速驗證遊戲與查看系統狀態</p>
                     </div>
                 </div>
 
@@ -407,7 +407,7 @@ export const DebugPage: React.FC = () => {
             </div>
 
             {/* QA Tools Section (Always Visible) */}
-            <div className="clay-card p-4 mb-6 flex items-center justify-between" style={{ borderRadius: '20px' }}>
+            <div className="clay-card p-4 mb-6 flex items-center justify-between rounded-card">
                 <div className="flex items-center gap-4">
                     <div className="bg-yellow-100 px-4 py-2 rounded-xl border-2 border-yellow-200">
                         <span className="text-xs text-yellow-700 block">目前星幣</span>

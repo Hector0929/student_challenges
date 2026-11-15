@@ -41,7 +41,8 @@ vi.mock('../components/RewardTime', () => ({
 }));
 
 vi.mock('../components/LearningArea', () => ({
-    LearningArea: ({ middle }: { middle?: React.ReactNode }) => <div>Learning Area{middle}</div>,
+    LearningArea: ({ children }: { children: (p: { recommended: React.ReactNode; all: React.ReactNode }) => React.ReactNode }) =>
+        <>{children({ recommended: <div>Learning Area</div>, all: null })}</>,
 }));
 
 vi.mock('../components/World3D', () => ({

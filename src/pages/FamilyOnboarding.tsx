@@ -107,16 +107,16 @@ export const FamilyOnboarding: React.FC = () => {
                             alt="Daily QuestMon 吉祥物"
                             className="w-16 h-16 md:w-24 md:h-24 drop-shadow-lg"
                         />
-                        <h1 className="font-heading text-2xl md:text-4xl font-bold" style={{ color: 'var(--color-text)' }}>
+                        <h1 className="font-heading text-2xl md:text-4xl font-bold text-ink">
                             Daily QuestMon
                         </h1>
                     </div>
-                    <p className="font-body text-base md:text-xl leading-relaxed" style={{ color: 'var(--color-text)' }}>
+                    <p className="font-body text-base md:text-xl leading-relaxed text-ink">
                         每天完成任務、學習闖關，換星幣的家庭冒險。
                     </p>
                     <ul className="hidden md:grid gap-3 mt-6">
                         {HIGHLIGHTS.map((h) => (
-                            <li key={h.text} className="flex items-center gap-3 font-body" style={{ color: 'var(--color-text)' }}>
+                            <li key={h.text} className="flex items-center gap-3 font-body text-ink">
                                 <span className="w-10 h-10 shrink-0 rounded-2xl bg-white/70 flex items-center justify-center text-xl shadow-sm">{h.icon}</span>
                                 <span>{h.text}</span>
                             </li>
@@ -125,8 +125,8 @@ export const FamilyOnboarding: React.FC = () => {
                 </section>
 
                 {/* 登入卡 */}
-                <div className="clay-card animate-bounce-in p-6 sm:p-8" style={{ borderRadius: '32px' }}>
-                    <h2 className="font-heading text-xl font-bold mb-4" style={{ color: 'var(--color-text)' }}>{subtitle}</h2>
+                <div className="clay-card animate-bounce-in p-6 sm:p-8 rounded-card">
+                    <h2 className="font-heading text-xl font-bold mb-4 text-ink">{subtitle}</h2>
 
                     {mode !== 'forgot' && (
                         <div className="clay-tab-switch mb-6">
@@ -140,7 +140,7 @@ export const FamilyOnboarding: React.FC = () => {
                     )}
 
                     {mode === 'forgot' && (
-                        <p className="font-body text-sm mb-4" style={{ color: 'var(--color-text-light)' }}>
+                        <p className="font-body text-sm mb-4 text-ink-soft">
                             輸入註冊時的 Email，我們會寄一封信，讓你設定新密碼。
                         </p>
                     )}
@@ -189,7 +189,7 @@ export const FamilyOnboarding: React.FC = () => {
                             </div>
                         )}
 
-                        <button type="submit" className="clay-btn w-full py-4 font-heading text-base cursor-pointer" style={{ borderRadius: '16px' }} disabled={loading}>
+                        <button type="submit" className="clay-btn w-full py-4 font-heading text-base cursor-pointer rounded-control" disabled={loading}>
                             <div className="flex items-center justify-center gap-2">
                                 {loading ? <span>處理中...</span> : <><span>{submitLabel}</span>{mode === 'forgot' ? <KeyRound size={18} /> : <ArrowRight size={18} />}</>}
                             </div>
@@ -217,11 +217,11 @@ export const FamilyOnboarding: React.FC = () => {
 function Field({ id, label, icon, children }: { id: string; label: string; icon: React.ReactNode; children: React.ReactNode }) {
     return (
         <div>
-            <label htmlFor={id} className="block font-heading text-sm mb-2" style={{ color: 'var(--color-text)' }}>
+            <label htmlFor={id} className="block font-heading text-sm mb-2 text-ink">
                 {label}
             </label>
             <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--color-text-muted)' }}>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-ink-muted">
                     {icon}
                 </span>
                 {children}

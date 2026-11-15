@@ -32,7 +32,7 @@ export const ClayDialog: React.FC<ClayDialogProps> = ({
             <div className="relative clay-dialog max-w-2xl w-full max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] flex flex-col animate-bounce-in my-2">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 pb-4">
-                    <h2 className="text-2xl font-heading font-bold" style={{ color: 'var(--color-text)' }}>
+                    <h2 className="text-2xl font-heading font-bold text-ink">
                         {title}
                     </h2>
                     {onClose && (

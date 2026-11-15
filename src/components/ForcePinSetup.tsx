@@ -35,7 +35,7 @@ export const ForcePinSetup: React.FC = () => {
 
     const input = (id: string, label: string, value: string, set: (v: string) => void, autoFocus = false) => (
         <div>
-            <label htmlFor={id} className="block font-heading text-sm mb-2" style={{ color: 'var(--color-text)' }}>{label}</label>
+            <label htmlFor={id} className="block font-heading text-sm mb-2 text-ink">{label}</label>
             <input
                 id={id}
                 type="password"
@@ -56,22 +56,22 @@ export const ForcePinSetup: React.FC = () => {
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} role="dialog" aria-modal="true" aria-labelledby="force-pin-title">
-            <form onSubmit={handleSubmit} className="clay-card w-full max-w-md p-6 space-y-4" style={{ borderRadius: '24px' }}>
+            <form onSubmit={handleSubmit} className="clay-card w-full max-w-md p-6 space-y-4 rounded-card">
                 <div className="text-center">
                     <ShieldCheck size={40} className="mx-auto mb-2 text-amber-500" />
-                    <h2 id="force-pin-title" className="font-heading text-xl font-bold" style={{ color: 'var(--color-text)' }}>先設定新的家長 PIN</h2>
-                    <p className="font-body text-sm mt-2" style={{ color: 'var(--color-text-light)' }}>
+                    <h2 id="force-pin-title" className="font-heading text-xl font-bold text-ink">先設定新的家長 PIN</h2>
+                    <p className="font-body text-sm mt-2 text-ink-soft">
                         家長模式可以審核任務、調整星幣。設定一組孩子猜不到的 4 位數字，之後進家長模式都要輸入它。
                     </p>
                 </div>
                 {input('new-pin', '新的 PIN', pin, setPin, true)}
                 {input('confirm-pin', '再輸入一次', confirm, setConfirm)}
-                {error && <p role="alert" className="text-center font-body text-sm" style={{ color: 'var(--color-danger)' }}>{error}</p>}
+                {error && <p role="alert" className="text-center font-body text-sm text-danger">{error}</p>}
                 <div className="flex gap-3">
-                    <button type="button" onClick={lockParent} className="flex-1 clay-btn-secondary py-3 font-heading cursor-pointer" style={{ borderRadius: '12px' }}>
+                    <button type="button" onClick={lockParent} className="flex-1 clay-btn-secondary py-3 font-heading cursor-pointer rounded-control">
                         離開家長模式
                     </button>
-                    <button type="submit" disabled={saving} className="flex-1 clay-btn py-3 font-heading cursor-pointer" style={{ borderRadius: '12px' }}>
+                    <button type="submit" disabled={saving} className="flex-1 clay-btn py-3 font-heading cursor-pointer rounded-control">
                         {saving ? '儲存中...' : '儲存'}
                     </button>
                 </div>

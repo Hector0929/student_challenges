@@ -88,7 +88,7 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
             <div className="min-h-screen bg-sky flex items-center justify-center">
                 <div className="text-center">
                     <div className="text-6xl mb-4 animate-float">👋</div>
-                    <p className="font-heading text-lg" style={{ color: 'var(--color-text)' }}>載入中...</p>
+                    <p className="font-heading text-lg text-ink">載入中...</p>
                 </div>
             </div>
         );
@@ -117,7 +117,7 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                 >
                     <div className="flex items-center gap-2">
                         <span className="text-2xl">🏠</span>
-                        <span className="font-heading font-bold text-lg" style={{ color: 'var(--color-text)' }}>
+                        <span className="font-heading font-bold text-lg text-ink">
                             {familyName || '我們家'}
                         </span>
                     </div>
@@ -145,10 +145,10 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                 >
                     <div className="text-center mb-6">
                         <div className="text-5xl mb-3 animate-float">🏝️</div>
-                        <h1 className="font-heading text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
+                        <h1 className="font-heading text-2xl font-bold mb-2 text-ink">
                             今天誰要出發？
                         </h1>
-                        <p className="font-body" style={{ color: 'var(--color-text-light)' }}>
+                        <p className="font-body text-ink-soft">
                             點自己的頭像，看看今天的任務。
                         </p>
                     </div>
@@ -160,7 +160,7 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                                 <ChildCard key={child.id} child={child} colors={ISLAND_COLORS[i % ISLAND_COLORS.length]} onSelect={() => onChildSelected(child)} />
                             ))
                         ) : (
-                            <div className="col-span-full text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
+                            <div className="col-span-full text-center py-8 text-ink-muted">
                                 <p className="font-heading text-lg">尚無註冊的孩子</p>
                                 <p className="font-body text-sm mt-2">請家長先建立孩子帳號</p>
                             </div>
@@ -173,9 +173,9 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                             {wordFeed.map((e) => (
                                 <div key={e.userId} className="flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: '#dfeccf' }}>
                                     <span className="text-2xl">{e.avatar}</span>
-                                    <span className="font-body text-sm min-w-0" style={{ color: 'var(--color-text)' }}>
+                                    <span className="font-body text-sm min-w-0 text-ink">
                                         <b>{feedText(e)}</b> 📣
-                                        <span className="block text-xs truncate" style={{ color: 'var(--color-text-light)' }}>
+                                        <span className="block text-xs truncate text-ink-soft">
                                             {e.words.slice(-5).join('、')}
                                         </span>
                                     </span>
@@ -198,13 +198,13 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                     >
                         <div className="text-center mb-6">
                             <div className="text-4xl mb-2">🔐</div>
-                            <h2 className="font-heading text-xl font-bold" style={{ color: 'var(--color-text)' }}>
+                            <h2 className="font-heading text-xl font-bold text-ink">
                                 家長驗證
                             </h2>
                         </div>
 
                         <form onSubmit={handleParentLogin} className="space-y-4">
-                            <p className="font-body text-center" style={{ color: 'var(--color-text-light)' }}>
+                            <p className="font-body text-center text-ink-soft">
                                 請輸入 4 位數的家長 PIN
                             </p>
 
@@ -227,9 +227,9 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                                     }}
                                     className="w-full pl-12 pr-4 py-4 text-2xl font-heading text-center tracking-widest"
                                     style={{
-                                        backgroundColor: 'var(--bg-card)',
-                                        border: '3px solid var(--border-card)',
-                                        borderRadius: '16px',
+                                        backgroundColor: '#fff',
+                                        border: '2px solid var(--border-soft)',
+                                        borderRadius: 'var(--radius-control)',
                                         color: 'var(--color-text)',
                                     }}
                                     placeholder="● ● ● ●"
@@ -239,7 +239,7 @@ export const RoleSelection: React.FC<RoleSelectionProps> = ({ onChildSelected, o
                             </div>
 
                             {error && (
-                                <p className="text-center font-heading" style={{ color: 'var(--color-danger)' }}>
+                                <p className="text-center font-heading text-danger">
                                     ❌ {error}
                                 </p>
                             )}
@@ -318,13 +318,13 @@ function ChildCard({ child, colors, onSelect }: { child: Profile; colors: [strin
                 <div className="absolute inset-[14%] group-hover:scale-105 transition-transform" style={{ background: ground, clipPath: HEX }} />
                 <span className="relative text-4xl drop-shadow">{child.avatar_url || '👦'}</span>
             </div>
-            <span className="font-heading font-bold text-base sm:text-lg leading-tight truncate max-w-full" style={{ color: 'var(--color-text)' }}>
+            <span className="font-heading font-bold text-base sm:text-lg leading-tight truncate max-w-full text-ink">
                 {child.name}
             </span>
             <span className="font-body text-xs font-bold" style={{ color: p.total === 0 ? 'var(--color-text-muted)' : p.allDone || p.unlocked ? 'var(--color-primary-dark)' : '#B45309' }}>
                 {loading ? '　' : p.total === 0 ? '今天還沒有任務' : p.allDone ? '今天完成了 🎉' : p.unlocked ? '遊戲時間解鎖 🎮' : `還差 ${p.left} 個任務`}
             </span>
-            <span className="font-body text-xs tabular-nums" style={{ color: 'var(--color-text-light)' }}>⭐ {formatStars(stars)}</span>
+            <span className="font-body text-xs tabular-nums text-ink-soft">⭐ {formatStars(stars)}</span>
         </button>
     );
 }

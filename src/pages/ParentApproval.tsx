@@ -104,7 +104,7 @@ export const ParentApproval: React.FC = () => {
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
                     <div className="text-6xl mb-4 animate-bounce">⚙️</div>
-                    <p className="font-heading text-sm" style={{ color: 'var(--color-text-light)' }}>載入中...</p>
+                    <p className="font-heading text-sm text-ink-soft">載入中...</p>
                 </div>
             </div>
         );
@@ -124,8 +124,8 @@ export const ParentApproval: React.FC = () => {
                         <ClipboardCheck className="text-primary-dark" size={28} />
                     </div>
                     <div>
-                        <h2 className="font-heading text-3xl font-bold" style={{ color: 'var(--color-text)' }}>審核中心</h2>
-                        <p className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>
+                        <h2 className="font-heading text-3xl font-bold text-ink">審核中心</h2>
+                        <p className="font-body text-sm text-ink-soft">
                             任務與兌換申請審核
                         </p>
                     </div>
@@ -136,7 +136,7 @@ export const ParentApproval: React.FC = () => {
                 </div>
             </div>
 
-            <p className="font-body text-sm mb-4" style={{ color: 'var(--color-text-light)' }}>
+            <p className="font-body text-sm mb-4 text-ink-soft">
                         {questPendingCount} 個任務 · {exchanges.length} 個兌換申請
             </p>
 
@@ -174,7 +174,7 @@ export const ParentApproval: React.FC = () => {
                     {questPendingCount > 0 ? (
                         <div className="space-y-6">
                             {wishes.map((quest) => (
-                                <div key={`wish-${quest.id}`} className="clay-card p-5 animate-bounce-in relative overflow-hidden border-2 border-yellow-300" style={{ borderRadius: '24px' }}>
+                                <div key={`wish-${quest.id}`} className="clay-card p-5 animate-bounce-in relative overflow-hidden border-2 border-yellow-300 rounded-card">
                                     <div className="flex items-start gap-4">
                                         <div className="clay-icon-circle bg-white text-4xl shrink-0" style={{ width: '64px', height: '64px', borderRadius: '18px' }}>
                                             {quest.icon || '🎯'}
@@ -182,7 +182,7 @@ export const ParentApproval: React.FC = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start justify-between gap-4 mb-2">
                                                 <div>
-                                                    <h3 className="font-heading font-bold text-xl mb-1 leading-relaxed" style={{ color: 'var(--color-text)' }}>
+                                                    <h3 className="font-heading font-bold text-xl mb-1 leading-relaxed text-ink">
                                                         {quest.title}
                                                     </h3>
                                                     <p className="font-body text-sm text-gray-600 mb-2">{quest.description || '孩子提交的許願任務'}</p>
@@ -226,7 +226,7 @@ export const ParentApproval: React.FC = () => {
                             ))}
 
                             {logs.map((log) => (
-                                <div key={log.id} className="clay-card p-5 animate-bounce-in relative overflow-hidden" style={{ borderRadius: '24px' }}>
+                                <div key={log.id} className="clay-card p-5 animate-bounce-in relative overflow-hidden rounded-card">
                                     <div className="flex items-start gap-4">
                                         {/* Quest Icon */}
                                         <div className="clay-icon-circle bg-white text-4xl shrink-0" style={{ width: '64px', height: '64px', borderRadius: '18px' }}>
@@ -237,7 +237,7 @@ export const ParentApproval: React.FC = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start justify-between gap-4 mb-2">
                                                 <div>
-                                                    <h3 className="font-heading font-bold text-xl mb-1 leading-relaxed" style={{ color: 'var(--color-text)' }}>
+                                                    <h3 className="font-heading font-bold text-xl mb-1 leading-relaxed text-ink">
                                                         {log.quest?.title || '未知任務'}
                                                     </h3>
                                                     <p className="font-body text-sm text-gray-600 mb-2">
@@ -302,9 +302,9 @@ export const ParentApproval: React.FC = () => {
                             ))}
                         </div>
                     ) : (
-                        <div className="clay-card text-center py-12" style={{ borderRadius: '24px' }}>
+                        <div className="clay-card text-center py-12 rounded-card">
                             <div className="text-6xl mb-4">✅</div>
-                            <p className="font-heading text-lg font-bold mb-2" style={{ color: 'var(--color-text)' }}>沒有待審核的任務</p>
+                            <p className="font-heading text-lg font-bold mb-2 text-ink">沒有待審核的任務</p>
                             <p className="font-body text-sm text-gray-600">所有任務都已經審核完成了！</p>
                         </div>
                     )}
@@ -317,7 +317,7 @@ export const ParentApproval: React.FC = () => {
                     {exchanges.length > 0 ? (
                         <div className="space-y-6">
                             {exchanges.map((request) => (
-                                <div key={request.id} className="clay-card p-5 animate-bounce-in" style={{ borderRadius: '24px' }}>
+                                <div key={request.id} className="clay-card p-5 animate-bounce-in rounded-card">
                                     <div className="flex items-start gap-4">
                                         {/* Icon */}
                                         <div className="clay-icon-circle bg-white text-4xl shrink-0" style={{ width: '64px', height: '64px', borderRadius: '18px' }}>
@@ -328,7 +328,7 @@ export const ParentApproval: React.FC = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start justify-between gap-4 mb-2">
                                                 <div>
-                                                    <h3 className="font-heading font-bold text-xl mb-1" style={{ color: 'var(--color-text)' }}>
+                                                    <h3 className="font-heading font-bold text-xl mb-1 text-ink">
                                                         {request.profiles?.name || '未知孩子'} 申請兌換
                                                     </h3>
                                                     <p className="font-body text-sm text-gray-600">
@@ -387,9 +387,9 @@ export const ParentApproval: React.FC = () => {
                             ))}
                         </div>
                     ) : (
-                        <div className="clay-card text-center py-12" style={{ borderRadius: '24px' }}>
+                        <div className="clay-card text-center py-12 rounded-card">
                             <div className="text-6xl mb-4">💱</div>
-                            <p className="font-heading text-lg font-bold mb-2" style={{ color: 'var(--color-text)' }}>沒有待審核的兌換申請</p>
+                            <p className="font-heading text-lg font-bold mb-2 text-ink">沒有待審核的兌換申請</p>
                             <p className="font-body text-sm text-gray-600">當孩子提交兌換申請時會顯示在這裡</p>
                         </div>
                     )}

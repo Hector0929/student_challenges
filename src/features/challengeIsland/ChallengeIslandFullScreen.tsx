@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, ArrowRight, ChevronDown, ChevronLeft, ChevronRight, ChevronsDownUp, ChevronsUpDown, Globe, Home, LayoutGrid, Link2, Megaphone, Pause, Play, RotateCcw, ScrollText, Search, Star, Tag, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronLeft, ChevronRight, ChevronsDownUp, ChevronsUpDown, Globe, Home, Link2, Pause, Play, RotateCcw, ScrollText, Search, Star, Tag, X } from 'lucide-react';
 import { useGameWindowController } from '../../hooks/useGameWindowController';
 import { useCompleteQuest } from '../../hooks/useQuests';
 import { GameModal } from '../../components/GameModal';
@@ -13,7 +13,7 @@ import { useRewardGamePlay } from '../../hooks/useRewardGamePlay';
 import { FUN_GAMES, type FunGame } from '../../lib/gameConfig';
 import { GAME_COST } from '../../lib/constants';
 import { IslandScene, type IslandSceneCallbacks, type Selection } from './engine/IslandScene';
-import { GAME_ISLAND_ID, QUEST_ISLAND_ID, hhmm, structureKey, toTaipei, tourEnd, type FeatureDef, type IslandChallenge, type IslandDef, type TodayEvent } from './model';
+import { GAME_ISLAND_ID, QUEST_ISLAND_ID, hhmm, structureKey, toTaipei, tourEnd, type IslandChallenge, type IslandDef, type TodayEvent } from './model';
 import { useChallengeIslandModel } from './useChallengeIsland';
 import './challengeIsland.css';
 import { formatStars } from '../../lib/formatStars';
@@ -44,7 +44,6 @@ export const ChallengeIslandFullScreen: React.FC<ChallengeIslandFullScreenProps>
     if (!isOpen) return null;
     const view = (
         <IslandView
-            mode="modal"
             userId={props.userId}
             starBalance={props.starBalance}
             onBack={handleEndGame}
@@ -54,33 +53,6 @@ export const ChallengeIslandFullScreen: React.FC<ChallengeIslandFullScreenProps>
     );
     return typeof document !== 'undefined' ? createPortal(view, document.body) : view;
 };
-
-interface ChallengeIslandHomeProps {
-    userId: string;
-    starBalance: number;
-    /** 冒險港上的功能建築 */
-    features: FeatureDef[];
-    onOpenFeature: (featureId: string) => void;
-    onSwitchProfile: () => void;
-    /** 切到經典版儀表板 */
-    onClassic: () => void;
-    parentMessage?: string | null;
-}
-
-/** 小孩登入後的首頁：自己的學習挑戰群島 */
-export const ChallengeIslandHome: React.FC<ChallengeIslandHomeProps> = (props) => (
-    <IslandView
-        mode="home"
-        userId={props.userId}
-        starBalance={props.starBalance}
-        features={props.features}
-        onOpenFeature={props.onOpenFeature}
-        onBack={props.onSwitchProfile}
-        backLabel="切換角色"
-        onClassic={props.onClassic}
-        parentMessage={props.parentMessage}
-    />
-);
 
 // ---------------------------------------------------------------------------
 
@@ -169,31 +141,26 @@ function highlight(text: string, q: string) {
 }
 
 interface IslandViewProps {
-    mode: 'home' | 'modal';
     userId: string;
     starBalance: number;
     onBack: () => void;
     backLabel: string;
     onHome?: () => void;
-    features?: FeatureDef[];
-    onOpenFeature?: (featureId: string) => void;
-    onClassic?: () => void;
-    parentMessage?: string | null;
 }
 
-const IslandView: React.FC<IslandViewProps> = ({ mode: viewMode, userId, starBalance, onBack, backLabel, onHome, features, onOpenFeature, onClassic, parentMessage }) => {
-    const { model, isLoading } = useChallengeIslandModel(userId, features);
+const IslandView: React.FC<IslandViewProps> = ({ userId, starBalance, onBack, backLabel, onHome }) => {
+    const { model, isLoading } = useChallengeIslandModel(userId);
     const rewardUnlocked = model.stats.gamesUnlocked;
     const remainingQuests = Math.max(0, model.stats.questTarget - model.stats.questsDone);
     const [playGame, setPlayGame] = useState<FunGame | null>(null);
     const rewardPlay = useRewardGamePlay(userId, playGame);
-    const [messageOpen, setMessageOpen] = useState(true);
     const stageRef = useRef<HTMLDivElement>(null);
     const engineRef = useRef<IslandScene | null>(null);
     const skey = structureKey(model);
 
     const [mode, setMode] = useState<Mode>(() => (isNarrow() ? 'overview' : 'list'));
-    const [panelOpen, setPanelOpen] = useState(() => !isNarrow());
+    // 手機也先打開清單（底部抽屜），想看地圖再收起
+    const [panelOpen, setPanelOpen] = useState(true);
     const [tab, setTab] = useState<'list' | 'log'>('list');
     const [query, setQuery] = useState('');
     const [collapsed, setCollapsed] = useState<string[]>(readCollapsed);
@@ -668,11 +635,6 @@ const IslandView: React.FC<IslandViewProps> = ({ mode: viewMode, userId, starBal
                             )}
                         </button>
                     )}
-                    {c.kind === 'feature' && onOpenFeature && (
-                        <button type="button" className="ci-primary" onClick={() => onOpenFeature(c.sourceId)}>
-                            進入{c.name} <ArrowRight size={18} />
-                        </button>
-                    )}
                 </div>
                 {c.kind === 'quest' && confirmQuest === c.id && <p className="ci-note">真的做完了嗎？再按一次送出給家長確認。</p>}
                 {c.kind === 'learning' && <p className="ci-note">練習滿 3 分鐘可以拿到星幣，屋頂也會出現金幣。</p>}
@@ -761,7 +723,7 @@ const IslandView: React.FC<IslandViewProps> = ({ mode: viewMode, userId, starBal
     const toggleIsland = (id: string) => updateCollapsed(collapsed.includes(id) ? collapsed.filter((x) => x !== id) : [...collapsed, id]);
 
     const stats = model.stats;
-    const rootClass = ['ci-root', panelOpen ? 'panel-open' : '', tour ? 'touring' : '', viewMode === 'home' ? 'is-home' : ''].join(' ');
+    const rootClass = ['ci-root', panelOpen ? 'panel-open' : '', tour ? 'touring' : ''].join(' ');
     const TOUR_END = tourEnd(tourSteps);
     const tourPct = Math.min(100, Math.max(0, ((minute - TOUR_START) / (TOUR_END - TOUR_START)) * 100));
 
@@ -793,19 +755,6 @@ const IslandView: React.FC<IslandViewProps> = ({ mode: viewMode, userId, starBal
                     ))}
                 </div>
             </header>
-
-            {parentMessage && messageOpen && (
-                <div className="ci-message" role="note">
-                    <Megaphone size={16} />
-                    <span>
-                        <b>爸媽的話</b>
-                        {parentMessage}
-                    </span>
-                    <button type="button" aria-label="收起" onClick={() => setMessageOpen(false)}>
-                        <X size={14} />
-                    </button>
-                </div>
-            )}
 
             <nav className="ci-toolbar" aria-label="地圖工具">
                 <button type="button" className={`ci-tg ${names ? 'is-on' : ''}`} title="名牌：顯示島嶼與建築名稱 (N)" onClick={() => setNames((v) => !v)}>
@@ -868,15 +817,6 @@ const IslandView: React.FC<IslandViewProps> = ({ mode: viewMode, userId, starBal
                         ))}
                     </div>
                 </div>
-                {onClassic && (
-                    <>
-                        <span className="ci-sep" />
-                        <button type="button" className="ci-tg" title="切換到經典版面" onClick={onClassic}>
-                            <LayoutGrid size={18} />
-                            <span>經典版</span>
-                        </button>
-                    </>
-                )}
                 {onHome && (
                     <>
                         <span className="ci-sep" />

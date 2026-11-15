@@ -185,6 +185,33 @@ export class IslandScene {
         }
     }
 
+    /**
+     * 名牌互相蓋到時，只留重要的那個：選取／滑鼠指著 > 島名 > 建築名。
+     * 用畫面上的實際位置判斷（ci-hidden 只改透明度，位置仍可量）。
+     */
+    private cullOverlappingLabels(hovered: string | null) {
+        type Cand = { el: HTMLElement; rank: number };
+        const cands: Cand[] = [];
+        for (const el of this.islandLabels.values()) if (!el.classList.contains('ci-hidden')) cands.push({ el, rank: el.classList.contains('sel') ? 0 : 1 });
+        for (const [id, el] of this.buildingLabels) {
+            if (el.classList.contains('ci-hidden')) continue;
+            cands.push({ el, rank: el.classList.contains('sel') || id === hovered ? 0 : 2 });
+        }
+        cands.sort((a, b) => a.rank - b.rank);
+        const placed: DOMRect[] = [];
+        const PAD = 3;
+        for (const { el, rank } of cands) {
+            const r = el.getBoundingClientRect();
+            if (!r.width) continue;
+            const hit = placed.some((p) => r.left < p.right + PAD && r.right > p.left - PAD && r.top < p.bottom + PAD && r.bottom > p.top - PAD);
+            if (hit && rank > 0) {
+                el.classList.add('ci-hidden');
+                continue;
+            }
+            placed.push(r);
+        }
+    }
+
     /** 只更新完成狀態（金幣、沙漏、旗子、名牌），不重建場景 */
     setStatuses(model: IslandModel) {
         for (const def of model.islands) {
@@ -501,6 +528,7 @@ export class IslandScene {
                 el.classList.toggle('ci-hidden', !show);
             }
             for (const [id, el] of this.islandLabels) el.classList.toggle('ci-hidden', !this.names && selIsland !== id);
+            this.cullOverlappingLabels(hovered);
         }
         const m = Math.floor(this.minute);
         if (m !== this.shownMinute) {

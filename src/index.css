@@ -42,15 +42,24 @@
   --border-soft: #D7CCC8;
   --border-card: #BCAAA4;
 
-  /* Radius */
-  --radius-card: 24px;
-  --radius-btn: 16px;
+  /* ── Design tokens（第三階段統一）──────────────────────────
+     顏色 4 種角色：primary 主色（完成/前進）、accent 強調（星幣/行動）、
+     danger 警示、ink 文字（深/淺/弱 三階）。表面用 surface / line。
+     圓角 2 級：card（卡片、對話框）與 control（按鈕、輸入框、標籤）。
+     陰影 1 種：soft。字體 2 種：heading（Fredoka）、body（Nunito）。
+     斷點：640（sm 平板）與 1024（lg 桌機）。像素字體只留在遊戲內。 */
+  --radius-card: 20px;
+  --radius-control: 12px;
   --radius-full: 9999px;
+  --shadow-soft: 0 2px 4px rgba(93, 64, 55, 0.06), 0 8px 20px rgba(93, 64, 55, 0.08);
+  --shadow-soft-hover: 0 4px 8px rgba(93, 64, 55, 0.08), 0 12px 28px rgba(93, 64, 55, 0.12);
+  --font-heading: 'Fredoka', 'Nunito', system-ui, sans-serif;
+  --font-body: 'Nunito', system-ui, sans-serif;
 
-  /* Shadows */
-  --shadow-clay: 4px 4px 0 rgba(0, 0, 0, 0.08), inset 0 -2px 4px rgba(0, 0, 0, 0.04);
-  --shadow-clay-hover: 6px 6px 0 rgba(0, 0, 0, 0.12);
-  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.08);
+  /* 舊名稱保留為別名，避免遊戲內樣式壞掉 */
+  --radius-btn: var(--radius-control);
+  --shadow-clay: var(--shadow-soft);
+  --shadow-clay-hover: var(--shadow-soft-hover);
 
   /* Pastel Palette for Game Cards */
   --pastel-blue-bg: #EBF5FF;
@@ -93,7 +102,7 @@
 }
 
 body {
-  font-family: 'Nunito', 'Fredoka', sans-serif;
+  font-family: var(--font-body);
   background-color: var(--bg-main);
   color: var(--color-text);
   line-height: 1.6;
@@ -108,17 +117,17 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-heading);
   font-weight: 600;
   color: var(--color-text);
 }
 
 .font-heading {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-heading);
 }
 
 .font-body {
-  font-family: 'Nunito', sans-serif;
+  font-family: var(--font-body);
 }
 
 /* Form Elements */
@@ -126,8 +135,8 @@ button,
 input,
 select,
 textarea {
-  font-family: 'Nunito', sans-serif;
-  border-radius: var(--radius-btn);
+  font-family: var(--font-body);
+  border-radius: var(--radius-control);
 }
 
 /* Custom Scrollbar */
@@ -156,14 +165,17 @@ textarea {
 /* Card Base */
 .clay-card {
   background: var(--bg-card);
-  border: 3px solid var(--border-card);
+  border: 2px solid var(--border-soft);
   border-radius: var(--radius-card);
-  box-shadow: var(--shadow-clay);
-  transition: all 0.2s ease;
+  box-shadow: var(--shadow-soft);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.clay-card:hover {
-  box-shadow: var(--shadow-clay-hover);
+/* 只有可以點的卡片才浮起來 */
+button.clay-card:hover,
+a.clay-card:hover,
+.clay-card[role='button']:hover {
+  box-shadow: var(--shadow-soft-hover);
   transform: translateY(-2px);
 }
 
@@ -171,53 +183,62 @@ textarea {
 .clay-btn {
   background: var(--color-cta);
   color: white;
-  border: 3px solid #E09000;
-  border-radius: var(--radius-btn);
+  border: 2px solid transparent;
+  border-radius: var(--radius-control);
   padding: 12px 24px;
   font-weight: 700;
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-heading);
   cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: 0 4px 0 #CC8000;
+  transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: var(--shadow-soft);
 }
 
 .clay-btn:hover {
   background: var(--color-cta-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 0 #CC8000;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft-hover);
 }
 
 .clay-btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #CC8000;
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.clay-btn:focus-visible,
+.clay-btn-secondary:focus-visible {
+  outline: 3px solid rgba(76, 175, 80, 0.45);
+  outline-offset: 2px;
 }
 
 /* Secondary Button */
 .clay-btn-secondary {
   background: var(--bg-card);
   color: var(--color-text);
-  border: 3px solid var(--border-card);
-  box-shadow: 0 4px 0 var(--border-soft);
+  border: 2px solid var(--border-soft);
+  box-shadow: none;
 }
 
 .clay-btn-secondary:hover {
   background: #FFF5DC;
-  box-shadow: 0 6px 0 var(--border-soft);
+  box-shadow: var(--shadow-soft);
 }
 
 /* Danger Button */
 .clay-btn-danger {
   background: var(--color-danger);
-  border-color: var(--color-danger-dark);
-  box-shadow: 0 4px 0 #B71C1C;
+  border-color: transparent;
+}
+
+.clay-btn-danger:hover {
+  background: var(--color-danger-dark);
 }
 
 /* Progress Bar */
 .clay-progress {
-  background: #E8E0D5;
-  border: 3px solid var(--border-card);
+  background: var(--border-soft);
+  border: none;
   border-radius: var(--radius-full);
-  height: 28px;
+  height: 16px;
   overflow: hidden;
   position: relative;
 }
@@ -249,9 +270,9 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3px solid var(--border-soft);
+  border: 2px solid var(--border-soft);
   background: var(--bg-card);
-  box-shadow: var(--shadow-clay);
+  box-shadow: none;
 }
 
 .clay-icon-circle.success {
@@ -283,8 +304,8 @@ textarea {
   padding: 6px 14px;
   border-radius: var(--radius-full);
   font-weight: 700;
-  font-family: 'Fredoka', sans-serif;
-  box-shadow: 0 2px 0 #CC8000;
+  font-family: var(--font-heading);
+  box-shadow: none;
 }
 
 /* Input Field */
@@ -292,11 +313,11 @@ textarea {
   width: 100%;
   padding: 14px 16px;
   padding-left: 48px;
-  font-family: 'Nunito', sans-serif;
+  font-family: var(--font-body);
   font-size: 1rem;
-  background: var(--bg-card);
-  border: 3px solid var(--border-card);
-  border-radius: var(--radius-btn);
+  background: #fff;
+  border: 2px solid var(--border-soft);
+  border-radius: var(--radius-control);
   color: var(--color-text);
   transition: all 0.2s ease;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -352,9 +373,9 @@ textarea {
   background-image: url('/patterns/dialog_bg.webp');
   background-repeat: repeat;
   background-size: 200px;
-  border: 4px solid var(--border-card);
-  border-radius: 32px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  border: 2px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  box-shadow: 0 20px 50px rgba(93, 64, 55, 0.18);
   position: relative;
   overflow: hidden;
 }
@@ -695,31 +716,37 @@ textarea {
    Responsive
    ======================================== */
 
-@media (max-width: 768px) {
-  body {
-    font-size: 14px;
-  }
+/* 斷點只用兩個：640（sm）與 1024（lg），與 Tailwind 預設一致 */
+body {
+  font-size: 16px;
+}
 
+@media (max-width: 639px) {
   .clay-card {
     border-radius: 16px;
   }
 
   .clay-btn {
     padding: 10px 20px;
-    font-size: 14px;
+    font-size: 15px;
   }
 }
 
-@media (min-width: 769px) {
-  body {
-    font-size: 16px;
-  }
+/* 共用表單欄位（取代舊的黑框輸入框） */
+.ui-field {
+  width: 100%;
+  padding: 10px 12px;
+  background: #fff;
+  border: 2px solid var(--border-soft);
+  border-radius: var(--radius-control);
+  color: var(--color-text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-@media (min-width: 1024px) {
-  body {
-    font-size: 18px;
-  }
+.ui-field:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
 }
 
 /* ========================================

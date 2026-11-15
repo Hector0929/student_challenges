@@ -32,10 +32,10 @@ export const SubjectSection: React.FC<SubjectSectionProps> = ({ group, onSelectI
                     <Icon size={20} style={{ color: 'var(--color-text)' }} />
                 </div>
                 <div>
-                    <h3 className="font-heading text-lg font-bold" style={{ color: 'var(--color-text)' }}>
+                    <h3 className="font-heading text-lg font-bold text-ink">
                         {group.subject.name}
                     </h3>
-                    <p className="font-body text-xs" style={{ color: 'var(--color-text-light)' }}>
+                    <p className="font-body text-xs text-ink-soft">
                         {group.subject.description}
                     </p>
                 </div>

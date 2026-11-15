@@ -111,7 +111,7 @@ export const ChildManagement: React.FC = () => {
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
                     <div className="text-6xl mb-4 animate-bounce">⚙️</div>
-                    <p className="font-heading text-sm" style={{ color: 'var(--color-text-light)' }}>載入中...</p>
+                    <p className="font-heading text-sm text-ink-soft">載入中...</p>
                 </div>
             </div>
         );
@@ -126,8 +126,8 @@ export const ChildManagement: React.FC = () => {
                         <Users className="text-primary-dark" size={28} />
                     </div>
                     <div>
-                        <h2 className="font-heading text-3xl font-bold" style={{ color: 'var(--color-text)' }}>管理孩子帳號</h2>
-                        <p className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>新增、查看與移除孩子帳號</p>
+                        <h2 className="font-heading text-3xl font-bold text-ink">管理孩子帳號</h2>
+                        <p className="font-body text-sm text-ink-soft">新增、查看與移除孩子帳號</p>
                     </div>
                 </div>
 
@@ -141,17 +141,17 @@ export const ChildManagement: React.FC = () => {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {children && children.length > 0 ? (
                     children.map((child) => (
-                        <div key={child.id} className="clay-card p-5 animate-bounce-in" style={{ borderRadius: '24px' }}>
+                        <div key={child.id} className="clay-card p-5 animate-bounce-in rounded-card">
                             <div className="flex items-start gap-4">
                                 <div className="clay-icon-circle bg-white text-4xl shrink-0" style={{ width: '64px', height: '64px', borderRadius: '18px' }}>
                                     {child.avatar_url || '👦'}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-heading font-bold text-2xl mb-1" style={{ color: 'var(--color-text)' }}>{child.name}</h3>
+                                    <h3 className="font-heading font-bold text-2xl mb-1 text-ink">{child.name}</h3>
                                     <p className="font-body text-sm text-gray-500 mt-2">
                                         建立於: {new Date(child.created_at).toLocaleDateString('zh-TW')}
                                     </p>
-                                    <label className="mt-3 flex items-center gap-2 font-body text-sm" style={{ color: 'var(--color-text)' }}>
+                                    <label className="mt-3 flex items-center gap-2 font-body text-sm text-ink">
                                         <span className="font-bold">年級</span>
                                         <select
                                             className="rounded-xl border-2 border-indigo-100 bg-white px-2 py-1"
@@ -177,9 +177,9 @@ export const ChildManagement: React.FC = () => {
                         </div>
                     ))
                 ) : (
-                    <div className="clay-card text-center py-12 md:col-span-2 lg:col-span-3" style={{ borderRadius: '24px' }}>
+                    <div className="clay-card text-center py-12 md:col-span-2 lg:col-span-3 rounded-card">
                         <div className="text-6xl mb-4">👶</div>
-                        <p className="font-heading text-lg font-bold mb-2" style={{ color: 'var(--color-text)' }}>尚未新增孩子</p>
+                        <p className="font-heading text-lg font-bold mb-2 text-ink">尚未新增孩子</p>
                         <p className="font-body text-sm text-gray-600">點擊「新增孩子」開始建立帳號</p>
                     </div>
                 )}
@@ -219,7 +219,7 @@ export const ChildManagement: React.FC = () => {
                 <form id="add-child-form" onSubmit={handleSubmit} className="space-y-4">
                     {/* Name */}
                     <div>
-                        <label className="block font-heading font-bold text-sm mb-2" style={{ color: 'var(--color-text)' }}>孩子的名字 *</label>
+                        <label className="block font-heading font-bold text-sm mb-2 text-ink">孩子的名字 *</label>
                         <input
                             type="text"
                             value={formData.name}
@@ -232,7 +232,7 @@ export const ChildManagement: React.FC = () => {
 
                     {/* Avatar */}
                     <div>
-                        <label className="block font-heading font-bold text-sm mb-2" style={{ color: 'var(--color-text)' }}>選擇頭像</label>
+                        <label className="block font-heading font-bold text-sm mb-2 text-ink">選擇頭像</label>
                         <div className="grid grid-cols-7 gap-2">
                             {commonEmojis.map((emoji) => (
                                 <button

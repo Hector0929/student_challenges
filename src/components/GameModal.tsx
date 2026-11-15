@@ -54,7 +54,7 @@ interface GameModalProps {
 type GamePhase = 'confirm' | 'playing' | 'paused' | 'timeup' | 'insufficient';
 
 // Helper Components (Extracted to prevent re-mounting)
-const btnBase = "px-6 py-3 font-pixel text-sm rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-1";
+const btnBase = "px-6 py-3 font-heading text-sm rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-1";
 const btnPrimary = "clay-btn w-full sm:w-auto";
 const btnSecondary = "clay-btn-secondary w-full sm:w-auto";
 const btnGreen = "bg-green-500 hover:bg-green-600 text-white shadow-[0_4px_0_0_#15803d] active:shadow-none";
@@ -93,13 +93,13 @@ const TopHUD = ({
                 >
                     <ArrowLeft size={18} />
                 </button>
-                <span className="font-pixel text-indigo-900 text-xs sm:text-sm truncate max-w-[90px] sm:max-w-[180px]">{gameName}</span>
+                <span className="font-heading text-indigo-900 text-xs sm:text-sm truncate max-w-[90px] sm:max-w-[180px]">{gameName}</span>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 bg-indigo-900 rounded-full py-1.5 sm:py-2 px-2.5 sm:px-4 shadow-lg">
                 <Clock size={18} className={`${timeRemaining <= 30 ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`} />
                 <div className="flex flex-col items-start w-16">
-                    <span className={`font-pixel text-base sm:text-lg leading-none ${timeRemaining <= 30 ? 'text-red-400' : 'text-white'}`}>
+                    <span className={`font-heading text-base sm:text-lg leading-none ${timeRemaining <= 30 ? 'text-red-400' : 'text-white'}`}>
                         {formatTime(timeRemaining)}
                     </span>
                 </div>
@@ -152,8 +152,8 @@ const PausedOverlay = ({
         <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center animate-fade-in">
             <div className="text-center p-6 clay-card max-w-md w-full mx-4 animate-bounce-in bg-white">
                 <div className="text-6xl mb-3">⏸️</div>
-                <h3 className="font-pixel text-2xl mb-2" style={{ color: 'var(--color-text)' }}>已暫停</h3>
-                <p className="mb-6 font-pixel text-sm" style={{ color: 'var(--color-text-light)' }}>可以繼續練習，或結束本次遊戲</p>
+                <h3 className="font-heading text-2xl mb-2 text-ink">已暫停</h3>
+                <p className="mb-6 font-heading text-sm text-ink-soft">可以繼續練習，或結束本次遊戲</p>
 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <button onClick={onEndGame} className={`${btnBase} ${btnSecondary} w-full sm:w-auto`}>
@@ -192,18 +192,18 @@ const TimeUpOverlay = ({
                     <div className="text-8xl animate-bounce">⏰</div>
                 </div>
 
-                <h3 className="font-pixel text-3xl mb-2" style={{ color: 'var(--color-text)' }}>時間到囉！</h3>
-                <p className="mb-8 font-pixel text-sm" style={{ color: 'var(--color-text-light)' }}>玩得開心嗎？休息一下還是繼續挑戰？</p>
+                <h3 className="font-heading text-3xl mb-2 text-ink">時間到囉！</h3>
+                <p className="mb-8 font-heading text-sm text-ink-soft">玩得開心嗎？休息一下還是繼續挑戰？</p>
 
                 <div className="bg-white/50 rounded-3xl p-6 mb-8 border-4 border-indigo-100 shadow-inner">
-                    <div className="text-sm mb-2 font-bold" style={{ color: 'var(--color-text-light)' }}>再玩 3 分鐘只需要</div>
+                    <div className="text-sm mb-2 font-bold text-ink-soft">再玩 3 分鐘只需要</div>
                     <div className="flex items-center justify-center gap-2">
                         <Star className="text-yellow-500" fill="currentColor" size={32} />
-                        <span className="font-pixel text-4xl" style={{ color: 'var(--color-text)' }}>{GAME_COST}</span>
+                        <span className="font-heading text-4xl text-ink">{GAME_COST}</span>
                     </div>
                     <div className="mt-4 pt-4 border-t border-indigo-100 flex justify-between px-4 text-sm">
                         <span style={{ color: 'var(--color-text-muted)' }}>目前餘額</span>
-                        <span className="font-pixel text-yellow-600">{formatStars(starBalance)} ⭐</span>
+                        <span className="font-heading text-yellow-600">{formatStars(starBalance)} ⭐</span>
                     </div>
                 </div>
 
@@ -536,7 +536,7 @@ export const GameModal: React.FC<GameModalProps> = ({
 
                     {phase === 'paused' && (
                         <div className="z-20 bg-amber-100 border-b-2 border-amber-300 px-3 py-2 text-center">
-                            <span className="font-pixel text-xs text-amber-700">⏸ 畫面已凍結（暫停中）</span>
+                            <span className="font-heading text-xs text-amber-700">⏸ 畫面已凍結（暫停中）</span>
                         </div>
                     )}
 
@@ -586,19 +586,19 @@ export const GameModal: React.FC<GameModalProps> = ({
                                                 <div className="absolute right-[30%] bottom-[20%] text-2xl animate-bounce">⭐</div>
                                             </div>
                                             <div className="absolute left-1/2 -translate-x-1/2 top-4 px-4 py-2 rounded-full bg-green-100 border-2 border-green-300 animate-bounce">
-                                                <span className="font-pixel text-xs text-green-700">🎉 學習獎勵已發送</span>
+                                                <span className="font-heading text-xs text-green-700">🎉 學習獎勵已發送</span>
                                             </div>
                                         </>
                                     )}
 
                                     <div className="text-7xl mb-3">🎓</div>
-                                    <h3 className="font-pixel text-2xl mb-2" style={{ color: 'var(--color-text)' }}>學習完成！</h3>
-                                    <p className="mb-4 font-pixel text-sm" style={{ color: 'var(--color-text-light)' }}>你完成了 3 分鐘學習</p>
+                                    <h3 className="font-heading text-2xl mb-2 text-ink">學習完成！</h3>
+                                    <p className="mb-4 font-heading text-sm text-ink-soft">你完成了 3 分鐘學習</p>
 
                                     {practiceRewardStars > 0 && (
                                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-100 border-2 border-yellow-300 mb-6">
                                             <Star className="text-yellow-500" fill="currentColor" size={18} />
-                                            <span className="font-pixel text-sm">+{practiceRewardStars} 星幣</span>
+                                            <span className="font-heading text-sm">+{practiceRewardStars} 星幣</span>
                                         </div>
                                     )}
 
@@ -632,7 +632,7 @@ export const GameModal: React.FC<GameModalProps> = ({
                     {/* Low Time Warning */}
                     {phase === 'playing' && timeRemaining <= 10 && timeRemaining > 0 && (
                         <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
-                            <div className="text-9xl font-pixel text-red-500 opacity-20 animate-ping">
+                            <div className="text-9xl font-heading text-red-500 opacity-20 animate-ping">
                                 {timeRemaining}
                             </div>
                         </div>
@@ -654,8 +654,8 @@ export const GameModal: React.FC<GameModalProps> = ({
                             </div>
                         </div>
 
-                        <h3 className="font-pixel text-2xl mb-2" style={{ color: 'var(--pastel-indigo-text)' }}>{gameName}</h3>
-                        <p className="text-sm mb-8 font-pixel" style={{ color: 'var(--color-text-light)' }}>
+                        <h3 className="font-heading text-2xl mb-2" style={{ color: 'var(--pastel-indigo-text)' }}>{gameName}</h3>
+                        <p className="text-sm mb-8 font-heading text-ink-soft">
                             {isPractice ? '準備好開始學習了嗎？加油！' : '準備好開始挑戰了嗎？'}
                         </p>
 
@@ -666,20 +666,20 @@ export const GameModal: React.FC<GameModalProps> = ({
                                         <div className="bg-yellow-400 p-3 rounded-2xl shadow-inner">
                                             <Star className="text-white" fill="currentColor" size={28} />
                                         </div>
-                                        <span className="font-pixel text-4xl" style={{ color: 'var(--color-text)' }}>{GAME_COST}</span>
+                                        <span className="font-heading text-4xl text-ink">{GAME_COST}</span>
                                     </div>
-                                    <div className="font-pixel text-sm" style={{ color: 'var(--color-text-muted)' }}>星幣 / 3分鐘</div>
+                                    <div className="font-heading text-sm text-ink-muted">星幣 / 3分鐘</div>
                                 </div>
 
                                 <div className="flex justify-center gap-8 mb-8 text-sm font-bold">
                                     <div className="text-center">
                                         <div className="text-gray-400 text-xs mb-1">目前擁有</div>
-                                        <div className="font-pixel text-xl text-yellow-500">{formatStars(starBalance)}</div>
+                                        <div className="font-heading text-xl text-yellow-500">{formatStars(starBalance)}</div>
                                     </div>
                                     <div className="w-px bg-gray-200"></div>
                                     <div className="text-center">
                                         <div className="text-gray-400 text-xs mb-1">付費後剩餘</div>
-                                        <div className={`font-pixel text-xl ${starBalance - GAME_COST < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                        <div className={`font-heading text-xl ${starBalance - GAME_COST < 0 ? 'text-red-500' : 'text-green-500'}`}>
                                             {starBalance - GAME_COST}
                                         </div>
                                     </div>
@@ -726,22 +726,22 @@ export const GameModal: React.FC<GameModalProps> = ({
                 return (
                     <div className="text-center py-8 px-4">
                         <div className="text-8xl mb-4 animate-float">😢</div>
-                        <h3 className="font-pixel text-2xl mb-2" style={{ color: 'var(--color-danger)' }}>星幣不夠了...</h3>
+                        <h3 className="font-heading text-2xl mb-2 text-danger">星幣不夠了...</h3>
 
                         <div className="bg-white/90 rounded-2xl p-6 shadow-clay border-2 border-red-100 mb-6 mx-auto max-w-xs">
                             <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>需要</span>
-                                <span className="font-pixel text-red-500">{GAME_COST} ⭐</span>
+                                <span className="text-sm text-ink-muted">需要</span>
+                                <span className="font-heading text-red-500">{GAME_COST} ⭐</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>擁有</span>
-                                <span className="font-pixel" style={{ color: 'var(--color-text)' }}>{formatStars(starBalance)} ⭐</span>
+                                <span className="text-sm text-ink-muted">擁有</span>
+                                <span className="font-heading text-ink">{formatStars(starBalance)} ⭐</span>
                             </div>
                         </div>
 
                         <div className="bg-yellow-50 border-4 border-dashed border-yellow-200 rounded-3xl p-6 mb-8">
-                            <h4 className="font-bold mb-2" style={{ color: 'var(--color-cta)' }}>💡 如何獲得星幣？</h4>
-                            <ul className="text-left text-sm space-y-2" style={{ color: 'var(--color-text-light)' }}>
+                            <h4 className="font-bold mb-2 text-accent">💡 如何獲得星幣？</h4>
+                            <ul className="text-left text-sm space-y-2 text-ink-soft">
                                 <li className="flex items-center gap-3 bg-white/50 p-2 rounded-xl">
                                     <span className="text-xl">📅</span> 完成每日任務
                                 </li>

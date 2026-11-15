@@ -49,50 +49,6 @@
   flex: none;
 }
 
-/* 當首頁時要讓怪獸塔（z-50）等全螢幕視窗蓋得過 */
-.ci-root.is-home {
-  z-index: 20;
-}
-
-/* ---------- 爸媽的話 ---------- */
-.ci-message {
-  position: absolute;
-  left: 16px;
-  top: 140px;
-  z-index: 6;
-  max-width: min(360px, calc(100% - 32px));
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: #fff4d6;
-  box-shadow: var(--shadow);
-  font-size: 13px;
-  line-height: 1.55;
-  color: #5b4413;
-}
-.ci-message b {
-  display: block;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  color: #b7791f;
-}
-.ci-message button {
-  flex: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-}
-@media (max-width: 860px) {
-  .ci-message {
-    top: 132px;
-    left: 12px;
-  }
-}
-
 /* ---------- 3D 舞台 ---------- */
 .ci-stage {
   position: absolute;
@@ -330,10 +286,12 @@
 }
 .ci-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* 四格等寬：minmax(0,1fr) 讓長數字不會把其他格擠成直排 */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
 }
 .ci-stat {
+  min-width: 0;
   padding: 8px 8px 6px;
   border-radius: 12px;
   background: var(--paper-2);
@@ -342,8 +300,11 @@
   display: block;
   font: 700 19px/1.1 var(--mono);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .ci-stat span {
+  white-space: nowrap;
   font-size: 11px;
   color: var(--muted);
 }

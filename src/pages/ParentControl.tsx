@@ -189,7 +189,7 @@ export const ParentControl: React.FC = () => {
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
                     <div className="text-6xl mb-4 animate-bounce">⚙️</div>
-                    <p className="font-pixel text-sm">載入中...</p>
+                    <p className="font-heading text-sm">載入中...</p>
                 </div>
             </div>
         );
@@ -209,8 +209,8 @@ export const ParentControl: React.FC = () => {
                         <Briefcase className="text-primary-dark" size={28} />
                     </div>
                     <div>
-                        <h2 className="font-heading text-3xl font-bold" style={{ color: 'var(--color-text)' }}>任務管理</h2>
-                        <p className="font-body text-sm" style={{ color: 'var(--color-text-light)' }}>建立與指派您的家庭冒險任務</p>
+                        <h2 className="font-heading text-3xl font-bold text-ink">任務管理</h2>
+                        <p className="font-body text-sm text-ink-soft">建立與指派您的家庭冒險任務</p>
                     </div>
                 </div>
             </div>
@@ -252,13 +252,13 @@ export const ParentControl: React.FC = () => {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
                 {quests && quests.length > 0 ? (
                     quests.map((quest) => (
-                        <div key={quest.id} className="clay-card p-5 animate-bounce-in relative group overflow-hidden border-2" style={{ borderRadius: '24px' }}>
+                        <div key={quest.id} className="clay-card p-5 animate-bounce-in relative group overflow-hidden border-2 rounded-card">
                             <div className="flex items-start gap-5 relative z-10">
                                 <div className="clay-icon-circle bg-white text-4xl shrink-0" style={{ width: '64px', height: '64px', borderRadius: '18px' }}>
                                     {quest.icon}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-heading font-bold text-lg mb-1 break-words leading-tight" style={{ color: 'var(--color-text)' }}>
+                                    <h3 className="font-heading font-bold text-lg mb-1 break-words leading-tight text-ink">
                                         {quest.title}
                                     </h3>
                                     {quest.description && (
@@ -318,7 +318,7 @@ export const ParentControl: React.FC = () => {
                         </div>
                     ))
                 ) : (
-                    <div className="clay-card text-center py-16 md:col-span-2 border-dashed border-4" style={{ borderRadius: '32px' }}>
+                    <div className="clay-card text-center py-16 md:col-span-2 border-dashed border-4 rounded-card">
                         <div className="text-7xl mb-6">📝</div>
                         <h3 className="font-heading text-xl font-bold mb-2">尚未建立任務</h3>
                         <p className="font-body text-gray-500">點擊右上方「新增任務」按鈕開始您的家庭冒險</p>
@@ -355,7 +355,7 @@ export const ParentControl: React.FC = () => {
                 <form id="parent-quest-form" onSubmit={handleSubmit} className="space-y-6">
                     {/* Title */}
                     <div>
-                        <label className="block font-heading font-bold text-sm mb-2 px-1" style={{ color: 'var(--color-text)' }}>任務名稱 *</label>
+                        <label className="block font-heading font-bold text-sm mb-2 px-1 text-ink">任務名稱 *</label>
                         <div className="relative">
                             <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <input
@@ -372,7 +372,7 @@ export const ParentControl: React.FC = () => {
 
                     {/* Description */}
                     <div>
-                        <label className="block font-heading font-bold text-sm mb-2 px-1" style={{ color: 'var(--color-text)' }}>任務詳細說明</label>
+                        <label className="block font-heading font-bold text-sm mb-2 px-1 text-ink">任務詳細說明</label>
                         <textarea
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -385,7 +385,7 @@ export const ParentControl: React.FC = () => {
 
                     {/* Icon Selector */}
                     <div>
-                        <label className="block font-heading font-bold text-sm mb-2 px-1" style={{ color: 'var(--color-text)' }}>選擇任務圖示 *</label>
+                        <label className="block font-heading font-bold text-sm mb-2 px-1 text-ink">選擇任務圖示 *</label>
                         <div className="bg-white/50 p-4 rounded-3xl border-2 border-dashed border-gray-200 mb-3">
                             <div className="grid grid-cols-7 gap-3 mb-4">
                                 {COMMON_EMOJIS.map((emoji) => (
@@ -418,7 +418,7 @@ export const ParentControl: React.FC = () => {
 
                     {/* Reward Points */}
                     <div>
-                        <label className="block font-heading font-bold text-sm mb-2 px-1" style={{ color: 'var(--color-text)' }}>完成獎勵 (星幣) *</label>
+                        <label className="block font-heading font-bold text-sm mb-2 px-1 text-ink">完成獎勵 (星幣) *</label>
                         <div className="relative">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">⭐</span>
                             <input
@@ -442,7 +442,7 @@ export const ParentControl: React.FC = () => {
 
                     {/* Assignments */}
                     <div>
-                        <label className="block font-heading font-bold text-sm mb-3 px-1" style={{ color: 'var(--color-text)' }}>任務指派給誰？</label>
+                        <label className="block font-heading font-bold text-sm mb-3 px-1 text-ink">任務指派給誰？</label>
                         <div className="flex flex-wrap gap-3 p-1">
                             <button
                                 type="button"

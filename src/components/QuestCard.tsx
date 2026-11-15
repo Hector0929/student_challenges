@@ -36,21 +36,21 @@ export const QuestCard: React.FC<QuestCardProps> = ({
     const getBorderColor = () => {
         if (status === 'verified') return 'var(--color-primary)';
         if (status === 'completed') return 'var(--color-cta)';
-        return 'var(--border-card)';
+        return 'var(--border-soft)';
     };
 
     return (
         <div
             onClick={handleClick}
             className={`
-                clay-card p-4 
+                clay-card p-4 shadow-none hover:shadow-soft
                 ${isDisabled ? 'opacity-70' : 'cursor-pointer'}
                 ${isShaking ? 'animate-wiggle' : ''}
                 ${isFlashing ? 'animate-pop-in' : ''}
             `}
             style={{
                 borderColor: getBorderColor(),
-                backgroundColor: status === 'verified' ? '#E8F5E9' : 'var(--bg-card)',
+                backgroundColor: status === 'verified' ? '#E8F5E9' : '#fff',
             }}
         >
             <div className="flex items-center gap-4">
@@ -67,11 +67,11 @@ export const QuestCard: React.FC<QuestCardProps> = ({
 
                 {/* Quest Info */}
                 <div className="flex-1 min-w-0">
-                    <h3 className="font-heading font-semibold text-base truncate" style={{ color: 'var(--color-text)' }}>
+                    <h3 className="font-heading font-semibold text-base truncate text-ink">
                         {quest.title}
                     </h3>
                     {quest.description && (
-                        <p className="font-body text-sm truncate" style={{ color: 'var(--color-text-light)' }}>
+                        <p className="font-body text-sm truncate text-ink-soft">
                             {quest.description}
                         </p>
                     )}
