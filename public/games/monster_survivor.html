@@ -101,6 +101,14 @@ const TS = Math.max(0.25, Math.min(8, Number(params.get('ts')) || 1)); // 測試
 const IMG_BASE = '/images/monsters/cutout/';
 const STAGE_SURVIVE = 120; // 關卡模式：撐 2 分鐘後魔王登場
 const ENDLESS_BOSS_GAP = 90;
+// 難度隨時間提升：每 10 秒，怪獸移動速度與出怪數量各 +5%（疊在原本的成長上；無盡模式最多 2.5 倍）
+const RAMP_STEP_SEC = 10, RAMP_STEP = 0.05, RAMP_MAX = 2.5;
+// 逼玩家移動的三種威脅
+const HAZ_START = 15;        // 第 15 秒開始出現地面警示圈
+const HAZ_WARN = 1.5;        // 紅圈閃多久才爆炸
+const HAZ_R = 72;            // 紅圈半徑（主角速度 165，0.5 秒內走得出去）
+const RANGED_START = 30, CHARGER_START = 45;
+function rampMul() { return S.run ? Math.min(RAMP_MAX, 1 + RAMP_STEP * Math.floor(S.run.t / RAMP_STEP_SEC)) : 1; }
 const userKey = (base) => (USER_ID ? `${base}_${USER_ID}` : base);
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
@@ -437,7 +445,7 @@ const S = {
   payLog: [],
 };
 let P = null; // 玩家
-let enemies = [], bullets = [], ebullets = [], pickups = [], floaters = [], particles = [], strikes = [], leaves = [];
+let enemies = [], bullets = [], ebullets = [], pickups = [], floaters = [], particles = [], strikes = [], leaves = [], hazards = [];
 const cam = { x: 0, y: 0, shake: 0 };
 
 function newPlayer(palId) {
@@ -448,7 +456,8 @@ function newPlayer(palId) {
     weapons: { [pal.weapon]: 1 }, passives: {}, timers: {}, orbitA: 0, frostTick: 0, regenAcc: 0,
   };
 }
-const expNeed = (lv) => 4 + lv * 3;
+// 越高級越難升：主力武器大約在魔王出現前後才升滿
+const expNeed = (lv) => Math.round(5 + lv * 4 + lv * lv * 0.5);
 const pv = (k) => P.passives[k] || 0;
 const dmgMul = () => 1 + 0.12 * pv('might');
 const cdMul = () => Math.max(0.5, 1 - 0.08 * pv('haste'));
@@ -460,7 +469,7 @@ function startRun(mapIdx, palId, mode) {
   P = newPlayer(palId);
   // 後面的關卡一開始武器就比較強（第 3、5 關起各 +1 級），小朋友不用每關都從最弱開始
   if (mode === 'stage') P.weapons[PALS[palId].weapon] = 1 + Math.floor(mapIdx / 2);
-  enemies = []; bullets = []; ebullets = []; pickups = []; floaters = []; particles = []; strikes = []; leaves = [];
+  enemies = []; bullets = []; ebullets = []; pickups = []; floaters = []; particles = []; strikes = []; leaves = []; hazards = [];
   S.run = {
     map: mapIdx, zone: ZONES[mapIdx], mode, t: 0, kills: 0, minutesPaid: 0, starsPaid: 0,
     spawnAcc: 0, nextElite: 40, nextRing: 60, boss: null, bossCount: 0,
@@ -508,20 +517,22 @@ function hpScale() {
   const z = r.map;
   let m = (1 + z * 0.12) * (1 + Math.min(r.t, 150) / 150 * 0.7);
   if (r.mode === 'endless') m *= 1 + Math.max(0, r.t - 60) / 80;
-  return m;
+  return m * rampMul(); // 每 10 秒 +5%，跟速度、數量一起成長
 }
 function makeFoe(kindIdx, x, y, opt = {}) {
   const r = S.run;
   const [shape, c1, c2] = r.zone.foes[kindIdx];
   const st = FOE_STATS[shape];
-  const elite = !!opt.elite;
-  const hp = st.hp * hpScale() * (elite ? 14 : 1);
+  const elite = !!opt.elite, ranged = !!opt.ranged, charger = !!opt.charger;
+  const hp = st.hp * hpScale() * (elite ? 14 : ranged ? 1.6 : charger ? 4 : 1);
   return {
-    x, y, shape, c1, c2, hp, maxHp: hp, elite,
+    x, y, shape, c1, c2, hp, maxHp: hp, elite, ranged, charger,
     speed: (st.speed + Math.min(r.t, 180) * 0.08) * (elite ? 0.8 : 1) * (opt.speedMul || 1),
-    size: st.size * (elite ? 2.1 : 1), exp: st.exp * (elite ? 1 : 1),
-    dmg: (5 + r.map * 1.0 + (r.mode === 'endless' ? r.t / 60 : 0)) * (elite ? 1.6 : 1),
+    size: st.size * (elite ? 2.1 : charger ? 1.3 : ranged ? 1.1 : 1), exp: st.exp * (ranged ? 3 : charger ? 4 : 1),
+    dmg: (5 + r.map * 1.0 + (r.mode === 'endless' ? r.t / 60 : 0)) * (elite ? 1.6 : charger ? 1.5 : 1),
     hitCd: 0, flash: 0, slow: 0, kb: { x: 0, y: 0 }, orbitHit: 0, leafHit: 0, wob: Math.random() * 6,
+    // 遠程怪：射擊冷卻；衝鋒怪：approach → wind（蓄力預告）→ dash（衝刺）→ rest
+    shootT: rand(1.2, 2.2), cState: 'approach', cT: 0, cA: null,
   };
 }
 function spawnFoe() {
@@ -530,6 +541,19 @@ function spawnFoe() {
   const unlocked = r.t < 20 ? 1 : r.t < 50 ? 2 : 3;
   const k = Math.floor(Math.random() * unlocked);
   const p = edgePoint();
+  // 遠程怪、衝鋒怪：火圈打不到或擋不住，逼你移動
+  const count = (f) => enemies.reduce((n, e) => n + (e[f] ? 1 : 0), 0);
+  const endless = r.mode === 'endless';
+  if (r.t >= RANGED_START && count('ranged') < (endless ? 10 : 4 + r.map) && Math.random() < Math.min(0.18, 0.06 + (r.t - RANGED_START) / 600)) {
+    enemies.push(makeFoe(Math.min(1, unlocked - 1), p.x, p.y, { ranged: true }));
+    if (!r.seenRanged) { r.seenRanged = true; banner('🎯 遠程怪出現了！牠會吐子彈，靠過去打牠', 2.6); }
+    return;
+  }
+  if (r.t >= CHARGER_START && count('charger') < (endless ? 6 : 3 + Math.floor(r.map / 2)) && Math.random() < 0.08) {
+    enemies.push(makeFoe(0, p.x, p.y, { charger: true }));
+    if (!r.seenCharger) { r.seenCharger = true; banner('💥 衝鋒怪！看到紅線就往旁邊閃', 2.6); }
+    return;
+  }
   if (r.zone.foes[k][0] === 'bat' && Math.random() < 0.5) {
     for (let i = 0; i < 4; i++) enemies.push(makeFoe(k, p.x + rand(-40, 40), p.y + rand(-40, 40), { speedMul: 1.1 }));
   } else enemies.push(makeFoe(k, p.x, p.y));
@@ -577,6 +601,12 @@ function update(dt) {
     payStars(1, `撐過 ${r.minutesPaid} 分鐘`);
     banner(`⭐ 撐過 ${r.minutesPaid} 分鐘！+1 星星`, 2.2, 'star');
   }
+  // 每 30 秒提醒一次怪獸變強（整分鐘留給星星提示，所以只在 30、90、150… 秒出現）
+  const half = Math.floor(r.t / 30);
+  if (half > (r.rampHalf || 0)) {
+    r.rampHalf = half;
+    if (half % 2 === 1 && r.clearT < 0) banner(`⚠️ 怪獸變快又變多了！（×${rampMul().toFixed(2)}）`, 2);
+  }
 
   // 過關後慢慢收尾
   if (r.clearT >= 0) {
@@ -588,8 +618,9 @@ function update(dt) {
   // 出怪
   const bossAlive = !!r.boss;
   if (r.clearT < 0) {
-    const rate = Math.min(r.mode === 'endless' ? 5 : 3.2, 0.9 + r.t * 0.018) * (bossAlive ? 0.3 : 1);
-    const maxAlive = bossAlive ? 40 : Math.min(r.mode === 'endless' ? 170 : 110, 30 + r.t * 0.45);
+    const ramp = rampMul();
+    const rate = Math.min(r.mode === 'endless' ? 5 : 3.2, 0.9 + r.t * 0.018) * ramp * (bossAlive ? 0.3 : 1);
+    const maxAlive = bossAlive ? 40 : Math.min(r.mode === 'endless' ? 170 : 110, 30 + r.t * 0.45) * ramp;
     r.spawnAcc += rate * dt;
     while (r.spawnAcc >= 1) { r.spawnAcc -= 1; if (enemies.length < maxAlive) spawnFoe(); }
     if (r.t >= r.nextElite) { spawnElite(); r.nextElite += r.mode === 'endless' ? 40 : 40; }
@@ -612,6 +643,7 @@ function update(dt) {
   updateEnemies(dt);
   updateBoss(dt);
   updateEBullets(dt);
+  updateHazards(dt);
   updatePickups(dt);
   updateFx(dt);
 
@@ -634,7 +666,7 @@ function nearestFoes(n, range) {
 function hurtFoe(e, dmg, kx = 0, ky = 0, crit = false) {
   dmg *= dmgMul();
   e.hp -= dmg; e.flash = 0.1;
-  if (e !== S.run.boss) { e.kb.x += kx; e.kb.y += ky; }
+  if (e !== S.run.boss && !(e.charger && e.cState === 'dash')) { e.kb.x += kx; e.kb.y += ky; }
   if (floaters.length < 70) floaters.push({ x: e.x + rand(-6, 6), y: e.y - (e.size || 90) * 0.45, text: String(Math.round(dmg)), color: crit ? '#ffd23f' : '#fff', size: crit ? 22 : 16, t: 0.7 });
 }
 
@@ -767,14 +799,33 @@ function nearestFoesFrom(src, n, range) {
 }
 
 function updateEnemies(dt) {
+  const ramp = rampMul(); // 已經在場上的怪也一起變快
   for (const e of enemies) {
     const dx = P.x - e.x, dy = P.y - e.y, d = hypot(dx, dy) || 1;
     const slow = e.slow > 0 ? 1 - e.slow : 1;
     e.slow = 0;
     e.wob += dt * 6;
-    const sp = e.speed * slow;
-    e.x += (dx / d) * sp * dt + e.kb.x * dt * 6;
-    e.y += (dy / d) * sp * dt + e.kb.y * dt * 6;
+    let mx = dx / d, my = dy / d, sp = e.speed * slow * ramp;
+    if (e.ranged) {
+      // 停在火圈外面射你：太近就退開
+      if (d < 200) { mx = -mx; my = -my; sp *= 0.8; } else if (d < 290) sp = 0;
+      e.shootT -= dt;
+      if (e.shootT <= 0 && d < 560) {
+        e.shootT = 2.4;
+        const v = 150 + S.run.map * 6;
+        ebullets.push({ x: e.x, y: e.y, vx: mx * v * (d < 200 ? -1 : 1), vy: my * v * (d < 200 ? -1 : 1), r: 7, ttl: 4.5, col: S.run.zone.bullet });
+      }
+    } else if (e.charger) {
+      e.cT -= dt;
+      if (e.cState === 'wind') { sp = 0; if (e.cT <= 0) { e.cState = 'dash'; e.cT = 0.55; } }
+      else if (e.cState === 'dash') { mx = e.cA.x; my = e.cA.y; sp = 540; if (e.cT <= 0) { e.cState = 'rest'; e.cT = 1.6; } }
+      else {
+        if (e.cState === 'rest') { sp *= 0.5; if (e.cT <= 0) e.cState = 'approach'; }
+        else if (d < 330 && d > 90) { e.cState = 'wind'; e.cT = 0.8; e.cA = { x: dx / d, y: dy / d }; }
+      }
+    }
+    e.x += mx * sp * dt + e.kb.x * dt * 6;
+    e.y += my * sp * dt + e.kb.y * dt * 6;
     e.kb.x *= 0.85; e.kb.y *= 0.85;
     e.hitCd -= dt; e.flash -= dt; e.orbitHit -= dt; e.leafHit -= dt;
     if (d < P.r + e.size * 0.36 && P.inv <= 0) hurtPlayer(e.dmg);
@@ -876,6 +927,36 @@ function updateEBullets(dt) {
     if (P.bulletInv <= 0 && hypot(b.x - P.x, b.y - P.y) < b.r + P.r * 0.7) { hurtPlayer(9 + S.run.map); P.bulletInv = 0.7; ebullets.splice(i, 1); }
   }
 }
+/* 地面警示圈：紅圈閃 1.5 秒後爆炸，第 3 張地圖起會留下毒池；爆炸也會炸到怪 */
+function spawnHazard(x, y) { hazards.push({ x, y, r: HAZ_R, state: 'warn', t: HAZ_WARN, tick: 0 }); }
+function updateHazards(dt) {
+  const r = S.run;
+  if (r.clearT < 0 && r.t >= HAZ_START) {
+    r.hazT = (r.hazT ?? 2) - dt;
+    if (r.hazT <= 0) {
+      // 每 3～5 秒一個，落在主角腳下；頻率固定，不隨時間增加
+      spawnHazard(P.x, P.y);
+      r.hazT = rand(3, 5);
+      if (!r.seenHazard) { r.seenHazard = true; banner('⚠️ 地上出現紅圈！快走出去', 2.4); }
+    }
+  }
+  for (let i = hazards.length - 1; i >= 0; i--) {
+    const h = hazards[i];
+    h.t -= dt;
+    const inside = hypot(P.x - h.x, P.y - h.y) < h.r + P.r * 0.4;
+    if (h.state === 'warn' && h.t <= 0) {
+      burst(h.x, h.y, '#ff8a3c', 18); cam.shake = Math.max(cam.shake, 0.25);
+      if (inside && !S.god) { P.inv = 0; hurtPlayer(12 + r.map * 2); }
+      for (const e of enemies) if (hypot(e.x - h.x, e.y - h.y) < h.r) hurtFoe(e, 30);
+      if (r.map >= 2) { h.state = 'pool'; h.t = 2.5; } else { h.state = 'boom'; h.t = 0.3; }
+    } else if (h.state === 'pool') {
+      h.tick -= dt;
+      if (inside && h.tick <= 0) { h.tick = 0.5; if (P.inv <= 0) hurtPlayer(4 + r.map); }
+      if (h.t <= 0) hazards.splice(i, 1);
+    } else if (h.state === 'boom' && h.t <= 0) hazards.splice(i, 1);
+  }
+}
+
 function updatePickups(dt) {
   const mag = magnetOf();
   for (let i = pickups.length - 1; i >= 0; i--) {
@@ -1127,6 +1208,37 @@ function draw(now) {
     if (g.kind === 'gem') gemShape(ctx, g.x, g.y, g.v >= 10 ? 11 : g.v >= 3 ? 8.5 : 7, g.v >= 10 ? '#b388ff' : g.v >= 3 ? '#62e08a' : '#4fd2ff');
     else drawPickup(g, now);
   }
+  // 地面警示圈 / 毒池（畫在怪物下面）
+  for (const h of hazards) {
+    if (h.state === 'warn') {
+      const k = 1 - h.t / HAZ_WARN, blink = 0.55 + Math.sin(now * 0.025) * 0.35;
+      ctx.fillStyle = `rgba(255,40,60,${0.28 + k * 0.2})`; ctx.beginPath(); ctx.arc(h.x, h.y, h.r, 0, 7); ctx.fill();
+      ctx.fillStyle = `rgba(230,20,50,${0.35 + k * 0.25})`; ctx.beginPath(); ctx.arc(h.x, h.y, h.r * k, 0, 7); ctx.fill();
+      ctx.strokeStyle = `rgba(210,10,40,${0.6 + blink * 0.4})`; ctx.lineWidth = 5; ctx.setLineDash([12, 7]);
+      ctx.beginPath(); ctx.arc(h.x, h.y, h.r, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = `rgba(255,255,255,${blink})`; ctx.font = '900 26px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('!', h.x, h.y);
+    } else if (h.state === 'boom') {
+      const a = h.t / 0.3;
+      ctx.fillStyle = `rgba(255,200,90,${a * 0.7})`; ctx.beginPath(); ctx.arc(h.x, h.y, h.r * (1.15 - a * 0.15), 0, 7); ctx.fill();
+    } else {
+      const a = Math.min(1, h.t / 0.5);
+      ctx.fillStyle = `rgba(140,60,200,${0.32 * a})`; ctx.beginPath(); ctx.arc(h.x, h.y, h.r, 0, 7); ctx.fill();
+      ctx.strokeStyle = `rgba(190,110,255,${0.6 * a})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(h.x, h.y, h.r, 0, 7); ctx.stroke();
+    }
+  }
+  // 衝鋒怪蓄力預告：紅線指出衝刺方向
+  for (const e of enemies) {
+    if (!e.charger || e.cState !== 'wind') continue;
+    const blink = 0.6 + Math.sin(now * 0.04) * 0.3, ex = e.x + e.cA.x * 300, ey = e.y + e.cA.y * 300;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = `rgba(230,20,50,${0.35 * blink})`; ctx.lineWidth = e.size * 0.9;
+    ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(ex, ey); ctx.stroke();
+    ctx.strokeStyle = `rgba(210,10,40,${blink})`; ctx.lineWidth = 4; ctx.setLineDash([14, 9]);
+    ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(ex, ey); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = '#c8102e'; ctx.lineWidth = 4; ctx.font = '900 24px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.strokeText('!', e.x, e.y - e.size * 0.75); ctx.fillText('!', e.x, e.y - e.size * 0.75);
+  }
   // 魔王衝撞預告
   const b = r.boss;
   if (b && b.dash && b.dash.t > 0.6) {
@@ -1140,6 +1252,18 @@ function draw(now) {
     const sp = foeSprite(e, e.shape === 'bat' ? frame : 0);
     const bob = e.shape === 'ghost' ? Math.sin(e.wob) * 3 : e.shape === 'blob' ? Math.abs(Math.sin(e.wob)) * -2 : 0;
     if (e.elite) { ctx.fillStyle = `rgba(255,210,80,${0.22 + Math.sin(now * 0.006) * 0.08})`; ctx.beginPath(); ctx.arc(e.x, e.y, e.size * 0.62, 0, 7); ctx.fill(); }
+    // 遠程怪：橘色準星圈，快射擊時變亮
+    if (e.ranged) {
+      const charge = e.shootT < 0.5 ? 1 - e.shootT / 0.5 : 0;
+      ctx.strokeStyle = `rgba(255,140,40,${0.55 + charge * 0.45})`; ctx.lineWidth = 3 + charge * 2;
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.size * 0.62, 0, 7); ctx.stroke();
+      ctx.beginPath(); for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { ctx.moveTo(e.x + ox * e.size * 0.5, e.y + oy * e.size * 0.5); ctx.lineTo(e.x + ox * e.size * 0.75, e.y + oy * e.size * 0.75); } ctx.stroke();
+    }
+    // 衝鋒怪：紅色怒氣
+    if (e.charger) {
+      ctx.fillStyle = `rgba(255,40,60,${e.cState === 'dash' ? 0.55 : 0.32 + Math.sin(now * 0.01) * 0.08})`; ctx.beginPath(); ctx.arc(e.x, e.y, e.size * 0.62, 0, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(200,16,46,.9)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(e.x, e.y, e.size * 0.62, 0, 7); ctx.stroke();
+    }
     const w = sp.width / 2;
     ctx.drawImage(sp, e.x - w / 2, e.y - w / 2 + bob, w, w);
     if (e.flash > 0) { ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(e.x, e.y + bob, e.size * 0.4, 0, 7); ctx.fill(); }
@@ -1467,7 +1591,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 /* 測試掛勾 */
 window.__ms = {
   S, ZONES, WEAPONS, PASSIVES, save,
-  get P() { return P; }, get enemies() { return enemies; }, get ebullets() { return ebullets; }, get pickups() { return pickups; },
+  get P() { return P; }, get enemies() { return enemies; }, get ebullets() { return ebullets; }, get hazards() { return hazards; }, get pickups() { return pickups; },
   start: (map = 0, pal = 'slime', mode = 'stage') => startRun(map, pal, mode),
   god: (on = true) => { S.god = on; },
   skipTo: (t) => { if (S.run) { S.run.t = t; } },
