@@ -118,6 +118,7 @@ export const FUN_GAMES: FunGame[] = [
         category: 'adventure',
         cover: cover('monster_bomber'),
         tags: ['10 關'],
+        earnsStars: true,
     },
     // ── 反應動作 ──
     {
@@ -130,6 +131,7 @@ export const FUN_GAMES: FunGame[] = [
         category: 'action',
         cover: cover('shooting'),
         tags: ['九九乘法'],
+        earnsStars: true,
     },
     {
         id: 'neon_slicer',

@@ -3,981 +3,1533 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Math Shooter</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>怪獸星際乘法射擊</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Orbitron', sans-serif;
-            background-color: #0f0b1e;
-            color: white;
-            overflow-x: hidden;
-            overflow-y: auto;
-            touch-action: manipulation;
+        :root {
+            --frame-border: #3b2d6e;
+            --frame-glow: #818cf8;
         }
 
-        .neon-text {
-            text-shadow: 0 0 10px #a855f7, 0 0 20px #a855f7;
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
-        .neon-box {
-            background: rgba(15, 23, 42, 0.9);
-            border: 2px solid #a855f7;
-            box-shadow: 0 0 15px rgba(168, 85, 247, 0.3), inset 0 0 10px rgba(168, 85, 247, 0.1);
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            font-family: 'Noto Sans TC', 'Fredoka', sans-serif;
+            background: radial-gradient(circle at 50% 35%, #1e1b4b 0%, #0f0a2c 60%, #060414 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
         }
 
-        .clay-btn {
-            background: linear-gradient(145deg, #1e1b4b, #312e81);
-            border: 1px solid #6366f1;
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
-            transition: all 0.2s;
-        }
-
-        .clay-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 0 25px rgba(99, 102, 241, 0.7);
-            border-color: #818cf8;
-        }
-
-        .clay-btn:active:not(:disabled) {
-            transform: scale(0.95);
-        }
-
-        .clay-btn:disabled {
-            background: #1f2937;
-            border-color: #374151;
-            color: #6b7280;
-            box-shadow: none;
-            cursor: not-allowed;
+        /* 單一置中星際畫框（15:13 比例，完美適配手機、平板與桌機） */
+        #stage-frame {
+            position: relative;
+            width: min(96vw, calc(94dvh * 660 / 572));
+            height: min(94dvh, calc(96vw * 572 / 660));
+            aspect-ratio: 660 / 572;
+            background: #0b0726;
+            border-radius: 26px;
+            border: 5px solid #4338ca;
+            box-shadow:
+                0 18px 45px rgba(0, 0, 0, 0.7),
+                0 0 28px rgba(99, 102, 241, 0.35),
+                inset 0 0 0 3px rgba(165, 180, 252, 0.25);
+            overflow: hidden;
         }
 
         canvas {
-            image-rendering: pixelated;
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
         }
 
-        .hearts-container {
-            letter-spacing: 2px;
+        /* 頂部中央：全息乘法題目看板 */
+        #math-hud {
+            position: absolute;
+            top: 10px;
+            left: 14px;
+            z-index: 15;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            pointer-events: none;
         }
 
-        .animate-bounce-3 {
-            animation: bounce 1s infinite;
-            animation-iteration-count: 3;
+        .question-card {
+            background: linear-gradient(135deg, rgba(30, 27, 75, 0.92), rgba(49, 46, 129, 0.92));
+            border: 2.5px solid #38bdf8;
+            border-radius: 18px;
+            padding: 6px 18px 8px;
+            box-shadow:
+                0 6px 20px rgba(14, 165, 233, 0.35),
+                inset 0 0 12px rgba(56, 189, 248, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(6px);
         }
 
-        .animate-bounce-3:hover {
-            animation: none;
+        .wave-tag {
+            background: rgba(14, 165, 233, 0.25);
+            border: 1.5px solid rgba(125, 211, 252, 0.6);
+            color: #bae6fd;
+            font-size: 12px;
+            font-weight: 900;
+            padding: 3px 9px;
+            border-radius: 999px;
+            white-space: nowrap;
         }
 
-        @keyframes bounce {
+        #question-text {
+            font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
+            font-size: clamp(24px, 4.5vw, 34px);
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 10px rgba(56, 189, 248, 0.7);
+            line-height: 1.1;
+        }
 
-            0%,
-            100% {
-                transform: translateY(-25%);
-                animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
-            }
+        /* 彩虹巨砲充能條 */
+        .charge-row {
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(15, 23, 42, 0.75);
+            padding: 3px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
 
-            50% {
-                transform: translateY(0);
-                animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
-            }
+        .charge-label {
+            font-size: 11px;
+            font-weight: 900;
+            color: #fde047;
+        }
+
+        .charge-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .charge-dot {
+            width: 18px;
+            height: 7px;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.25s;
+        }
+
+        .charge-dot.filled {
+            background: linear-gradient(90deg, #f43f5e, #f59e0b, #10b981, #38bdf8);
+            box-shadow: 0 0 8px #facc15;
+        }
+
+        /* 右上角：精簡生命與星幣 HUD */
+        #top-right-hud {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hud-pill {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(6px);
+            border: 2px solid rgba(165, 180, 252, 0.35);
+            border-radius: 999px;
+            padding: 5px 11px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+            font-weight: 900;
+            font-size: 13px;
+            color: #fff;
+        }
+
+        #hp-hearts {
+            font-size: 14px;
+            letter-spacing: 1px;
+            line-height: 1;
+        }
+
+        #pause-btn {
+            background: rgba(30, 41, 59, 0.88);
+            border: 2px solid rgba(165, 180, 252, 0.45);
+            color: #fff;
+            border-radius: 999px;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s;
+        }
+
+        #pause-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* 畫面中央短暫提示橫幅（Toast） */
+        #center-toast {
+            position: absolute;
+            top: 23%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.85);
+            z-index: 25;
+            pointer-events: none;
+            background: linear-gradient(135deg, rgba(254, 240, 138, 0.96), rgba(251, 191, 36, 0.96));
+            border: 3px solid #92400e;
+            border-radius: 20px;
+            padding: 8px 22px;
+            text-align: center;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            white-space: nowrap;
+        }
+
+        #center-toast.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        #center-toast .toast-main {
+            font-size: 18px;
+            font-weight: 900;
+            color: #78350f;
+        }
+
+        #center-toast .toast-sub {
+            font-size: 12px;
+            font-weight: 800;
+            color: #92400e;
+            margin-top: 2px;
+        }
+
+        /* 底部：4 顆彩色圓形答案發射鈕 */
+        #bottom-cannons {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(94%, 560px);
+            z-index: 18;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .cannon-pad {
+            position: relative;
+            height: 62px;
+            border-radius: 20px;
+            font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
+            font-size: clamp(22px, 4vw, 30px);
+            font-weight: 900;
+            color: #ffffff;
+            border: 3px solid rgba(255, 255, 255, 0.75);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s, opacity 0.2s, filter 0.2s;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
+        }
+
+        .cannon-pad:active:not(:disabled) {
+            transform: translateY(3px) scale(0.96);
+        }
+
+        .cannon-pad:disabled {
+            opacity: 0.28;
+            filter: grayscale(0.8);
+            cursor: default;
+            transform: scale(0.94);
+        }
+
+        .cannon-pad .key-hint {
+            position: absolute;
+            top: 4px;
+            left: 8px;
+            font-size: 10px;
+            font-weight: 800;
+            opacity: 0.75;
+        }
+
+        .pad-0 {
+            background: linear-gradient(180deg, #22d3ee 0%, #0284c7 100%);
+            box-shadow: 0 6px 0 #0369a1, 0 8px 18px rgba(34, 211, 238, 0.4);
+        }
+        .pad-1 {
+            background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+            box-shadow: 0 6px 0 #92400e, 0 8px 18px rgba(251, 191, 36, 0.4);
+        }
+        .pad-2 {
+            background: linear-gradient(180deg, #34d399 0%, #059669 100%);
+            box-shadow: 0 6px 0 #065f46, 0 8px 18px rgba(52, 211, 153, 0.4);
+        }
+        .pad-3 {
+            background: linear-gradient(180deg, #f472b6 0%, #db2777 100%);
+            box-shadow: 0 6px 0 #9d174d, 0 8px 18px rgba(244, 114, 182, 0.4);
+        }
+
+        /* 彈出視窗（開始 / 暫停 / 過關結算） */
+        .overlay-modal {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 8, 34, 0.82);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 40;
+            padding: 16px;
+        }
+
+        .overlay-modal.hidden {
+            display: none;
+        }
+
+        .modal-card {
+            background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+            border: 4px solid #78350f;
+            border-radius: 26px;
+            padding: 20px 18px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            color: #451a03;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+            animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.88); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-badge {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 900;
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 2px solid #38bdf8;
+            margin-bottom: 6px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 900;
+            margin: 2px 0 6px;
+            color: #451a03;
+        }
+
+        .modal-desc {
+            font-size: 13px;
+            font-weight: 700;
+            color: #78350f;
+            margin-bottom: 12px;
+            line-height: 1.45;
+        }
+
+        .section-label {
+            font-size: 12px;
+            font-weight: 900;
+            color: #92400e;
+            margin: 8px 0 6px;
+        }
+
+        /* 乘法範圍選擇鈕 */
+        .range-picker {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .range-btn {
+            background: #fff;
+            border: 2.5px solid #d6d3d1;
+            border-radius: 12px;
+            padding: 7px 4px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 900;
+            color: #57534e;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .range-btn.selected {
+            border-color: #0284c7;
+            background: #e0f2fe;
+            color: #0369a1;
+            box-shadow: 0 3px 8px rgba(2, 132, 199, 0.2);
+        }
+
+        /* 怪獸飛行員選擇 */
+        .hero-picker {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .hero-option {
+            width: 68px;
+            padding: 6px 4px;
+            border-radius: 14px;
+            border: 2.5px solid #d6d3d1;
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            font-size: 11px;
+            font-weight: 800;
+            color: #57534e;
+            transition: all 0.15s;
+        }
+
+        .hero-option img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .hero-option.selected {
+            border-color: #d97706;
+            background: #fef3c7;
+            color: #78350f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(217, 119, 6, 0.25);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .stat-box {
+            background: #fff;
+            border: 2px solid #fde68a;
+            border-radius: 14px;
+            padding: 8px;
+        }
+
+        .stat-box .lbl {
+            font-size: 11px;
+            font-weight: 800;
+            color: #92400e;
+        }
+
+        .stat-box .val {
+            font-size: 20px;
+            font-weight: 900;
+            color: #451a03;
+            margin-top: 2px;
+        }
+
+        .primary-btn {
+            width: 100%;
+            padding: 12px 18px;
+            border-radius: 16px;
+            border: 3px solid #78350f;
+            background: linear-gradient(180deg, #facc15 0%, #f59e0b 100%);
+            color: #451a03;
+            font-family: inherit;
+            font-size: 17px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #78350f;
+            transition: transform 0.1s;
+        }
+
+        .primary-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #78350f;
+        }
+
+        .secondary-btn {
+            width: 100%;
+            margin-top: 8px;
+            padding: 10px 16px;
+            border-radius: 14px;
+            border: 2.5px solid #a8a29e;
+            background: #fff;
+            color: #57534e;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
         }
     </style>
 </head>
 
-<body class="bg-[#0f0b1e] text-white overflow-x-hidden overflow-y-auto min-h-screen h-[100dvh] w-screen flex flex-col">
+<body>
+    <div id="stage-frame">
+        <canvas id="gameCanvas" width="660" height="572"></canvas>
 
-    <!-- Top Stats Bar -->
-    <div class="flex-none p-2 z-20">
-        <div class="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-2 items-center">
-            <div class="neon-box rounded-xl px-4 py-2 flex gap-4 bg-[#0f0b1e]/80 backdrop-blur">
-                <span class="text-purple-400 font-bold text-sm md:text-base">SCORE</span>
-                <span id="scoreDisplay" class="text-lg md:text-xl text-white">0</span>
+        <!-- 左上至中上：全息乘法題目看板與彩虹充能 -->
+        <div id="math-hud">
+            <div class="question-card">
+                <span class="wave-tag" id="wave-label">第 1 / 15 波</span>
+                <span id="question-text">2 × 3 = ?</span>
             </div>
-            <div class="neon-box rounded-xl px-4 py-2 flex gap-1 md:gap-2 bg-[#0f0b1e]/80 backdrop-blur">
-                <span class="text-red-500 font-bold text-sm md:text-base">LIVES</span>
-                <span id="livesDisplay" class="text-sm md:text-xl text-white tracking-widest">❤️❤️❤️❤️❤️❤️</span>
-            </div>
-            <div class="neon-box rounded-xl px-4 py-2 bg-[#0f0b1e]/80 backdrop-blur">
-                <div class="text-cyan-300 font-bold text-xs md:text-sm">連擊</div>
-                <div id="streakDisplay" class="text-white text-base md:text-lg">0</div>
-            </div>
-            <div class="neon-box rounded-xl px-4 py-2 bg-[#0f0b1e]/80 backdrop-blur">
-                <div class="text-yellow-300 font-bold text-xs md:text-sm">本局任務</div>
-                <div id="missionDisplay" class="text-white text-xs md:text-sm leading-5">準備中...</div>
+            <div class="charge-row">
+                <span class="charge-label">🌈 彩虹巨砲</span>
+                <div class="charge-dots">
+                    <div class="charge-dot" id="charge-0"></div>
+                    <div class="charge-dot" id="charge-1"></div>
+                    <div class="charge-dot" id="charge-2"></div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Game Area (Flexible) -->
-    <div id="game-wrapper"
-        class="flex-1 relative w-full max-w-4xl mx-auto my-2 border-x-2 border-purple-500/30 overflow-hidden">
-        <canvas id="gameCanvas" class="block h-full w-full"></canvas>
-
-        <!-- Question Overlay (Floating Top Center) -->
-        <div class="absolute left-0 right-0 top-4 z-10 text-center pointer-events-none">
-            <div id="questionDisplay"
-                class="neon-text drop-shadow-xl inline-block bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-5xl font-bold text-transparent md:text-6xl">
-                READY?
+        <!-- 右上角：精簡生命、星幣與暫停 HUD -->
+        <div id="top-right-hud">
+            <div class="hud-pill" title="本局獲得星幣與得分">
+                <span>⭐</span>
+                <span id="stars-text">0</span>
+                <span style="opacity:0.4;">|</span>
+                <span id="score-text">0</span>
             </div>
-            <div id="phaseDisplay" class="mt-2 text-cyan-200 text-sm font-bold">開始 10 秒驚喜</div>
-            <!-- Timer Bar -->
-            <div class="mx-auto mt-2 h-2 w-64 overflow-hidden rounded-full bg-gray-800/50 backdrop-blur-sm">
-                <div id="questionTimerBar"
-                    class="h-full bg-cyan-500 shadow-[0_0_10px_#22d3ee] transition-all duration-100 ease-linear"
-                    style="width: 100%;"></div>
+            <div class="hud-pill" title="生命值與護盾">
+                <span id="hp-hearts">❤️❤️❤️❤️</span>
             </div>
-            <!-- Feedback -->
-            <div id="feedbackDisplay" class="mt-2 h-8 text-xl font-bold text-shadow-md"></div>
+            <button id="pause-btn" title="暫停">⏸️</button>
         </div>
-    </div>
 
-    <!-- Bottom Controls (Fixed Height) -->
-    <div class="flex-none p-4 pb-8 z-20 bg-gradient-to-t from-[#0f0b1e] to-transparent">
-        <div class="mx-auto max-w-2xl">
-            <!-- Answers Grid -->
-            <div id="answerOptionsContainer" class="mb-4 grid grid-cols-2 gap-4">
-                <!-- Buttons injected by JS -->
-            </div>
-
-            <!-- Start / Controls -->
-            <div class="flex justify-center gap-4">
-                <button id="startGameButton"
-                    class="clay-btn shadow-2xl w-full max-w-xs rounded-xl px-8 py-3 text-xl font-bold text-white">
-                    START MISSION
-                </button>
-                <button id="specialCannonButton"
-                    class="clay-btn animate-pulse hidden whitespace-nowrap rounded-xl border-yellow-500 px-6 py-3 text-lg font-bold text-yellow-300 shadow-[0_0_15px_rgba(234,179,8,0.4)]">
-                    ⚡ SUPER BEAM
-                </button>
-            </div>
+        <!-- 畫面中央短暫提示橫幅 -->
+        <div id="center-toast">
+            <div class="toast-main" id="toast-main">🚀 星際防衛開始！</div>
+            <div class="toast-sub" id="toast-sub">點擊正確答案的飛碟或下方按鈕發射雷射！</div>
         </div>
-    </div>
 
-    <!-- Celebration Overlay -->
-    <div id="celebrationScreen"
-        class="absolute inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div class="neon-box mx-4 max-w-sm rounded-2xl p-8 text-center">
-            <div class="mb-4 text-6xl">🎉</div>
-            <h2 class="neon-text mb-2 text-3xl font-bold text-purple-400">MISSION COMPLETE!</h2>
-            <p class="mb-2 text-gray-300">FINAL SCORE</p>
-            <p id="finalScore" class="mb-8 text-5xl font-bold text-white text-shadow-lg">0</p>
-            <div class="mb-2 text-sm text-cyan-300" id="summaryStreak">最高連擊：0</div>
-            <div class="mb-2 text-sm text-yellow-300" id="summaryMission">任務：未完成</div>
-            <div class="mb-6 text-sm text-purple-200" id="summaryMessage">太棒了！</div>
-            <button id="restartGameButton"
-                class="clay-btn w-full rounded-xl px-8 py-3 text-xl font-bold text-white transition-transform hover:scale-105 active:scale-95">
-                PLAY AGAIN
+        <!-- 底部：4 顆彩色圓形答案發射鈕 -->
+        <div id="bottom-cannons">
+            <button class="cannon-pad pad-0" id="pad-0" onclick="fireAtSlot(0)">
+                <span class="key-hint">1</span>
+                <span class="pad-val">--</span>
             </button>
+            <button class="cannon-pad pad-1" id="pad-1" onclick="fireAtSlot(1)">
+                <span class="key-hint">2</span>
+                <span class="pad-val">--</span>
+            </button>
+            <button class="cannon-pad pad-2" id="pad-2" onclick="fireAtSlot(2)">
+                <span class="key-hint">3</span>
+                <span class="pad-val">--</span>
+            </button>
+            <button class="cannon-pad pad-3" id="pad-3" onclick="fireAtSlot(3)">
+                <span class="key-hint">4</span>
+                <span class="pad-val">--</span>
+            </button>
+        </div>
+
+        <!-- 彈出視窗（開始 / 暫停 / 結算） -->
+        <div class="overlay-modal" id="modal-overlay">
+            <div class="modal-card">
+                <div class="modal-badge" id="modal-badge">🎯 九九乘法星際防衛</div>
+                <div class="modal-title" id="modal-title">怪獸星際乘法射擊</div>
+                <div class="modal-desc" id="modal-desc">
+                    外星飛碟帶著數字護盾降落了！<br>
+                    <strong>直接點擊正確答案的飛碟</strong>或<strong>按下方四色發射鈕</strong>，發射彩虹雷射擊落敵機！
+                </div>
+
+                <div id="setup-section">
+                    <div class="section-label">🔢 選擇乘法題庫範圍：</div>
+                    <div class="range-picker" id="range-picker">
+                        <button class="range-btn selected" data-range="all">🌟 全部 (2~9)</button>
+                        <button class="range-btn" data-range="basic">🌱 基礎 (2~5)</button>
+                        <button class="range-btn" data-range="advanced">🔥 進階 (6~9)</button>
+                    </div>
+
+                    <div class="section-label">🐾 選擇你的星際怪獸飛行員：</div>
+                    <div class="hero-picker" id="hero-picker">
+                        <div class="hero-option selected" data-hero="astro_turtle">
+                            <img src="/images/monsters/new/astro_turtle.png" alt="太空龜">
+                            <span>太空龜</span>
+                        </div>
+                        <div class="hero-option" data-hero="penguin_knight">
+                            <img src="/images/monsters/new/penguin_knight.png" alt="企鵝騎士">
+                            <span>企鵝騎士</span>
+                        </div>
+                        <div class="hero-option" data-hero="comet_fox">
+                            <img src="/images/monsters/new/comet_fox.png" alt="彗星狐">
+                            <span>彗星狐</span>
+                        </div>
+                        <div class="hero-option" data-hero="robo_scout">
+                            <img src="/images/monsters/new/robo_scout.png" alt="機器人">
+                            <span>機器人</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="modal-stats" style="display: none;">
+                    <div class="stat-box">
+                        <div class="lbl">擊退波數 / 最高連擊</div>
+                        <div class="val" id="stat-wave">15 波</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="lbl">獲得星幣獎勵</div>
+                        <div class="val" id="stat-stars">⭐ +0</div>
+                    </div>
+                </div>
+
+                <button class="primary-btn" id="modal-primary-btn">🚀 出發防衛星際</button>
+                <button class="secondary-btn" id="modal-secondary-btn" style="display: none;">🔄 重新開始</button>
+            </div>
         </div>
     </div>
 
     <script>
-        /**
-         * NEON MATH SHOOTER - Responsive Fit
-         */
+        // ==========================================
+        // 怪獸星際乘法射擊（單一畫框・直覺雙操作版）
+        // ==========================================
         const canvas = document.getElementById('gameCanvas');
-        const wrapper = document.getElementById('game-wrapper');
         const ctx = canvas.getContext('2d');
+        const W = canvas.width;   // 660
+        const H = canvas.height;  // 572
+        const TOTAL_WAVES = 15;
 
-        // Game Configuration
-        const CONFIG = {
-            width: 800,
-            height: 600, // Will be updated by resize
-            colors: {
-                bg: '#0f0b1e',
-                player: '#22d3ee',
-                playerGlow: '#06b6d4',
-                enemy: '#f472b6',
-                enemyGlow: '#db2777',
-                bullet: '#facc15',
-                bulletGlow: '#eab308'
+        // 四色能量護盾配色（與底部四顆發射鈕一一對應）
+        const ORB_PALETTES = [
+            { main: '#06b6d4', light: '#67e8f9', dark: '#0369a1', glow: 'rgba(34, 211, 238, 0.55)' }, // 藍青
+            { main: '#f59e0b', light: '#fde047', dark: '#b45309', glow: 'rgba(251, 191, 36, 0.55)' }, // 金黃
+            { main: '#10b981', light: '#6ee7b7', dark: '#047857', glow: 'rgba(52, 211, 153, 0.55)' }, // 翠綠
+            { main: '#ec4899', light: '#f9a8d4', dark: '#be185d', glow: 'rgba(244, 114, 182, 0.55)' }  // 粉紅
+        ];
+
+        // 預載 Voxel 怪獸圖片
+        const MONSTER_URLS = {
+            astro_turtle: '/images/monsters/new/astro_turtle.png',
+            penguin_knight: '/images/monsters/new/penguin_knight.png',
+            comet_fox: '/images/monsters/new/comet_fox.png',
+            robo_scout: '/images/monsters/new/robo_scout.png',
+            ufo_rider: '/images/monsters/new/ufo_rider.png',
+            space_jelly: '/images/monsters/new/space_jelly.png',
+            star_bit: '/images/monsters/new/star_bit.png',
+            demon_imp: '/images/monsters/new/demon_imp.png',
+            storm_lord: '/images/monsters/new/storm_lord.png',
+            ice_cube_slime: '/images/monsters/new/ice_cube_slime.png'
+        };
+        const ENEMY_KEYS = ['ufo_rider', 'space_jelly', 'star_bit', 'demon_imp', 'storm_lord', 'ice_cube_slime'];
+        const sprites = {};
+        Object.entries(MONSTER_URLS).forEach(([k, url]) => {
+            const img = new Image();
+            img.src = url;
+            sprites[k] = img;
+        });
+
+        // 輕量音效合成器
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
             }
+            init() {
+                if (!this.ctx) {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if (AC) this.ctx = new AC();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+            tone(freq, type = 'sine', dur = 0.12, vol = 0.12, slide = null) {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    if (slide) {
+                        osc.frequency.exponentialRampToValueAtTime(slide, this.ctx.currentTime + dur);
+                    }
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + dur);
+                } catch (e) {}
+            }
+            laser() {
+                this.tone(520, 'triangle', 0.18, 0.14, 980);
+                setTimeout(() => this.tone(780, 'sine', 0.16, 0.12, 1280), 50);
+            }
+            rainbowBlast() {
+                [523, 659, 784, 1046, 1318].forEach((f, idx) => {
+                    setTimeout(() => this.tone(f, 'triangle', 0.18, 0.15), idx * 55);
+                });
+            }
+            wrongBounce() {
+                this.tone(240, 'sawtooth', 0.16, 0.09, 150);
+            }
+            breach() {
+                this.tone(180, 'sawtooth', 0.28, 0.14, 90);
+            }
+            win() {
+                [523, 659, 784, 1046].forEach((f, idx) => {
+                    setTimeout(() => this.tone(f, 'triangle', 0.22, 0.15), idx * 90);
+                });
+            }
+        }
+        const sfx = new SoundFX();
+
+        // 星空背景粒子
+        const stars = Array.from({ length: 75 }, () => ({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            r: Math.random() * 1.8 + 0.6,
+            speed: Math.random() * 18 + 8,
+            phase: Math.random() * Math.PI * 2
+        }));
+
+        // 遊戲狀態
+        let selectedHero = 'astro_turtle';
+        let selectedRange = 'all'; // 'all' (2..9), 'basic' (2..5), 'advanced' (6..9)
+        let gameState = 'menu'; // 'menu' | 'playing' | 'paused' | 'wave_clearing' | 'gameover' | 'victory'
+        let endlessMode = false;
+
+        let wave = 1;
+        let score = 0;
+        let lives = 4;
+        let maxLives = 4;
+        let shield = true; // 開局贈送 1 層泡泡護盾
+        let streak = 0;
+        let maxStreak = 0;
+        let rainbowCharge = 0; // 0..3，滿 3 觸發超級彩虹巨砲
+        let starsEarnedThisRun = 0;
+        let screenShake = 0;
+
+        let currentQuestion = { a: 2, b: 3, ans: 6 };
+        let askedHistory = [];
+        let ufos = [];          // 當前波次的 4 架數字飛碟
+        let beamEffects = [];   // 雷射光束與閃電鏈特效
+        let particles = [];     // 爆炸星星與彩紙粒子
+        let floatingTexts = []; // 浮動得分文字
+
+        // 玩家底部星際砲台
+        const turret = {
+            x: W / 2,
+            y: H - 108,
+            targetX: W / 2,
+            angle: 0,
+            targetAngle: 0,
+            recoil: 0
         };
 
-        // Game State
-        let state = {
-            isPlaying: false,
-            score: 0,
-            lives: 12,
-            questionTime: 5,
-            lastFrame: 0,
-            specialReady: false,
-            lastSpecialScore: 0,
-            shake: 0,
-            slowMo: false,
-            streak: 0,
-            maxStreak: 0,
-            correctAnswers: 0,
-            mission: null,
-            gameStartAt: 0
-        };
-
-        // Entities
-        let player, enemies = [], bullets = [], particles = [], stars = [], items = [];
-        // Logic
-        let currentQuestion = null;
-        let gameLoopId, questionTimerId;
-        let enemySpawnTimer = 0;
-        let slowMoTimer = 0;
-
-        // Resize handling
-        function resize() {
-            const rect = wrapper.getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = rect.height;
-
-            CONFIG.width = rect.width;
-            CONFIG.height = rect.height;
-
-            // Reposition player if exists
-            if (player) {
-                player.x = CONFIG.width / 2;
-                player.y = CONFIG.height - 80;
-                player.targetX = player.x;
-            }
-        }
-        window.addEventListener('resize', resize);
-        // Call resize immediately and after short delay to ensure layout is settled
-        resize();
-        setTimeout(resize, 100);
-
-        // UI References
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const livesDisplay = document.getElementById('livesDisplay');
-        const questionDisplay = document.getElementById('questionDisplay');
-        const answerOptionsContainer = document.getElementById('answerOptionsContainer');
-        const questionTimerBar = document.getElementById('questionTimerBar');
-        const feedbackDisplay = document.getElementById('feedbackDisplay');
-        const startGameButton = document.getElementById('startGameButton');
-        const specialCannonButton = document.getElementById('specialCannonButton');
-        const celebrationScreen = document.getElementById('celebrationScreen');
-        const finalScoreDisplay = document.getElementById('finalScore');
-        const restartGameButton = document.getElementById('restartGameButton');
-        const streakDisplay = document.getElementById('streakDisplay');
-        const missionDisplay = document.getElementById('missionDisplay');
-        const phaseDisplay = document.getElementById('phaseDisplay');
-        const summaryStreak = document.getElementById('summaryStreak');
-        const summaryMission = document.getElementById('summaryMission');
-        const summaryMessage = document.getElementById('summaryMessage');
-
-        function createMission() {
-            const missions = [
-                { id: 'correct', title: '答對 8 題', target: 8, progress: 0, reward: 120 },
-                { id: 'streak', title: '連續答對 5 題', target: 5, progress: 0, reward: 150 },
-                { id: 'defeat', title: '擊退 15 個敵人', target: 15, progress: 0, reward: 130 }
-            ];
-            return { ...missions[Math.floor(Math.random() * missions.length)], done: false };
+        // Toast 控制
+        let toastTimeout = null;
+        function showCenterToast(mainText, subText = '', duration = 1750) {
+            const toast = document.getElementById('center-toast');
+            document.getElementById('toast-main').textContent = mainText;
+            document.getElementById('toast-sub').textContent = subText;
+            toast.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
         }
 
-        function updateMissionUI() {
-            if (!state.mission) return;
-            missionDisplay.innerText = `${state.mission.title} (${Math.min(state.mission.progress, state.mission.target)}/${state.mission.target})`;
-        }
-
-        function updateStreakUI() {
-            streakDisplay.innerText = `${state.streak}`;
-        }
-
-        function updatePhaseLabel() {
-            if (!state.isPlaying) return;
-            const elapsed = (performance.now() - state.gameStartAt) / 1000;
-            if (elapsed <= 10) {
-                phaseDisplay.innerText = '開始 10 秒驚喜';
-            } else if (elapsed <= 40) {
-                phaseDisplay.innerText = '30 秒任務暖身';
-            } else if (elapsed <= 160) {
-                phaseDisplay.innerText = '120 秒精彩時刻';
-            } else {
-                phaseDisplay.innerText = '結束獎勵';
-            }
-        }
-
-        function markMissionProgress(type, amount = 1) {
-            if (!state.mission || state.mission.done || state.mission.id !== type) return;
-            state.mission.progress += amount;
-            updateMissionUI();
-            if (state.mission.progress >= state.mission.target) {
-                state.mission.done = true;
-                addScore(state.mission.reward);
-                feedbackDisplay.innerText = `任務完成！+${state.mission.reward}`;
-                feedbackDisplay.className = 'h-6 text-sm font-bold mb-1 text-yellow-300';
-            }
-        }
-
-
-        // --- Classes ---
-
-        class Star {
-            constructor() {
-                this.x = Math.random() * CONFIG.width;
-                this.y = Math.random() * CONFIG.height;
-                this.size = Math.random() * 2;
-                this.speed = Math.random() * 0.5 + 0.1;
-                this.brightness = Math.random();
-            }
-            update() {
-                this.y += this.speed;
-                if (this.y > CONFIG.height) {
-                    this.y = 0;
-                    this.x = Math.random() * CONFIG.width;
-                }
-                this.brightness = 0.5 + Math.sin(Date.now() * 0.005 + this.x) * 0.5;
-            }
-            draw(ctx) {
-                ctx.fillStyle = `rgba(255, 255, 255, ${this.brightness})`;
-                ctx.fillRect(this.x, this.y, this.size, this.size);
-            }
-        }
-
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.color = color;
-                const angle = Math.random() * Math.PI * 2;
-                const speed = Math.random() * 3 + 1;
-                this.vx = Math.cos(angle) * speed;
-                this.vy = Math.sin(angle) * speed;
-                this.life = 1.0;
-                this.decay = Math.random() * 0.03 + 0.02;
-            }
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life -= this.decay;
-            }
-            draw(ctx) {
-                ctx.globalAlpha = Math.max(0, this.life);
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1.0;
-            }
-        }
-
-        class Player {
-            constructor() {
-                this.w = 50;
-                this.h = 50;
-                this.x = CONFIG.width / 2;
-                this.y = CONFIG.height - 70;
-                this.targetX = this.x;
-            }
-
-            update() {
-                // Smooth movement to target
-                this.x += (this.targetX - this.x) * 0.1;
-            }
-
-            draw(ctx) {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-
-                // Glow
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = CONFIG.colors.playerGlow;
-                ctx.strokeStyle = CONFIG.colors.player;
-                ctx.fillStyle = '#000';
-                ctx.lineWidth = 2;
-
-                // Ship Shape
-                ctx.beginPath();
-                ctx.moveTo(0, -25);
-                ctx.lineTo(20, 25);
-                ctx.lineTo(0, 15); // Engine indent
-                ctx.lineTo(-20, 25);
-                ctx.closePath();
-
-                ctx.fill();
-                ctx.stroke();
-
-                // Detailed Engine Glow
-                ctx.shadowBlur = 10;
-                ctx.fillStyle = CONFIG.colors.player;
-                ctx.beginPath();
-                ctx.arc(0, 15, 3 + Math.random() * 2, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.restore();
-            }
-        }
-
-        class Item {
-            constructor(x, y, type) {
-                this.x = x;
-                this.y = y;
-                this.w = 40;
-                this.h = 40;
-                this.type = type; // 'clock' or 'nuke'
-                this.speed = 2; // Items fall slightly faster to be catchable
-                this.rotation = 0;
-            }
-
-            update() {
-                this.y += this.speed;
-                this.rotation += 0.05;
-            }
-
-            draw(ctx) {
-                ctx.save();
-                ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
-                // Oscillation
-                const scale = 1 + Math.sin(Date.now() * 0.01) * 0.1;
-                ctx.scale(scale, scale);
-                ctx.font = "30px Arial";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-
-                if (this.type === 'clock') {
-                    ctx.fillText("⏰", 0, 0);
-                } else if (this.type === 'nuke') {
-                    ctx.fillText("☢️", 0, 0);
-                }
-
-                ctx.restore();
-            }
-        }
-
-        class Enemy {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.w = 40;
-                this.h = 40;
-
-                // Difficulty Scaling: Base speed 0.375 (very slow start), increases by 1.2x every 1000 points
-                const difficultyMultiplier = Math.pow(1.2, Math.floor(state.score / 1000));
-                this.baseSpeed = 0.375 * difficultyMultiplier;
-                this.speed = this.baseSpeed;
-
-                this.rotation = 0;
-            }
-
-            update() {
-                // Apply Slow Motion
-                let currentSpeed = this.baseSpeed;
-                if (state.slowMo) {
-                    currentSpeed *= 0.5;
-                }
-
-                this.y += currentSpeed;
-                this.rotation += 0.05;
-            }
-
-            draw(ctx) {
-                ctx.save();
-                ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
-                ctx.rotate(this.rotation);
-
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = CONFIG.colors.enemyGlow;
-                ctx.strokeStyle = CONFIG.colors.enemy;
-                ctx.lineWidth = 2;
-
-                // Geometric Shape (Diamond)
-                ctx.beginPath();
-                ctx.moveTo(0, -20);
-                ctx.lineTo(20, 0);
-                ctx.lineTo(0, 20);
-                ctx.lineTo(-20, 0);
-                ctx.closePath();
-                ctx.stroke();
-
-                // Inner core
-                ctx.fillStyle = CONFIG.colors.enemy;
-                ctx.globalAlpha = 0.3;
-                ctx.fill();
-                ctx.globalAlpha = 1;
-
-                ctx.restore();
-            }
-        }
-
-        class Bullet {
-            constructor(x, y, target) {
-                this.x = x;
-                this.y = y;
-                this.w = 6;
-                this.h = 20;
-                this.speed = 12;
-                this.target = target;
-
-                if (target) {
-                    // Homing logic (simple)
-                    const dx = (target.x + target.w / 2) - x;
-                    const dy = (target.y + target.h / 2) - y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    this.vx = (dx / dist) * this.speed;
-                    this.vy = (dy / dist) * this.speed;
-                    this.angle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
-                } else {
-                    this.vx = 0;
-                    this.vy = -this.speed;
-                    this.angle = 0;
-                }
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-            }
-
-            draw(ctx) {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.angle);
-
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = CONFIG.colors.bulletGlow;
-                ctx.fillStyle = CONFIG.colors.bullet;
-
-                // Laser beam shape
-                ctx.beginPath();
-                ctx.roundRect(-3, -10, 6, 20, 3);
-                ctx.fill();
-
-                ctx.restore();
-            }
-        }
-
-        // --- Core Systems ---
-
-        function init() {
+        // 發送星幣獎勵至主系統
+        function awardStarCoins(amount) {
+            if (amount <= 0) return;
+            starsEarnedThisRun += amount;
             try {
-                player = new Player();
-                stars = Array(50).fill().map(() => new Star());
+                window.parent.postMessage({ type: 'QUESTMON_EARN_STARS', amount }, '*');
+            } catch (e) {}
+            updateHUD();
+        }
 
-                // Auto-start game on load for better UX
-                startGame();
+        function updateHUD() {
+            document.getElementById('wave-label').textContent = endlessMode
+                ? `無盡第 ${wave} 波`
+                : `第 ${wave} / ${TOTAL_WAVES} 波`;
+            document.getElementById('stars-text').textContent = starsEarnedThisRun;
+            document.getElementById('score-text').textContent = score;
 
-                // Initial render
-                loop(0);
-            } catch (e) {
-                console.error("Game Init Error:", e);
+            let heartsStr = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, maxLives - lives));
+            if (shield) heartsStr = '🫧' + heartsStr;
+            document.getElementById('hp-hearts').textContent = heartsStr;
+
+            for (let i = 0; i < 3; i++) {
+                const dot = document.getElementById(`charge-${i}`);
+                if (dot) dot.classList.toggle('filled', i < rainbowCharge);
             }
         }
 
-        function loop(timestamp) {
-            if (!state.lastFrame) state.lastFrame = timestamp;
-            const dt = (timestamp - state.lastFrame) / 16.67;
-            state.lastFrame = timestamp;
+        // 產生題目與 4 艘數字飛碟
+        function spawnWave() {
+            gameState = 'playing';
 
-            // Clear
-            ctx.fillStyle = CONFIG.colors.bg;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // 依選擇範圍決定被乘數與乘數
+            let minN = 2, maxN = 9;
+            if (selectedRange === 'basic') { minN = 2; maxN = 5; }
+            else if (selectedRange === 'advanced') { minN = 6; maxN = 9; }
 
-            // Screen Shake
+            let a, b, key;
+            let tries = 0;
+            do {
+                a = Math.floor(Math.random() * (maxN - minN + 1)) + minN;
+                b = Math.floor(Math.random() * 8) + 2; // 2..9
+                if (Math.random() < 0.5) [a, b] = [b, a];
+                key = `${Math.min(a, b)}x${Math.max(a, b)}`;
+                tries++;
+            } while (askedHistory.includes(key) && tries < 25);
+
+            askedHistory.push(key);
+            if (askedHistory.length > 18) askedHistory.shift();
+
+            const ans = a * b;
+            currentQuestion = { a, b, ans };
+            document.getElementById('question-text').textContent = `${a} × ${b} = ?`;
+
+            // 產生 3 個貼近但合理的干擾答案（幫助練習九九乘法分辨）
+            const optionsSet = new Set([ans]);
+            const candidates = [
+                a * (b + 1),
+                a * Math.max(1, b - 1),
+                (a + 1) * b,
+                Math.max(1, a - 1) * b,
+                ans + a,
+                ans - b,
+                ans + 2,
+                ans - 2
+            ].filter(v => v > 1 && v <= 81 && v !== ans);
+
+            while (optionsSet.size < 4 && candidates.length > 0) {
+                const idx = Math.floor(Math.random() * candidates.length);
+                optionsSet.add(candidates.splice(idx, 1)[0]);
+            }
+            while (optionsSet.size < 4) {
+                const r = Math.floor(Math.random() * 72) + 4;
+                if (r !== ans) optionsSet.add(r);
+            }
+
+            const options = Array.from(optionsSet).sort(() => Math.random() - 0.5);
+
+            // 計算降落速度（高年級 6~9 題目自動放慢 18%，讓孩子從容思考）
+            const baseSpeed = 24 + Math.min(18, (wave - 1) * 1.3);
+            const hardFactor = (a >= 6 && b >= 6) ? 0.82 : 1.0;
+            const fallSpeed = baseSpeed * hardFactor;
+
+            const laneWidth = (W - 76) / 4;
+            ufos = options.map((val, slot) => {
+                const laneCenterX = 38 + laneWidth * (slot + 0.5);
+                const monsterKey = ENEMY_KEYS[(wave + slot) % ENEMY_KEYS.length];
+                return {
+                    slot,
+                    value: val,
+                    isCorrect: val === ans,
+                    x: laneCenterX,
+                    y: 96 + (slot % 2) * 18,
+                    baseX: laneCenterX,
+                    speed: fallSpeed,
+                    wobbleOffset: slot * 1.4 + Math.random(),
+                    monsterKey,
+                    eliminated: false,
+                    alive: true,
+                    hitScale: 1
+                };
+            });
+
+            // 同步更新底部 4 顆發射鈕
+            options.forEach((val, slot) => {
+                const btn = document.getElementById(`pad-${slot}`);
+                btn.querySelector('.pad-val').textContent = val;
+                btn.disabled = false;
+            });
+
+            updateHUD();
+        }
+
+        // 玩家對第 slot 號飛碟開火
+        window.fireAtSlot = function(slot) {
+            if (gameState !== 'playing') return;
+            const target = ufos[slot];
+            if (!target || !target.alive || target.eliminated) return;
+
+            sfx.init();
+
+            // 旋轉砲台對準目標飛碟
+            const dx = target.x - turret.x;
+            const dy = target.y - turret.y;
+            turret.targetAngle = Math.atan2(dx, -dy);
+            turret.recoil = 10;
+
+            if (target.isCorrect) {
+                handleCorrectHit(target);
+            } else {
+                handleWrongHit(target);
+            }
+        };
+
+        function handleCorrectHit(target) {
+            gameState = 'wave_clearing';
+            streak++;
+            maxStreak = Math.max(maxStreak, streak);
+            rainbowCharge = Math.min(3, rainbowCharge + 1);
+
+            const isSuperRainbow = rainbowCharge >= 3;
+            if (isSuperRainbow) {
+                sfx.rainbowBlast();
+                rainbowCharge = 0;
+                if (!shield) {
+                    shield = true;
+                }
+            } else {
+                sfx.laser();
+            }
+
+            // 禁用底部按鈕避免重複觸發
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`pad-${i}`).disabled = true;
+            }
+
+            // 主雷射光束：從砲台射向正確飛碟
+            beamEffects.push({
+                x1: turret.x,
+                y1: turret.y - 18,
+                x2: target.x,
+                y2: target.y,
+                rainbow: isSuperRainbow,
+                life: 0.45,
+                maxLife: 0.45
+            });
+
+            // 連鎖電弧：從正確飛碟同時擊碎另外 3 艘干擾飛碟
+            ufos.forEach(u => {
+                if (u !== target && u.alive) {
+                    beamEffects.push({
+                        x1: target.x,
+                        y1: target.y,
+                        x2: u.x,
+                        y2: u.y,
+                        rainbow: isSuperRainbow,
+                        life: 0.38,
+                        maxLife: 0.38
+                    });
+                }
+            });
+
+            // 計算得分與星幣獎勵
+            const gain = (isSuperRainbow ? 200 : 100) + Math.min(80, streak * 15);
+            score += gain;
+            screenShake = isSuperRainbow ? 10 : 5;
+
+            // 產生爆炸粒子
+            ufos.forEach(u => {
+                u.alive = false;
+                const palette = ORB_PALETTES[u.slot];
+                spawnExplosion(u.x, u.y, palette.main, u === target ? 28 : 14);
+            });
+
+            floatingTexts.push({
+                x: target.x,
+                y: target.y - 10,
+                text: isSuperRainbow ? `🌈 超級巨砲 +${gain}!` : `✨ ${currentQuestion.a}×${currentQuestion.b}=${currentQuestion.ans}  +${gain}`,
+                color: '#fde047',
+                life: 1.0
+            });
+
+            // 每擊退 3 波發送 1 顆星幣獎勵
+            if (wave % 3 === 0) {
+                awardStarCoins(1);
+            }
+
+            if (isSuperRainbow) {
+                showCenterToast('🌈 3 連擊！超級彩虹巨砲！', '全場秒殺 + 補充泡泡護盾 🫧', 1300);
+            } else if (streak > 0 && streak % 5 === 0) {
+                showCenterToast(`🔥 太強了！連續答對 ${streak} 題！`, '繼續保持星際連擊節奏！', 1200);
+            }
+
+            updateHUD();
+
+            // 短暫延遲後進入下一波或通關
+            setTimeout(() => {
+                if (gameState !== 'wave_clearing') return;
+                if (!endlessMode && wave >= TOTAL_WAVES) {
+                    triggerVictory();
+                } else {
+                    wave++;
+                    spawnWave();
+                }
+            }, 680);
+        }
+
+        function handleWrongHit(target) {
+            sfx.wrongBounce();
+            streak = 0;
+            rainbowCharge = 0;
+            target.eliminated = true;
+            target.hitScale = 1.25;
+
+            // 禁用該錯誤按鈕，幫小朋友消去錯誤選項
+            const btn = document.getElementById(`pad-${target.slot}`);
+            if (btn) btn.disabled = true;
+
+            // 發射藍色小電漿彈反彈特效
+            beamEffects.push({
+                x1: turret.x,
+                y1: turret.y - 18,
+                x2: target.x,
+                y2: target.y + 15,
+                rainbow: false,
+                weak: true,
+                life: 0.22,
+                maxLife: 0.22
+            });
+
+            spawnExplosion(target.x, target.y + 15, '#94a3b8', 8);
+            floatingTexts.push({
+                x: target.x,
+                y: target.y - 14,
+                text: '再算算看！',
+                color: '#fca5a5',
+                life: 0.85
+            });
+
+            updateHUD();
+        }
+
+        // 當飛碟突破底部防線
+        function handleDefenseBreach() {
+            sfx.breach();
+            streak = 0;
+            rainbowCharge = 0;
+            screenShake = 9;
+
+            if (shield) {
+                shield = false;
+                showCenterToast('🫧 泡泡護盾抵擋了撞擊！', `正確答案是：${currentQuestion.a} × ${currentQuestion.b} = ${currentQuestion.ans}`, 1600);
+            } else {
+                lives--;
+                showCenterToast('⚠️ 飛碟越過防線！-1 ❤️', `正確答案是：${currentQuestion.a} × ${currentQuestion.b} = ${currentQuestion.ans}`, 1600);
+            }
+
+            updateHUD();
+
+            if (lives <= 0) {
+                triggerGameOver();
+            } else {
+                spawnWave();
+            }
+        }
+
+        function spawnExplosion(x, y, color, count = 18) {
+            const colors = [color, '#fde047', '#ffffff', '#38bdf8', '#f472b6'];
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 170 + 45;
+                particles.push({
+                    x,
+                    y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    r: Math.random() * 4.5 + 2,
+                    color: colors[i % colors.length],
+                    life: 1.0,
+                    decay: Math.random() * 1.4 + 1.1
+                });
+            }
+        }
+
+        // 畫布點擊：支援直接點擊畫面中的飛碟或數字球！
+        canvas.addEventListener('pointerdown', (e) => {
+            if (gameState !== 'playing') return;
+            const rect = canvas.getBoundingClientRect();
+            const cx = (e.clientX - rect.left) * (W / rect.width);
+            const cy = (e.clientY - rect.top) * (H / rect.height);
+
+            // 檢查是否點到任何一艘飛碟
+            let bestSlot = -1;
+            let bestDist = 72; // 寬鬆好點的觸控半徑
+            ufos.forEach(u => {
+                if (!u.alive || u.eliminated) return;
+                const d = Math.hypot(cx - u.x, cy - u.y);
+                if (d < bestDist) {
+                    bestDist = d;
+                    bestSlot = u.slot;
+                }
+            });
+
+            if (bestSlot !== -1) {
+                fireAtSlot(bestSlot);
+            }
+        });
+
+        // 鍵盤快捷鍵支援（1~4 對應四個答案，P/Esc 暫停）
+        window.addEventListener('keydown', (e) => {
+            if (e.key >= '1' && e.key <= '4') {
+                fireAtSlot(parseInt(e.key, 10) - 1);
+            } else if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+                togglePause();
+            }
+        });
+
+        // 主更新迴圈
+        let lastTime = performance.now();
+        function update(dt) {
+            // 背景星星流動
+            stars.forEach(s => {
+                s.y += s.speed * dt;
+                if (s.y > H) {
+                    s.y = -4;
+                    s.x = Math.random() * W;
+                }
+            });
+
+            // 砲台平滑轉向與後座力恢復
+            turret.angle += (turret.targetAngle - turret.angle) * Math.min(1, dt * 16);
+            turret.recoil = Math.max(0, turret.recoil - dt * 45);
+
+            if (screenShake > 0) {
+                screenShake = Math.max(0, screenShake - dt * 28);
+            }
+
+            // 更新雷射特效
+            for (let i = beamEffects.length - 1; i >= 0; i--) {
+                beamEffects[i].life -= dt;
+                if (beamEffects[i].life <= 0) beamEffects.splice(i, 1);
+            }
+
+            // 更新爆炸粒子
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.vy += 120 * dt;
+                p.life -= p.decay * dt;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            // 更新浮動文字
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const ft = floatingTexts[i];
+                ft.y -= 38 * dt;
+                ft.life -= dt * 1.1;
+                if (ft.life <= 0) floatingTexts.splice(i, 1);
+            }
+
+            if (gameState !== 'playing') return;
+
+            // 更新飛碟位置與防線檢查
+            const defenseLineY = H - 155;
+            let breached = false;
+            const nowSec = performance.now() * 0.001;
+
+            ufos.forEach(u => {
+                if (!u.alive) return;
+                u.y += u.speed * dt;
+                u.x = u.baseX + Math.sin(nowSec * 2.2 + u.wobbleOffset) * 10;
+                if (u.hitScale > 1) {
+                    u.hitScale = Math.max(1, u.hitScale - dt * 2.5);
+                }
+                if (u.y >= defenseLineY) {
+                    breached = true;
+                }
+            });
+
+            if (breached) {
+                handleDefenseBreach();
+            }
+        }
+
+        // 繪製遊戲畫面
+        function draw() {
             ctx.save();
-            if (state.shake > 0) {
-                const dx = (Math.random() - 0.5) * state.shake;
-                const dy = (Math.random() - 0.5) * state.shake;
-                ctx.translate(dx, dy);
-                state.shake *= 0.9;
-                if (state.shake < 0.5) state.shake = 0;
+            if (screenShake > 0) {
+                ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
             }
 
-            if (state.slowMo) {
-                slowMoTimer--;
-                if (slowMoTimer <= 0) {
-                    state.slowMo = false;
-                    feedbackDisplay.innerText = ""; // Clear status
+            // 1. 深空漸層背景與星雲光暈
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+            bgGrad.addColorStop(0, '#0f0a2c');
+            bgGrad.addColorStop(0.55, '#1e1b4b');
+            bgGrad.addColorStop(1, '#172554');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            // 柔和星雲裝飾
+            const neb1 = ctx.createRadialGradient(140, 180, 10, 140, 180, 160);
+            neb1.addColorStop(0, 'rgba(139, 92, 246, 0.18)');
+            neb1.addColorStop(1, 'rgba(139, 92, 246, 0)');
+            ctx.fillStyle = neb1;
+            ctx.fillRect(0, 0, W, H);
+
+            const neb2 = ctx.createRadialGradient(520, 290, 10, 520, 290, 180);
+            neb2.addColorStop(0, 'rgba(14, 165, 233, 0.16)');
+            neb2.addColorStop(1, 'rgba(14, 165, 233, 0)');
+            ctx.fillStyle = neb2;
+            ctx.fillRect(0, 0, W, H);
+
+            // 閃爍星辰
+            const now = performance.now() * 0.003;
+            stars.forEach(s => {
+                const alpha = 0.4 + 0.55 * Math.sin(now + s.phase);
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 2. 底部星際防線光束
+            const defenseY = H - 155;
+            ctx.save();
+            ctx.strokeStyle = shield ? 'rgba(56, 189, 248, 0.45)' : 'rgba(244, 63, 94, 0.35)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 8]);
+            ctx.beginPath();
+            ctx.moveTo(24, defenseY);
+            ctx.lineTo(W - 24, defenseY);
+            ctx.stroke();
+            ctx.restore();
+
+            // 3. 繪製雷射光束與閃電特效
+            beamEffects.forEach(b => {
+                const alpha = Math.max(0, b.life / b.maxLife);
+                ctx.save();
+                ctx.lineCap = 'round';
+                if (b.rainbow) {
+                    const grad = ctx.createLinearGradient(b.x1, b.y1, b.x2, b.y2);
+                    grad.addColorStop(0, '#f43f5e');
+                    grad.addColorStop(0.33, '#facc15');
+                    grad.addColorStop(0.66, '#4ade80');
+                    grad.addColorStop(1, '#38bdf8');
+                    ctx.strokeStyle = grad;
+                    ctx.lineWidth = 18 * alpha;
+                    ctx.shadowColor = '#facc15';
+                    ctx.shadowBlur = 22;
+                    ctx.beginPath();
+                    ctx.moveTo(b.x1, b.y1);
+                    ctx.lineTo(b.x2, b.y2);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 6 * alpha;
+                    ctx.stroke();
+                } else {
+                    ctx.strokeStyle = b.weak ? `rgba(148, 163, 184, ${alpha})` : `rgba(56, 189, 248, ${alpha})`;
+                    ctx.lineWidth = (b.weak ? 6 : 12) * alpha;
+                    ctx.shadowColor = '#38bdf8';
+                    ctx.shadowBlur = 16;
+                    ctx.beginPath();
+                    ctx.moveTo(b.x1, b.y1);
+                    ctx.lineTo(b.x2, b.y2);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                    ctx.lineWidth = 4 * alpha;
+                    ctx.stroke();
                 }
-            }
+                ctx.restore();
+            });
 
-            // Update & Draw Background
-            stars.forEach(s => { s.update(); s.draw(ctx); });
-
-            // Player
-            if (player) {
-                player.update();
-                player.draw(ctx);
-            }
-
-            if (state.isPlaying) {
-                updatePhaseLabel();
-                // Spawning - check count
-                enemySpawnTimer++;
-
-                // Dynamic Spawn Rate:
-                // Start: 100 frames (~1.6s)
-                // Speed up: -5 frames every 1000 points
-                // Cap: Minimum 40 frames (~0.6s)
-                const spawnThreshold = Math.max(40, 100 - Math.floor(state.score / 1000) * 5);
-
-                if (enemySpawnTimer > spawnThreshold) {
-                    spawnEnemy();
-                    enemySpawnTimer = 0;
+            // 4. 繪製 4 艘外星數字飛碟艦隊
+            ufos.forEach(u => {
+                if (!u.alive) return;
+                const pal = ORB_PALETTES[u.slot];
+                ctx.save();
+                ctx.translate(u.x, u.y);
+                ctx.scale(u.hitScale, u.hitScale);
+                if (u.eliminated) {
+                    ctx.globalAlpha = 0.32;
                 }
 
-                // Entities Update & Draw
-                updateEntities();
-                checkCollisions();
+                // 飛碟外星怪獸座艙（上方）
+                ctx.fillStyle = 'rgba(224, 242, 254, 0.25)';
+                ctx.strokeStyle = 'rgba(186, 230, 253, 0.75)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(0, -28, 24, Math.PI, 0);
+                ctx.fill();
+                ctx.stroke();
+
+                // 繪製座艙內的 Voxel 外星怪獸
+                const mImg = sprites[u.monsterKey];
+                if (mImg && mImg.complete && mImg.naturalWidth > 0) {
+                    ctx.drawImage(mImg, -22, -52, 44, 44);
+                }
+
+                // 飛碟金屬圓盤底座
+                ctx.fillStyle = '#475569';
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.ellipse(0, -10, 34, 9, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // 飛碟下方懸浮的大號彩色數字護盾球
+                ctx.shadowColor = pal.glow;
+                ctx.shadowBlur = u.eliminated ? 0 : 16;
+                const orbGrad = ctx.createRadialGradient(-8, 12, 4, 0, 20, 30);
+                orbGrad.addColorStop(0, pal.light);
+                orbGrad.addColorStop(0.55, pal.main);
+                orbGrad.addColorStop(1, pal.dark);
+
+                ctx.fillStyle = orbGrad;
+                ctx.beginPath();
+                ctx.arc(0, 20, 28, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // 護盾高光
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+                ctx.beginPath();
+                ctx.ellipse(-9, 9, 9, 5, -0.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 超清晰答案數字
+                ctx.font = '900 26px "Fredoka", "Noto Sans TC", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = 'rgba(15, 23, 42, 0.65)';
+                ctx.strokeText(u.value, 0, 21);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(u.value, 0, 21);
+
+                ctx.restore();
+            });
+
+            // 5. 繪製底部玩家星際怪獸砲台
+            ctx.save();
+            ctx.translate(turret.x, turret.y + turret.recoil * 0.6);
+
+            // 若有泡泡護盾，繪製半透明藍光防護罩
+            if (shield) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.75)';
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.14)';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.arc(0, -2, 44, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
             }
 
-            // Always draw entities (even particles if game over)
-            bullets.forEach(b => b.draw(ctx));
-            items.forEach(i => i.draw(ctx));
-            enemies.forEach(e => e.draw(ctx));
-            particles.forEach(p => { p.update(); p.draw(ctx); });
+            // 旋轉能量砲管
+            ctx.save();
+            ctx.rotate(turret.angle);
+            const barrelGrad = ctx.createLinearGradient(-10, -48, 10, 0);
+            barrelGrad.addColorStop(0, '#38bdf8');
+            barrelGrad.addColorStop(1, '#1d4ed8');
+            ctx.fillStyle = barrelGrad;
+            ctx.strokeStyle = '#e0f2fe';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.roundRect(-9, -46, 18, 34, 7);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
 
-            ctx.restore(); // Restore shake
+            // 星際戰機機翼與底座
+            ctx.fillStyle = '#312e81';
+            ctx.strokeStyle = '#818cf8';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(-40, 18);
+            ctx.lineTo(-18, -10);
+            ctx.lineTo(18, -10);
+            ctx.lineTo(40, 18);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
 
+            // 駕駛艙內的 Voxel 怪獸飛行員
+            const heroImg = sprites[selectedHero];
+            if (heroImg && heroImg.complete && heroImg.naturalWidth > 0) {
+                ctx.drawImage(heroImg, -27, -30, 54, 54);
+            }
+            ctx.restore();
+
+            // 6. 繪製爆炸粒子與浮動得分文字
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            floatingTexts.forEach(ft => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, ft.life);
+                ctx.font = '900 20px "Noto Sans TC", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.lineWidth = 4;
+                ctx.strokeText(ft.text, ft.x, ft.y);
+                ctx.fillStyle = ft.color;
+                ctx.fillText(ft.text, ft.x, ft.y);
+                ctx.restore();
+            });
+
+            ctx.restore();
+        }
+
+        function loop(now) {
+            const dt = Math.min(0.05, (now - lastTime) / 1000);
+            lastTime = now;
+            update(dt);
+            draw();
             requestAnimationFrame(loop);
         }
 
-        function updateEntities() {
-            // Cleanup off-screen
-            bullets = bullets.filter(b => b.y > -50 && b.y < CONFIG.height + 50 && b.x > -50 && b.x < CONFIG.width + 50);
+        // 選單與遊戲流程控制
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalBadge = document.getElementById('modal-badge');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+        const setupSection = document.getElementById('setup-section');
+        const modalStats = document.getElementById('modal-stats');
+        const primaryBtn = document.getElementById('modal-primary-btn');
+        const secondaryBtn = document.getElementById('modal-secondary-btn');
 
-            // Special: Check if enemies hit bottom
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                const e = enemies[i];
-                e.update();
-
-                if (e.y > CONFIG.height + 50) {
-                    // Enemy breached! Damage!
-                    enemies.splice(i, 1);
-                    takeDamage();
-                }
-            }
-
-            particles = particles.filter(p => p.life > 0);
-            bullets.forEach(b => b.update());
-
-            // Items
-            items = items.filter(i => i.y < CONFIG.height + 50);
-            items.forEach(i => i.update());
-        }
-
-        function spawnEnemy() {
-            if (enemies.length >= 10) return;
-            const x = Math.random() * (CONFIG.width - 60) + 10;
-
-            // 5% chance to spawn item instead
-            if (Math.random() < 0.05) {
-                const type = Math.random() < 0.5 ? 'clock' : 'nuke';
-                items.push(new Item(x, -50, type));
-            } else {
-                enemies.push(new Enemy(x, -50));
-            }
-        }
-
-        function spawnParticles(x, y, count = 10, color = '#fff') {
-            for (let i = 0; i < count; i++) {
-                particles.push(new Particle(x, y, color));
-            }
-            // Limit particles for performance
-            if (particles.length > 200) {
-                particles.splice(0, particles.length - 200);
-            }
-        }
-
-        function takeDamage() {
-            if (!state.isPlaying) return;
-            state.lives--;
-            updateLivesDisplay();
-            state.shake = 10; // Trigger shake
-
-            // Feedback
-            feedbackDisplay.innerText = "WARNING! BREACH!";
-            feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-red-500 animate-pulse";
-
-            if (state.lives <= 0) {
-                endGame(false);
-            }
-        }
-
-        function updateLivesDisplay() {
-            let hearts = "";
-            for (let i = 0; i < state.lives; i++) hearts += "❤️";
-            livesDisplay.innerText = hearts;
-        }
-
-        function checkCollisions() {
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                const b = bullets[i];
-                if (!b) continue;
-
-                // Check Items first
-                for (let k = items.length - 1; k >= 0; k--) {
-                    const item = items[k];
-                    if (b.x > item.x && b.x < item.x + item.w &&
-                        b.y > item.y && b.y < item.y + item.h) {
-
-                        // Activate Item!
-                        if (item.type === 'clock') {
-                            state.slowMo = true;
-                            slowMoTimer = 300; // 5 seconds (60fps)
-                            feedbackDisplay.innerText = "⏳ SLOW MOTION! ⏳";
-                            feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-blue-400";
-                        } else if (item.type === 'nuke') {
-                            // Explosion visual
-                            enemies.forEach(e => spawnParticles(e.x, e.y, 20, '#ff4400'));
-                            enemies = [];
-                            feedbackDisplay.innerText = "☢️ NUKE CLEARED! ☢️";
-                            feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-orange-500";
-                            state.shake = 20;
-                        }
-
-                        items.splice(k, 1);
-                        bullets.splice(i, 1);
-                        break; // Bullet used
-                    }
-                }
-
-                if (!bullets[i]) continue; // If bullet hit item, skip enemy check
-
-                for (let j = enemies.length - 1; j >= 0; j--) {
-                    const b = bullets[i];
-                    const e = enemies[j];
-
-                    if (!b || !e) continue;
-
-                    // Simple AABB / Hitbox
-                    if (b.x > e.x && b.x < e.x + e.w &&
-                        b.y > e.y && b.y < e.y + e.h) {
-
-                        // Hit!
-                        spawnParticles(e.x + e.w / 2, e.y + e.h / 2, 10, CONFIG.colors.enemy);
-                        enemies.splice(j, 1);
-                        bullets.splice(i, 1);
-
-                        markMissionProgress('defeat');
-                        addScore(10);
-                        break;
-                    }
-                }
-            }
-        }
-
-        // --- Math Logic ---
-
-        let askedQuestions = new Set();
-
-        function generateQuestion() {
-            let num1, num2, qStr;
-            do {
-                num1 = Math.floor(Math.random() * 9) + 1;
-                num2 = Math.floor(Math.random() * 9) + 1;
-                qStr = `${Math.min(num1, num2)}x${Math.max(num1, num2)}`;
-            } while (askedQuestions.has(qStr) && askedQuestions.size < 50);
-
-            if (askedQuestions.size >= 50) askedQuestions.clear();
-            askedQuestions.add(qStr);
-
-            currentQuestion = { num1, num2, ans: num1 * num2 };
-
-            // Visual Update
-            questionDisplay.innerText = `${num1} × ${num2} = ?`;
-            questionDisplay.classList.remove('text-red-500');
-            questionDisplay.classList.add('text-transparent'); // Restore gradient
-
-            resetTimerBar();
-            generateAnswers(currentQuestion.ans);
-        }
-
-        function generateAnswers(correct) {
-            const answers = [correct];
-            while (answers.length < 4) {
-                let wrong = Math.floor(Math.random() * 81) + 1;
-                if (!answers.includes(wrong) && Math.abs(wrong - correct) > 2) {
-                    answers.push(wrong);
-                }
-            }
-            // Shuffle
-            answers.sort(() => Math.random() - 0.5);
-
-            answerOptionsContainer.innerHTML = '';
-            answers.forEach(ans => {
-                const btn = document.createElement('button');
-                btn.textContent = ans;
-                btn.className = 'clay-btn text-white text-3xl font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-transform';
-                btn.onclick = () => handleAnswer(ans);
-                answerOptionsContainer.appendChild(btn);
+        // 切換乘法範圍
+        document.querySelectorAll('.range-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedRange = btn.dataset.range;
             });
+        });
+
+        // 切換怪獸飛行員
+        document.querySelectorAll('.hero-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                document.querySelectorAll('.hero-option').forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                selectedHero = opt.dataset.hero;
+            });
+        });
+
+        function startNewGame() {
+            sfx.init();
+            wave = 1;
+            score = 0;
+            lives = maxLives;
+            shield = true;
+            streak = 0;
+            maxStreak = 0;
+            rainbowCharge = 0;
+            starsEarnedThisRun = 0;
+            endlessMode = false;
+            askedHistory = [];
+            modalOverlay.classList.add('hidden');
+            spawnWave();
+            showCenterToast('🚀 星際防衛開始！', '直接點飛碟或按下方四色發射鈕開火！', 1800);
         }
 
-        function handleAnswer(val) {
-            if (!state.isPlaying) return;
-
-            if (val === currentQuestion.ans) {
-                // Correct!
-                state.correctAnswers++;
-                state.streak++;
-                state.maxStreak = Math.max(state.maxStreak, state.streak);
-                updateStreakUI();
-                markMissionProgress('correct');
-                if (state.mission?.id === 'streak' && !state.mission.done) {
-                    state.mission.progress = Math.max(state.mission.progress, state.streak);
-                    updateMissionUI();
-                    if (state.mission.progress >= state.mission.target) {
-                        state.mission.done = true;
-                        addScore(state.mission.reward);
-                        feedbackDisplay.innerText = `任務完成！+${state.mission.reward}`;
-                        feedbackDisplay.className = 'h-6 text-sm font-bold mb-1 text-yellow-300';
-                    }
-                }
-
-                feedbackDisplay.innerText = state.streak >= 5 ? "太棒了！連擊中！" : "答對了！";
-                feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-green-400";
-                const streakBonus = Math.min(30, state.streak * 3);
-                addScore(40 + streakBonus);
-
-                // Fire Bullets!
-                const burst = 5;
-                fireBullets(burst);
-
-                generateQuestion();
-            } else {
-                // Wrong
-                state.streak = 0;
-                updateStreakUI();
-                feedbackDisplay.innerText = "再試一次，你可以的！";
-                feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-red-500 animate-pulse";
+        function togglePause() {
+            if (gameState === 'playing') {
+                gameState = 'paused';
+                modalBadge.textContent = '⏸️ 遊戲暫停';
+                modalTitle.textContent = '休息一下，準備好了嗎？';
+                modalDesc.innerHTML = '隨時可以切換乘法題庫範圍或更換怪獸飛行員！';
+                setupSection.style.display = 'block';
+                modalStats.style.display = 'none';
+                primaryBtn.textContent = '▶️ 繼續戰鬥';
+                primaryBtn.onclick = () => {
+                    modalOverlay.classList.add('hidden');
+                    gameState = 'playing';
+                };
+                secondaryBtn.style.display = 'block';
+                secondaryBtn.textContent = '🔄 重新開始本局';
+                secondaryBtn.onclick = startNewGame;
+                modalOverlay.classList.remove('hidden');
+            } else if (gameState === 'paused') {
+                modalOverlay.classList.add('hidden');
+                gameState = 'playing';
             }
         }
 
-        function fireBullets(count) {
-            // Sort enemies by proximity (lowest Y)
-            let targets = [...enemies].sort((a, b) => b.y - a.y); // Bottom first
+        function triggerVictory() {
+            gameState = 'victory';
+            sfx.win();
+            awardStarCoins(3); // 通關額外獎勵 3 顆星幣
+            modalBadge.textContent = '🏆 星際防衛大成功';
+            modalTitle.textContent = '恭喜擊退全部 15 波外星艦隊！';
+            modalDesc.innerHTML = '你的九九乘法反應超敏捷，成功守護了怪獸星系！';
+            setupSection.style.display = 'none';
+            modalStats.style.display = 'grid';
+            document.getElementById('stat-wave').textContent = `${wave} 波 (連擊 ${maxStreak})`;
+            document.getElementById('stat-stars').textContent = `⭐ +${starsEarnedThisRun}`;
 
-            for (let i = 0; i < count; i++) {
-                setTimeout(() => {
-                    // Check if target still exists
-                    let freshTargets = [...enemies].sort((a, b) => b.y - a.y);
-                    const target = freshTargets[i % freshTargets.length]; // cycle targets if not enough
-
-                    const bX = player.x;
-                    const bY = player.y - 20;
-                    bullets.push(new Bullet(bX, bY, target));
-                }, i * 100);
-            }
+            primaryBtn.textContent = '🌌 繼續挑戰無盡模式';
+            primaryBtn.onclick = () => {
+                endlessMode = true;
+                wave++;
+                modalOverlay.classList.add('hidden');
+                spawnWave();
+                showCenterToast('🌌 進入無盡星際模式！', '看看你能連續擊退多少波飛碟！', 1800);
+            };
+            secondaryBtn.style.display = 'block';
+            secondaryBtn.textContent = '🔄 再玩一局';
+            secondaryBtn.onclick = startNewGame;
+            modalOverlay.classList.remove('hidden');
         }
 
-        function fireSpecial() {
-            if (!state.specialReady) return;
+        function triggerGameOver() {
+            gameState = 'gameover';
+            modalBadge.textContent = '💫 任務結束';
+            modalTitle.textContent = '別氣餒，再來挑戰一次！';
+            modalDesc.innerHTML = '多練習幾次九九乘法，你的彩虹雷射一定會越來越準！';
+            setupSection.style.display = 'block';
+            modalStats.style.display = 'grid';
+            document.getElementById('stat-wave').textContent = `${wave} 波 (連擊 ${maxStreak})`;
+            document.getElementById('stat-stars').textContent = `⭐ +${starsEarnedThisRun}`;
 
-            // BEAM
-            feedbackDisplay.innerText = "SUPER BEAM ACTIVATED!";
-            feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-yellow-300";
-
-            // Fan of bullets
-            for (let i = -2; i <= 2; i++) {
-                const b = new Bullet(player.x, player.y - 20, null);
-                b.vx = i * 2;
-                b.w = 50; // Huge beam
-                b.h = 100;
-                b.speed = 20;
-                bullets.push(b);
-            }
-            // Clear all enemies logic visually
-            enemies.forEach(e => spawnParticles(e.x, e.y, 15, CONFIG.colors.enemy));
-            const killCount = enemies.length;
-            enemies = [];
-            addScore(killCount * 20);
-
-            // Reset
-            state.specialReady = false;
-            specialCannonButton.classList.add('hidden');
+            primaryBtn.textContent = '🚀 再挑戰一次';
+            primaryBtn.onclick = startNewGame;
+            secondaryBtn.style.display = 'none';
+            modalOverlay.classList.remove('hidden');
         }
 
-        // --- Game Flow ---
+        document.getElementById('pause-btn').addEventListener('click', togglePause);
+        primaryBtn.onclick = startNewGame;
 
-        function startGame() {
-            console.log("Game Started");
-            state.isPlaying = true;
-            state.score = 0;
-            state.lives = 12;
-            state.specialReady = false;
-            state.lastSpecialScore = 0;
-            state.streak = 0;
-            state.maxStreak = 0;
-            state.correctAnswers = 0;
-            state.mission = createMission();
-            state.gameStartAt = performance.now();
-
-            scoreDisplay.innerText = 0;
-            updateLivesDisplay();
-            updateStreakUI();
-            updateMissionUI();
-            phaseDisplay.innerText = '開始 10 秒驚喜';
-
-            enemies = [];
-            enemies = [];
-            bullets = [];
-            items = [];
-
-            startGameButton.classList.add('hidden');
-            celebrationScreen.classList.add('hidden');
-
-            generateQuestion();
-        }
-
-        function endGame(timeUp) {
-            state.isPlaying = false;
-            clearInterval(questionTimerId);
-
-            // Show Final Screen
-            celebrationScreen.classList.remove('hidden');
-            document.querySelector('#celebrationScreen h2').innerText = "GAME OVER";
-            finalScoreDisplay.innerText = state.score;
-            summaryStreak.innerText = `最高連擊：${state.maxStreak}`;
-            summaryMission.innerText = state.mission?.done
-                ? `任務完成：${state.mission.title}`
-                : `任務進度：${state.mission?.title || '—'}`;
-            summaryMessage.innerText = state.maxStreak >= 6
-                ? '節奏超棒！你今天像小小指揮家！'
-                : '你越玩越熟練了，再來一局會更厲害！';
-        }
-
-        function addScore(n) {
-            state.score += n;
-            scoreDisplay.innerText = state.score;
-
-            // Check Special
-            if (state.score - state.lastSpecialScore >= 200) {
-                state.specialReady = true;
-                state.lastSpecialScore = state.score;
-                specialCannonButton.classList.remove('hidden');
-            }
-        }
-
-        function resetTimerBar() {
-            if (questionTimerId) clearInterval(questionTimerId);
-            state.questionTime = 5;
-            questionTimerBar.style.width = '100%';
-
-            questionTimerId = setInterval(() => {
-                state.questionTime -= 0.1;
-                const pct = (state.questionTime / 5) * 100;
-                questionTimerBar.style.width = pct + '%';
-
-                if (pct < 30) questionTimerBar.className = "h-full bg-red-500 shadow-[0_0_10px_#ef4444] transition-all duration-100 ease-linear";
-                else questionTimerBar.className = "h-full bg-cyan-500 shadow-[0_0_10px_#22d3ee] transition-all duration-100 ease-linear";
-
-                if (state.questionTime <= 0) {
-                    clearInterval(questionTimerId);
-                    // Time out on question = Refresh
-                    state.streak = 0;
-                    updateStreakUI();
-                    feedbackDisplay.innerText = "時間到，下一題加油！";
-                    feedbackDisplay.className = "h-6 text-sm font-bold mb-1 text-red-500";
-                    generateQuestion();
-                }
-            }, 100);
-        }
-
-        // --- Inputs ---
-
-        startGameButton.onclick = startGame;
-        restartGameButton.onclick = startGame;
-        specialCannonButton.onclick = fireSpecial;
-
-        // Init
-        init();
-
+        // 初始化預覽背景與啟動迴圈
+        updateHUD();
+        requestAnimationFrame(loop);
     </script>
 </body>
 

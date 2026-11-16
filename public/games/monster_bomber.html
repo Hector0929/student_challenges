@@ -3,235 +3,496 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>怪獸塔爆爆冒險</title>
+  <title>怪獸塔爆爆冒險 · 陽光森林遺跡</title>
   <style>
     :root {
-      --bg: #070b16;
-      --panel: #0f1a30;
-      --panel-border: #31466f;
-      --accent: #38bdf8;
-      --accent-2: #a78bfa;
-      --good: #34d399;
-      --warn: #f59e0b;
-      --danger: #ef4444;
-      --text: #f8fafc;
-      --text-dim: #cbd5e1;
+      --wood-dark: #4a2c15;
+      --wood-mid: #8b5a2b;
+      --ink: #3b2314;
+      --muted: #7c5836;
     }
 
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-    body {
+    html, body {
       margin: 0;
-      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
-      background: radial-gradient(circle at top, #16294a 0%, #0b1326 45%, var(--bg) 100%);
-      color: var(--text);
-      touch-action: manipulation;
-      -webkit-user-select: none;
-      user-select: none;
-      min-height: 100dvh;
-      display: flex;
-      justify-content: center;
-      padding: 10px;
-    }
-
-    .game-shell {
-      width: min(100%, 980px);
-      display: grid;
-      gap: 10px;
-      grid-template-rows: auto auto 1fr auto;
-    }
-
-    .title {
-      text-align: center;
-      font-size: clamp(1.3rem, 2.4vw, 1.8rem);
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      margin: 2px 0 0;
-      color: #fde68a;
-      text-shadow: 0 2px 12px rgba(245, 158, 11, 0.35);
-    }
-
-    .hud {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-    }
-
-    .hud-item {
-      background: linear-gradient(180deg, rgba(23, 37, 67, 0.94), rgba(13, 24, 45, 0.94));
-      border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      padding: 8px;
-      text-align: center;
-      font-size: 0.9rem;
-      line-height: 1.25;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 16px rgba(2, 8, 23, 0.25);
-    }
-
-    .hud-item b {
-      display: block;
-      color: #fef08a;
-      font-size: 1rem;
-      margin-top: 2px;
-    }
-
-    .stage {
-      position: relative;
-      border-radius: 14px;
+      width: 100%;
+      height: 100%;
       overflow: hidden;
-      border: 2px solid #3f5a8f;
-      background: #0f172a;
-      min-height: 320px;
+      font-family: system-ui, -apple-system, "Noto Sans TC", "PingFang TC", sans-serif;
+      color: var(--ink);
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      /* 溫暖森林樹冠背景襯托中央棋盤框 */
+      background:
+        radial-gradient(circle at 50% 25%, rgba(254, 249, 195, 0.25), transparent 70%),
+        linear-gradient(180deg, #2d5a27 0%, #1e3f1b 100%);
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+      border: 0;
+      background: none;
+      cursor: pointer;
+    }
+
+    .hidden { display: none !important; }
+
+    /* ---------- 單一中央方框佈局（100% 完整顯示不裁切） ---------- */
+    #arcade-shell {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 18px 34px rgba(1, 6, 18, 0.5), inset 0 0 0 1px rgba(255,255,255,0.06);
+      padding: 8px;
+    }
+
+    #stage-frame {
+      position: relative;
+      width: min(96vw, calc(94dvh * (15 / 13)));
+      height: min(94dvh, calc(96vw * (13 / 15)));
+      aspect-ratio: 15 / 13;
+      border-radius: 24px;
+      border: 6px solid #4a2c15;
+      box-shadow:
+        0 0 0 4px #8b5a2b,
+        0 18px 42px rgba(0, 0, 0, 0.55);
+      overflow: hidden;
+      background: #84cc16;
     }
 
     canvas {
       display: block;
       width: 100%;
-      height: auto;
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
+      height: 100%;
       outline: none;
       touch-action: none;
-      background: radial-gradient(circle at center, #1a2c4a 0%, #101b30 100%);
+    }
+
+    /* ---------- 右上角血量與暫停 HUD ---------- */
+    #top-right-hud {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 18;
+      pointer-events: none;
+    }
+
+    .hud-pill {
+      background: rgba(255, 253, 245, 0.94);
+      border: 2.5px solid #4a2c15;
+      border-radius: 999px;
+      padding: 4px 11px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+      font-size: 13px;
+      font-weight: 900;
+      color: var(--ink);
+    }
+
+    .pause-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(255, 253, 245, 0.94);
+      border: 2.5px solid #4a2c15;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      pointer-events: auto;
+    }
+
+    /* ---------- 畫面中央短暫跳出提醒（關卡開始 / 傳送門開啟） ---------- */
+    #center-toast {
+      position: absolute;
+      top: 34%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background: linear-gradient(180deg, rgba(255, 251, 235, 0.96), rgba(254, 243, 199, 0.96));
+      border: 3.5px solid #d97706;
+      border-radius: 22px;
+      padding: 10px 22px;
+      text-align: center;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+      z-index: 22;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      white-space: nowrap;
+    }
+
+    #center-toast.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    #center-toast .toast-sub {
+      font-size: 12px;
+      font-weight: 900;
+      color: #b45309;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    #center-toast .toast-main {
+      font-size: 22px;
+      font-weight: 900;
+      color: #78350f;
+    }
+
+    /* ---------- 手機/平板左下十字方向鍵 & 右下大炸彈按鈕 ---------- */
+    #touch-controls {
+      position: absolute;
+      inset: auto 12px 12px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .dpad {
+      position: relative;
+      width: 124px;
+      height: 124px;
+      background: rgba(255, 255, 255, 0.32);
+      border: 2.5px solid rgba(255, 255, 255, 0.65);
+      border-radius: 50%;
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      pointer-events: auto;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+    }
+
+    .dpad-btn {
+      position: absolute;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(255, 253, 245, 0.85);
+      border: 2px solid #5c3a21;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      font-weight: 900;
+      color: #4a2c15;
+      box-shadow: 0 3px 0 rgba(74, 44, 21, 0.4);
+    }
+
+    .dpad-btn:active, .dpad-btn.active {
+      background: #fde047;
+      transform: scale(0.93);
+    }
+
+    .dpad-up    { top: 4px; left: 41px; }
+    .dpad-down  { bottom: 4px; left: 41px; }
+    .dpad-left  { top: 41px; left: 4px; }
+    .dpad-right { top: 41px; right: 4px; }
+
+    .bomb-fab {
+      pointer-events: auto;
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 32% 28%, #fde047 0%, #f97316 55%, #dc2626 100%);
+      border: 4px solid #fffbeb;
+      box-shadow:
+        0 6px 0 #7c2d12,
+        0 12px 24px rgba(0, 0, 0, 0.38);
+      font-size: 34px;
+      display: grid;
+      place-items: center;
+      transition: transform 0.1s;
+    }
+
+    .bomb-fab:active {
+      transform: translateY(4px) scale(0.95);
+      box-shadow: 0 2px 0 #7c2d12;
+    }
+
+    /* ---------- 選角欄與彈窗 Overlay ---------- */
+    .char-picker {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .char-btn {
+      background: rgba(255, 255, 255, 0.75);
+      border: 2.5px solid #8b5a2b;
+      border-radius: 14px;
+      padding: 5px;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      transition: transform 0.12s;
+    }
+
+    .char-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .char-btn.selected {
+      background: #fef08a;
+      border-color: #d97706;
+      box-shadow: 0 0 0 2px #f59e0b;
+      transform: translateY(-2px);
     }
 
     .overlay {
       position: absolute;
       inset: 0;
-      background: rgba(2, 8, 23, 0.75);
+      display: grid;
+      place-items: center;
+      padding: 14px;
+      background: rgba(28, 17, 8, 0.68);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 40;
+    }
+
+    .panel {
+      width: min(360px, 92%);
+      max-height: 92%;
+      overflow-y: auto;
+      background: linear-gradient(180deg, #fffdf9 0%, #fef3c7 100%);
+      border: 4px solid #5c3a21;
+      border-radius: 26px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+      padding: 18px 16px;
+      text-align: center;
+    }
+
+    .panel-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      background: #dcfce7;
+      color: #15803d;
+      border: 2px solid #86efac;
+      margin-bottom: 6px;
+    }
+
+    .panel h2 {
+      margin: 4px 0 8px;
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--ink);
+    }
+
+    .panel p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      font-weight: 700;
+    }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.85);
+      border: 2px solid #dfaa73;
+      border-radius: 14px;
+      padding: 7px 8px;
+    }
+
+    .stat-card small { display: block; font-size: 11px; color: var(--muted); font-weight: 800; }
+    .stat-card b { font-size: 17px; color: var(--ink); font-weight: 900; }
+
+    .btns {
       display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 14px;
+      font-weight: 900;
+      font-size: 15px;
+      border: 3px solid #5c3a21;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      z-index: 8;
-      padding: 16px;
+      gap: 6px;
+      transition: transform 0.1s;
     }
 
-    .dialog {
-      width: min(92%, 560px);
-      background: rgba(15, 23, 42, 0.95);
-      border: 1px solid var(--panel-border);
-      border-radius: 14px;
-      padding: 18px;
-      text-align: center;
-      box-shadow: 0 18px 38px rgba(2, 8, 23, 0.55);
+    .btn:active { transform: translateY(2px); }
+
+    .btn.primary {
+      background: linear-gradient(180deg, #4ade80, #16a34a);
+      color: #fff;
+      text-shadow: 0 2px 0 #14532d;
+      box-shadow: 0 4px 0 #14532d;
     }
 
-    .dialog h2 {
-      margin: 0 0 8px;
-      font-size: clamp(1.35rem, 4.6vw, 2rem);
-      color: #fef08a;
-    }
-
-    .dialog p {
-      margin: 8px 0;
-      color: var(--text-dim);
-      line-height: 1.5;
-      font-size: 0.95rem;
-    }
-
-    .cta {
-      margin-top: 12px;
-      border: none;
-      border-radius: 10px;
-      background: linear-gradient(120deg, var(--accent), var(--accent-2));
-      color: white;
-      font-weight: 800;
-      font-size: 1rem;
-      padding: 10px 18px;
-      cursor: pointer;
-    }
-
-    .controls {
-      display: grid;
-      gap: 10px;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-      background: linear-gradient(180deg, rgba(23, 37, 67, 0.92), rgba(13, 24, 45, 0.92));
-      border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      padding: 10px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
-    }
-
-    .hint {
-      font-size: 0.88rem;
-      color: var(--text-dim);
-      line-height: 1.45;
-    }
-
-    .hint b { color: #fde68a; }
-
-    .bomb-btn {
-      border: none;
-      border-radius: 999px;
-      width: 76px;
-      aspect-ratio: 1;
-      background: radial-gradient(circle at 32% 28%, #9ca3af 0%, #1f2937 70%);
-      color: white;
-      font-size: 1.55rem;
-      font-weight: 800;
-      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.35);
-      cursor: pointer;
-      touch-action: manipulation;
-      transition: transform 0.14s ease, filter 0.14s ease;
-    }
-
-    .bomb-btn:active {
-      transform: translateY(1px) scale(0.98);
-      filter: brightness(1.08);
-    }
-
-    @media (max-width: 760px) {
-      .hud {
-        grid-template-columns: repeat(2, 1fr);
-      }
+    .btn.secondary {
+      background: linear-gradient(180deg, #fde68a, #f59e0b);
+      color: #451a03;
+      box-shadow: 0 4px 0 #78350f;
     }
   </style>
 </head>
 <body>
-  <main class="game-shell">
-    <h1 class="title">怪獸塔爆爆冒險（10 關）</h1>
+  <div id="arcade-shell">
+    <main id="stage-frame">
+      <canvas id="gameCanvas" width="660" height="572" tabindex="0"></canvas>
 
-    <section class="hud">
-      <div class="hud-item">關卡<b id="level">1 / 10</b></div>
-      <div class="hud-item">分數<b id="score">0</b></div>
-      <div class="hud-item">生命<b id="lives">❤️❤️❤️</b></div>
-      <div class="hud-item">怪獸剩餘<b id="enemyCount">0</b></div>
-    </section>
-
-    <section class="stage">
-      <canvas id="gameCanvas" tabindex="0"></canvas>
-      <div class="overlay" id="overlay">
-        <div class="dialog" id="dialog"></div>
+      <!-- 右上角血量、怪獸剩餘與暫停鈕 -->
+      <div id="top-right-hud">
+        <div class="hud-pill" title="剩餘怪獸">
+          <span>👾</span>
+          <span id="enemy-num">3</span>
+        </div>
+        <div class="hud-pill" title="生命值">
+          <span id="lives-display">❤️❤️❤️</span>
+        </div>
+        <button class="pause-btn" id="btn-pause" aria-label="暫停">⏸️</button>
       </div>
-    </section>
 
-    <section class="controls">
-      <div class="hint">
-        手機 / 網頁：<b>點擊可達目的地</b> 會用最短路徑自動移動，<b>連點兩下</b> 放炸彈。<br>
-        若目標路徑被牆/磚/炸彈阻擋，角色會停留原地。<br>
-        鍵盤：<b>方向鍵</b> 微調移動，<b>空白鍵</b> 放炸彈。
+      <!-- 畫面中央短暫提示（開關卡 / 傳送門出現） -->
+      <div id="center-toast">
+        <span class="toast-sub" id="toast-sub">🌳 陽光森林遺跡</span>
+        <div class="toast-main" id="toast-main">🎉 第 1 關開始！</div>
       </div>
-      <button class="bomb-btn" id="bombButton" aria-label="放置炸彈">💣</button>
-    </section>
-  </main>
+
+      <!-- 左下十字方向鍵 & 右下大炸彈按鈕 -->
+      <div id="touch-controls">
+        <div class="dpad" id="dpad">
+          <button class="dpad-btn dpad-up" data-dir="up" aria-label="上">▲</button>
+          <button class="dpad-btn dpad-down" data-dir="down" aria-label="下">▼</button>
+          <button class="dpad-btn dpad-left" data-dir="left" aria-label="左">◀</button>
+          <button class="dpad-btn dpad-right" data-dir="right" aria-label="右">▶</button>
+        </div>
+        <button class="bomb-fab" id="bombButton" aria-label="放置炸彈">💣</button>
+      </div>
+
+      <!-- 開始選單 Modal -->
+      <div class="overlay" id="menu-modal">
+        <div class="panel">
+          <span class="panel-badge">✨ 陽光森林遺跡 · 減壓改版</span>
+          <h2>💣 怪獸塔爆爆冒險</h2>
+          <p>放炸彈炸開木箱、打敗搗蛋怪獸！地面會顯示「十字爆炸預警光格」，而且自己的炸彈不會炸傷自己喔！</p>
+
+          <div style="margin-bottom: 12px;">
+            <small style="font-weight:900; color:var(--muted); display:block; margin-bottom:6px;">👇 選擇你的出戰怪獸夥伴</small>
+            <div class="char-picker" id="menu-char-picker"></div>
+          </div>
+
+          <div class="panel-grid">
+            <div class="stat-card">
+              <small>最高關卡</small>
+              <b id="menu-best">第 1 關</b>
+            </div>
+            <div class="stat-card">
+              <small>累積星幣</small>
+              <b id="menu-stars">⭐ 0</b>
+            </div>
+          </div>
+
+          <div class="btns">
+            <button class="btn primary" id="btn-start">🚀 開始爆爆冒險</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 暫停 Modal -->
+      <div class="overlay hidden" id="pause-modal">
+        <div class="panel">
+          <h2>⏸️ 遊戲暫停</h2>
+          <p>目前在第 <b id="pause-level">1</b> 關，準備好就繼續冒險吧！</p>
+          <div class="btns">
+            <button class="btn primary" id="btn-resume">▶️ 繼續遊戲</button>
+            <button class="btn secondary" id="btn-restart">🔄 重新開始本局</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 挑戰結束 Modal -->
+      <div class="overlay hidden" id="over-modal">
+        <div class="panel">
+          <span class="panel-badge" style="background:#fee2e2; color:#dc2626; border-color:#fca5a5;">冒險結算</span>
+          <h2>再接再厲！</h2>
+          <p id="over-desc">這次闖到了第 1 關，下次一定能走更遠！</p>
+
+          <div class="panel-grid">
+            <div class="stat-card">
+              <small>抵達關卡</small>
+              <b id="over-level">第 1 關</b>
+            </div>
+            <div class="stat-card">
+              <small>獲得星幣</small>
+              <b id="over-stars">⭐ +0</b>
+            </div>
+          </div>
+
+          <div class="btns">
+            <button class="btn primary" id="btn-over-retry">🔄 再玩一次</button>
+            <button class="btn secondary" id="btn-over-menu">🏠 換角色 / 回選單</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 勝利 Modal -->
+      <div class="overlay hidden" id="win-modal">
+        <div class="panel">
+          <span class="panel-badge">🏆 全 10 關破關</span>
+          <h2>🎉 恭喜完成爆爆冒險！</h2>
+          <p>你成功打敗所有搗蛋怪獸，征服了整座森林遺跡！</p>
+
+          <div class="panel-grid">
+            <div class="stat-card">
+              <small>最終分數</small>
+              <b id="win-score">0</b>
+            </div>
+            <div class="stat-card">
+              <small>總獲得星幣</small>
+              <b id="win-stars">⭐ +10</b>
+            </div>
+          </div>
+
+          <div class="btns">
+            <button class="btn primary" id="btn-win-retry">🔄 再玩一次</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
 
   <script>
+  (() => {
+    'use strict';
+
+    /* ============================================================
+       1. 常數、圖片資源與存檔
+       ============================================================ */
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-
-    const overlay = document.getElementById('overlay');
-    const dialog = document.getElementById('dialog');
-
-    const levelEl = document.getElementById('level');
-    const scoreEl = document.getElementById('score');
-    const livesEl = document.getElementById('lives');
-    const enemyCountEl = document.getElementById('enemyCount');
-    const bombBtn = document.getElementById('bombButton');
 
     const TILE = 0;
     const WALL = 1;
@@ -239,88 +500,216 @@
 
     const MAP_COLS = 15;
     const MAP_ROWS = 13;
-    const TILE_SIZE = 40;
-    const BOMB_FUSE_MS = 3000;
+    const TILE_SIZE = 44; // 15*44 = 660, 13*44 = 572
+    const BOMB_FUSE_MS = 2600;
 
-    canvas.width = MAP_COLS * TILE_SIZE;
-    canvas.height = MAP_ROWS * TILE_SIZE;
-
-    const GAME_STATE = {
-      START: 'START',
-      PLAYING: 'PLAYING',
-      LEVEL_CLEAR: 'LEVEL_CLEAR',
-      GAME_OVER: 'GAME_OVER',
-      GAME_WIN: 'GAME_WIN',
-    };
-
-    const ENEMY_THEMES = [
-      { primary: '#fb7185', secondary: '#be123c', eye: '#fff1f2' },
-      { primary: '#f59e0b', secondary: '#b45309', eye: '#fffbeb' },
-      { primary: '#34d399', secondary: '#047857', eye: '#ecfdf5' },
-      { primary: '#60a5fa', secondary: '#1d4ed8', eye: '#eff6ff' },
-      { primary: '#a78bfa', secondary: '#6d28d9', eye: '#f5f3ff' },
-      { primary: '#22d3ee', secondary: '#0e7490', eye: '#ecfeff' },
+    // 玩家可選怪獸夥伴
+    const HERO_MONSTERS = [
+      { id: 'penguin_knight', name: '企鵝騎士', src: '/images/monsters/new/penguin_knight.png' },
+      { id: 'mushroom_kin',   name: '蘑菇小兵', src: '/images/monsters/new/mushroom_kin.png' },
+      { id: 'moon_bunny',     name: '月光玉兔', src: '/images/monsters/new/moon_bunny.png' },
+      { id: 'thunder_mouse',  name: '電電倉鼠', src: '/images/monsters/new/thunder_mouse.png' }
     ];
 
-    function roundedRectPath(x, y, w, h, r) {
-      const radius = Math.min(r, w / 2, h / 2);
-      ctx.beginPath();
-      ctx.moveTo(x + radius, y);
-      ctx.lineTo(x + w - radius, y);
-      ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
-      ctx.lineTo(x + w, y + h - radius);
-      ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
-      ctx.lineTo(x + radius, y + h);
-      ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
-      ctx.lineTo(x, y + radius);
-      ctx.quadraticCurveTo(x, y, x + radius, y);
-      ctx.closePath();
+    // 敵人怪獸圖庫
+    const ENEMY_SPRITES = [
+      '/images/monsters/new/demon_imp.png',
+      '/images/monsters/new/wind_slime.png',
+      '/images/monsters/new/ice_cube_slime.png',
+      '/images/monsters/new/magma_blob.png',
+      '/images/monsters/new/cactus_boy.png',
+      '/images/monsters/new/robo_scout.png'
+    ];
+
+    const loadedImages = {};
+    [...HERO_MONSTERS.map(h => h.src), ...ENEMY_SPRITES].forEach(src => {
+      const img = new Image();
+      img.src = src;
+      loadedImages[src] = img;
+    });
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('userId') || 'guest';
+    const SAVE_KEY = `monster_bomber_save_${userId}`;
+
+    function loadSavedData() {
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return { bestLevel: 1, totalStars: 0, selectedHero: 'penguin_knight' };
     }
 
-    let gameState = GAME_STATE.START;
+    function saveGameData(data) {
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      } catch (e) {}
+    }
+
+    let userSaved = loadSavedData();
+    if (!userSaved.selectedHero) userSaved.selectedHero = 'penguin_knight';
+
+    /* ============================================================
+       2. 音效與星幣回報 (QUESTMON_EARN_STARS)
+       ============================================================ */
+    function reportStars(stars, reason) {
+      if (stars <= 0 || window.parent === window) return;
+      try {
+        window.parent.postMessage({
+          type: 'QUESTMON_EARN_STARS',
+          txId: `bomber-${userId}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`,
+          amount: stars,
+          gameId: 'monster_bomber',
+          description: `怪獸塔爆爆冒險：${reason}（+${stars} ⭐）`
+        }, window.location.origin);
+      } catch (e) {}
+    }
+
+    let audioCtx = null;
+    function playTone(freq, type, duration, vol = 0.1) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    const sfx = {
+      place: () => playTone(320, 'sine', 0.09, 0.11),
+      boom: () => { playTone(110, 'sawtooth', 0.28, 0.16); setTimeout(() => playTone(80, 'square', 0.22, 0.12), 40); },
+      item: () => { playTone(587, 'triangle', 0.09, 0.12); setTimeout(() => playTone(880, 'triangle', 0.14, 0.12), 60); },
+      portal: () => {
+        [523, 659, 784, 1046].forEach((f, idx) => setTimeout(() => playTone(f, 'triangle', 0.14, 0.13), idx * 65));
+      },
+      hurt: () => playTone(170, 'sawtooth', 0.24, 0.14)
+    };
+
+    /* ============================================================
+       3. DOM 元素與中央短暫提示
+       ============================================================ */
+    const enemyNumEl = document.getElementById('enemy-num');
+    const livesDispEl = document.getElementById('lives-display');
+    const centerToastEl = document.getElementById('center-toast');
+    const toastSubEl = document.getElementById('toast-sub');
+    const toastMainEl = document.getElementById('toast-main');
+
+    const menuModal = document.getElementById('menu-modal');
+    const pauseModal = document.getElementById('pause-modal');
+    const overModal = document.getElementById('over-modal');
+    const winModal = document.getElementById('win-modal');
+
+    const menuBestEl = document.getElementById('menu-best');
+    const menuStarsEl = document.getElementById('menu-stars');
+
+    let toastTimer = null;
+    function showToast(subText, mainText, duration = 1800) {
+      toastSubEl.textContent = subText;
+      toastMainEl.textContent = mainText;
+      centerToastEl.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        centerToastEl.classList.remove('show');
+      }, duration);
+    }
+
+    function renderCharPicker() {
+      const el = document.getElementById('menu-char-picker');
+      if (!el) return;
+      el.innerHTML = '';
+      HERO_MONSTERS.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 'char-btn' + (userSaved.selectedHero === m.id ? ' selected' : '');
+        btn.title = m.name;
+        btn.innerHTML = `<img src="${m.src}" alt="${m.name}" />`;
+        btn.addEventListener('click', () => {
+          userSaved.selectedHero = m.id;
+          saveGameData(userSaved);
+          renderCharPicker();
+          sfx.place();
+        });
+        el.appendChild(btn);
+      });
+    }
+    renderCharPicker();
+
+    function updateMenuStats() {
+      menuBestEl.textContent = `第 ${userSaved.bestLevel || 1} 關`;
+      menuStarsEl.textContent = `⭐ ${userSaved.totalStars || 0}`;
+    }
+    updateMenuStats();
+
+    /* ============================================================
+       4. 遊戲狀態、尋路與爆炸範圍預警計算
+       ============================================================ */
+    let running = false;
+    let paused = false;
     let level = 1;
     let score = 0;
+    let starsEarnedThisRun = 0;
 
     const playerStats = {
       lives: 3,
       speedTier: 1,
       bombCount: 1,
-      bombRange: 1,
+      bombRange: 2, // 起始十字範圍 2 格，更容易炸到木箱與怪獸！
+      shield: true  // 開局贈送泡泡護盾
     };
 
     let map = [];
+    let brickVariant = []; // 0: 木箱, 1: 炸藥木桶
     let player = null;
     let enemies = [];
     let bombs = [];
     let explosions = [];
     let items = [];
+    let particles = [];
+    let floatingTexts = [];
     let exit = null;
     let destinationMarker = null;
 
     const input = { up: false, down: false, left: false, right: false, bomb: false };
 
-    function getCanvasPointerPosition(clientX, clientY) {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      return {
-        x: (clientX - rect.left) * scaleX,
-        y: (clientY - rect.top) * scaleY,
-      };
-    }
-
-    function toGrid(px, py) {
-      return {
-        x: Math.floor((px + TILE_SIZE / 2) / TILE_SIZE),
-        y: Math.floor((py + TILE_SIZE / 2) / TILE_SIZE),
-      };
-    }
-
-    function isWalkableTile(gx, gy) {
+    function isWalkableTile(gx, gy, ignoreBombAt = null) {
       if (gx < 0 || gy < 0 || gx >= MAP_COLS || gy >= MAP_ROWS) return false;
       if (map[gy][gx] === WALL || map[gy][gx] === BRICK) return false;
-      if (bombs.some((b) => b.gx === gx && b.gy === gy)) return false;
+      if (bombs.some(b => b.gx === gx && b.gy === gy && !(ignoreBombAt && ignoreBombAt.x === gx && ignoreBombAt.y === gy))) {
+        return false;
+      }
       return true;
+    }
+
+    // 計算單顆炸彈的十字預警格子清單（供地面預警光格與實際爆炸共用）
+    function getBombBlastCells(gx, gy, range) {
+      const cells = [{ x: gx, y: gy, stopBrick: false }];
+      const dirs = [
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: -1 }
+      ];
+      for (const d of dirs) {
+        for (let r = 1; r <= range; r++) {
+          const nx = gx + d.x * r;
+          const ny = gy + d.y * r;
+          if (nx < 0 || ny < 0 || nx >= MAP_COLS || ny >= MAP_ROWS) break;
+          if (map[ny][nx] === WALL) break;
+          if (map[ny][nx] === BRICK) {
+            cells.push({ x: nx, y: ny, stopBrick: true });
+            break;
+          }
+          cells.push({ x: nx, y: ny, stopBrick: false });
+        }
+      }
+      return cells;
     }
 
     function findShortestPath(startX, startY, targetX, targetY) {
@@ -331,47 +720,40 @@
         { dx: 1, dy: 0 },
         { dx: -1, dy: 0 },
         { dx: 0, dy: 1 },
-        { dx: 0, dy: -1 },
+        { dx: 0, dy: -1 }
       ];
 
       const total = MAP_COLS * MAP_ROWS;
       const visited = new Array(total).fill(false);
       const prevX = new Array(total).fill(-1);
       const prevY = new Array(total).fill(-1);
-      const queue = [];
+      const queue = [{ x: startX, y: startY }];
       let head = 0;
 
       const toIndex = (x, y) => y * MAP_COLS + x;
-      const startIndex = toIndex(startX, startY);
-      const targetIndex = toIndex(targetX, targetY);
-
-      visited[startIndex] = true;
-      queue.push({ x: startX, y: startY });
+      visited[toIndex(startX, startY)] = true;
 
       while (head < queue.length) {
-        const current = queue[head++];
-
-        if (current.x === targetX && current.y === targetY) break;
+        const cur = queue[head++];
+        if (cur.x === targetX && cur.y === targetY) break;
 
         for (const d of dirs) {
-          const nx = current.x + d.dx;
-          const ny = current.y + d.dy;
+          const nx = cur.x + d.dx;
+          const ny = cur.y + d.dy;
           if (nx < 0 || ny < 0 || nx >= MAP_COLS || ny >= MAP_ROWS) continue;
-
           const ni = toIndex(nx, ny);
           if (visited[ni]) continue;
-
-          const isStart = nx === startX && ny === startY;
-          if (!isStart && !isWalkableTile(nx, ny)) continue;
+          if (!isWalkableTile(nx, ny, { x: startX, y: startY })) continue;
 
           visited[ni] = true;
-          prevX[ni] = current.x;
-          prevY[ni] = current.y;
+          prevX[ni] = cur.x;
+          prevY[ni] = cur.y;
           queue.push({ x: nx, y: ny });
         }
       }
 
-      if (!visited[targetIndex]) return null;
+      const targetIdx = toIndex(targetX, targetY);
+      if (!visited[targetIdx]) return null;
 
       const steps = [];
       let cx = targetX;
@@ -380,37 +762,53 @@
         const i = toIndex(cx, cy);
         const px = prevX[i];
         const py = prevY[i];
-        if (px === -1 || py === -1) return null;
+        if (px === -1) return null;
         steps.push({ dx: cx - px, dy: cy - py });
         cx = px;
         cy = py;
       }
-
       steps.reverse();
       return steps;
     }
 
+    function addSparks(x, y, color, count = 8) {
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const spd = Math.random() * 2.8 + 1;
+        particles.push({
+          x, y,
+          vx: Math.cos(a) * spd,
+          vy: Math.sin(a) * spd,
+          life: 24 + Math.random() * 12,
+          maxLife: 36,
+          color,
+          size: Math.random() * 4 + 2.5
+        });
+      }
+    }
+
+    function addFloatingText(x, y, text, color = '#fef08a') {
+      floatingTexts.push({ x, y, text, color, life: 42, maxLife: 42 });
+    }
+
+    /* ============================================================
+       5. 角色與平滑移動怪獸類別
+       ============================================================ */
     class Entity {
       constructor(gridX, gridY, size = TILE_SIZE * 0.78) {
         this.size = size;
         this.x = gridX * TILE_SIZE + (TILE_SIZE - size) / 2;
         this.y = gridY * TILE_SIZE + (TILE_SIZE - size) / 2;
       }
-
-      get gridX() {
-        return Math.floor((this.x + this.size / 2) / TILE_SIZE);
-      }
-
-      get gridY() {
-        return Math.floor((this.y + this.size / 2) / TILE_SIZE);
-      }
-
+      get gridX() { return Math.floor((this.x + this.size / 2) / TILE_SIZE); }
+      get gridY() { return Math.floor((this.y + this.size / 2) / TILE_SIZE); }
       hitRect(other) {
+        const pad = 4;
         return (
-          this.x < other.x + other.size &&
-          this.x + this.size > other.x &&
-          this.y < other.y + other.size &&
-          this.y + this.size > other.y
+          this.x + pad < other.x + other.size - pad &&
+          this.x + this.size - pad > other.x + pad &&
+          this.y + pad < other.y + other.size - pad &&
+          this.y + this.size - pad > other.y + pad
         );
       }
     }
@@ -422,21 +820,21 @@
         this.targetX = this.x;
         this.targetY = this.y;
         this.moving = false;
-        this.moveCooldown = 0;
         this.pathQueue = [];
         this.bombsPlaced = 0;
         this.invincible = 0;
+        this.dizzyTimer = 0;
+        this.faceDir = 1;
       }
 
       get speed() {
-        return 2.2 + playerStats.speedTier * 0.25;
+        return 3.0 + playerStats.speedTier * 0.45;
       }
 
       update() {
         if (!this.alive) return;
-
-        if (this.invincible > 0) this.invincible -= 1;
-        if (this.moveCooldown > 0) this.moveCooldown -= 1;
+        if (this.invincible > 0) this.invincible--;
+        if (this.dizzyTimer > 0) this.dizzyTimer--;
 
         if (this.moving) {
           const dx = this.targetX - this.x;
@@ -446,26 +844,28 @@
             this.x = this.targetX;
             this.y = this.targetY;
             this.moving = false;
-            this.moveCooldown = Math.max(6, 14 - playerStats.speedTier * 2);
           } else {
             this.x += (dx / dist) * this.speed;
             this.y += (dy / dist) * this.speed;
           }
         }
 
-        if (!this.moving && this.moveCooldown <= 0) {
-          let dx = 0;
-          let dy = 0;
+        // 移除原本的 moveCooldown 卡頓，讓連續移動絲滑順暢！
+        if (!this.moving && this.dizzyTimer <= 0) {
+          let dx = 0, dy = 0;
           if (input.up) dy = -1;
           else if (input.down) dy = 1;
-          else if (input.left) dx = -1;
-          else if (input.right) dx = 1;
+          else if (input.left) { dx = -1; this.faceDir = -1; }
+          else if (input.right) { dx = 1; this.faceDir = 1; }
+
           if (dx || dy) {
             this.pathQueue = [];
             destinationMarker = null;
             this.tryMove(dx, dy);
           } else if (this.pathQueue.length > 0) {
             const next = this.pathQueue.shift();
+            if (next.dx < 0) this.faceDir = -1;
+            if (next.dx > 0) this.faceDir = 1;
             if (!next || !this.tryMove(next.dx, next.dy)) {
               this.pathQueue = [];
               destinationMarker = null;
@@ -484,14 +884,30 @@
           input.bomb = false;
         }
 
-        for (let i = items.length - 1; i >= 0; i -= 1) {
+        // 拾取強化道具
+        for (let i = items.length - 1; i >= 0; i--) {
           if (this.hitRect(items[i])) {
             const item = items[i];
-            if (item.type === 'bomb' && playerStats.bombCount < 4) playerStats.bombCount += 1;
-            if (item.type === 'range' && playerStats.bombRange < 4) playerStats.bombRange += 1;
-            if (item.type === 'speed' && playerStats.speedTier < 4) playerStats.speedTier += 1;
-            if (item.type === 'heart' && playerStats.lives < 3) playerStats.lives += 1;
-            score += 60;
+            sfx.item();
+            if (item.type === 'bomb') {
+              playerStats.bombCount = Math.min(4, playerStats.bombCount + 1);
+              addFloatingText(this.x + 16, this.y, '+1 💣 炸彈上限', '#fde047');
+            } else if (item.type === 'range') {
+              playerStats.bombRange = Math.min(5, playerStats.bombRange + 1);
+              addFloatingText(this.x + 16, this.y, '+1 🔥 爆炸威力', '#fb923c');
+            } else if (item.type === 'speed') {
+              playerStats.speedTier = Math.min(4, playerStats.speedTier + 1);
+              addFloatingText(this.x + 16, this.y, '🛼 移動加速！', '#38bdf8');
+            } else if (item.type === 'heart') {
+              if (playerStats.lives < 3) {
+                playerStats.lives++;
+                addFloatingText(this.x + 16, this.y, '+1 ❤️ 生命回復', '#fb7185');
+              } else {
+                playerStats.shield = true;
+                addFloatingText(this.x + 16, this.y, '🛡️ 泡泡護盾充能！', '#7dd3fc');
+              }
+            }
+            score += 80;
             items.splice(i, 1);
             refreshHud();
           }
@@ -514,10 +930,8 @@
         const startX = this.gridX;
         const startY = this.gridY;
         if (startX === gridX && startY === gridY) return false;
-
         const path = findShortestPath(startX, startY, gridX, gridY);
         if (!path || path.length === 0) return false;
-
         this.pathQueue = path;
         return true;
       }
@@ -526,29 +940,40 @@
         if (this.bombsPlaced >= playerStats.bombCount) return;
         const gx = this.gridX;
         const gy = this.gridY;
-        if (bombs.some((b) => b.gx === gx && b.gy === gy)) return;
+        if (bombs.some(b => b.gx === gx && b.gy === gy)) return;
+        sfx.place();
         const placedAt = performance.now();
         bombs.push({
-          gx,
-          gy,
+          gx, gy,
           owner: this,
           range: playerStats.bombRange,
           placedAt,
-          explodeAt: placedAt + BOMB_FUSE_MS,
+          explodeAt: placedAt + BOMB_FUSE_MS
         });
-        this.bombsPlaced += 1;
+        this.bombsPlaced++;
       }
 
-      hurt() {
+      hurtByEnemy() {
         if (!this.alive || this.invincible > 0) return;
-        this.alive = false;
-        playerStats.lives -= 1;
-        refreshHud();
-        if (playerStats.lives <= 0) {
-          gameState = GAME_STATE.GAME_OVER;
-          openOverlay();
+        if (playerStats.shield) {
+          playerStats.shield = false;
+          this.invincible = 90;
+          sfx.item();
+          addSparks(this.x + this.size / 2, this.y + this.size / 2, '#38bdf8', 14);
+          addFloatingText(this.x + 16, this.y, '🛡️ 護盾保護了你！', '#38bdf8');
           return;
         }
+        sfx.hurt();
+        this.alive = false;
+        playerStats.lives--;
+        refreshHud();
+        addSparks(this.x + this.size / 2, this.y + this.size / 2, '#ef4444', 16);
+
+        if (playerStats.lives <= 0) {
+          triggerGameOver();
+          return;
+        }
+
         setTimeout(() => {
           this.x = TILE_SIZE + (TILE_SIZE - this.size) / 2;
           this.y = TILE_SIZE + (TILE_SIZE - this.size) / 2;
@@ -557,228 +982,279 @@
           this.moving = false;
           this.pathQueue = [];
           this.alive = true;
-          this.invincible = 170;
-        }, 900);
+          this.invincible = 140;
+          playerStats.shield = true;
+        }, 700);
       }
 
       draw() {
         if (!this.alive) return;
-        if (this.invincible > 0 && Math.floor(this.invincible / 8) % 2 === 0) return;
+        if (this.invincible > 0 && Math.floor(this.invincible / 6) % 2 === 0) return;
 
         const cx = this.x + this.size / 2;
         const cy = this.y + this.size / 2;
-        const bob = Math.sin(performance.now() / 160) * 0.8;
+        const bob = Math.sin(performance.now() / 150) * 1.5;
 
-        ctx.shadowColor = 'rgba(250, 204, 21, 0.6)';
-        ctx.shadowBlur = 12;
+        ctx.save();
+        ctx.translate(cx, cy + bob);
 
-        const grad = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.size);
-        grad.addColorStop(0, '#fef08a');
-        grad.addColorStop(1, '#f59e0b');
-        ctx.fillStyle = grad;
-        roundedRectPath(this.x, this.y + bob, this.size, this.size, 10);
-        ctx.fill();
-
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = 'rgba(255,255,255,0.45)';
-        roundedRectPath(this.x + 4, this.y + 4 + bob, this.size - 8, 7, 4);
-        ctx.fill();
-
-        // Distinct dark outline for contrast
-        ctx.strokeStyle = '#7c2d12';
-        ctx.lineWidth = 2.5;
-        roundedRectPath(this.x, this.y + bob, this.size, this.size, 10);
-        ctx.stroke();
-
-        ctx.fillStyle = '#ffffff';
+        // 地面小陰影
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
         ctx.beginPath();
-        ctx.arc(cx - 5, cy - 2 + bob, 3.2, 0, Math.PI * 2);
-        ctx.arc(cx + 5, cy - 2 + bob, 3.2, 0, Math.PI * 2);
+        ctx.ellipse(0, this.size * 0.42, this.size * 0.38, 5, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = '#0f172a';
-        ctx.beginPath();
-        ctx.arc(cx - 5, cy - 2 + bob, 1.6, 0, Math.PI * 2);
-        ctx.arc(cx + 5, cy - 2 + bob, 1.6, 0, Math.PI * 2);
-        ctx.fill();
+        const heroObj = HERO_MONSTERS.find(h => h.id === userSaved.selectedHero) || HERO_MONSTERS[0];
+        const img = loadedImages[heroObj.src];
 
-        ctx.fillStyle = '#7c2d12';
-        ctx.beginPath();
-        ctx.arc(cx, cy + 1 + bob, 1.4, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.save();
+        ctx.scale(this.faceDir, 1);
+        if (img && img.complete && img.naturalWidth > 0) {
+          const drawSz = this.size * 1.22;
+          ctx.drawImage(img, -drawSz / 2, -drawSz / 2 - 2, drawSz, drawSz);
+        } else {
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
 
-        ctx.strokeStyle = '#7c2d12';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(cx, cy + 4 + bob, 5, 0.2, Math.PI - 0.2);
-        ctx.stroke();
-
-        // Small crown marker to make player instantly recognizable
+        // 頭頂主角小皇冠
         ctx.fillStyle = '#fde047';
-        ctx.fillRect(cx - 6, this.y - 4 + bob, 12, 4);
-        ctx.fillRect(cx - 4, this.y - 7 + bob, 2, 3);
-        ctx.fillRect(cx, this.y - 8 + bob, 2, 4);
-        ctx.fillRect(cx + 4, this.y - 7 + bob, 2, 3);
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-7, -this.size * 0.45);
+        ctx.lineTo(-5, -this.size * 0.65);
+        ctx.lineTo(0, -this.size * 0.52);
+        ctx.lineTo(5, -this.size * 0.65);
+        ctx.lineTo(7, -this.size * 0.45);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 泡泡護盾光圈
+        if (playerStats.shield) {
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.92)';
+          ctx.fillStyle = 'rgba(186, 230, 253, 0.22)';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(0, 0, this.size * 0.62, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+
+        ctx.restore();
       }
     }
 
+    // 平滑移動的 Voxel 敵方怪獸（不再瞬移跳格！）
     class Enemy extends Entity {
-      constructor(gridX, gridY, styleIndex = 0) {
-        super(gridX, gridY, TILE_SIZE * 0.8);
-        this.styleIndex = styleIndex;
-        this.dir = [{ x: 0, y: 1 }, { x: 0, y: -1 }, { x: 1, y: 0 }, { x: -1, y: 0 }][Math.floor(Math.random() * 4)];
-        this.cooldown = Math.floor(Math.random() * 64) + 28;
+      constructor(gridX, gridY, spriteIndex = 0) {
+        super(gridX, gridY, TILE_SIZE * 0.78);
+        this.spriteSrc = ENEMY_SPRITES[spriteIndex % ENEMY_SPRITES.length];
+        this.targetX = this.x;
+        this.targetY = this.y;
+        this.moving = false;
+        this.dir = { x: 0, y: 1 };
+        this.faceDir = 1;
         this.alive = true;
+        this.pauseTimer = 15;
+      }
+
+      get speed() {
+        return Math.min(2.1, 1.15 + level * 0.08);
       }
 
       update() {
         if (!this.alive) return;
 
-        this.cooldown -= 1;
-        if (this.cooldown <= 0) {
-          const dirs = [
-            this.dir,
-            { x: 0, y: 1 },
-            { x: 0, y: -1 },
-            { x: 1, y: 0 },
-            { x: -1, y: 0 },
-          ];
-          let moved = false;
-          for (const d of dirs.sort(() => Math.random() - 0.5)) {
-            if (this.tryMove(d.x, d.y)) {
-              this.dir = d;
-              moved = true;
-              break;
-            }
+        if (this.moving) {
+          const dx = this.targetX - this.x;
+          const dy = this.targetY - this.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist <= this.speed) {
+            this.x = this.targetX;
+            this.y = this.targetY;
+            this.moving = false;
+            this.pauseTimer = Math.max(6, 18 - level);
+          } else {
+            this.x += (dx / dist) * this.speed;
+            this.y += (dy / dist) * this.speed;
           }
-          this.cooldown = moved ? Math.max(20, 34 - level) : 24;
+        } else {
+          if (this.pauseTimer > 0) {
+            this.pauseTimer--;
+          } else {
+            const dirs = [
+              this.dir,
+              { x: 1, y: 0 },
+              { x: -1, y: 0 },
+              { x: 0, y: 1 },
+              { x: 0, y: -1 }
+            ];
+            for (const d of dirs.sort(() => Math.random() - 0.5)) {
+              const nx = this.gridX + d.x;
+              const ny = this.gridY + d.y;
+              if (isWalkableTile(nx, ny)) {
+                this.dir = d;
+                if (d.x !== 0) this.faceDir = d.x;
+                this.targetX = nx * TILE_SIZE + (TILE_SIZE - this.size) / 2;
+                this.targetY = ny * TILE_SIZE + (TILE_SIZE - this.size) / 2;
+                this.moving = true;
+                break;
+              }
+            }
+            if (!this.moving) this.pauseTimer = 15;
+          }
         }
 
-        if (player.alive && this.hitRect(player)) player.hurt();
-      }
-
-      tryMove(dx, dy) {
-        const gx = this.gridX + dx;
-        const gy = this.gridY + dy;
-        if (gx < 0 || gy < 0 || gx >= MAP_COLS || gy >= MAP_ROWS) return false;
-        if (map[gy][gx] === WALL || map[gy][gx] === BRICK) return false;
-        if (bombs.some((b) => b.gx === gx && b.gy === gy)) return false;
-        this.x = gx * TILE_SIZE + (TILE_SIZE - this.size) / 2;
-        this.y = gy * TILE_SIZE + (TILE_SIZE - this.size) / 2;
-        return true;
+        if (player && player.alive && this.hitRect(player)) {
+          player.hurtByEnemy();
+        }
       }
 
       draw() {
         if (!this.alive) return;
-
-        const theme = ENEMY_THEMES[this.styleIndex % ENEMY_THEMES.length];
         const cx = this.x + this.size / 2;
         const cy = this.y + this.size / 2;
-        const bob = Math.sin((performance.now() + this.styleIndex * 120) / 210) * 0.9;
+        const bob = Math.sin(performance.now() / 190 + cx) * 1.4;
 
-        ctx.shadowColor = `${theme.primary}66`;
-        ctx.shadowBlur = 10;
-        const grad = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.size);
-        grad.addColorStop(0, theme.primary);
-        grad.addColorStop(1, theme.secondary);
-        ctx.fillStyle = grad;
-        roundedRectPath(this.x, this.y + bob, this.size, this.size, 10);
-        ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.save();
+        ctx.translate(cx, cy + bob);
 
-        ctx.fillStyle = 'rgba(255,255,255,0.28)';
-        roundedRectPath(this.x + 4, this.y + 4 + bob, this.size - 8, 6, 4);
-        ctx.fill();
-
-        ctx.fillStyle = theme.eye;
-        ctx.fillRect(cx - 8, cy - 4 + bob, 5, 5);
-        ctx.fillRect(cx + 3, cy - 4 + bob, 5, 5);
-
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(cx - 7, cy - 3 + bob, 2, 2);
-        ctx.fillRect(cx + 4, cy - 3 + bob, 2, 2);
-
-        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-        ctx.lineWidth = 2;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
         ctx.beginPath();
-        ctx.moveTo(cx - 6, cy + 7 + bob);
-        ctx.quadraticCurveTo(cx, cy + 11 + bob, cx + 6, cy + 7 + bob);
-        ctx.stroke();
+        ctx.ellipse(0, this.size * 0.42, this.size * 0.35, 4.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.scale(this.faceDir, 1);
+        const img = loadedImages[this.spriteSrc];
+        if (img && img.complete && img.naturalWidth > 0) {
+          const drawSz = this.size * 1.2;
+          ctx.drawImage(img, -drawSz / 2, -drawSz / 2 - 2, drawSz, drawSz);
+        } else {
+          ctx.fillStyle = '#fb7185';
+          ctx.beginPath();
+          ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
       }
     }
 
+    /* ============================================================
+       6. 爆炸處理（防自爆友善設計 + 怪獸全滅自動開門）
+       ============================================================ */
     function spawnExplosion(gx, gy, range, owner) {
-      const cells = [{ x: gx, y: gy }];
-      const dirs = [
-        { x: 1, y: 0 },
-        { x: -1, y: 0 },
-        { x: 0, y: 1 },
-        { x: 0, y: -1 },
-      ];
+      sfx.boom();
+      const blastCells = getBombBlastCells(gx, gy, range);
 
-      for (const d of dirs) {
-        for (let r = 1; r <= range; r += 1) {
-          const x = gx + d.x * r;
-          const y = gy + d.y * r;
-          if (x < 0 || y < 0 || x >= MAP_COLS || y >= MAP_ROWS) break;
-          if (map[y][x] === WALL) break;
-          cells.push({ x, y });
-          if (map[y][x] === BRICK) {
-            map[y][x] = TILE;
-            score += 10;
-            if (exit && exit.x === x && exit.y === y) exit.revealed = true;
-            else if (Math.random() < 0.25) {
-              const rItem = ['bomb', 'range', 'speed', 'heart'][Math.floor(Math.random() * 4)];
-              items.push({ x: x * TILE_SIZE + TILE_SIZE * 0.15, y: y * TILE_SIZE + TILE_SIZE * 0.15, size: TILE_SIZE * 0.7, type: rItem, bob: 0 });
-            }
-            break;
+      for (const c of blastCells) {
+        if (c.stopBrick && map[c.y][c.x] === BRICK) {
+          map[c.y][c.x] = TILE;
+          score += 15;
+          addSparks(c.x * TILE_SIZE + TILE_SIZE / 2, c.y * TILE_SIZE + TILE_SIZE / 2, '#d97706', 8);
+
+          if (exit && exit.x === c.x && exit.y === c.y) {
+            exit.revealed = true;
+            showToast('✨ 發現黃金傳送門！', '打敗所有怪獸即可進入！', 1600);
+          } else if (Math.random() < 0.34) {
+            const rItem = ['bomb', 'range', 'speed', 'heart'][Math.floor(Math.random() * 4)];
+            items.push({
+              x: c.x * TILE_SIZE + TILE_SIZE * 0.15,
+              y: c.y * TILE_SIZE + TILE_SIZE * 0.15,
+              size: TILE_SIZE * 0.7,
+              type: rItem,
+              bob: 0
+            });
           }
         }
       }
 
-      explosions.push({ cells, timer: 24 });
+      explosions.push({ cells: blastCells, timer: 22 });
       owner.bombsPlaced = Math.max(0, owner.bombsPlaced - 1);
 
-      for (const c of cells) {
+      let killedAny = false;
+      for (const c of blastCells) {
         const rect = { x: c.x * TILE_SIZE, y: c.y * TILE_SIZE, size: TILE_SIZE };
 
-        if (player.alive && player.hitRect(rect)) player.hurt();
+        // 友善減壓設計：自己的炸彈只會讓主角輕微氣浪震暈 0.35 秒，不會炸死自己！
+        if (player && player.alive && player.hitRect(rect) && player.dizzyTimer <= 0) {
+          player.dizzyTimer = 20;
+          addFloatingText(player.x + 16, player.y - 6, '💨 小心火燭！', '#fde047');
+        }
 
         for (const e of enemies) {
           if (e.alive && e.hitRect(rect)) {
             e.alive = false;
-            score += 120;
+            killedAny = true;
+            score += 150;
+            addSparks(e.x + e.size / 2, e.y + e.size / 2, '#facc15', 14);
+            addFloatingText(e.x + 16, e.y, '+150 💥', '#fde047');
           }
         }
 
         for (const b of bombs) {
-          if (b.gx === c.x && b.gy === c.y) b.explodeAt = Math.min(b.explodeAt, performance.now() + 40);
+          if (b.gx === c.x && b.gy === c.y) {
+            b.explodeAt = Math.min(b.explodeAt, performance.now() + 40);
+          }
         }
       }
+
+      enemies = enemies.filter(e => e.alive);
       refreshHud();
+
+      // 重要減壓設計：當怪獸全部被消滅時，自動炸開並顯現黃金傳送門，不用大海撈針！
+      if (killedAny && enemies.length === 0 && exit) {
+        map[exit.y][exit.x] = TILE;
+        exit.revealed = true;
+        sfx.portal();
+        addSparks(exit.x * TILE_SIZE + TILE_SIZE / 2, exit.y * TILE_SIZE + TILE_SIZE / 2, '#facc15', 20);
+        showToast('🌟 怪獸全數淨化！', '✨ 黃金傳送門已開啟，快走進去過關！', 2200);
+      }
     }
 
+    /* ============================================================
+       7. 地圖建立與關卡流程
+       ============================================================ */
     function buildMap() {
       map = [];
-      for (let y = 0; y < MAP_ROWS; y += 1) {
+      brickVariant = [];
+      // 降低木箱密度 (44% ~ 50%)，畫面更清爽好走位
+      const brickChance = Math.min(0.52, 0.42 + level * 0.01);
+
+      for (let y = 0; y < MAP_ROWS; y++) {
         const row = [];
-        for (let x = 0; x < MAP_COLS; x += 1) {
+        const vRow = [];
+        for (let x = 0; x < MAP_COLS; x++) {
           const border = x === 0 || y === 0 || x === MAP_COLS - 1 || y === MAP_ROWS - 1;
           const pillar = x % 2 === 0 && y % 2 === 0;
-          if (border || pillar) row.push(WALL);
-          else row.push(Math.random() < 0.69 ? BRICK : TILE);
+          if (border || pillar) {
+            row.push(WALL);
+          } else if (Math.random() < brickChance) {
+            row.push(BRICK);
+          } else {
+            row.push(TILE);
+          }
+          vRow.push((x * 7 + y * 13) % 3 === 0 ? 1 : 0);
         }
         map.push(row);
+        brickVariant.push(vRow);
       }
 
+      // 確保左上角玩家出生區暢通
       map[1][1] = TILE;
       map[1][2] = TILE;
       map[2][1] = TILE;
+      map[1][3] = TILE;
+      map[3][1] = TILE;
 
       const brickCells = [];
-      for (let y = 1; y < MAP_ROWS - 1; y += 1) {
-        for (let x = 1; x < MAP_COLS - 1; x += 1) {
-          if (map[y][x] === BRICK) brickCells.push({ x, y });
+      for (let y = 1; y < MAP_ROWS - 1; y++) {
+        for (let x = 1; x < MAP_COLS - 1; x++) {
+          if (map[y][x] === BRICK && (x > 4 || y > 4)) brickCells.push({ x, y });
         }
       }
       const pick = brickCells[Math.floor(Math.random() * brickCells.length)] || { x: MAP_COLS - 2, y: MAP_ROWS - 2 };
@@ -787,26 +1263,23 @@
 
     function spawnEnemies() {
       enemies = [];
-      const count = 2 + level;
+      const count = 2 + Math.min(5, level);
       const pool = [];
-      for (let y = 1; y < MAP_ROWS - 1; y += 1) {
-        for (let x = 1; x < MAP_COLS - 1; x += 1) {
+      for (let y = 1; y < MAP_ROWS - 1; y++) {
+        for (let x = 1; x < MAP_COLS - 1; x++) {
           if (map[y][x] === TILE && (x > 4 || y > 4)) pool.push({ x, y });
         }
       }
-
-      for (let i = 0; i < count && pool.length; i += 1) {
-        const index = Math.floor(Math.random() * pool.length);
-        const { x, y } = pool.splice(index, 1)[0];
+      for (let i = 0; i < count && pool.length > 0; i++) {
+        const idx = Math.floor(Math.random() * pool.length);
+        const { x, y } = pool.splice(idx, 1)[0];
         enemies.push(new Enemy(x, y, i + level));
       }
     }
 
     function refreshHud() {
-      levelEl.textContent = `${level} / 10`;
-      scoreEl.textContent = String(score);
-      livesEl.textContent = '❤️'.repeat(Math.max(playerStats.lives, 0));
-      enemyCountEl.textContent = String(enemies.filter((e) => e.alive).length);
+      enemyNumEl.textContent = String(enemies.filter(e => e.alive).length);
+      livesDispEl.textContent = '❤️'.repeat(Math.max(0, playerStats.lives));
     }
 
     function startLevel() {
@@ -815,209 +1288,352 @@
       bombs = [];
       explosions = [];
       items = [];
+      particles = [];
+      floatingTexts = [];
+      destinationMarker = null;
+      playerStats.shield = true; // 每關補滿一層泡泡護盾
       spawnEnemies();
       refreshHud();
-      gameState = GAME_STATE.PLAYING;
-      overlay.style.display = 'none';
+
+      running = true;
+      paused = false;
+      menuModal.classList.add('hidden');
+      pauseModal.classList.add('hidden');
+      overModal.classList.add('hidden');
+      winModal.classList.add('hidden');
+
+      showToast('🌳 陽光森林遺跡', `🎉 第 ${level} / 10 關開始！`, 1800);
       canvas.focus();
     }
 
-    function resetGame() {
+    function startNewRun() {
       level = 1;
       score = 0;
+      starsEarnedThisRun = 0;
       playerStats.lives = 3;
       playerStats.speedTier = 1;
       playerStats.bombCount = 1;
-      playerStats.bombRange = 1;
+      playerStats.bombRange = 2;
       startLevel();
     }
 
-    function openOverlay() {
-      overlay.style.display = 'flex';
-      if (gameState === GAME_STATE.START) {
-        dialog.innerHTML = `
-          <h2>怪獸塔爆爆冒險</h2>
-          <p>重新包裝的手機版炸彈玩法：10 個關卡、怪獸塔怪獸登場。</p>
-          <p>目標：炸掉障礙、擊敗全部怪獸，找到出口即可過關。</p>
-          <button class="cta" id="startBtn">開始冒險</button>
-        `;
-      }
+    function triggerGameOver() {
+      running = false;
+      if (level > (userSaved.bestLevel || 1)) userSaved.bestLevel = level;
+      userSaved.totalStars = (userSaved.totalStars || 0) + starsEarnedThisRun;
+      saveGameData(userSaved);
+      updateMenuStats();
 
-      if (gameState === GAME_STATE.LEVEL_CLEAR) {
-        dialog.innerHTML = `
-          <h2>第 ${level} 關完成！</h2>
-          <p>準備進入下一關怪獸戰場...</p>
-        `;
-      }
-
-      if (gameState === GAME_STATE.GAME_OVER) {
-        dialog.innerHTML = `
-          <h2>挑戰結束</h2>
-          <p>最終分數：${score}</p>
-          <button class="cta" id="restartBtn">重新挑戰</button>
-        `;
-      }
-
-      if (gameState === GAME_STATE.GAME_WIN) {
-        dialog.innerHTML = `
-          <h2>全 10 關通關！</h2>
-          <p>恭喜完成怪獸塔爆爆冒險！</p>
-          <p>最終分數：${score}</p>
-          <button class="cta" id="restartBtn">再玩一次</button>
-        `;
-      }
-
-      document.getElementById('startBtn')?.addEventListener('click', resetGame);
-      document.getElementById('restartBtn')?.addEventListener('click', resetGame);
+      document.getElementById('over-desc').textContent = `本次闖到了第 ${level} 關，獲得 ${score} 分！`;
+      document.getElementById('over-level').textContent = `第 ${level} 關`;
+      document.getElementById('over-stars').textContent = `⭐ +${starsEarnedThisRun}`;
+      overModal.classList.remove('hidden');
     }
 
+    /* ============================================================
+       8. 陽光森林遺跡繪製（草地棋盤、青苔石柱、木箱木桶、十字預警）
+       ============================================================ */
+    function drawMap() {
+      for (let y = 0; y < MAP_ROWS; y++) {
+        for (let x = 0; x < MAP_COLS; x++) {
+          const px = x * TILE_SIZE;
+          const py = y * TILE_SIZE;
+
+          // 1. 陽光草地雙色棋盤地板
+          ctx.fillStyle = (x + y) % 2 === 0 ? '#a3e635' : '#84cc16';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+
+          // 2. 不可破壞牆：立體淺灰青苔石柱（與草地及木箱截然不同！）
+          if (map[y][x] === WALL) {
+            const isBorder = x === 0 || y === 0 || x === MAP_COLS - 1 || y === MAP_ROWS - 1;
+            ctx.fillStyle = isBorder ? '#94a3b8' : '#cbd5e1';
+            ctx.fillRect(px + 1, py + 1, TILE_SIZE - 2, TILE_SIZE - 2);
+
+            // 石柱頂部亮面
+            ctx.fillStyle = '#f1f5f9';
+            ctx.fillRect(px + 3, py + 3, TILE_SIZE - 6, TILE_SIZE * 0.62);
+
+            // 石柱底部立體陰影
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(px + 2, py + TILE_SIZE - 7, TILE_SIZE - 4, 5);
+
+            // 翠綠青苔與小花點綴
+            if (!isBorder) {
+              ctx.fillStyle = '#22c55e';
+              ctx.beginPath();
+              ctx.arc(px + 11, py + 10, 4.5, 0, Math.PI * 2);
+              ctx.arc(px + 16, py + 12, 3.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillStyle = '#f472b6';
+              ctx.beginPath();
+              ctx.arc(px + 12, py + 10, 2, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          // 3. 可炸毀障礙：立體木紋寶箱 / 炸藥木桶
+          if (map[y][x] === BRICK) {
+            const isBarrel = brickVariant[y]?.[x] === 1;
+            if (isBarrel) {
+              // 圓潤木桶
+              ctx.fillStyle = '#b45309';
+              ctx.beginPath();
+              ctx.roundRect(px + 5, py + 3, TILE_SIZE - 10, TILE_SIZE - 6, 10);
+              ctx.fill();
+              ctx.strokeStyle = '#451a03';
+              ctx.lineWidth = 2;
+              ctx.stroke();
+
+              // 鐵箍條
+              ctx.fillStyle = '#475569';
+              ctx.fillRect(px + 5, py + 11, TILE_SIZE - 10, 4);
+              ctx.fillRect(px + 5, py + TILE_SIZE - 15, TILE_SIZE - 10, 4);
+            } else {
+              // 木箱
+              ctx.fillStyle = '#d97706';
+              ctx.beginPath();
+              ctx.roundRect(px + 3, py + 3, TILE_SIZE - 6, TILE_SIZE - 6, 6);
+              ctx.fill();
+              ctx.strokeStyle = '#78350f';
+              ctx.lineWidth = 2;
+              ctx.stroke();
+
+              // 木箱內框與斜撐條
+              ctx.fillStyle = '#f59e0b';
+              ctx.fillRect(px + 7, py + 7, TILE_SIZE - 14, TILE_SIZE - 14);
+              ctx.strokeStyle = '#92400e';
+              ctx.beginPath();
+              ctx.moveTo(px + 7, py + 7);
+              ctx.lineTo(px + TILE_SIZE - 7, py + TILE_SIZE - 7);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+    }
+
+    // 繪製炸彈的「十字爆炸範圍預警光格」
+    function drawBlastPreviews() {
+      if (bombs.length === 0) return;
+      const pulse = 0.28 + Math.abs(Math.sin(performance.now() / 130)) * 0.28;
+      ctx.save();
+      for (const b of bombs) {
+        const previewCells = getBombBlastCells(b.gx, b.gy, b.range);
+        for (const c of previewCells) {
+          const px = c.x * TILE_SIZE;
+          const py = c.y * TILE_SIZE;
+          ctx.fillStyle = `rgba(251, 146, 60, ${pulse})`;
+          ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+          ctx.strokeStyle = 'rgba(254, 240, 138, 0.85)';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(px + 3, py + 3, TILE_SIZE - 6, TILE_SIZE - 6);
+        }
+      }
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawMap();
+      drawBlastPreviews();
+
+      // 點擊尋路目標標記
+      if (destinationMarker) {
+        const mx = destinationMarker.x * TILE_SIZE + TILE_SIZE / 2;
+        const my = destinationMarker.y * TILE_SIZE + TILE_SIZE / 2;
+        const pulse = 8 + Math.sin(performance.now() / 120) * 2.2;
+        ctx.strokeStyle = destinationMarker.reachable ? '#15803d' : '#dc2626';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(mx, my, pulse + 6, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // 黃金傳送門
+      if (exit?.revealed) {
+        const ex = exit.x * TILE_SIZE + TILE_SIZE / 2;
+        const ey = exit.y * TILE_SIZE + TILE_SIZE / 2;
+        const rot = performance.now() / 350;
+        ctx.save();
+        ctx.translate(ex, ey);
+        const grad = ctx.createRadialGradient(0, 0, 4, 0, 0, TILE_SIZE * 0.46);
+        grad.addColorStop(0, '#fffbeb');
+        grad.addColorStop(0.55, '#facc15');
+        grad.addColorStop(1, 'rgba(217, 119, 6, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, TILE_SIZE * 0.46, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.rotate(rot);
+        ctx.strokeStyle = '#b45309';
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(-10, -10, 20, 20);
+        ctx.restore();
+
+        if (enemies.length === 0) {
+          ctx.fillStyle = '#78350f';
+          ctx.font = '900 11px system-ui';
+          ctx.textAlign = 'center';
+          ctx.fillText('✨出口', ex, ey - 18);
+        }
+      }
+
+      // 強化道具
+      for (const item of items) {
+        const iy = item.y + Math.sin(item.bob) * 2.5;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.roundRect(item.x, iy, item.size, item.size, 8);
+        ctx.fill();
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.font = '19px system-ui';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const icon = item.type === 'bomb' ? '💣' : item.type === 'range' ? '🔥' : item.type === 'speed' ? '🛼' : '❤️';
+        ctx.fillText(icon, item.x + item.size / 2, iy + item.size / 2 + 1);
+      }
+
+      // 星星炸彈本體
+      for (const b of bombs) {
+        const bx = b.gx * TILE_SIZE + TILE_SIZE / 2;
+        const by = b.gy * TILE_SIZE + TILE_SIZE / 2;
+        const elapsedMs = Math.max(0, performance.now() - b.placedAt);
+        const fuseProgress = Math.min(1, elapsedMs / BOMB_FUSE_MS);
+        const pulse = 15 + Math.sin(fuseProgress * 20) * 2.2;
+
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath();
+        ctx.arc(bx, by, pulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#facc15';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#facc15';
+        ctx.font = 'bold 11px system-ui';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('★', bx, by + 1);
+      }
+
+      player?.draw();
+      for (const e of enemies) e.draw();
+
+      // 十字火焰特效
+      for (const exp of explosions) {
+        const alpha = exp.timer / 22;
+        for (const c of exp.cells) {
+          const cx = c.x * TILE_SIZE + TILE_SIZE / 2;
+          const cy = c.y * TILE_SIZE + TILE_SIZE / 2;
+          const r = TILE_SIZE * 0.56;
+          const g = ctx.createRadialGradient(cx, cy, 2, cx, cy, r);
+          g.addColorStop(0, `rgba(255, 251, 235, ${alpha})`);
+          g.addColorStop(0.55, `rgba(250, 204, 21, ${alpha * 0.92})`);
+          g.addColorStop(1, 'rgba(239, 68, 68, 0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(c.x * TILE_SIZE, c.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+      }
+
+      // 粒子與浮動文字
+      for (const pt of particles) {
+        ctx.fillStyle = pt.color;
+        ctx.globalAlpha = Math.max(0, pt.life / pt.maxLife);
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      ctx.save();
+      ctx.font = '900 13px system-ui';
+      ctx.textAlign = 'center';
+      for (const ft of floatingTexts) {
+        ctx.globalAlpha = Math.max(0, ft.life / ft.maxLife);
+        ctx.strokeStyle = '#451a03';
+        ctx.lineWidth = 3;
+        ctx.strokeText(ft.text, ft.x, ft.y);
+        ctx.fillStyle = ft.color;
+        ctx.fillText(ft.text, ft.x, ft.y);
+      }
+      ctx.restore();
+    }
+
+    /* ============================================================
+       9. 主更新迴圈
+       ============================================================ */
     function update() {
-      if (gameState !== GAME_STATE.PLAYING) return;
+      if (!running || paused) return;
       const now = performance.now();
 
       player.update();
-
       for (const e of enemies) e.update();
-      enemies = enemies.filter((e) => e.alive);
+      enemies = enemies.filter(e => e.alive);
 
-      for (let i = bombs.length - 1; i >= 0; i -= 1) {
+      for (let i = bombs.length - 1; i >= 0; i--) {
         if (now >= bombs[i].explodeAt) {
           const b = bombs.splice(i, 1)[0];
           spawnExplosion(b.gx, b.gy, b.range, b.owner);
         }
       }
 
-      for (let i = explosions.length - 1; i >= 0; i -= 1) {
-        explosions[i].timer -= 1;
+      for (let i = explosions.length - 1; i >= 0; i--) {
+        explosions[i].timer--;
         if (explosions[i].timer <= 0) explosions.splice(i, 1);
       }
 
-      for (const item of items) item.bob += 0.08;
+      for (const item of items) item.bob += 0.09;
 
-      refreshHud();
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.life--;
+        if (pt.life <= 0) particles.splice(i, 1);
+      }
 
-      if (enemies.length === 0 && exit.revealed) {
+      for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y -= 0.6;
+        ft.life--;
+        if (ft.life <= 0) floatingTexts.splice(i, 1);
+      }
+
+      if (destinationMarker && destinationMarker.ttl > 0) {
+        destinationMarker.ttl--;
+        if (destinationMarker.ttl <= 0) destinationMarker = null;
+      }
+
+      // 走進黃金傳送門過關！
+      if (enemies.length === 0 && exit?.revealed) {
         const extRect = { x: exit.x * TILE_SIZE, y: exit.y * TILE_SIZE, size: TILE_SIZE };
         if (player.alive && player.hitRect(extRect)) {
+          sfx.portal();
           score += 500;
+          starsEarnedThisRun += 1;
+          reportStars(1, `通過第 ${level} 關`);
+
           if (level >= 10) {
-            gameState = GAME_STATE.GAME_WIN;
-            openOverlay();
+            running = false;
+            userSaved.bestLevel = 10;
+            userSaved.totalStars = (userSaved.totalStars || 0) + starsEarnedThisRun;
+            saveGameData(userSaved);
+            updateMenuStats();
+            document.getElementById('win-score').textContent = score;
+            document.getElementById('win-stars').textContent = `⭐ +${starsEarnedThisRun}`;
+            winModal.classList.remove('hidden');
           } else {
-            level += 1;
-            gameState = GAME_STATE.LEVEL_CLEAR;
-            openOverlay();
-            setTimeout(startLevel, 1000);
+            level++;
+            if (level > (userSaved.bestLevel || 1)) {
+              userSaved.bestLevel = level;
+              saveGameData(userSaved);
+            }
+            startLevel();
           }
-        }
-      }
-    }
-
-    function drawMap() {
-      if (!Array.isArray(map) || map.length !== MAP_ROWS) {
-        ctx.fillStyle = '#0e1b2f';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        return;
-      }
-
-      for (let y = 0; y < MAP_ROWS; y += 1) {
-        for (let x = 0; x < MAP_COLS; x += 1) {
-          const base = (x + y) % 2 === 0 ? '#183355' : '#1d3b63';
-          ctx.fillStyle = base;
-          ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-
-          if (map[y][x] === WALL) {
-            ctx.fillStyle = '#3b4e73';
-            ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            ctx.fillStyle = 'rgba(255,255,255,0.2)';
-            ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, 4);
-          }
-
-          if (map[y][x] === BRICK) {
-            ctx.fillStyle = '#b45309';
-            ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            ctx.strokeStyle = '#78350f';
-            ctx.strokeRect(x * TILE_SIZE + 1, y * TILE_SIZE + 1, TILE_SIZE - 2, TILE_SIZE - 2);
-          }
-        }
-      }
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawMap();
-
-      if (destinationMarker) {
-        const mx = destinationMarker.x * TILE_SIZE + TILE_SIZE / 2;
-        const my = destinationMarker.y * TILE_SIZE + TILE_SIZE / 2;
-        const pulse = 8 + Math.sin(performance.now() / 120) * 2.2;
-        const color = destinationMarker.reachable ? 'rgba(34,197,94,0.9)' : 'rgba(239,68,68,0.92)';
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(mx, my, pulse + 8, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(mx - 5, my);
-        ctx.lineTo(mx + 5, my);
-        ctx.moveTo(mx, my - 5);
-        ctx.lineTo(mx, my + 5);
-        ctx.stroke();
-      }
-
-      if (exit?.revealed) {
-        ctx.fillStyle = 'rgba(192, 132, 252, 0.85)';
-        ctx.fillRect(exit.x * TILE_SIZE, exit.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 24px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('⇩', exit.x * TILE_SIZE + TILE_SIZE / 2, exit.y * TILE_SIZE + TILE_SIZE / 2 + 1);
-      }
-
-      for (const item of items) {
-        const y = item.y + Math.sin(item.bob) * 2;
-        ctx.fillStyle = '#34d399';
-        ctx.fillRect(item.x, y, item.size, item.size);
-        ctx.fillStyle = '#fff';
-        ctx.font = '20px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const icon = item.type === 'bomb' ? '💣' : item.type === 'range' ? '🔥' : item.type === 'speed' ? '⚡' : '❤️';
-        ctx.fillText(icon, item.x + item.size / 2, y + item.size / 2 + 1);
-      }
-
-      for (const b of bombs) {
-        const x = b.gx * TILE_SIZE + TILE_SIZE / 2;
-        const y = b.gy * TILE_SIZE + TILE_SIZE / 2;
-        const elapsedMs = Math.max(0, performance.now() - b.placedAt);
-        const fuseProgress = Math.min(1, elapsedMs / BOMB_FUSE_MS);
-        const pulse = 14 + Math.sin(fuseProgress * 18) * 2;
-        ctx.fillStyle = '#111827';
-        ctx.beginPath();
-        ctx.arc(x, y, pulse, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#fef3c7';
-        ctx.beginPath();
-        ctx.arc(x - 4, y - 4, 3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      player?.draw();
-      for (const e of enemies) e.draw();
-
-      for (const exp of explosions) {
-        const alpha = exp.timer / 24;
-        for (const c of exp.cells) {
-          const cx = c.x * TILE_SIZE + TILE_SIZE / 2;
-          const cy = c.y * TILE_SIZE + TILE_SIZE / 2;
-          const r = TILE_SIZE * 0.55;
-          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-          g.addColorStop(0, `rgba(255,244,174,${alpha})`);
-          g.addColorStop(0.6, `rgba(250,204,21,${alpha * 0.9})`);
-          g.addColorStop(1, 'rgba(251,146,60,0)');
-          ctx.fillStyle = g;
-          ctx.fillRect(c.x * TILE_SIZE, c.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
       }
     }
@@ -1028,92 +1644,106 @@
       requestAnimationFrame(gameLoop);
     }
 
+    /* ============================================================
+       10. 輸入控制（虛擬十字方向鍵 + 點擊尋路 + 鍵盤）
+       ============================================================ */
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowUp') { input.up = true; e.preventDefault(); }
-      if (e.key === 'ArrowDown') { input.down = true; e.preventDefault(); }
-      if (e.key === 'ArrowLeft') { input.left = true; e.preventDefault(); }
-      if (e.key === 'ArrowRight') { input.right = true; e.preventDefault(); }
-      if (e.key === ' ') { input.bomb = true; e.preventDefault(); }
+      if (e.key === 'ArrowUp' || e.code === 'KeyW') { input.up = true; e.preventDefault(); }
+      if (e.key === 'ArrowDown' || e.code === 'KeyS') { input.down = true; e.preventDefault(); }
+      if (e.key === 'ArrowLeft' || e.code === 'KeyA') { input.left = true; e.preventDefault(); }
+      if (e.key === 'ArrowRight' || e.code === 'KeyD') { input.right = true; e.preventDefault(); }
+      if (e.key === ' ' || e.code === 'Enter') { input.bomb = true; e.preventDefault(); }
+      if (e.code === 'KeyP' || e.code === 'Escape') togglePause();
     });
 
     window.addEventListener('keyup', (e) => {
-      if (e.key === 'ArrowUp') input.up = false;
-      if (e.key === 'ArrowDown') input.down = false;
-      if (e.key === 'ArrowLeft') input.left = false;
-      if (e.key === 'ArrowRight') input.right = false;
+      if (e.key === 'ArrowUp' || e.code === 'KeyW') input.up = false;
+      if (e.key === 'ArrowDown' || e.code === 'KeyS') input.down = false;
+      if (e.key === 'ArrowLeft' || e.code === 'KeyA') input.left = false;
+      if (e.key === 'ArrowRight' || e.code === 'KeyD') input.right = false;
     });
 
-    let touchStart = null;
+    // 左下虛擬十字鍵支援按住與滑動切換方向
+    const dpadBtns = document.querySelectorAll('.dpad-btn');
+    dpadBtns.forEach(btn => {
+      const dir = btn.dataset.dir;
+      const press = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        input[dir] = true;
+        btn.classList.add('active');
+      };
+      const release = (e) => {
+        e.preventDefault();
+        input[dir] = false;
+        btn.classList.remove('active');
+      };
+      btn.addEventListener('pointerdown', press);
+      btn.addEventListener('pointerup', release);
+      btn.addEventListener('pointercancel', release);
+      btn.addEventListener('pointerleave', release);
+    });
+
+    // 點擊棋盤格子自動尋路 / 連點放炸彈
     let lastTapAt = 0;
     let lastTapPos = null;
 
     canvas.addEventListener('pointerdown', (e) => {
-      const { x, y } = getCanvasPointerPosition(e.clientX, e.clientY);
-
-      touchStart = { x, y };
-      canvas.setPointerCapture(e.pointerId);
-    });
-
-    canvas.addEventListener('pointerup', (e) => {
-      if (!touchStart || gameState !== GAME_STATE.PLAYING) {
-        touchStart = null;
-        return;
-      }
-
-      const { x, y } = getCanvasPointerPosition(e.clientX, e.clientY);
-      const movedDist = Math.hypot(x - touchStart.x, y - touchStart.y);
+      if (!running || paused) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * canvas.width;
+      const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
       const now = performance.now();
 
-      // Ignore drag gestures for tap-to-move.
-      if (movedDist <= 20) {
-        let triggeredBomb = false;
-        if (now - lastTapAt < 280 && lastTapPos) {
-          const dist = Math.hypot(lastTapPos.x - x, lastTapPos.y - y);
-          if (dist < 45) {
-            input.bomb = true;
-            triggeredBomb = true;
-          }
-        }
-
-        if (!triggeredBomb && player?.alive) {
-          const gx = Math.floor(x / TILE_SIZE);
-          const gy = Math.floor(y / TILE_SIZE);
-          const moved = player.setDestination(gx, gy);
-          destinationMarker = {
-            x: gx,
-            y: gy,
-            reachable: moved,
-            ttl: moved ? -1 : 26,
-          };
-        }
-
-        lastTapAt = now;
-        lastTapPos = { x, y };
+      if (now - lastTapAt < 280 && lastTapPos && Math.hypot(lastTapPos.x - x, lastTapPos.y - y) < 44) {
+        input.bomb = true;
+      } else if (player?.alive) {
+        const gx = Math.floor(x / TILE_SIZE);
+        const gy = Math.floor(y / TILE_SIZE);
+        const moved = player.setDestination(gx, gy);
+        destinationMarker = {
+          x: gx,
+          y: gy,
+          reachable: moved,
+          ttl: moved ? -1 : 24
+        };
       }
 
-      touchStart = null;
+      lastTapAt = now;
+      lastTapPos = { x, y };
     });
 
-    canvas.addEventListener('pointercancel', () => {
-      touchStart = null;
-    });
-
-    bombBtn.addEventListener('click', () => {
+    document.getElementById('bombButton').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       input.bomb = true;
-      canvas.focus();
     });
 
-    setInterval(() => {
-      if (!destinationMarker) return;
-      if (destinationMarker.ttl > 0) {
-        destinationMarker.ttl -= 1;
-        if (destinationMarker.ttl <= 0) destinationMarker = null;
-      }
-    }, 16);
+    function togglePause() {
+      if (!running) return;
+      paused = !paused;
+      document.getElementById('pause-level').textContent = level;
+      pauseModal.classList.toggle('hidden', !paused);
+    }
 
+    document.getElementById('btn-pause').addEventListener('click', togglePause);
+    document.getElementById('btn-resume').addEventListener('click', togglePause);
+    document.getElementById('btn-restart').addEventListener('click', startNewRun);
+    document.getElementById('btn-start').addEventListener('click', startNewRun);
+    document.getElementById('btn-over-retry').addEventListener('click', startNewRun);
+    document.getElementById('btn-over-menu').addEventListener('click', () => {
+      overModal.classList.add('hidden');
+      menuModal.classList.remove('hidden');
+    });
+    document.getElementById('btn-win-retry').addEventListener('click', startNewRun);
+
+    // 預先建立背景棋盤供主選單預覽
+    buildMap();
+    player = new Player();
+    spawnEnemies();
     refreshHud();
-    openOverlay();
     gameLoop();
+  })();
   </script>
 </body>
 </html>

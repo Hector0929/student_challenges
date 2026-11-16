@@ -688,7 +688,7 @@ export const GameModal: React.FC<GameModalProps> = ({
                                     <div className="text-center">
                                         <div className="text-gray-400 text-xs mb-1">付費後剩餘</div>
                                         <div className={`font-heading text-xl ${starBalance - GAME_COST < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                                            {starBalance - GAME_COST}
+                                            {formatStars(starBalance - GAME_COST)}
                                         </div>
                                     </div>
                                 </div>
