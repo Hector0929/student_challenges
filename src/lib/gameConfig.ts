@@ -209,5 +209,7 @@ export const FUN_GAMES: FunGame[] = [
         color: 'bg-cyan-500 hover:bg-cyan-600',
         category: 'puzzle',
         cover: cover('memory_matrix'),
+        tags: ['怪獸圖鑑'],
+        earnsStars: true,
     },
 ];

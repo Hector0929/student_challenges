@@ -4,398 +4,1217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Memory Matrix</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <title>怪獸星光圖鑑翻翻樂</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Orbitron', sans-serif;
-            background-color: #050510;
-            overflow-x: hidden;
-            overflow-y: auto;
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            font-family: 'Noto Sans TC', 'Fredoka', sans-serif;
+            background: radial-gradient(circle at 50% 30%, #311042 0%, #1a0b2e 55%, #090414 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             touch-action: manipulation;
-            perspective: 1000px;
-            min-height: 100vh;
-            min-height: 100dvh;
         }
 
-        .neon-text {
-            text-shadow: 0 0 10px #22d3ee, 0 0 20px #22d3ee;
+        /* 單一置中星光占卜桌畫框（手機直向自動 100% 滿版且零捲軸） */
+        #stage-frame {
+            position: relative;
+            width: min(96vw, 760px);
+            height: min(94dvh, 650px);
+            background:
+                radial-gradient(circle at 50% 45%, rgba(99, 102, 241, 0.22) 0%, rgba(30, 27, 75, 0.95) 75%),
+                #1e1b4b;
+            border-radius: 26px;
+            border: 5px solid #92400e;
+            box-shadow:
+                0 18px 45px rgba(0, 0, 0, 0.75),
+                0 0 0 2px #fbbf24,
+                inset 0 0 28px rgba(0, 0, 0, 0.65);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px 14px;
         }
 
-        /* Card Flip Styles */
-        .card-container {
-            perspective: 1000px;
+        @media (max-width: 640px) {
+            #stage-frame {
+                width: 100vw;
+                height: 100dvh;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+                padding: 8px 10px;
+            }
         }
 
-        .card {
+        /* 頂部木質金邊資訊列 */
+        #top-hud {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            z-index: 20;
+        }
+
+        .hud-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hud-pill {
+            background: linear-gradient(180deg, rgba(69, 26, 3, 0.92), rgba(41, 16, 2, 0.95));
+            border: 2px solid #f59e0b;
+            border-radius: 999px;
+            padding: 4px 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+            font-weight: 900;
+            font-size: clamp(11px, 2.8vw, 13.5px);
+            color: #fef3c7;
+            white-space: nowrap;
+        }
+
+        /* 糖果彩虹時間進度條 */
+        .timer-pill {
+            flex: 1;
+            max-width: 210px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 2px solid rgba(251, 191, 36, 0.55);
+            border-radius: 999px;
+            padding: 4px 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .timer-bar-bg {
+            flex: 1;
+            height: 9px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        #timer-bar-fill {
             width: 100%;
             height: 100%;
+            background: linear-gradient(90deg, #34d399, #facc15, #f43f5e);
+            border-radius: 99px;
+            transition: width 0.25s linear;
+        }
+
+        #time-text {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 13px;
+            font-weight: 900;
+            color: #fde047;
+            min-width: 28px;
+            text-align: right;
+        }
+
+        #pause-btn {
+            background: linear-gradient(180deg, #78350f, #451a03);
+            border: 2px solid #fbbf24;
+            color: #fef3c7;
+            border-radius: 999px;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 13px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+            transition: transform 0.1s;
+        }
+
+        #pause-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* 中央星光牌桌區域（自動填滿剩餘高度，不產生捲軸） */
+        #board-area {
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(15, 11, 46, 0.65);
+            border: 2px solid rgba(165, 180, 252, 0.22);
+            border-radius: 20px;
+            box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             position: relative;
+        }
+
+        #card-grid {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            gap: clamp(5px, 1.2vw, 10px);
+            perspective: 1000px;
+        }
+
+        /* 3D 怪獸圖鑑卡樣式 */
+        .card-slot {
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            min-width: 0;
+            perspective: 900px;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
             transform-style: preserve-3d;
-            transition: transform 0.6s;
+            transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
             cursor: pointer;
         }
 
-        .card.flipped {
+        .card-inner.flipped,
+        .card-inner.matched,
+        .card-inner.peeking {
             transform: rotateY(180deg);
         }
 
         .card-face {
             position: absolute;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             backface-visibility: hidden;
-            border-radius: 0.5rem;
+            -webkit-backface-visibility: hidden;
+            border-radius: clamp(10px, 2vw, 14px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* 卡背：燙金怪獸肉球圖騰 */
+        .card-back {
+            background: linear-gradient(145deg, #78350f 0%, #451a03 100%);
+            border: 2.5px solid #fbbf24;
+            box-shadow:
+                0 5px 12px rgba(0, 0, 0, 0.45),
+                inset 0 0 0 2px rgba(251, 191, 36, 0.25);
+        }
+
+        .card-back::before {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            border: 1.5px dashed rgba(253, 224, 71, 0.4);
+            border-radius: 9px;
+            pointer-events: none;
+        }
+
+        .paw-emblem {
+            width: clamp(28px, 6vw, 44px);
+            height: clamp(28px, 6vw, 44px);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(251, 191, 36, 0.35), rgba(146, 64, 14, 0.8));
+            border: 2px solid #fde047;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            box-shadow: 0 0 15px rgba(34, 211, 238, 0.2);
-            border: 2px solid #22d3ee;
+            font-size: clamp(15px, 3.5vw, 22px);
+            box-shadow: 0 0 12px rgba(251, 191, 36, 0.4);
         }
 
-        .card-back {
-            background: #0f172a;
-            color: #22d3ee;
-        }
-
+        /* 卡面：立體怪獸收藏卡 */
         .card-front {
-            background: #0891b2;
-            color: white;
             transform: rotateY(180deg);
-            border-color: #ec4899;
-            box-shadow: 0 0 20px rgba(236, 72, 153, 0.5);
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border: 3px solid var(--card-border, #38bdf8);
+            box-shadow:
+                0 6px 15px rgba(0, 0, 0, 0.5),
+                inset 0 0 15px var(--card-glow, rgba(56, 189, 248, 0.3));
+            padding: 3px;
+            justify-content: space-between;
         }
 
-        .matched .card-front {
-            border-color: #10b981;
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        .card-inner.matched .card-front {
+            border-color: #4ade80;
+            background: linear-gradient(180deg, #064e3b 0%, #022c22 100%);
+            box-shadow:
+                0 0 18px rgba(74, 222, 128, 0.65),
+                inset 0 0 14px rgba(74, 222, 128, 0.35);
+            animation: matchPulse 0.45s ease-out;
         }
 
-        /* Responsive card sizing */
-        @media (max-height: 700px) {
-            .card-face {
-                font-size: 1.5rem;
-            }
+        @keyframes matchPulse {
+            0% { transform: rotateY(180deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(1.09); }
+            100% { transform: rotateY(180deg) scale(1); }
         }
 
-        /* Level badge styling */
-        .level-badge {
-            background: linear-gradient(135deg, #06b6d4, #8b5cf6);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.6rem;
-            margin-left: 4px;
+        /* 卡片左上角家族編號徽章（幫助進化配對辨識） */
+        .pair-badge {
+            align-self: flex-start;
+            background: var(--card-border, #38bdf8);
+            color: #0f172a;
+            font-size: clamp(9px, 1.8vw, 11px);
+            font-weight: 900;
+            padding: 1px 6px;
+            border-radius: 99px;
+            line-height: 1.2;
+        }
+
+        .monster-sprite {
+            width: auto;
+            height: 58%;
+            max-width: 82%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
+            pointer-events: none;
+        }
+
+        .card-name {
+            width: 100%;
+            text-align: center;
+            font-size: clamp(9.5px, 2vw, 12px);
+            font-weight: 900;
+            color: #f8fafc;
+            background: rgba(15, 23, 42, 0.78);
+            border-radius: 6px;
+            padding: 1px 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 底部：貓頭鷹博士夥伴與兩大魔法技能鈕 */
+        #bottom-bar {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            z-index: 20;
+        }
+
+        .owl-companion {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.82);
+            border: 1.5px solid rgba(251, 191, 36, 0.45);
+            border-radius: 16px;
+            padding: 4px 10px 4px 6px;
+            min-width: 0;
+        }
+
+        .owl-companion img {
+            width: clamp(36px, 8vw, 46px);
+            height: clamp(36px, 8vw, 46px);
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        #owl-speech {
+            font-size: clamp(11px, 2.6vw, 12.5px);
+            font-weight: 800;
+            color: #fde68a;
+            line-height: 1.25;
+        }
+
+        .skills-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .skill-btn {
+            border-radius: 14px;
+            padding: 7px 12px;
+            font-family: inherit;
+            font-size: clamp(11.5px, 2.8vw, 13.5px);
+            font-weight: 900;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: transform 0.1s, opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .skill-btn:active:not(:disabled) {
+            transform: translateY(2px) scale(0.96);
+        }
+
+        .skill-btn:disabled {
+            opacity: 0.35;
+            filter: grayscale(0.7);
+            cursor: default;
+        }
+
+        #peek-btn {
+            background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+            border: 2px solid #bae6fd;
+            box-shadow: 0 4px 0 #0369a1;
+        }
+
+        #hint-btn {
+            background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+            border: 2px solid #fef08a;
+            color: #451a03;
+            box-shadow: 0 4px 0 #92400e;
+        }
+
+        /* 畫面中央短暫提示橫幅（Toast） */
+        #center-toast {
+            position: absolute;
+            top: 46%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.85);
+            z-index: 30;
+            pointer-events: none;
+            background: linear-gradient(135deg, rgba(254, 240, 138, 0.97), rgba(251, 191, 36, 0.97));
+            border: 2.5px solid #92400e;
+            border-radius: 18px;
+            padding: 7px 18px;
+            text-align: center;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+            opacity: 0;
+            transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 90%;
+        }
+
+        #center-toast.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        #center-toast .toast-main {
+            font-size: clamp(14px, 3.8vw, 18px);
+            font-weight: 900;
+            color: #78350f;
+        }
+
+        #center-toast .toast-sub {
+            font-size: clamp(11px, 2.8vw, 12px);
+            font-weight: 800;
+            color: #92400e;
+            margin-top: 2px;
+        }
+
+        /* 彈出視窗（開始 / 暫停 / 過關結算） */
+        .overlay-modal {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 8, 34, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 40;
+            padding: 12px;
+        }
+
+        .overlay-modal.hidden {
+            display: none;
+        }
+
+        .modal-card {
+            background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+            border: 3.5px solid #78350f;
+            border-radius: 24px;
+            padding: clamp(14px, 3.5vw, 20px);
+            width: 100%;
+            max-width: 390px;
+            max-height: 92dvh;
+            overflow-y: auto;
+            text-align: center;
+            color: #451a03;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+            animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.88); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 900;
+            background: #fef3c7;
+            color: #92400e;
+            border: 2px solid #f59e0b;
+            margin-bottom: 4px;
+        }
+
+        .modal-title {
+            font-size: clamp(20px, 5vw, 24px);
+            font-weight: 900;
+            margin: 2px 0 6px;
+            color: #451a03;
+        }
+
+        .modal-desc {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #78350f;
+            margin-bottom: 10px;
+            line-height: 1.45;
+        }
+
+        .section-label {
+            font-size: 12px;
+            font-weight: 900;
+            color: #92400e;
+            margin: 6px 0 6px;
+        }
+
+        .mode-picker {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .mode-btn {
+            background: #fff;
+            border: 2.5px solid #d6d3d1;
+            border-radius: 14px;
+            padding: 8px 6px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: center;
+        }
+
+        .mode-btn .m-title {
+            font-size: 13px;
+            font-weight: 900;
+            color: #451a03;
+        }
+
+        .mode-btn .m-sub {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #78350f;
+            margin-top: 2px;
+        }
+
+        .mode-btn.selected {
+            border-color: #d97706;
+            background: #fef3c7;
+            box-shadow: 0 4px 10px rgba(217, 119, 6, 0.22);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .stat-box {
+            background: #fff;
+            border: 2px solid #fde68a;
+            border-radius: 12px;
+            padding: 7px;
+        }
+
+        .stat-box .lbl {
+            font-size: 11px;
+            font-weight: 800;
+            color: #92400e;
+        }
+
+        .stat-box .val {
+            font-size: 18px;
+            font-weight: 900;
+            color: #451a03;
+            margin-top: 2px;
+        }
+
+        .primary-btn {
+            width: 100%;
+            padding: 11px 16px;
+            border-radius: 14px;
+            border: 3px solid #78350f;
+            background: linear-gradient(180deg, #facc15 0%, #f59e0b 100%);
+            color: #451a03;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #78350f;
+            transition: transform 0.1s;
+        }
+
+        .primary-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #78350f;
+        }
+
+        .secondary-btn {
+            width: 100%;
+            margin-top: 7px;
+            padding: 9px 14px;
+            border-radius: 12px;
+            border: 2px solid #a8a29e;
+            background: #fff;
+            color: #57534e;
+            font-family: inherit;
+            font-size: 13.5px;
+            font-weight: 800;
+            cursor: pointer;
         }
     </style>
 </head>
 
-<body class="min-h-screen flex flex-col items-center justify-start p-3 sm:p-4 overflow-x-hidden overflow-y-auto">
+<body>
+    <div id="stage-frame">
+        <!-- 頂部木質金邊 HUD -->
+        <div id="top-hud">
+            <div class="hud-group">
+                <div class="hud-pill">
+                    <span>🃏</span>
+                    <span id="stage-label">第 1 / 5 關 ・ 配對 0/4</span>
+                </div>
+            </div>
 
-    <!-- Header -->
-    <div class="w-full max-w-lg flex justify-between items-center mb-6">
-        <div>
-            <div class="text-cyan-400 text-xs tracking-widest">LEVEL</div>
-            <div class="flex items-baseline gap-1">
-                <span id="level-display" class="text-2xl text-white font-bold">1</span>
-                <span id="cycle-badge" class="level-badge text-white hidden">Cycle 2</span>
+            <div class="timer-pill" title="剩餘時間">
+                <span>⏳</span>
+                <div class="timer-bar-bg">
+                    <div id="timer-bar-fill"></div>
+                </div>
+                <span id="time-text">35s</span>
+            </div>
+
+            <div class="hud-group">
+                <div class="hud-pill" title="本局獲得星幣與得分">
+                    <span>⭐</span>
+                    <span id="stars-text">0</span>
+                    <span style="opacity:0.35;">|</span>
+                    <span id="score-text">0</span>
+                </div>
+                <button id="pause-btn" title="暫停">⏸️</button>
             </div>
         </div>
-        <div class="text-center">
-            <h1
-                class="text-xl sm:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 font-bold neon-text">
-                MEMORY MATRIX
-            </h1>
-        </div>
-        <div class="text-right">
-            <div class="text-pink-400 text-xs tracking-widest">TIME</div>
-            <div id="time-display" class="text-2xl text-white font-bold">60</div>
-        </div>
-    </div>
 
-    <!-- Score Display -->
-    <div class="w-full max-w-lg flex justify-center gap-4 mb-4">
-        <div class="bg-slate-800/50 px-4 py-1 rounded-full border border-cyan-500/30">
-            <span class="text-cyan-400 text-xs">PAIRS</span>
-            <span id="pairs-display" class="text-white font-bold ml-2">0/3</span>
+        <!-- 中央星光占卜牌桌（自動等比縮放，絕不溢出） -->
+        <div id="board-area">
+            <div id="card-grid"></div>
         </div>
-    </div>
 
-    <!-- Grid Container -->
-    <div id="game-grid" class="grid gap-2 w-full max-w-sm mx-auto" style="max-height: 58dvh;"></div>
+        <!-- 底部：貓頭鷹博士夥伴與魔法技能按鈕 -->
+        <div id="bottom-bar">
+            <div class="owl-companion">
+                <img src="/images/monsters/new/clock_owl.png" alt="貓頭鷹博士">
+                <span id="owl-speech">先記住卡片位置，連續配對有驚喜喔！</span>
+            </div>
 
-    <!-- Start / Game Over Overlay -->
-    <div id="overlay" class="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
-        <div class="text-center px-4">
-            <div class="text-6xl mb-6">🧠</div>
-            <h2 id="overlay-title" class="text-3xl sm:text-4xl font-bold text-white mb-4">READY?</h2>
-            <p id="overlay-msg" class="text-cyan-200 mb-2">記住圖案的位置！</p>
-            <p id="overlay-sub" class="text-cyan-400/70 text-sm mb-8">找出所有配對的卡片</p>
-            <button onclick="startGame()"
-                class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-12 rounded-full shadow-lg shadow-cyan-500/50 transition-all hover:scale-105">
-                START
-            </button>
+            <div class="skills-group">
+                <button class="skill-btn" id="peek-btn" onclick="usePeekSkill()">
+                    <span>👁️ 透視</span>
+                    <span id="peek-count">(2)</span>
+                </button>
+                <button class="skill-btn" id="hint-btn" onclick="useHintSkill()">
+                    <span>⚡ 提示</span>
+                    <span id="hint-count">(1)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 畫面中央短暫提示橫幅 -->
+        <div id="center-toast">
+            <div class="toast-main" id="toast-main">🃏 第 1 關：星光記憶試煉</div>
+            <div class="toast-sub" id="toast-sub">趁現在記住怪獸卡片的位置！</div>
+        </div>
+
+        <!-- 彈出視窗（開始 / 暫停 / 結算） -->
+        <div class="overlay-modal" id="modal-overlay">
+            <div class="modal-card">
+                <div class="modal-badge" id="modal-badge">🧠 怪獸星光占卜館</div>
+                <div class="modal-title" id="modal-title">怪獸星光圖鑑翻翻樂</div>
+                <div class="modal-desc" id="modal-desc">
+                    翻開燙金星光卡，找出成對的 Voxel 怪獸夥伴！<br>
+                    卡關時可點下方 <strong>👁️ 透視偷看</strong> 或 <strong>⚡ 星光提示</strong>，翻出 <strong>🎁 黃金寶箱對卡</strong> 還能直接拿星幣！
+                </div>
+
+                <div id="setup-section">
+                    <div class="section-label">✨ 選擇圖鑑配對模式：</div>
+                    <div class="mode-picker" id="mode-picker">
+                        <button class="mode-btn selected" data-mode="twin">
+                            <div class="m-title">🐾 經典雙胞胎</div>
+                            <div class="m-sub">找出兩張相同的怪獸卡</div>
+                        </button>
+                        <button class="mode-btn" data-mode="evo">
+                            <div class="m-title">✨ 進化羈絆配對</div>
+                            <div class="m-sub">幼年怪獸 ↔ 進化型態</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="modal-stats" style="display: none;">
+                    <div class="stat-box">
+                        <div class="lbl">闖關進度 / 最高連擊</div>
+                        <div class="val" id="stat-stage">第 5 關</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="lbl">獲得星幣獎勵</div>
+                        <div class="val" id="stat-stars">⭐ +0</div>
+                    </div>
+                </div>
+
+                <button class="primary-btn" id="modal-primary-btn">🃏 開始星光翻牌</button>
+                <button class="secondary-btn" id="modal-secondary-btn" style="display: none;">🔄 重新開始</button>
+            </div>
         </div>
     </div>
 
     <script>
-        const grid = document.getElementById('game-grid');
-        const overlay = document.getElementById('overlay');
-        const timeDisplay = document.getElementById('time-display');
-        const levelDisplay = document.getElementById('level-display');
-        const pairsDisplay = document.getElementById('pairs-display');
-        const cycleBadge = document.getElementById('cycle-badge');
+        // ====================================================
+        // 怪獸星光圖鑑翻翻樂（Voxel 圖鑑卡・進化配對・自動行列轉置版）
+        // ====================================================
+        const cardGrid = document.getElementById('card-grid');
+        const TOTAL_STAGES = 5;
 
-        // Extended icon set for more variety across cycles
-        const ICON_SETS = [
-            ['🚀', '👾', '💎', '🥝', '🎸', '🧬', '🔮', '🧸', '🌈', '🍕'],
-            ['🐱', '🦄', '⭐', '🔥', '⚡', '❄️', '🎯', '🎨', '🎭', '🎪'],
-            ['🌸', '🌺', '🌻', '🍀', '🌙', '☀️', '🌊', '⛰️', '🏝️', '🌵'],
-            ['🦋', '🐝', '🐞', '🦎', '🐙', '🦀', '🦈', '🐬', '🦩', '🦚'],
-            ['🍎', '🍊', '🍋', '🍇', '🍓', '🥑', '🍩', '🍪', '🧁', '🍰']
+        // 12 組精選 Voxel 怪獸家族（含幼年名稱、進化名稱與卡片色系）
+        const MONSTER_FAMILIES = [
+            { id: 'penguin_knight', baseName: '企鵝騎士', evoName: '冰晶企鵝王', color: '#38bdf8', glow: 'rgba(56, 189, 248, 0.35)' },
+            { id: 'temple_cat', baseName: '神殿招財貓', evoName: '法老聖貓神', color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.35)' },
+            { id: 'rainbow_snail', baseName: '彩虹蝸牛', evoName: '極光水晶蝸', color: '#f472b6', glow: 'rgba(244, 114, 182, 0.35)' },
+            { id: 'comet_fox', baseName: '彗星狐', evoName: '九尾星狐仙', color: '#c084fc', glow: 'rgba(192, 132, 252, 0.35)' },
+            { id: 'astro_turtle', baseName: '太空龜', evoName: '星艦玄武號', color: '#34d399', glow: 'rgba(52, 211, 153, 0.35)' },
+            { id: 'thunder_mouse', baseName: '雷電鼠', evoName: '雷霆電擊王', color: '#facc15', glow: 'rgba(250, 204, 21, 0.35)' },
+            { id: 'balloon_pup', baseName: '氣球小狗', evoName: '飛艇貴賓犬', color: '#fb7185', glow: 'rgba(251, 113, 133, 0.35)' },
+            { id: 'mushroom_kin', baseName: '小蘑菇', evoName: '森林蘑菇王', color: '#4ade80', glow: 'rgba(74, 222, 128, 0.35)' },
+            { id: 'moon_bunny', baseName: '月光兔', evoName: '廣寒玉兔仙', color: '#818cf8', glow: 'rgba(129, 140, 248, 0.35)' },
+            { id: 'phoenix_chick', baseName: '火鳳雛', evoName: '烈焰不死鳥', color: '#fb923c', glow: 'rgba(251, 146, 60, 0.35)' }
         ];
 
-        // Flatten all icons for use
-        const ALL_ICONS = ICON_SETS.flat();
+        // 5 關配置（根據螢幕橫直向自動轉置 cols 與 rows！）
+        const STAGE_CONFIGS = [
+            { pairs: 4, landscape: [4, 2], portrait: [2, 4], time: 35, previewMs: 2200 },
+            { pairs: 6, landscape: [4, 3], portrait: [3, 4], time: 45, previewMs: 2600 },
+            { pairs: 8, landscape: [4, 4], portrait: [4, 4], time: 55, previewMs: 3000 },
+            { pairs: 10, landscape: [5, 4], portrait: [4, 5], time: 65, previewMs: 3400 },
+            { pairs: 10, landscape: [5, 4], portrait: [4, 5], time: 60, previewMs: 3200 }
+        ];
 
-        let state = {
-            level: 1,
-            cycle: 1, // Cycle number (restarts card count but with new icons)
-            timeLeft: 60,
-            cards: [],
-            firstCard: null,
-            isLocked: false,
-            timer: null,
-            cols: 4,
-            rows: 2,
-            matchedPairs: 0,
-            totalPairs: 0
-        };
-
-        // Layout progression with visual balance in mind
-        // Max is 5x4 (20 cards = 10 pairs), then cycle restarts
-        function getLayout(level) {
-            const layouts = [
-                { rows: 2, cols: 4, time: 25, pairs: 4 },   // Level 1: 2x4 = 8 cards (4 pairs) - 更寬的佈局
-                { rows: 3, cols: 4, time: 35, pairs: 6 },   // Level 2: 3x4 = 12 cards (6 pairs)
-                { rows: 4, cols: 4, time: 45, pairs: 8 },   // Level 3: 4x4 = 16 cards (8 pairs)
-                { rows: 4, cols: 5, time: 55, pairs: 10 },  // Level 4: 4x5 = 20 cards (10 pairs) - MAX
-                { rows: 4, cols: 5, time: 50, pairs: 10 },  // Level 5+: 維持 4x5，時間稍減
-            ];
-
-            // After level 4, keep max layout but cycle with different icons
-            if (level <= 4) {
-                return layouts[level - 1];
-            } else {
-                // Level 5+: Use last layout with decreasing time (more challenging)
-                const baseLayout = layouts[4];
-                const extraLevels = level - 4;
-                return {
-                    ...baseLayout,
-                    time: Math.max(35, baseLayout.time - (extraLevels * 3)) // Reduce time gradually, min 35s
-                };
+        // 輕量音效合成器
+        class SoundFX {
+            constructor() { this.ctx = null; }
+            init() {
+                if (!this.ctx) {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if (AC) this.ctx = new AC();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            }
+            tone(freq, type = 'sine', dur = 0.11, vol = 0.12, slide = null) {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    if (slide) osc.frequency.exponentialRampToValueAtTime(slide, this.ctx.currentTime + dur);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + dur);
+                } catch (e) {}
+            }
+            flip() { this.tone(420, 'sine', 0.08, 0.09, 640); }
+            match(combo = 1) {
+                const base = Math.min(980, 520 + combo * 75);
+                this.tone(base, 'triangle', 0.14, 0.14, base * 1.35);
+            }
+            miss() { this.tone(240, 'sine', 0.14, 0.08, 170); }
+            magic() {
+                [523, 659, 784, 1046].forEach((f, i) => {
+                    setTimeout(() => this.tone(f, 'triangle', 0.13, 0.12), i * 45);
+                });
+            }
+            win() {
+                [523, 659, 784, 1046].forEach((f, i) => {
+                    setTimeout(() => this.tone(f, 'triangle', 0.2, 0.14), i * 85);
+                });
             }
         }
+        const sfx = new SoundFX();
 
-        function getCycleNumber(level) {
-            if (level <= 4) return 1;
-            return Math.floor((level - 1) / 4) + 1;
+        // 遊戲狀態
+        let matchMode = 'twin'; // 'twin' | 'evo'
+        let gameState = 'menu'; // 'menu' | 'preview' | 'playing' | 'paused' | 'gameover' | 'victory'
+        let stage = 1;
+        let score = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let matchedPairs = 0;
+        let totalPairs = 4;
+        let timeLeft = 35;
+        let maxTime = 35;
+        let peekUses = 2;
+        let hintUses = 1;
+        let starsEarnedThisRun = 0;
+
+        let cards = [];
+        let firstPicked = null;
+        let isBoardLocked = false;
+        let timerInterval = null;
+
+        // Toast 控制
+        let toastTimeout = null;
+        function showCenterToast(mainText, subText = '', duration = 1600) {
+            const toast = document.getElementById('center-toast');
+            document.getElementById('toast-main').textContent = mainText;
+            document.getElementById('toast-sub').textContent = subText;
+            toast.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
         }
 
-        function getIconsForLevel(level, pairCount) {
-            const cycle = getCycleNumber(level);
-            // Use different icon sets based on cycle number
-            const startIndex = ((cycle - 1) * 10) % ALL_ICONS.length;
-            const available = [];
-
-            // Collect enough icons, wrapping around if needed
-            for (let i = 0; i < pairCount; i++) {
-                available.push(ALL_ICONS[(startIndex + i) % ALL_ICONS.length]);
-            }
-            return available;
+        function setOwlSpeech(text) {
+            document.getElementById('owl-speech').textContent = text;
         }
 
-        function startGame() {
-            state.level = 1;
-            state.cycle = 1;
-            startLevel();
+        function awardStarCoins(amount) {
+            if (amount <= 0) return;
+            starsEarnedThisRun += amount;
+            try {
+                window.parent.postMessage({ type: 'QUESTMON_EARN_STARS', amount }, '*');
+            } catch (e) {}
+            updateHUD();
         }
 
-        function startLevel() {
-            const layout = getLayout(state.level);
-            const cycle = getCycleNumber(state.level);
+        function updateHUD() {
+            document.getElementById('stage-label').textContent = `第 ${stage} / ${TOTAL_STAGES} 關 ・ 配對 ${matchedPairs}/${totalPairs}`;
+            document.getElementById('stars-text').textContent = starsEarnedThisRun;
+            document.getElementById('score-text').textContent = score;
 
-            state.rows = layout.rows;
-            state.cols = layout.cols;
-            state.timeLeft = layout.time;
-            state.firstCard = null;
-            state.isLocked = true;
-            state.matchedPairs = 0;
-            state.totalPairs = layout.pairs;
-            state.cycle = cycle;
+            const pct = Math.max(0, Math.min(100, (timeLeft / maxTime) * 100));
+            document.getElementById('timer-bar-fill').style.width = `${pct}%`;
+            document.getElementById('time-text').textContent = `${Math.ceil(timeLeft)}s`;
 
-            levelDisplay.innerText = state.level;
-            timeDisplay.innerText = state.timeLeft;
-            pairsDisplay.innerText = `0/${state.totalPairs}`;
+            document.getElementById('peek-count').textContent = `(${peekUses})`;
+            document.getElementById('peek-btn').disabled = (peekUses <= 0 || gameState !== 'playing');
 
-            // Show cycle badge if cycle > 1
-            if (cycle > 1) {
-                cycleBadge.classList.remove('hidden');
-                cycleBadge.innerText = `Cycle ${cycle}`;
-            } else {
-                cycleBadge.classList.add('hidden');
-            }
+            document.getElementById('hint-count').textContent = `(${hintUses})`;
+            document.getElementById('hint-btn').disabled = (hintUses <= 0 || gameState !== 'playing');
+        }
 
-            overlay.classList.add('hidden');
+        // 根據螢幕橫直向動態轉置網格欄列數，確保手機與平板都 100% 滿版不溢出
+        function applyResponsiveGridLayout() {
+            const cfg = STAGE_CONFIGS[Math.min(stage - 1, STAGE_CONFIGS.length - 1)];
+            const boardEl = document.getElementById('board-area');
+            const isPortrait = boardEl.clientHeight > boardEl.clientWidth * 1.05;
+            const [cols, rows] = isPortrait ? cfg.portrait : cfg.landscape;
 
-            // Generate Cards with level-appropriate icons
-            const pairCount = (state.rows * state.cols) / 2;
-            const selectedIcons = getIconsForLevel(state.level, pairCount);
-            const cardValues = [...selectedIcons, ...selectedIcons];
+            cardGrid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+            cardGrid.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
+        }
+        window.addEventListener('resize', applyResponsiveGridLayout);
 
-            // Shuffle (Fisher-Yates)
-            for (let i = cardValues.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [cardValues[i], cardValues[j]] = [cardValues[j], cardValues[i]];
-            }
+        // 建立本關卡片
+        function buildStageCards(lvl) {
+            const cfg = STAGE_CONFIGS[Math.min(lvl - 1, STAGE_CONFIGS.length - 1)];
+            totalPairs = cfg.pairs;
+            matchedPairs = 0;
+            maxTime = cfg.time;
+            timeLeft = cfg.time;
+            peekUses = 2;
+            hintUses = 1;
+            firstPicked = null;
+            isBoardLocked = true;
+            gameState = 'preview';
 
-            // Render Grid
-            grid.innerHTML = '';
-            grid.style.gridTemplateColumns = `repeat(${state.cols}, 1fr)`;
+            // 挑選本關登場的怪獸家族
+            const shuffledFamilies = [...MONSTER_FAMILIES].sort(() => Math.random() - 0.5);
+            const includeTreasure = lvl >= 2;
+            const monsterPairCount = includeTreasure ? totalPairs - 1 : totalPairs;
+            const chosen = shuffledFamilies.slice(0, monsterPairCount);
 
-            state.cards = cardValues.map((icon, index) => {
-                const el = document.createElement('div');
-                el.className = 'card-container aspect-square';
-                el.innerHTML = `
-                    <div class="card flipped" data-index="${index}">
-                        <div class="card-face card-back text-2xl">?</div>
-                        <div class="card-face card-front">${icon}</div>
-                    </div>
-                `;
-                el.querySelector('.card').onclick = () => handleCardClick(index);
-                grid.appendChild(el);
-                return { id: index, icon, flipped: true, matched: false, element: el.querySelector('.card') };
+            const deckSpecs = [];
+            chosen.forEach((fam, idx) => {
+                const badgeText = `#${idx + 1}`;
+                // 第一張：幼年怪獸
+                deckSpecs.push({
+                    pairKey: fam.id,
+                    badge: badgeText,
+                    name: fam.baseName,
+                    img: `/images/monsters/new/${fam.id}.png`,
+                    color: fam.color,
+                    glow: fam.glow,
+                    isTreasure: false
+                });
+                // 第二張：若為進化羈絆模式則使用 evo 圖片與進化名稱
+                deckSpecs.push({
+                    pairKey: fam.id,
+                    badge: badgeText,
+                    name: matchMode === 'evo' ? fam.evoName : fam.baseName,
+                    img: matchMode === 'evo'
+                        ? `/images/monsters/evo/${fam.id}.png`
+                        : `/images/monsters/new/${fam.id}.png`,
+                    color: fam.color,
+                    glow: fam.glow,
+                    isTreasure: false
+                });
             });
 
-            // Preview Phase - show all cards briefly
-            const previewTime = Math.min(2000 + (pairCount * 100), 4000); // More pairs = more preview time, max 4s
-            setTimeout(() => {
-                state.cards.forEach(c => {
-                    c.flipped = false;
-                    c.element.classList.remove('flipped');
-                });
-                state.isLocked = false;
-                startTimer();
-            }, previewTime);
-        }
-
-        function handleCardClick(index) {
-            if (state.isLocked) return;
-            const card = state.cards[index];
-            if (card.flipped || card.matched) return;
-
-            // Flip card
-            card.flipped = true;
-            card.element.classList.add('flipped');
-
-            if (!state.firstCard) {
-                state.firstCard = card;
-            } else {
-                checkForMatch(state.firstCard, card);
-                state.firstCard = null;
-            }
-        }
-
-        function checkForMatch(card1, card2) {
-            state.isLocked = true;
-
-            if (card1.icon === card2.icon) {
-                // Match!
-                card1.matched = true;
-                card2.matched = true;
-                state.matchedPairs++;
-                pairsDisplay.innerText = `${state.matchedPairs}/${state.totalPairs}`;
-
-                setTimeout(() => {
-                    card1.element.classList.add('matched');
-                    card2.element.classList.add('matched');
-                    state.isLocked = false;
-
-                    if (state.cards.every(c => c.matched)) {
-                        levelComplete();
-                    }
-                }, 300);
-            } else {
-                // No match - flip back
-                setTimeout(() => {
-                    card1.flipped = false;
-                    card2.flipped = false;
-                    card1.element.classList.remove('flipped');
-                    card2.element.classList.remove('flipped');
-                    state.isLocked = false;
-                }, 800);
-            }
-        }
-
-        function startTimer() {
-            if (state.timer) clearInterval(state.timer);
-            state.timer = setInterval(() => {
-                state.timeLeft--;
-                timeDisplay.innerText = state.timeLeft;
-                if (state.timeLeft <= 0) {
-                    gameOver();
+            // 第 2 關起加入一組「🎁 黃金寶箱對卡」
+            if (includeTreasure) {
+                for (let k = 0; k < 2; k++) {
+                    deckSpecs.push({
+                        pairKey: 'treasure_chest',
+                        badge: '🎁 寶箱',
+                        name: '黃金星幣箱',
+                        img: '/images/monsters/new/gold_mimic.png',
+                        color: '#facc15',
+                        glow: 'rgba(250, 204, 21, 0.45)',
+                        isTreasure: true
+                    });
                 }
-            }, 1000);
+            }
+
+            // 洗牌
+            for (let i = deckSpecs.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deckSpecs[i], deckSpecs[j]] = [deckSpecs[j], deckSpecs[i]];
+            }
+
+            cardGrid.innerHTML = '';
+            applyResponsiveGridLayout();
+
+            cards = deckSpecs.map((spec, index) => {
+                const slot = document.createElement('div');
+                slot.className = 'card-slot';
+                slot.innerHTML = `
+                    <div class="card-inner flipped" style="--card-border: ${spec.color}; --card-glow: ${spec.glow};">
+                        <div class="card-face card-back">
+                            <div class="paw-emblem">🐾</div>
+                        </div>
+                        <div class="card-face card-front">
+                            <span class="pair-badge">${spec.badge}</span>
+                            <img class="monster-sprite" src="${spec.img}" alt="${spec.name}">
+                            <div class="card-name">${spec.name}</div>
+                        </div>
+                    </div>
+                `;
+                const innerEl = slot.querySelector('.card-inner');
+                innerEl.addEventListener('click', () => onCardClicked(index));
+                cardGrid.appendChild(slot);
+
+                return {
+                    index,
+                    spec,
+                    flipped: true,
+                    matched: false,
+                    el: innerEl
+                };
+            });
+
+            updateHUD();
+            setOwlSpeech('快趁現在記住每隻怪獸的位置喔！');
+            showCenterToast(`🃏 第 ${lvl} 關：預覽記憶時間`, matchMode === 'evo' ? '配對相同編號的「幼年 ↔ 進化怪獸」！' : '記住相同怪獸的位置！', cfg.previewMs - 200);
+
+            setTimeout(() => {
+                if (gameState !== 'preview') return;
+                cards.forEach(c => {
+                    c.flipped = false;
+                    c.el.classList.remove('flipped');
+                });
+                isBoardLocked = false;
+                gameState = 'playing';
+                setOwlSpeech('開始翻牌！卡關時可以用右下角的 👁️ 透視或 ⚡ 提示！');
+                updateHUD();
+            }, cfg.previewMs);
         }
 
-        function levelComplete() {
-            clearInterval(state.timer);
+        function onCardClicked(index) {
+            if (gameState !== 'playing' || isBoardLocked) return;
+            const card = cards[index];
+            if (!card || card.flipped || card.matched) return;
 
-            // No max level - game continues infinitely
-            state.level++;
+            sfx.init();
+            sfx.flip();
+            card.flipped = true;
+            card.el.classList.add('flipped');
 
-            // Show brief celebration, then continue
-            const nextLayout = getLayout(state.level);
-            const nextCycle = getCycleNumber(state.level);
-
-            if (nextCycle > state.cycle) {
-                // New cycle - show special message
-                showTransition(`🎉 CYCLE ${nextCycle}!`, `新的圖案挑戰！`, () => {
-                    startLevel();
-                });
+            if (!firstPicked) {
+                firstPicked = card;
             } else {
-                // Same cycle - quick transition
-                setTimeout(startLevel, 800);
+                const c1 = firstPicked;
+                const c2 = card;
+                firstPicked = null;
+                evaluatePair(c1, c2);
             }
         }
 
-        function showTransition(title, msg, callback) {
-            overlay.classList.remove('hidden');
-            document.getElementById('overlay-title').innerText = title;
-            document.getElementById('overlay-msg').innerText = msg;
-            document.getElementById('overlay-sub').innerText = '準備好了嗎？';
+        function evaluatePair(c1, c2) {
+            isBoardLocked = true;
 
-            // Auto-continue after 2 seconds
+            if (c1.spec.pairKey === c2.spec.pairKey) {
+                // 配對成功！
+                c1.matched = true;
+                c2.matched = true;
+                matchedPairs++;
+                combo++;
+                maxCombo = Math.max(maxCombo, combo);
+                sfx.match(combo);
+
+                const gain = 50 + combo * 25;
+                score += gain;
+
+                setTimeout(() => {
+                    c1.el.classList.add('matched');
+                    c2.el.classList.add('matched');
+                    isBoardLocked = false;
+
+                    if (c1.spec.isTreasure) {
+                        timeLeft = Math.min(maxTime, timeLeft + 8);
+                        awardStarCoins(1);
+                        showCenterToast('🎁 翻出黃金寶箱對卡！', '獲得 ⭐+1 星幣 與 +8 秒時間！', 1450);
+                        setOwlSpeech('太幸運了！找到黃金星幣寶箱！');
+                    } else if (combo >= 2) {
+                        setOwlSpeech(`🔥 太強了！連續配對 COMBO x${combo}！`);
+                    } else {
+                        setOwlSpeech(`✨ 配對成功！是「${c2.spec.name}」！`);
+                    }
+
+                    updateHUD();
+
+                    // 若達成 3 連擊且場上還有至少 2 組未翻開，自動觸發星光共鳴幫配對 1 組！
+                    if (combo === 3 && (totalPairs - matchedPairs) >= 2) {
+                        showCenterToast('⚡ 3 連擊星光共鳴！', '自動為你點亮配對 1 組怪獸卡！', 1400);
+                        setTimeout(() => autoMatchOnePair(), 320);
+                        return;
+                    }
+
+                    checkStageClear();
+                }, 240);
+            } else {
+                // 配對失敗，蓋回卡片
+                combo = 0;
+                sfx.miss();
+                setOwlSpeech('差一點點！記住這兩張牌的位置，繼續加油！');
+                setTimeout(() => {
+                    c1.flipped = false;
+                    c2.flipped = false;
+                    c1.el.classList.remove('flipped');
+                    c2.el.classList.remove('flipped');
+                    isBoardLocked = false;
+                }, 720);
+            }
+        }
+
+        // 技能 1：👁️ 透視偷看（全場蓋著的牌同時翻開 1.4 秒）
+        window.usePeekSkill = function() {
+            if (gameState !== 'playing' || isBoardLocked || peekUses <= 0) return;
+            sfx.init();
+            sfx.magic();
+            peekUses--;
+            isBoardLocked = true;
+            updateHUD();
+
+            setOwlSpeech('👁️ 發動星光透視鏡！快看清楚它們在哪裡！');
+            cards.forEach(c => {
+                if (!c.matched && !c.flipped) {
+                    c.el.classList.add('peeking');
+                }
+            });
+
             setTimeout(() => {
-                overlay.classList.add('hidden');
-                callback();
-            }, 2000);
+                cards.forEach(c => {
+                    c.el.classList.remove('peeking');
+                });
+                isBoardLocked = false;
+            }, 1450);
+        };
+
+        // 技能 2：⚡ 星光提示（直接幫玩家自動配對消除 1 組卡片）
+        window.useHintSkill = function() {
+            if (gameState !== 'playing' || isBoardLocked || hintUses <= 0) return;
+            sfx.init();
+            hintUses--;
+            updateHUD();
+            setOwlSpeech('⚡ 星光指引！幫你直接配對一組怪獸夥伴！');
+            autoMatchOnePair();
+        };
+
+        function autoMatchOnePair() {
+            if (gameState !== 'playing') return;
+            // 若玩家正翻開第一張，優先找它的另一半；否則找場上任意一組未配對的卡片
+            let targetKey = firstPicked ? firstPicked.spec.pairKey : null;
+            if (!targetKey) {
+                const unmatched = cards.filter(c => !c.matched);
+                if (unmatched.length < 2) return;
+                targetKey = unmatched[0].spec.pairKey;
+            }
+
+            const pairCards = cards.filter(c => !c.matched && c.spec.pairKey === targetKey);
+            if (pairCards.length === 2) {
+                firstPicked = null;
+                pairCards.forEach(c => {
+                    c.flipped = true;
+                    c.el.classList.add('flipped');
+                });
+                sfx.magic();
+                evaluatePair(pairCards[0], pairCards[1]);
+            }
         }
 
-        function gameOver() {
-            clearInterval(state.timer);
-            const cycle = getCycleNumber(state.level);
-            const cycleText = cycle > 1 ? ` (Cycle ${cycle})` : '';
-            showOverlay("GAME OVER", `最高達到 Level ${state.level}${cycleText}`);
+        function checkStageClear() {
+            if (matchedPairs < totalPairs) return;
+            gameState = 'paused';
+            awardStarCoins(1); // 每過一關獲得 1 顆星幣
+
+            if (stage >= TOTAL_STAGES) {
+                setTimeout(() => triggerVictory(), 450);
+            } else {
+                stage++;
+                showCenterToast(`🎉 第 ${stage - 1} 關完成！⭐+1`, `準備進入第 ${stage} 關...`, 1400);
+                setTimeout(() => {
+                    buildStageCards(stage);
+                }, 1450);
+            }
         }
 
-        function showOverlay(title, msg) {
-            overlay.classList.remove('hidden');
-            document.getElementById('overlay-title').innerText = title;
-            document.getElementById('overlay-msg').innerText = msg;
-            document.getElementById('overlay-sub').innerText = '再挑戰一次？';
+        // 計時迴圈
+        function startGlobalTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (gameState !== 'playing') return;
+                timeLeft = Math.max(0, timeLeft - 0.2);
+                updateHUD();
+                if (timeLeft <= 0) {
+                    triggerGameOver();
+                }
+            }, 200);
         }
+
+        // 選單與流程控制
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalBadge = document.getElementById('modal-badge');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+        const setupSection = document.getElementById('setup-section');
+        const modalStats = document.getElementById('modal-stats');
+        const primaryBtn = document.getElementById('modal-primary-btn');
+        const secondaryBtn = document.getElementById('modal-secondary-btn');
+
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                matchMode = btn.dataset.mode;
+            });
+        });
+
+        function startNewGame() {
+            sfx.init();
+            stage = 1;
+            score = 0;
+            combo = 0;
+            maxCombo = 0;
+            starsEarnedThisRun = 0;
+            modalOverlay.classList.add('hidden');
+            buildStageCards(stage);
+            startGlobalTimer();
+        }
+
+        function togglePause() {
+            if (gameState === 'playing') {
+                gameState = 'paused';
+                modalBadge.textContent = '⏸️ 遊戲暫停';
+                modalTitle.textContent = '休息一下，要切換配對模式嗎？';
+                modalDesc.innerHTML = '隨時可以切換「經典雙胞胎」或「進化羈絆配對」重新挑戰！';
+                setupSection.style.display = 'block';
+                modalStats.style.display = 'none';
+                primaryBtn.textContent = '▶️ 繼續翻牌';
+                primaryBtn.onclick = () => {
+                    modalOverlay.classList.add('hidden');
+                    gameState = 'playing';
+                    updateHUD();
+                };
+                secondaryBtn.style.display = 'block';
+                secondaryBtn.textContent = '🔄 重新開始本局';
+                secondaryBtn.onclick = startNewGame;
+                modalOverlay.classList.remove('hidden');
+            } else if (gameState === 'paused') {
+                modalOverlay.classList.add('hidden');
+                gameState = 'playing';
+                updateHUD();
+            }
+        }
+
+        function triggerVictory() {
+            gameState = 'victory';
+            sfx.win();
+            awardStarCoins(3);
+            modalBadge.textContent = '🏆 星光記憶大師';
+            modalTitle.textContent = '恭喜突破全部 5 關星光試煉！';
+            modalDesc.innerHTML = '你的記憶力超群，把所有怪獸與進化圖鑑都配對完成了！';
+            setupSection.style.display = 'block';
+            modalStats.style.display = 'grid';
+            document.getElementById('stat-stage').textContent = `5 關全破 (連擊 ${maxCombo})`;
+            document.getElementById('stat-stars').textContent = `⭐ +${starsEarnedThisRun}`;
+
+            primaryBtn.textContent = '🔄 再玩一局';
+            primaryBtn.onclick = startNewGame;
+            secondaryBtn.style.display = 'none';
+            modalOverlay.classList.remove('hidden');
+        }
+
+        function triggerGameOver() {
+            gameState = 'gameover';
+            modalBadge.textContent = '⏳ 時間到囉';
+            modalTitle.textContent = '別氣餒，再來挑戰一次！';
+            modalDesc.innerHTML = '記得善用右下角的 <strong>👁️ 透視偷看</strong> 與 <strong>⚡ 星光提示</strong>，過關更輕鬆喔！';
+            setupSection.style.display = 'block';
+            modalStats.style.display = 'grid';
+            document.getElementById('stat-stage').textContent = `第 ${stage} 關 (連擊 ${maxCombo})`;
+            document.getElementById('stat-stars').textContent = `⭐ +${starsEarnedThisRun}`;
+
+            primaryBtn.textContent = '🃏 再挑戰一次';
+            primaryBtn.onclick = startNewGame;
+            secondaryBtn.style.display = 'none';
+            modalOverlay.classList.remove('hidden');
+        }
+
+        document.getElementById('pause-btn').addEventListener('click', togglePause);
+        primaryBtn.onclick = startNewGame;
+
+        // 初始化預覽牌桌
+        buildStageCards(1);
+        gameState = 'menu';
     </script>
 </body>
 
