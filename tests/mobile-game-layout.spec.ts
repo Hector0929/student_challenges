@@ -76,11 +76,18 @@ test.describe('Mobile game layout smoke tests', () => {
     test('fun game (bubble shooter) keeps square board visible on mobile', async ({ page }) => {
         await page.goto('/games/bubble_shooter.html');
 
-        const overflowY = await page.evaluate(() => getComputedStyle(document.body).overflowY);
-        expect(['auto', 'scroll']).toContain(overflowY);
-
+        // 全螢幕畫布、不捲動：整個棋盤必須完整落在可視範圍內
         await expect(page.locator('#gameCanvas')).toBeVisible();
         await expect(page.locator('#menu-screen')).toBeVisible();
+
+        const box = await page.locator('#gameCanvas').boundingBox();
+        const viewport = page.viewportSize();
+        expect(box).not.toBeNull();
+        expect(viewport).not.toBeNull();
+        expect(box!.x).toBeGreaterThanOrEqual(0);
+        expect(box!.y).toBeGreaterThanOrEqual(0);
+        expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width + 1);
+        expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height + 1);
     });
 
     test('learning game (multiplication) keeps numpad reachable on mobile', async ({ page }) => {

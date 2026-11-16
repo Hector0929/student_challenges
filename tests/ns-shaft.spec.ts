@@ -18,8 +18,8 @@ test.describe('NS Shaft (怪獸下樓梯) Regression & Smoke Tests', () => {
 
         await page.click('#btn-start');
 
-        await expect(page.locator('#hud')).toBeVisible();
-        await expect(page.locator('#floor-display')).toHaveText('第 1 層');
+        await expect(page.locator('#top-right-hud')).toBeVisible();
+        await expect(page.locator('#menu-modal')).toBeHidden();
 
         const isRunning = await page.evaluate(() => {
             const hook = (window as unknown as { __shaft?: { state: { running: boolean } } }).__shaft;
@@ -40,16 +40,23 @@ test.describe('NS Shaft (怪獸下樓梯) Regression & Smoke Tests', () => {
         await expect(page.locator('#menu-stars')).toHaveText('⭐ 7');
     });
 
-    test('controls mode toggle switches between drag and on-screen buttons', async ({ page }) => {
+    test('keyboard moves the player and pause button opens the pause menu', async ({ page }) => {
         await page.goto('/games/ns_shaft.html?userId=kid-bob');
-
-        const toggleBtn = page.locator('#btn-toggle-ctrl');
-        await expect(toggleBtn).toHaveText(/單指滑動/);
-
-        await toggleBtn.click();
-        await expect(toggleBtn).toHaveText(/左右按鈕/);
-
         await page.click('#btn-start');
-        await expect(page.locator('#btn-controls')).toBeVisible();
+
+        type Hook = { __shaft: { player: { x: number }; state: { paused: boolean } } };
+        const startX = await page.evaluate(() => (window as unknown as Hook).__shaft.player.x);
+        await page.keyboard.down('ArrowLeft');
+        await page.waitForTimeout(400);
+        await page.keyboard.up('ArrowLeft');
+        const endX = await page.evaluate(() => (window as unknown as Hook).__shaft.player.x);
+        expect(endX).toBeLessThan(startX);
+
+        await page.click('#btn-pause');
+        await expect(page.locator('#pause-modal')).toBeVisible();
+        expect(await page.evaluate(() => (window as unknown as Hook).__shaft.state.paused)).toBe(true);
+
+        await page.click('#btn-resume');
+        await expect(page.locator('#pause-modal')).toBeHidden();
     });
 });
