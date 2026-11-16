@@ -4,456 +4,1363 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Breaker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <title>怪獸寶石打磚塊</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Orbitron', sans-serif;
-            background-color: #050510;
-            overflow-x: hidden;
-            overflow-y: auto;
-            touch-action: manipulation;
-            min-height: 100vh;
-            min-height: 100dvh;
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
-        .neon-text {
-            text-shadow: 0 0 10px #f472b6, 0 0 20px #f472b6;
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            font-family: 'Noto Sans TC', 'Fredoka', sans-serif;
+            background: radial-gradient(circle at 50% 30%, #3b0764 0%, #1e1b4b 55%, #090518 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
         }
 
-        .neon-border {
-            box-shadow: 0 0 10px #f472b6, inset 0 0 10px #f472b6;
-            border: 2px solid #f472b6;
+        /* 單一置中水晶礦坑畫框（手機直向自動 100% 滿版） */
+        #stage-frame {
+            position: relative;
+            width: min(96vw, 720px);
+            height: min(94dvh, 650px);
+            background: #130b2e;
+            border-radius: 26px;
+            border: 4px solid #7e22ce;
+            box-shadow:
+                0 18px 45px rgba(0, 0, 0, 0.75),
+                0 0 28px rgba(168, 85, 247, 0.35),
+                inset 0 0 0 2px rgba(216, 180, 254, 0.25);
+            overflow: hidden;
+        }
+
+        @media (max-width: 640px) {
+            #stage-frame {
+                width: 100vw;
+                height: 100dvh;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+            }
         }
 
         canvas {
-            image-rendering: pixelated;
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* 頂部專屬留白 HUD（高度獨立於磚塊區上方，絕不遮擋任何磚塊） */
+        #top-hud {
+            position: absolute;
+            top: 10px;
+            left: 12px;
+            right: 12px;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .hud-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            pointer-events: auto;
+        }
+
+        .hud-pill {
+            background: rgba(15, 23, 42, 0.84);
+            backdrop-filter: blur(6px);
+            border: 1.5px solid rgba(216, 180, 254, 0.4);
+            border-radius: 999px;
+            padding: 4px 11px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            font-weight: 900;
+            font-size: clamp(11px, 2.8vw, 13px);
+            color: #fff;
+            white-space: nowrap;
+        }
+
+        #hp-hearts {
+            font-size: clamp(12px, 3vw, 14px);
+            letter-spacing: 1px;
+            line-height: 1;
+        }
+
+        #pause-btn {
+            background: rgba(30, 41, 59, 0.88);
+            border: 1.5px solid rgba(216, 180, 254, 0.5);
+            color: #fff;
+            border-radius: 999px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 13px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+            transition: transform 0.1s;
+        }
+
+        #pause-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* 底部大拇指防遮擋滑軌區（手指在最底部滑動，完全不擋上方的怪獸滑板與球） */
+        #thumb-track {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(92%, 480px);
+            height: 38px;
+            border-radius: 999px;
+            background: rgba(30, 27, 75, 0.68);
+            border: 1.5px dashed rgba(165, 180, 252, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: clamp(11px, 2.8vw, 12.5px);
+            font-weight: 800;
+            color: rgba(224, 231, 255, 0.85);
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        /* 畫面中央短暫提示橫幅（Toast） */
+        #center-toast {
+            position: absolute;
+            top: 44%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.85);
+            z-index: 25;
+            pointer-events: none;
+            background: linear-gradient(135deg, rgba(254, 240, 138, 0.96), rgba(251, 191, 36, 0.96));
+            border: 2.5px solid #92400e;
+            border-radius: 18px;
+            padding: 6px 18px;
+            text-align: center;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 90%;
+        }
+
+        #center-toast.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        #center-toast .toast-main {
+            font-size: clamp(14px, 3.8vw, 18px);
+            font-weight: 900;
+            color: #78350f;
+        }
+
+        #center-toast .toast-sub {
+            font-size: clamp(11px, 2.8vw, 12px);
+            font-weight: 800;
+            color: #92400e;
+            margin-top: 2px;
+        }
+
+        /* 彈出視窗（開始 / 暫停 / 過關結算） */
+        .overlay-modal {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 8, 34, 0.84);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 40;
+            padding: 12px;
+        }
+
+        .overlay-modal.hidden {
+            display: none;
+        }
+
+        .modal-card {
+            background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+            border: 3.5px solid #78350f;
+            border-radius: 24px;
+            padding: clamp(14px, 3.5vw, 20px);
+            width: 100%;
+            max-width: 390px;
+            max-height: 92dvh;
+            overflow-y: auto;
+            text-align: center;
+            color: #451a03;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+            animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.88); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 900;
+            background: #f3e8ff;
+            color: #7e22ce;
+            border: 2px solid #c084fc;
+            margin-bottom: 4px;
+        }
+
+        .modal-title {
+            font-size: clamp(20px, 5vw, 24px);
+            font-weight: 900;
+            margin: 2px 0 6px;
+            color: #451a03;
+        }
+
+        .modal-desc {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #78350f;
+            margin-bottom: 10px;
+            line-height: 1.45;
+        }
+
+        .section-label {
+            font-size: 12px;
+            font-weight: 900;
+            color: #92400e;
+            margin: 6px 0 6px;
+        }
+
+        .hero-picker {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .hero-option {
+            padding: 6px 2px;
+            border-radius: 12px;
+            border: 2px solid #d6d3d1;
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            font-size: 10.5px;
+            font-weight: 800;
+            color: #57534e;
+            transition: all 0.15s;
+        }
+
+        .hero-option img {
+            width: 38px;
+            height: 38px;
+            object-fit: contain;
+        }
+
+        .hero-option.selected {
+            border-color: #9333ea;
+            background: #f3e8ff;
+            color: #581c87;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(147, 51, 234, 0.25);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .stat-box {
+            background: #fff;
+            border: 2px solid #fde68a;
+            border-radius: 12px;
+            padding: 7px;
+        }
+
+        .stat-box .lbl {
+            font-size: 11px;
+            font-weight: 800;
+            color: #92400e;
+        }
+
+        .stat-box .val {
+            font-size: 18px;
+            font-weight: 900;
+            color: #451a03;
+            margin-top: 2px;
+        }
+
+        .primary-btn {
+            width: 100%;
+            padding: 11px 16px;
+            border-radius: 14px;
+            border: 3px solid #78350f;
+            background: linear-gradient(180deg, #facc15 0%, #f59e0b 100%);
+            color: #451a03;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #78350f;
+            transition: transform 0.1s;
+        }
+
+        .primary-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #78350f;
+        }
+
+        .secondary-btn {
+            width: 100%;
+            margin-top: 7px;
+            padding: 9px 14px;
+            border-radius: 12px;
+            border: 2px solid #a8a29e;
+            background: #fff;
+            color: #57534e;
+            font-family: inherit;
+            font-size: 13.5px;
+            font-weight: 800;
+            cursor: pointer;
         }
     </style>
 </head>
 
-<body class="min-h-screen h-[100dvh] flex flex-col items-center justify-start py-3 sm:py-5">
+<body>
+    <div id="stage-frame">
+        <canvas id="gameCanvas"></canvas>
 
-    <!-- UI Overlay -->
-    <div id="ui-layer"
-        class="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-10 w-full max-w-lg mx-auto">
-        <div class="flex justify-between items-start">
-            <div class="bg-black/50 backdrop-blur rounded-xl px-4 py-2 border border-pink-500/50">
-                <div class="text-pink-400 text-xs">SCORE</div>
-                <div id="score" class="text-2xl text-white font-bold">0</div>
+        <!-- 頂部專屬安全區 HUD（不遮擋任何磚塊） -->
+        <div id="top-hud">
+            <div class="hud-group">
+                <div class="hud-pill">
+                    <span>💎</span>
+                    <span id="stage-label">第 1 / 5 關</span>
+                </div>
             </div>
-            <div class="bg-black/50 backdrop-blur rounded-xl px-4 py-2 border border-pink-500/50">
-                <div class="text-pink-400 text-xs">LIVES</div>
-                <div id="lives" class="text-2xl text-white font-bold">❤️❤️❤️</div>
+            <div class="hud-group">
+                <div class="hud-pill" title="本局獲得星幣與得分">
+                    <span>⭐</span>
+                    <span id="stars-text">0</span>
+                    <span style="opacity:0.35;">|</span>
+                    <span id="score-text">0</span>
+                </div>
+                <div class="hud-pill" title="生命值與彩虹安全網">
+                    <span id="hp-hearts">🫧❤️❤️❤️❤️</span>
+                </div>
+                <button id="pause-btn" title="暫停">⏸️</button>
             </div>
         </div>
-        <div class="grid grid-cols-2 gap-2 mb-2">
-            <div class="bg-black/50 backdrop-blur rounded-xl px-4 py-2 border border-pink-500/50">
-                <div class="text-pink-300 text-xs">COMBO</div>
-                <div id="combo" class="text-white text-xl font-bold">0</div>
-            </div>
-            <div class="bg-black/50 backdrop-blur rounded-xl px-4 py-2 border border-pink-500/50">
-                <div class="text-pink-300 text-xs">MISSION</div>
-                <div id="mission" class="text-white text-xs leading-5">準備中...</div>
+
+        <!-- 底部大拇指防遮擋滑軌區 -->
+        <div id="thumb-track">
+            <span>👈 左右滑動操控怪獸滑板・點一下發射 👉</span>
+        </div>
+
+        <!-- 畫面中央短暫提示橫幅 -->
+        <div id="center-toast">
+            <div class="toast-main" id="toast-main">💎 第 1 關：星光水晶礦坑</div>
+            <div class="toast-sub" id="toast-sub">點一下畫面發射能量球，接住掉落的強化膠囊！</div>
+        </div>
+
+        <!-- 彈出視窗（開始 / 暫停 / 結算） -->
+        <div class="overlay-modal" id="modal-overlay">
+            <div class="modal-card">
+                <div class="modal-badge" id="modal-badge">💎 星光水晶礦坑</div>
+                <div class="modal-title" id="modal-title">怪獸寶石打磚塊</div>
+                <div class="modal-desc" id="modal-desc">
+                    左右滑動底部的<strong>防遮擋滑軌</strong>操控怪獸滑板反彈能量球！<br>
+                    擊碎 <strong>🎁寶箱磚</strong> 可掉落 <strong>⚡三球分身、↔️巨型滑板、🔥貫穿火球、🌈彩虹安全網</strong>！
+                </div>
+
+                <div id="setup-section">
+                    <div class="section-label">🐾 選擇你的怪獸滑板手：</div>
+                    <div class="hero-picker" id="hero-picker">
+                        <div class="hero-option selected" data-hero="penguin_knight">
+                            <img src="/images/monsters/new/penguin_knight.png" alt="企鵝騎士">
+                            <span>企鵝騎士</span>
+                        </div>
+                        <div class="hero-option" data-hero="cloud_puff">
+                            <img src="/images/monsters/new/cloud_puff.png" alt="雲朵泡芙">
+                            <span>雲朵泡芙</span>
+                        </div>
+                        <div class="hero-option" data-hero="mushroom_kin">
+                            <img src="/images/monsters/new/mushroom_kin.png" alt="小蘑菇">
+                            <span>小蘑菇</span>
+                        </div>
+                        <div class="hero-option" data-hero="thunder_mouse">
+                            <img src="/images/monsters/new/thunder_mouse.png" alt="雷電鼠">
+                            <span>雷電鼠</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="modal-stats" style="display: none;">
+                    <div class="stat-box">
+                        <div class="lbl">闖關進度 / 總得分</div>
+                        <div class="val" id="stat-stage">第 5 關</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="lbl">獲得星幣獎勵</div>
+                        <div class="val" id="stat-stars">⭐ +0</div>
+                    </div>
+                </div>
+
+                <button class="primary-btn" id="modal-primary-btn">🚀 進入水晶礦坑</button>
+                <button class="secondary-btn" id="modal-secondary-btn" style="display: none;">🔄 重新開始</button>
             </div>
         </div>
-        <div id="phase" class="text-center text-pink-200 text-sm font-bold">開始 10 秒驚喜</div>
-    </div>
-
-    <!-- Start / Game Over Screen -->
-    <div id="menu-screen" class="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div class="bg-gray-900 rounded-2xl p-8 text-center max-w-md mx-4 border-2 border-pink-500 shadow-2xl">
-            <div class="text-6xl mb-4 animate-pulse">🧱</div>
-            <h1
-                class="text-4xl text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-600 font-bold mb-2 neon-text">
-                NEON BREAKER
-            </h1>
-            <p id="menu-message" class="text-pink-200/70 mb-8 tracking-wider">
-                SMASH THE SYSTEM
-            </p>
-            <div id="summaryCombo" class="text-cyan-300 text-sm mb-1 hidden">最高連擊：0</div>
-            <div id="summaryMission" class="text-yellow-300 text-sm mb-4 hidden">任務：未完成</div>
-
-            <button onclick="startGame()"
-                class="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-pink-500/50">
-                LAUNCH BALL
-            </button>
-        </div>
-    </div>
-
-    <!-- Game Canvas -->
-    <div class="relative w-full max-w-lg aspect-square max-h-[calc(100dvh-8rem)] bg-gray-900/90 overflow-hidden shadow-2xl border-x-2 border-gray-800">
-        <canvas id="gameCanvas" class="w-full h-full block"></canvas>
     </div>
 
     <script>
+        // ====================================================
+        // 怪獸寶石打磚塊（水晶礦坑・多球道具・防遮擋滑軌版）
+        // ====================================================
+        const stageFrame = document.getElementById('stage-frame');
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const scoreDisplay = document.getElementById('score');
-        const livesDisplay = document.getElementById('lives');
-        const menuScreen = document.getElementById('menu-screen');
-        const comboDisplay = document.getElementById('combo');
-        const missionDisplay = document.getElementById('mission');
-        const phaseDisplay = document.getElementById('phase');
-        const summaryCombo = document.getElementById('summaryCombo');
-        const summaryMission = document.getElementById('summaryMission');
 
-        // Config
-        const CONFIG = {
-            paddleWidth: 100,
-            paddleHeight: 16,
-            ballRadius: 8,
-            brickRows: 6,
-            brickCols: 6,
-            brickHeight: 24,
-            brickGap: 8,
-            colors: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7']
+        let W = 700;
+        let H = 620;
+        let isCompactMobile = false;
+        const TOTAL_STAGES = 5;
+
+        // 預載怪獸圖片
+        const HERO_URLS = {
+            penguin_knight: '/images/monsters/new/penguin_knight.png',
+            cloud_puff: '/images/monsters/new/cloud_puff.png',
+            mushroom_kin: '/images/monsters/new/mushroom_kin.png',
+            thunder_mouse: '/images/monsters/new/thunder_mouse.png'
         };
+        const sprites = {};
+        Object.entries(HERO_URLS).forEach(([k, url]) => {
+            const img = new Image();
+            img.src = url;
+            sprites[k] = img;
+        });
 
-        let state = {
-            isPlaying: false,
-            score: 0,
-            lives: 3,
-            combo: 0,
-            maxCombo: 0,
-            bricksBroken: 0,
-            mission: null,
-            gameStartAt: 0,
-            paddle: { x: 0, y: 0 },
-            ball: { x: 0, y: 0, dx: 0, dy: 0, active: false },
-            bricks: [],
-            particles: [],
-            lastTime: 0
-        };
+        // 寶石磚色系
+        const GEM_COLORS = [
+            { fill: '#f43f5e', light: '#fda4af', dark: '#9f1239' }, // 紅寶石
+            { fill: '#f59e0b', light: '#fde047', dark: '#92400e' }, // 琥珀金
+            { fill: '#10b981', light: '#6ee7b7', dark: '#065f46' }, // 祖母綠
+            { fill: '#0ea5e9', light: '#7dd3fc', dark: '#0369a1' }, // 藍寶石
+            { fill: '#a855f7', light: '#d8b4fe', dark: '#581c87' }  // 紫水晶
+        ];
 
-        function createMission() {
-            const missions = [
-                { id: 'break', title: '擊碎 24 塊磚', target: 24, progress: 0, reward: 300 },
-                { id: 'combo', title: '達成 6 連擊', target: 6, progress: 0, reward: 350 }
-            ];
-            return { ...missions[Math.floor(Math.random() * missions.length)], done: false };
-        }
+        // 4 種掉落強化膠囊
+        const POWERUP_TYPES = [
+            { id: 'multi', icon: '⚡', label: '⚡ 三球分身！', color: '#38bdf8' },
+            { id: 'wide', icon: '↔️', label: '↔️ 巨型滑板！', color: '#4ade80' },
+            { id: 'fire', icon: '🔥', label: '🔥 貫穿烈焰球！', color: '#f97316' },
+            { id: 'net', icon: '🌈', label: '🌈 補充彩虹防護網！', color: '#f472b6' }
+        ];
 
-        function updateComboUI() {
-            comboDisplay.innerText = `${state.combo}`;
-        }
-
-        function updateMissionUI() {
-            if (!state.mission) return;
-            missionDisplay.innerText = `${state.mission.title} (${Math.min(state.mission.progress, state.mission.target)}/${state.mission.target})`;
-        }
-
-        function updatePhaseLabel() {
-            if (!state.isPlaying) return;
-            const elapsed = (performance.now() - state.gameStartAt) / 1000;
-            if (elapsed <= 10) {
-                phaseDisplay.innerText = '開始 10 秒驚喜';
-            } else if (elapsed <= 40) {
-                phaseDisplay.innerText = '30 秒任務暖身';
-            } else if (elapsed <= 160) {
-                phaseDisplay.innerText = '120 秒精彩時刻';
-            } else {
-                phaseDisplay.innerText = '結束獎勵';
+        // 輕量音效合成器
+        class SoundFX {
+            constructor() { this.ctx = null; }
+            init() {
+                if (!this.ctx) {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if (AC) this.ctx = new AC();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            }
+            tone(freq, type = 'sine', dur = 0.1, vol = 0.11, slide = null) {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    if (slide) osc.frequency.exponentialRampToValueAtTime(slide, this.ctx.currentTime + dur);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + dur);
+                } catch (e) {}
+            }
+            paddle() { this.tone(360, 'triangle', 0.09, 0.12, 520); }
+            brick(combo = 1) {
+                const f = Math.min(1100, 440 + combo * 35);
+                this.tone(f, 'sine', 0.11, 0.12, f * 1.3);
+            }
+            tnt() { this.tone(160, 'sawtooth', 0.25, 0.15, 70); }
+            powerup() {
+                [523, 659, 784, 1046].forEach((f, i) => {
+                    setTimeout(() => this.tone(f, 'triangle', 0.12, 0.12), i * 45);
+                });
+            }
+            win() {
+                [523, 659, 784, 1046].forEach((f, i) => {
+                    setTimeout(() => this.tone(f, 'triangle', 0.2, 0.14), i * 85);
+                });
             }
         }
+        const sfx = new SoundFX();
 
-        function markMission(type, amount = 1) {
-            if (!state.mission || state.mission.done || state.mission.id !== type) return;
-            state.mission.progress += amount;
-            updateMissionUI();
-            if (state.mission.progress >= state.mission.target) {
-                state.mission.done = true;
-                state.score += state.mission.reward;
-                scoreDisplay.innerText = state.score;
+        // 遊戲狀態
+        let selectedHero = 'penguin_knight';
+        let gameState = 'menu'; // 'menu' | 'playing' | 'paused' | 'gameover' | 'victory'
+        let stage = 1;
+        let score = 0;
+        let lives = 4;
+        let maxLives = 4;
+        let safetyNet = true; // 底部彩虹安全防護網（掉球自動彈回一次）
+        let combo = 0;
+        let maxCombo = 0;
+        let wideTimer = 0;
+        let fireTimer = 0;
+        let starsEarnedThisRun = 0;
+        let screenShake = 0;
+
+        // 怪獸懸浮滑板（位於底部滑軌上方 64px，手機手指絕不遮擋！）
+        const paddle = {
+            x: 300,
+            y: 500,
+            baseW: 118,
+            w: 118,
+            h: 18,
+            targetX: 300
+        };
+
+        let balls = [];
+        let bricks = [];
+        let capsules = [];
+        let particles = [];
+        let floatingTexts = [];
+        let bgSparkles = [];
+
+        function initSparkles() {
+            bgSparkles = Array.from({ length: 40 }, () => ({
+                x: Math.random() * W,
+                y: Math.random() * H,
+                r: Math.random() * 2 + 0.6,
+                phase: Math.random() * Math.PI * 2
+            }));
+        }
+
+        // Toast 控制
+        let toastTimeout = null;
+        function showCenterToast(mainText, subText = '', duration = 1650) {
+            const toast = document.getElementById('center-toast');
+            document.getElementById('toast-main').textContent = mainText;
+            document.getElementById('toast-sub').textContent = subText;
+            toast.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+
+        function awardStarCoins(amount) {
+            if (amount <= 0) return;
+            starsEarnedThisRun += amount;
+            try {
+                window.parent.postMessage({ type: 'QUESTMON_EARN_STARS', amount }, '*');
+            } catch (e) {}
+            updateHUD();
+        }
+
+        function updateHUD() {
+            document.getElementById('stage-label').textContent = `第 ${stage} / ${TOTAL_STAGES} 關`;
+            document.getElementById('stars-text').textContent = starsEarnedThisRun;
+            document.getElementById('score-text').textContent = score;
+
+            let heartsStr = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, maxLives - lives));
+            if (safetyNet) heartsStr = '🫧' + heartsStr;
+            document.getElementById('hp-hearts').textContent = heartsStr;
+        }
+
+        function resizeCanvas() {
+            const rect = stageFrame.getBoundingClientRect();
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const oldW = W;
+            W = Math.max(320, Math.round(rect.width));
+            H = Math.max(440, Math.round(rect.height));
+            isCompactMobile = W < 500;
+
+            canvas.width = W * dpr;
+            canvas.height = H * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            paddle.baseW = isCompactMobile ? 104 : 124;
+            paddle.w = wideTimer > 0 ? paddle.baseW * 1.45 : paddle.baseW;
+            // 滑板高度固定在底部防遮擋滑軌上方 64px
+            paddle.y = H - 72;
+            if (oldW > 0) {
+                paddle.x = Math.min(W - paddle.w / 2 - 10, Math.max(paddle.w / 2 + 10, (paddle.x / oldW) * W));
+                paddle.targetX = paddle.x;
             }
+
+            if (bgSparkles.length === 0) initSparkles();
+            relayoutBricks();
         }
+        window.addEventListener('resize', resizeCanvas);
 
-        // Resize
-        function resize() {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-            state.paddle.y = canvas.height - 50;
-        }
-        window.addEventListener('resize', resize);
-        resize();
+        // 建立關卡寶石磚陣型（頂部預留 58px 安全區，絕不與 HUD 重疊）
+        function buildStageBricks(lvl) {
+            bricks = [];
+            const cols = isCompactMobile ? 7 : 9;
+            const rows = 5;
 
-        function initBricks() {
-            state.bricks = [];
-            const totalBrickWidth = canvas.width - (CONFIG.brickGap * (CONFIG.brickCols + 1));
-            const brickWidth = totalBrickWidth / CONFIG.brickCols;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    // 根據關卡設計不同趣味圖案造型
+                    let skip = false;
+                    if (lvl === 2 && (r + c) % 4 === 0) skip = true;
+                    if (lvl === 3 && r === 2 && c % 2 === 1) skip = true;
+                    if (lvl === 4 && Math.abs(c - Math.floor(cols / 2)) === r) skip = true;
+                    if (skip) continue;
 
-            for (let r = 0; r < CONFIG.brickRows; r++) {
-                for (let c = 0; c < CONFIG.brickCols; c++) {
-                    state.bricks.push({
-                        x: CONFIG.brickGap + c * (brickWidth + CONFIG.brickGap),
-                        y: 60 + r * (CONFIG.brickHeight + CONFIG.brickGap),
-                        w: brickWidth,
-                        h: CONFIG.brickHeight,
-                        color: CONFIG.colors[r % CONFIG.colors.length],
+                    let special = 'normal';
+                    if ((r === 1 || r === 3) && (c === 1 || c === cols - 2)) {
+                        special = 'chest'; // 🎁 必掉強化膠囊
+                    } else if (r === 2 && c === Math.floor(cols / 2)) {
+                        special = 'tnt';   // 💥 十字爆破炸藥桶
+                    } else if ((r + c) % 5 === 0) {
+                        special = 'star';  // ⭐ 額外加分星幣磚
+                    }
+
+                    bricks.push({
+                        r,
+                        c,
+                        cols,
+                        x: 0,
+                        y: 0,
+                        w: 0,
+                        h: 0,
+                        colorSpec: GEM_COLORS[r % GEM_COLORS.length],
+                        special,
                         active: true
                     });
                 }
             }
+            relayoutBricks();
         }
 
-        function startGame() {
-            menuScreen.classList.add('hidden');
-            state.score = 0;
-            state.lives = 3;
-            state.combo = 0;
-            state.maxCombo = 0;
-            state.bricksBroken = 0;
-            state.mission = createMission();
-            state.gameStartAt = performance.now();
-            updateLives();
-            updateComboUI();
-            updateMissionUI();
-            phaseDisplay.innerText = '開始 10 秒驚喜';
-            scoreDisplay.innerText = 0;
-            summaryCombo.classList.add('hidden');
-            summaryMission.classList.add('hidden');
+        function relayoutBricks() {
+            if (bricks.length === 0) return;
+            const cols = bricks[0].cols || (isCompactMobile ? 7 : 9);
+            const padX = isCompactMobile ? 12 : 22;
+            const gap = isCompactMobile ? 5 : 7;
+            const topY = 58; // 嚴格低於頂部 HUD
+            const maxAreaH = H * 0.31;
+            const brickH = Math.min(28, Math.max(20, Math.floor((maxAreaH - gap * 5) / 5)));
+            const brickW = (W - padX * 2 - gap * (cols - 1)) / cols;
 
-            initBricks();
-            resetBall();
-
-            state.isPlaying = true;
-            state.lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
+            bricks.forEach(b => {
+                b.w = brickW;
+                b.h = brickH;
+                b.x = padX + b.c * (brickW + gap);
+                b.y = topY + b.r * (brickH + gap);
+            });
         }
 
-        function resetBall() {
-            state.paddle.x = (canvas.width - CONFIG.paddleWidth) / 2;
-            state.ball.x = canvas.width / 2;
-            state.ball.y = state.paddle.y - CONFIG.ballRadius - 2;
-            state.ball.active = false;
+        function resetDockedBall() {
+            const speed = isCompactMobile ? 350 : 390;
+            balls = [{
+                x: paddle.x,
+                y: paddle.y - 18,
+                vx: speed * (Math.random() > 0.5 ? 0.55 : -0.55),
+                vy: -speed * 0.85,
+                r: isCompactMobile ? 8.5 : 9.5,
+                docked: true,
+                trail: []
+            }];
         }
 
-        function launchBall() {
-            if (!state.ball.active) {
-                state.ball.active = true;
-                state.ball.dx = 4 * (Math.random() > 0.5 ? 1 : -1);
-                state.ball.dy = -6;
-            }
+        function launchDockedBalls() {
+            let launched = false;
+            balls.forEach(b => {
+                if (b.docked) {
+                    b.docked = false;
+                    launched = true;
+                }
+            });
+            if (launched) sfx.paddle();
         }
 
-        function updateLives() {
-            let hearts = '';
-            for (let i = 0; i < state.lives; i++) hearts += '❤️';
-            livesDisplay.innerText = hearts;
-        }
-
-        function gameOver(win) {
-            state.isPlaying = false;
-            menuScreen.classList.remove('hidden');
-            const msg = win ? "YOU WIN!" : "GAME OVER";
-            document.querySelector('#menu-screen h1').innerText = msg;
-            document.getElementById('menu-message').innerText = `SCORE: ${state.score}`;
-            summaryCombo.innerText = `最高連擊：${state.maxCombo}`;
-            summaryMission.innerText = state.mission?.done
-                ? `任務完成：${state.mission.title}`
-                : `任務進度：${state.mission?.title || '—'}`;
-            summaryCombo.classList.remove('hidden');
-            summaryMission.classList.remove('hidden');
-        }
-
-        // Input
-        function handleMove(clientX) {
+        // 操控輸入（全畫面水平滑動皆可移動滑板，點擊發射）
+        let isDragging = false;
+        function updatePaddleFromClientX(clientX) {
             const rect = canvas.getBoundingClientRect();
-            let relativeX = clientX - rect.left;
-
-            // Mouse center to paddle center
-            let paddleX = relativeX - CONFIG.paddleWidth / 2;
-
-            // Clamp
-            if (paddleX < 0) paddleX = 0;
-            if (paddleX > canvas.width - CONFIG.paddleWidth) paddleX = canvas.width - CONFIG.paddleWidth;
-
-            state.paddle.x = paddleX;
-
-            if (!state.ball.active) {
-                state.ball.x = state.paddle.x + CONFIG.paddleWidth / 2;
-            }
+            const cx = (clientX - rect.left) * (W / rect.width);
+            paddle.targetX = Math.min(W - paddle.w / 2 - 8, Math.max(paddle.w / 2 + 8, cx));
         }
 
-        document.addEventListener('mousemove', e => {
-            if (state.isPlaying) handleMove(e.clientX);
+        canvas.addEventListener('pointerdown', (e) => {
+            if (gameState !== 'playing') return;
+            sfx.init();
+            isDragging = true;
+            updatePaddleFromClientX(e.clientX);
+            launchDockedBalls();
         });
 
-        document.addEventListener('touchmove', e => {
-            if (state.isPlaying) {
-                e.preventDefault();
-                handleMove(e.touches[0].clientX);
+        window.addEventListener('pointermove', (e) => {
+            if (gameState !== 'playing') return;
+            if (isDragging || e.pointerType === 'mouse') {
+                updatePaddleFromClientX(e.clientX);
             }
-        }, { passive: false });
-
-        document.addEventListener('mousedown', launchBall);
-        document.addEventListener('touchstart', launchBall);
-        document.addEventListener('keydown', e => {
-            if (e.code === 'Space') launchBall();
         });
 
-        function spawnParticles(x, y, color) {
-            for (let i = 0; i < 8; i++) {
-                state.particles.push({
-                    x, y,
-                    dx: (Math.random() - 0.5) * 6,
-                    dy: (Math.random() - 0.5) * 6,
+        window.addEventListener('pointerup', () => {
+            isDragging = false;
+        });
+
+        const keys = {};
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (e.code === 'Space' && gameState === 'playing') {
+                sfx.init();
+                launchDockedBalls();
+            } else if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+                togglePause();
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // 破壞磚塊與觸發特效
+        function breakBrick(b, triggerChain = true) {
+            if (!b.active) return;
+            b.active = false;
+            combo++;
+            maxCombo = Math.max(maxCombo, combo);
+
+            const pts = (b.special === 'star' ? 60 : 30) + Math.min(40, combo * 5);
+            score += pts;
+
+            const cx = b.x + b.w / 2;
+            const cy = b.y + b.h / 2;
+            spawnGemSparks(cx, cy, b.colorSpec.fill, 12);
+
+            if (b.special === 'chest' || (b.special === 'normal' && Math.random() < 0.16)) {
+                const pSpec = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)];
+                capsules.push({
+                    x: cx,
+                    y: cy,
+                    vy: 145,
+                    w: 44,
+                    h: 24,
+                    spec: pSpec
+                });
+            }
+
+            if (b.special === 'tnt' && triggerChain) {
+                sfx.tnt();
+                screenShake = 9;
+                floatingTexts.push({ x: cx, y: cy, text: '💥 炸藥連爆！', color: '#fde047', life: 0.95 });
+                bricks.forEach(nb => {
+                    if (nb.active && Math.abs(nb.r - b.r) <= 1 && Math.abs(nb.c - b.c) <= 1) {
+                        breakBrick(nb, false);
+                    }
+                });
+            } else {
+                sfx.brick(combo);
+            }
+
+            updateHUD();
+        }
+
+        function activatePowerup(spec, x, y) {
+            sfx.powerup();
+            score += 50;
+            floatingTexts.push({
+                x: Math.min(W - 85, Math.max(85, x)),
+                y: y - 16,
+                text: spec.label,
+                color: '#fde047',
+                life: 1.0
+            });
+
+            if (spec.id === 'multi') {
+                const activeBalls = balls.filter(b => !b.docked);
+                const source = activeBalls[0] || balls[0];
+                if (source && balls.length < 5) {
+                    const spd = Math.hypot(source.vx, source.vy) || 370;
+                    [-0.45, 0.45].forEach(angleOffset => {
+                        const baseAngle = Math.atan2(source.vy, source.vx) + angleOffset;
+                        balls.push({
+                            x: source.x,
+                            y: source.y,
+                            vx: Math.cos(baseAngle) * spd,
+                            vy: -Math.abs(Math.sin(baseAngle) * spd),
+                            r: source.r,
+                            docked: false,
+                            trail: []
+                        });
+                    });
+                }
+            } else if (spec.id === 'wide') {
+                wideTimer = 12.0;
+                paddle.w = paddle.baseW * 1.45;
+            } else if (spec.id === 'fire') {
+                fireTimer = 7.0;
+            } else if (spec.id === 'net') {
+                safetyNet = true;
+            }
+            updateHUD();
+        }
+
+        function spawnGemSparks(x, y, color, count = 12) {
+            const cols = [color, '#ffffff', '#fde047'];
+            for (let i = 0; i < count; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const s = Math.random() * 150 + 40;
+                particles.push({
+                    x,
+                    y,
+                    vx: Math.cos(a) * s,
+                    vy: Math.sin(a) * s,
+                    r: Math.random() * 4 + 2,
+                    color: cols[i % cols.length],
                     life: 1.0,
-                    color
+                    decay: Math.random() * 1.5 + 1.1
                 });
             }
         }
 
-        function update() {
-            if (!state.ball.active) return;
+        // 主更新迴圈
+        let lastTime = performance.now();
+        function update(dt) {
+            if (screenShake > 0) screenShake = Math.max(0, screenShake - dt * 28);
 
-            // Move Ball
-            state.ball.x += state.ball.dx;
-            state.ball.y += state.ball.dy;
-
-            // Walls
-            if (state.ball.x + CONFIG.ballRadius > canvas.width || state.ball.x - CONFIG.ballRadius < 0) {
-                state.ball.dx = -state.ball.dx;
-            }
-            if (state.ball.y - CONFIG.ballRadius < 0) {
-                state.ball.dy = -state.ball.dy;
-            }
-
-            // Bottom (Death)
-            if (state.ball.y - CONFIG.ballRadius > canvas.height) {
-                state.lives--;
-                state.combo = 0;
-                updateComboUI();
-                updateLives();
-                if (state.lives <= 0) {
-                    gameOver(false);
-                } else {
-                    resetBall();
-                }
-                return;
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.vy += 180 * dt;
+                p.life -= p.decay * dt;
+                if (p.life <= 0) particles.splice(i, 1);
             }
 
-            // Paddle Collision
-            if (state.ball.dy > 0) { // Only checking when falling
-                if (state.ball.y + CONFIG.ballRadius >= state.paddle.y &&
-                    state.ball.y - CONFIG.ballRadius <= state.paddle.y + CONFIG.paddleHeight &&
-                    state.ball.x >= state.paddle.x &&
-                    state.ball.x <= state.paddle.x + CONFIG.paddleWidth
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const ft = floatingTexts[i];
+                ft.y -= 36 * dt;
+                ft.life -= dt * 1.05;
+                if (ft.life <= 0) floatingTexts.splice(i, 1);
+            }
+
+            if (gameState !== 'playing') return;
+
+            // 鍵盤左右移動支援
+            const keySpeed = 480;
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+                paddle.targetX = Math.max(paddle.w / 2 + 8, paddle.targetX - keySpeed * dt);
+            }
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+                paddle.targetX = Math.min(W - paddle.w / 2 - 8, paddle.targetX + keySpeed * dt);
+            }
+
+            paddle.x += (paddle.targetX - paddle.x) * Math.min(1, dt * 22);
+
+            if (wideTimer > 0) {
+                wideTimer = Math.max(0, wideTimer - dt);
+                if (wideTimer <= 0) paddle.w = paddle.baseW;
+            }
+            if (fireTimer > 0) {
+                fireTimer = Math.max(0, fireTimer - dt);
+            }
+
+            // 更新掉落膠囊
+            for (let i = capsules.length - 1; i >= 0; i--) {
+                const cap = capsules[i];
+                cap.y += cap.vy * dt;
+                if (
+                    cap.y + cap.h / 2 >= paddle.y - 26 &&
+                    cap.y - cap.h / 2 <= paddle.y + paddle.h &&
+                    Math.abs(cap.x - paddle.x) <= paddle.w / 2 + cap.w / 2
                 ) {
-                    state.ball.dy = -Math.abs(state.ball.dy); // Force up
-
-                    // Angle control
-                    const hitPoint = state.ball.x - (state.paddle.x + CONFIG.paddleWidth / 2);
-                    state.ball.dx = hitPoint * 0.15; // Influence angle
-
-                    // Speed up slightly
-                    // state.ball.dx *= 1.05;
-                    // state.ball.dy *= 1.05;
+                    activatePowerup(cap.spec, cap.x, paddle.y - 20);
+                    capsules.splice(i, 1);
+                } else if (cap.y > H + 40) {
+                    capsules.splice(i, 1);
                 }
             }
 
-            // Brick Collision
-            let hit = false;
-            for (let b of state.bricks) {
-                if (!b.active) continue;
+            // 更新所有能量球
+            const netY = H - 48;
+            for (let i = balls.length - 1; i >= 0; i--) {
+                const ball = balls[i];
+                if (ball.docked) {
+                    ball.x = paddle.x;
+                    ball.y = paddle.y - 18;
+                    continue;
+                }
 
-                if (state.ball.x + CONFIG.ballRadius > b.x &&
-                    state.ball.x - CONFIG.ballRadius < b.x + b.w &&
-                    state.ball.y + CONFIG.ballRadius > b.y &&
-                    state.ball.y - CONFIG.ballRadius < b.y + b.h
+                ball.trail.push({ x: ball.x, y: ball.y });
+                if (ball.trail.length > 7) ball.trail.shift();
+
+                ball.x += ball.vx * dt;
+                ball.y += ball.vy * dt;
+
+                // 左右牆壁與頂部安全區反彈
+                if (ball.x - ball.r < 6) {
+                    ball.x = 6 + ball.r;
+                    ball.vx = Math.abs(ball.vx);
+                } else if (ball.x + ball.r > W - 6) {
+                    ball.x = W - 6 - ball.r;
+                    ball.vx = -Math.abs(ball.vx);
+                }
+                if (ball.y - ball.r < 50) {
+                    ball.y = 50 + ball.r;
+                    ball.vy = Math.abs(ball.vy);
+                }
+
+                // 怪獸滑板反彈判定
+                if (
+                    ball.vy > 0 &&
+                    ball.y + ball.r >= paddle.y - 4 &&
+                    ball.y - ball.r <= paddle.y + paddle.h + 6 &&
+                    ball.x >= paddle.x - paddle.w / 2 - ball.r &&
+                    ball.x <= paddle.x + paddle.w / 2 + ball.r
                 ) {
-                    b.active = false;
-                    state.ball.dy = -state.ball.dy; // Bounce
-                    state.score += 100;
-                    state.combo += 1;
-                    state.maxCombo = Math.max(state.maxCombo, state.combo);
-                    state.bricksBroken += 1;
-                    updateComboUI();
-                    markMission('break');
-                    if (state.mission?.id === 'combo' && !state.mission.done) {
-                        state.mission.progress = Math.max(state.mission.progress, state.combo);
-                        updateMissionUI();
-                        if (state.mission.progress >= state.mission.target) {
-                            state.mission.done = true;
-                            state.score += state.mission.reward;
+                    sfx.paddle();
+                    combo = 0;
+                    const hitOffset = (ball.x - paddle.x) / (paddle.w / 2);
+                    const clamped = Math.max(-0.82, Math.min(0.82, hitOffset));
+                    const spd = Math.hypot(ball.vx, ball.vy);
+                    const bounceAngle = clamped * (Math.PI * 0.36);
+                    ball.vx = Math.sin(bounceAngle) * spd;
+                    ball.vy = -Math.cos(bounceAngle) * spd;
+                    ball.y = paddle.y - ball.r - 4;
+                }
+
+                // 彩虹安全防護網反彈！
+                if (safetyNet && ball.vy > 0 && ball.y + ball.r >= netY) {
+                    safetyNet = false;
+                    sfx.paddle();
+                    ball.vy = -Math.abs(ball.vy);
+                    ball.y = netY - ball.r - 2;
+                    floatingTexts.push({
+                        x: Math.min(W - 80, Math.max(80, ball.x)),
+                        y: netY - 16,
+                        text: '🌈 彩虹防護網救援！',
+                        color: '#f472b6',
+                        life: 0.95
+                    });
+                    updateHUD();
+                }
+
+                // 磚塊精準 2D 碰撞（區分側面與上下反彈）
+                for (let j = 0; j < bricks.length; j++) {
+                    const b = bricks[j];
+                    if (!b.active) continue;
+                    const nearestX = Math.max(b.x, Math.min(ball.x, b.x + b.w));
+                    const nearestY = Math.max(b.y, Math.min(ball.y, b.y + b.h));
+                    const dx = ball.x - nearestX;
+                    const dy = ball.y - nearestY;
+
+                    if (dx * dx + dy * dy <= ball.r * ball.r) {
+                        if (fireTimer <= 0) {
+                            if (Math.abs(dx) > Math.abs(dy)) {
+                                ball.vx = -ball.vx;
+                            } else {
+                                ball.vy = -ball.vy;
+                            }
                         }
+                        breakBrick(b, true);
+                        break;
                     }
-                    scoreDisplay.innerText = state.score;
-                    spawnParticles(b.x + b.w / 2, b.y + b.h / 2, b.color);
-                    hit = true;
-                    break; // Only hit one brick per frame (simple)
+                }
+
+                // 掉出底部
+                if (ball.y - ball.r > H + 12) {
+                    balls.splice(i, 1);
                 }
             }
 
-            // Win Condition
-            if (!state.bricks.some(b => b.active)) {
-                gameOver(true);
+            // 所有球都掉光時才扣 1 顆愛心
+            if (balls.length === 0) {
+                lives--;
+                combo = 0;
+                screenShake = 8;
+                updateHUD();
+                if (lives <= 0) {
+                    triggerGameOver();
+                    return;
+                } else {
+                    resetDockedBall();
+                    showCenterToast('💫 點一下發射新能量球！', `剩餘 ${lives} 顆愛心`, 1300);
+                }
             }
 
-            // Particles
-            for (let i = state.particles.length - 1; i >= 0; i--) {
-                const p = state.particles[i];
-                p.x += p.dx;
-                p.y += p.dy;
-                p.life -= 0.05;
-                if (p.life <= 0) state.particles.splice(i, 1);
+            // 檢查本關寶石是否全部清空
+            if (bricks.length > 0 && bricks.every(b => !b.active)) {
+                awardStarCoins(1); // 每過一關發送 1 顆星幣
+                if (stage >= TOTAL_STAGES) {
+                    triggerVictory();
+                } else {
+                    stage++;
+                    safetyNet = true; // 進入下一關自動補滿彩虹防護網
+                    capsules = [];
+                    buildStageBricks(stage);
+                    resetDockedBall();
+                    updateHUD();
+                    showCenterToast(`🎉 進入第 ${stage} 關！⭐+1`, '已為你重新張開底部彩虹防護網 🌈', 1800);
+                }
             }
         }
 
+        // 繪製遊戲畫面
         function draw() {
-            ctx.fillStyle = '#050510';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Paddle
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#ec4899';
-            ctx.fillStyle = '#ec4899';
-            ctx.fillRect(state.paddle.x, state.paddle.y, CONFIG.paddleWidth, CONFIG.paddleHeight);
-
-            // Ball
-            if (state.ball.active || state.isPlaying) {
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = '#fff';
-                ctx.fillStyle = '#fff';
-                ctx.beginPath();
-                ctx.arc(state.ball.x, state.ball.y, CONFIG.ballRadius, 0, Math.PI * 2);
-                ctx.fill();
+            ctx.save();
+            if (screenShake > 0) {
+                ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
             }
 
-            // Bricks
-            state.bricks.forEach(b => {
+            // 1. 星光水晶礦坑漸層背景
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+            bgGrad.addColorStop(0, '#13092e');
+            bgGrad.addColorStop(0.55, '#2e1065');
+            bgGrad.addColorStop(1, '#1e1b4b');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            // 兩側水晶柱剪影裝飾
+            ctx.fillStyle = 'rgba(168, 85, 247, 0.12)';
+            ctx.beginPath();
+            ctx.moveTo(0, H);
+            ctx.lineTo(0, H * 0.55);
+            ctx.lineTo(36, H * 0.65);
+            ctx.lineTo(54, H);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(W, H);
+            ctx.lineTo(W, H * 0.52);
+            ctx.lineTo(W - 38, H * 0.64);
+            ctx.lineTo(W - 56, H);
+            ctx.fill();
+
+            // 礦坑星塵閃爍
+            const now = performance.now() * 0.003;
+            bgSparkles.forEach(s => {
+                const alpha = 0.25 + 0.5 * Math.sin(now + s.phase);
+                ctx.fillStyle = `rgba(233, 213, 255, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 2. 繪製底部彩虹安全防護網（若啟用中）
+            const netY = H - 48;
+            if (safetyNet) {
+                ctx.save();
+                const netGrad = ctx.createLinearGradient(0, netY, W, netY);
+                netGrad.addColorStop(0, '#f43f5e');
+                netGrad.addColorStop(0.25, '#facc15');
+                netGrad.addColorStop(0.5, '#4ade80');
+                netGrad.addColorStop(0.75, '#38bdf8');
+                netGrad.addColorStop(1, '#c084fc');
+                ctx.strokeStyle = netGrad;
+                ctx.lineWidth = 4;
+                ctx.shadowColor = '#f472b6';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.moveTo(10, netY);
+                ctx.lineTo(W - 10, netY);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // 3. 繪製立體切面寶石磚塊與特殊寶箱磚
+            bricks.forEach(b => {
                 if (!b.active) return;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = b.color;
-                ctx.fillStyle = b.color;
-                ctx.fillRect(b.x, b.y, b.w, b.h);
+                ctx.save();
+                const c = b.colorSpec;
 
-                // Bevel
-                ctx.fillStyle = 'rgba(255,255,255,0.2)';
-                ctx.fillRect(b.x, b.y, b.w, 4);
+                // 寶石主體
+                const grad = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h);
+                if (b.special === 'chest') {
+                    grad.addColorStop(0, '#fde047');
+                    grad.addColorStop(1, '#b45309');
+                } else if (b.special === 'tnt') {
+                    grad.addColorStop(0, '#fb923c');
+                    grad.addColorStop(1, '#991b1b');
+                } else {
+                    grad.addColorStop(0, c.light);
+                    grad.addColorStop(0.35, c.fill);
+                    grad.addColorStop(1, c.dark);
+                }
+
+                ctx.fillStyle = grad;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.roundRect(b.x, b.y, b.w, b.h, 6);
+                ctx.fill();
+                ctx.stroke();
+
+                // 頂部寶石切面高光
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+                ctx.beginPath();
+                ctx.roundRect(b.x + 3, b.y + 2, b.w - 6, b.h * 0.32, 3);
+                ctx.fill();
+
+                // 特殊磚塊圖示
+                if (b.special !== 'normal') {
+                    ctx.font = `${Math.min(16, b.h - 4)}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    const icon = b.special === 'chest' ? '🎁' : (b.special === 'tnt' ? '💥' : '⭐');
+                    ctx.fillText(icon, b.x + b.w / 2, b.y + b.h / 2 + 1);
+                }
+
+                ctx.restore();
             });
 
-            // Particles
-            state.particles.forEach(p => {
-                ctx.globalAlpha = p.life;
+            // 4. 繪製掉落中的強化膠囊
+            capsules.forEach(cap => {
+                ctx.save();
+                ctx.translate(cap.x, cap.y);
+                ctx.shadowColor = cap.spec.color;
+                ctx.shadowBlur = 12;
+                ctx.fillStyle = cap.spec.color;
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(-cap.w / 2, -cap.h / 2, cap.w, cap.h, 12);
+                ctx.fill();
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                ctx.font = '15px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(cap.spec.icon, 0, 1);
+                ctx.restore();
+            });
+
+            // 5. 繪製怪獸懸浮滑板與 Voxel 怪獸駕駛員
+            ctx.save();
+            ctx.translate(paddle.x, paddle.y);
+
+            // 乘坐在滑板正中央的 Voxel 怪獸夥伴
+            const heroImg = sprites[selectedHero];
+            if (heroImg && heroImg.complete && heroImg.naturalWidth > 0) {
+                const mSize = isCompactMobile ? 42 : 48;
+                ctx.drawImage(heroImg, -mSize / 2, -mSize + 4, mSize, mSize);
+            }
+
+            // 發光糖果水晶懸浮滑板
+            const padGrad = ctx.createLinearGradient(-paddle.w / 2, 0, paddle.w / 2, 0);
+            padGrad.addColorStop(0, '#ec4899');
+            padGrad.addColorStop(0.5, '#38bdf8');
+            padGrad.addColorStop(1, '#a855f7');
+            ctx.shadowColor = '#38bdf8';
+            ctx.shadowBlur = 14;
+            ctx.fillStyle = padGrad;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.roundRect(-paddle.w / 2, 0, paddle.w, paddle.h, 9);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            // 6. 繪製能量球與彩虹殘影軌跡
+            balls.forEach(ball => {
+                ball.trail.forEach((pt, idx) => {
+                    const ratio = (idx + 1) / ball.trail.length;
+                    ctx.save();
+                    ctx.globalAlpha = ratio * 0.45;
+                    ctx.fillStyle = fireTimer > 0 ? '#f97316' : `hsl(${(now * 240 + idx * 35) % 360}, 95%, 65%)`;
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, ball.r * ratio * 0.9, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+
+                ctx.save();
+                ctx.shadowColor = fireTimer > 0 ? '#f97316' : '#38bdf8';
+                ctx.shadowBlur = 14;
+                const bGrad = ctx.createRadialGradient(ball.x - 3, ball.y - 3, 2, ball.x, ball.y, ball.r);
+                bGrad.addColorStop(0, '#ffffff');
+                bGrad.addColorStop(0.6, fireTimer > 0 ? '#fb923c' : '#fde047');
+                bGrad.addColorStop(1, fireTimer > 0 ? '#dc2626' : '#0284c7');
+                ctx.fillStyle = bGrad;
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // 7. 繪製寶石碎片粒子與浮動文字
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.life);
                 ctx.fillStyle = p.color;
-                ctx.fillRect(p.x, p.y, 4, 4);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
             });
-            ctx.globalAlpha = 1;
 
-            ctx.shadowBlur = 0;
+            floatingTexts.forEach(ft => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, ft.life);
+                ctx.font = `900 ${isCompactMobile ? 16 : 19}px "Noto Sans TC", sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.lineWidth = 4;
+                ctx.strokeText(ft.text, ft.x, ft.y);
+                ctx.fillStyle = ft.color;
+                ctx.fillText(ft.text, ft.x, ft.y);
+                ctx.restore();
+            });
+
+            ctx.restore();
         }
 
-        function gameLoop(time) {
-            if (!state.isPlaying) return;
-            updatePhaseLabel();
-            update();
+        function loop(now) {
+            const dt = Math.min(0.04, (now - lastTime) / 1000);
+            lastTime = now;
+            update(dt);
             draw();
-            requestAnimationFrame(gameLoop);
+            requestAnimationFrame(loop);
         }
 
-        draw(); // Initial
+        // 選單與流程控制
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalBadge = document.getElementById('modal-badge');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+        const setupSection = document.getElementById('setup-section');
+        const modalStats = document.getElementById('modal-stats');
+        const primaryBtn = document.getElementById('modal-primary-btn');
+        const secondaryBtn = document.getElementById('modal-secondary-btn');
+
+        document.querySelectorAll('.hero-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                document.querySelectorAll('.hero-option').forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                selectedHero = opt.dataset.hero;
+            });
+        });
+
+        function startNewGame() {
+            sfx.init();
+            resizeCanvas();
+            stage = 1;
+            score = 0;
+            lives = maxLives;
+            safetyNet = true;
+            combo = 0;
+            maxCombo = 0;
+            wideTimer = 0;
+            fireTimer = 0;
+            starsEarnedThisRun = 0;
+            capsules = [];
+            particles = [];
+            floatingTexts = [];
+            paddle.x = W / 2;
+            paddle.targetX = W / 2;
+
+            buildStageBricks(stage);
+            resetDockedBall();
+            gameState = 'playing';
+            modalOverlay.classList.add('hidden');
+            updateHUD();
+            showCenterToast('💎 第 1 關：星光水晶礦坑', '點一下畫面發射能量球，接住掉落的膠囊！', 1800);
+        }
+
+        function togglePause() {
+            if (gameState === 'playing') {
+                gameState = 'paused';
+                modalBadge.textContent = '⏸️ 遊戲暫停';
+                modalTitle.textContent = '休息一下，換位滑板手嗎？';
+                modalDesc.innerHTML = '隨時可以切換你的怪獸滑板夥伴！';
+                setupSection.style.display = 'block';
+                modalStats.style.display = 'none';
+                primaryBtn.textContent = '▶️ 繼續闖關';
+                primaryBtn.onclick = () => {
+                    modalOverlay.classList.add('hidden');
+                    gameState = 'playing';
+                };
+                secondaryBtn.style.display = 'block';
+                secondaryBtn.textContent = '🔄 重新開始本局';
+                secondaryBtn.onclick = startNewGame;
+                modalOverlay.classList.remove('hidden');
+            } else if (gameState === 'paused') {
+                modalOverlay.classList.add('hidden');
+                gameState = 'playing';
+            }
+        }
+
+        function triggerVictory() {
+            gameState = 'victory';
+            sfx.win();
+            awardStarCoins(3);
+            modalBadge.textContent = '🏆 水晶礦坑大破關';
+            modalTitle.textContent = '恭喜突破全部 5 關水晶陣！';
+            modalDesc.innerHTML = '你的接球反應超精準，把所有寶石都收集完畢了！';
+            setupSection.style.display = 'none';
+            modalStats.style.display = 'grid';
+            document.getElementById('stat-stage').textContent = `5 關全破 (${score}分)`;
+            document.getElementById('stat-stars').textContent = `⭐ +${starsEarnedThisRun}`;
+
+            primaryBtn.textContent = '🔄 再玩一局';
+            primaryBtn.onclick = startNewGame;
+            secondaryBtn.style.display = 'none';
+            modalOverlay.classList.remove('hidden');
+        }
+
+        function triggerGameOver() {
+            gameState = 'gameover';
+            modalBadge.textContent = '💫 挑戰結束';
+            modalTitle.textContent = '別氣餒，再來挑戰一次！';
+            modalDesc.innerHTML = '善用 🎁 寶箱磚掉落的三球分身與彩虹防護網，會更容易過關喔！';
+            setupSection.style.display = 'block';
+            modalStats.style.display = 'grid';
+            document.getElementById('stat-stage').textContent = `第 ${stage} 關 (${score}分)`;
+            document.getElementById('stat-stars').textContent = `⭐ +${starsEarnedThisRun}`;
+
+            primaryBtn.textContent = '🚀 再挑戰一次';
+            primaryBtn.onclick = startNewGame;
+            secondaryBtn.style.display = 'none';
+            modalOverlay.classList.remove('hidden');
+        }
+
+        document.getElementById('pause-btn').addEventListener('click', togglePause);
+        primaryBtn.onclick = startNewGame;
+
+        resizeCanvas();
+        buildStageBricks(1);
+        resetDockedBall();
+        updateHUD();
+        requestAnimationFrame(loop);
     </script>
 </body>
 

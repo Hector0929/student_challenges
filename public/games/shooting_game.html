@@ -7,11 +7,6 @@
     <title>怪獸星際乘法射擊</title>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --frame-border: #3b2d6e;
-            --frame-glow: #818cf8;
-        }
-
         * {
             box-sizing: border-box;
             user-select: none;
@@ -34,20 +29,32 @@
             touch-action: none;
         }
 
-        /* 單一置中星際畫框（15:13 比例，完美適配手機、平板與桌機） */
+        /* 響應式星際畫框：桌機/平板為置中圓角框，手機直向自動滿版釋放空間 */
         #stage-frame {
             position: relative;
-            width: min(96vw, calc(94dvh * 660 / 572));
-            height: min(94dvh, calc(96vw * 572 / 660));
-            aspect-ratio: 660 / 572;
+            width: min(96vw, 700px);
+            height: min(94dvh, 640px);
             background: #0b0726;
             border-radius: 26px;
-            border: 5px solid #4338ca;
+            border: 4px solid #4338ca;
             box-shadow:
                 0 18px 45px rgba(0, 0, 0, 0.7),
                 0 0 28px rgba(99, 102, 241, 0.35),
-                inset 0 0 0 3px rgba(165, 180, 252, 0.25);
+                inset 0 0 0 2px rgba(165, 180, 252, 0.25);
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 手機與小螢幕優化：滿版直向街機比例，不浪費任何螢幕空間 */
+        @media (max-width: 640px) {
+            #stage-frame {
+                width: 100vw;
+                height: 100dvh;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+            }
         }
 
         canvas {
@@ -57,133 +64,60 @@
             cursor: pointer;
         }
 
-        /* 頂部中央：全息乘法題目看板 */
-        #math-hud {
-            position: absolute;
-            top: 10px;
-            left: 14px;
-            z-index: 15;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            pointer-events: none;
-        }
-
-        .question-card {
-            background: linear-gradient(135deg, rgba(30, 27, 75, 0.92), rgba(49, 46, 129, 0.92));
-            border: 2.5px solid #38bdf8;
-            border-radius: 18px;
-            padding: 6px 18px 8px;
-            box-shadow:
-                0 6px 20px rgba(14, 165, 233, 0.35),
-                inset 0 0 12px rgba(56, 189, 248, 0.25);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            backdrop-filter: blur(6px);
-        }
-
-        .wave-tag {
-            background: rgba(14, 165, 233, 0.25);
-            border: 1.5px solid rgba(125, 211, 252, 0.6);
-            color: #bae6fd;
-            font-size: 12px;
-            font-weight: 900;
-            padding: 3px 9px;
-            border-radius: 999px;
-            white-space: nowrap;
-        }
-
-        #question-text {
-            font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
-            font-size: clamp(24px, 4.5vw, 34px);
-            font-weight: 900;
-            color: #ffffff;
-            letter-spacing: 1px;
-            text-shadow: 0 2px 10px rgba(56, 189, 248, 0.7);
-            line-height: 1.1;
-        }
-
-        /* 彩虹巨砲充能條 */
-        .charge-row {
-            margin-top: 5px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(15, 23, 42, 0.75);
-            padding: 3px 10px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-        }
-
-        .charge-label {
-            font-size: 11px;
-            font-weight: 900;
-            color: #fde047;
-        }
-
-        .charge-dots {
-            display: flex;
-            gap: 4px;
-        }
-
-        .charge-dot {
-            width: 18px;
-            height: 7px;
-            border-radius: 99px;
-            background: rgba(255, 255, 255, 0.2);
-            transition: all 0.25s;
-        }
-
-        .charge-dot.filled {
-            background: linear-gradient(90deg, #f43f5e, #f59e0b, #10b981, #38bdf8);
-            box-shadow: 0 0 8px #facc15;
-        }
-
-        /* 右上角：精簡生命與星幣 HUD */
+        /* 右上角：精簡生命與星幣 HUD（頂部唯一常駐資訊，手機絕不重疊） */
         #top-right-hud {
             position: absolute;
             top: 10px;
             right: 12px;
+            left: 12px;
             z-index: 20;
             display: flex;
             align-items: center;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .hud-group {
+            display: flex;
+            align-items: center;
             gap: 6px;
+            pointer-events: auto;
         }
 
         .hud-pill {
             background: rgba(15, 23, 42, 0.82);
             backdrop-filter: blur(6px);
-            border: 2px solid rgba(165, 180, 252, 0.35);
+            border: 1.5px solid rgba(165, 180, 252, 0.35);
             border-radius: 999px;
-            padding: 5px 11px;
+            padding: 4px 10px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
             font-weight: 900;
-            font-size: 13px;
+            font-size: clamp(11px, 2.8vw, 13px);
             color: #fff;
+            white-space: nowrap;
         }
 
         #hp-hearts {
-            font-size: 14px;
+            font-size: clamp(12px, 3vw, 14px);
             letter-spacing: 1px;
             line-height: 1;
         }
 
         #pause-btn {
             background: rgba(30, 41, 59, 0.88);
-            border: 2px solid rgba(165, 180, 252, 0.45);
+            border: 1.5px solid rgba(165, 180, 252, 0.45);
             color: #fff;
             border-radius: 999px;
-            width: 34px;
-            height: 34px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             transition: transform 0.1s;
         }
@@ -195,20 +129,20 @@
         /* 畫面中央短暫提示橫幅（Toast） */
         #center-toast {
             position: absolute;
-            top: 23%;
+            top: 16%;
             left: 50%;
             transform: translate(-50%, -50%) scale(0.85);
             z-index: 25;
             pointer-events: none;
             background: linear-gradient(135deg, rgba(254, 240, 138, 0.96), rgba(251, 191, 36, 0.96));
-            border: 3px solid #92400e;
-            border-radius: 20px;
-            padding: 8px 22px;
+            border: 2.5px solid #92400e;
+            border-radius: 18px;
+            padding: 6px 16px;
             text-align: center;
             box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
             opacity: 0;
             transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-            white-space: nowrap;
+            max-width: 92%;
         }
 
         #center-toast.show {
@@ -217,46 +151,118 @@
         }
 
         #center-toast .toast-main {
-            font-size: 18px;
+            font-size: clamp(14px, 3.8vw, 17px);
             font-weight: 900;
             color: #78350f;
         }
 
         #center-toast .toast-sub {
-            font-size: 12px;
+            font-size: clamp(11px, 2.8vw, 12px);
             font-weight: 800;
             color: #92400e;
             margin-top: 2px;
         }
 
+        /* =========================================================
+           底部一體化星際駕駛艙：題目就在 4 個答案按鈕正上方！
+           ========================================================= */
+        #bottom-cockpit {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 18;
+            padding: 6px 10px 10px;
+            background: linear-gradient(180deg, rgba(11, 7, 38, 0) 0%, rgba(11, 7, 38, 0.88) 28%, rgba(15, 10, 44, 0.98) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        /* 題目橫幅（緊貼在答案按鈕正上方，視線免上下跳動） */
+        #question-deck {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, rgba(30, 27, 75, 0.96), rgba(49, 46, 129, 0.96));
+            border: 2.5px solid #38bdf8;
+            border-radius: 999px;
+            padding: 5px 18px;
+            box-shadow:
+                0 6px 18px rgba(14, 165, 233, 0.35),
+                inset 0 0 12px rgba(56, 189, 248, 0.25);
+            max-width: 96%;
+        }
+
+        #question-text {
+            font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
+            font-size: clamp(22px, 5.5vw, 30px);
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 10px rgba(56, 189, 248, 0.75);
+            line-height: 1.1;
+            white-space: nowrap;
+        }
+
+        /* 彩虹巨砲充能燈號（整合在題目膠囊右側） */
+        .charge-inline {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(15, 23, 42, 0.75);
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .charge-icon {
+            font-size: 12px;
+            line-height: 1;
+        }
+
+        .charge-dot {
+            width: 10px;
+            height: 7px;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, 0.22);
+            transition: all 0.25s;
+        }
+
+        .charge-dot.filled {
+            background: linear-gradient(90deg, #f43f5e, #f59e0b, #10b981, #38bdf8);
+            box-shadow: 0 0 8px #facc15;
+        }
+
         /* 底部：4 顆彩色圓形答案發射鈕 */
         #bottom-cannons {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: min(94%, 560px);
-            z-index: 18;
+            pointer-events: auto;
+            width: min(100%, 560px);
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            gap: 8px;
         }
 
         .cannon-pad {
             position: relative;
-            height: 62px;
-            border-radius: 20px;
+            height: clamp(50px, 8.5dvh, 62px);
+            border-radius: 16px;
             font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
-            font-size: clamp(22px, 4vw, 30px);
+            font-size: clamp(20px, 5vw, 28px);
             font-weight: 900;
             color: #ffffff;
-            border: 3px solid rgba(255, 255, 255, 0.75);
+            border: 2.5px solid rgba(255, 255, 255, 0.8);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: transform 0.1s, opacity 0.2s, filter 0.2s;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
+            padding: 0;
         }
 
         .cannon-pad:active:not(:disabled) {
@@ -264,49 +270,62 @@
         }
 
         .cannon-pad:disabled {
-            opacity: 0.28;
-            filter: grayscale(0.8);
+            opacity: 0.25;
+            filter: grayscale(0.85);
             cursor: default;
             transform: scale(0.94);
         }
 
         .cannon-pad .key-hint {
             position: absolute;
-            top: 4px;
-            left: 8px;
+            top: 3px;
+            left: 7px;
             font-size: 10px;
             font-weight: 800;
             opacity: 0.75;
         }
 
+        @media (max-width: 480px) {
+            .cannon-pad .key-hint {
+                display: none;
+            }
+            #bottom-cockpit {
+                padding: 4px 8px 8px;
+                gap: 6px;
+            }
+            #bottom-cannons {
+                gap: 6px;
+            }
+        }
+
         .pad-0 {
             background: linear-gradient(180deg, #22d3ee 0%, #0284c7 100%);
-            box-shadow: 0 6px 0 #0369a1, 0 8px 18px rgba(34, 211, 238, 0.4);
+            box-shadow: 0 5px 0 #0369a1, 0 6px 14px rgba(34, 211, 238, 0.35);
         }
         .pad-1 {
             background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
-            box-shadow: 0 6px 0 #92400e, 0 8px 18px rgba(251, 191, 36, 0.4);
+            box-shadow: 0 5px 0 #92400e, 0 6px 14px rgba(251, 191, 36, 0.35);
         }
         .pad-2 {
             background: linear-gradient(180deg, #34d399 0%, #059669 100%);
-            box-shadow: 0 6px 0 #065f46, 0 8px 18px rgba(52, 211, 153, 0.4);
+            box-shadow: 0 5px 0 #065f46, 0 6px 14px rgba(52, 211, 153, 0.35);
         }
         .pad-3 {
             background: linear-gradient(180deg, #f472b6 0%, #db2777 100%);
-            box-shadow: 0 6px 0 #9d174d, 0 8px 18px rgba(244, 114, 182, 0.4);
+            box-shadow: 0 5px 0 #9d174d, 0 6px 14px rgba(244, 114, 182, 0.35);
         }
 
-        /* 彈出視窗（開始 / 暫停 / 過關結算） */
+        /* 彈出視窗（開始 / 暫停 / 過關結算，支援手機小螢幕捲動與自適應） */
         .overlay-modal {
             position: absolute;
             inset: 0;
-            background: rgba(10, 8, 34, 0.82);
+            background: rgba(10, 8, 34, 0.84);
             backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 40;
-            padding: 16px;
+            padding: 12px;
         }
 
         .overlay-modal.hidden {
@@ -315,11 +334,13 @@
 
         .modal-card {
             background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
-            border: 4px solid #78350f;
-            border-radius: 26px;
-            padding: 20px 18px;
+            border: 3.5px solid #78350f;
+            border-radius: 24px;
+            padding: clamp(14px, 3.5vw, 20px);
             width: 100%;
-            max-width: 400px;
+            max-width: 390px;
+            max-height: 92dvh;
+            overflow-y: auto;
             text-align: center;
             color: #451a03;
             box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
@@ -333,53 +354,52 @@
 
         .modal-badge {
             display: inline-block;
-            padding: 4px 14px;
+            padding: 3px 12px;
             border-radius: 999px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 900;
             background: #e0f2fe;
             color: #0369a1;
             border: 2px solid #38bdf8;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .modal-title {
-            font-size: 24px;
+            font-size: clamp(20px, 5vw, 24px);
             font-weight: 900;
             margin: 2px 0 6px;
             color: #451a03;
         }
 
         .modal-desc {
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 700;
             color: #78350f;
-            margin-bottom: 12px;
-            line-height: 1.45;
+            margin-bottom: 10px;
+            line-height: 1.4;
         }
 
         .section-label {
             font-size: 12px;
             font-weight: 900;
             color: #92400e;
-            margin: 8px 0 6px;
+            margin: 6px 0 5px;
         }
 
-        /* 乘法範圍選擇鈕 */
         .range-picker {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 6px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .range-btn {
             background: #fff;
-            border: 2.5px solid #d6d3d1;
-            border-radius: 12px;
-            padding: 7px 4px;
+            border: 2px solid #d6d3d1;
+            border-radius: 10px;
+            padding: 6px 4px;
             font-family: inherit;
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 900;
             color: #57534e;
             cursor: pointer;
@@ -393,34 +413,32 @@
             box-shadow: 0 3px 8px rgba(2, 132, 199, 0.2);
         }
 
-        /* 怪獸飛行員選擇 */
         .hero-picker {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 14px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 12px;
         }
 
         .hero-option {
-            width: 68px;
-            padding: 6px 4px;
-            border-radius: 14px;
-            border: 2.5px solid #d6d3d1;
+            padding: 5px 2px;
+            border-radius: 12px;
+            border: 2px solid #d6d3d1;
             background: #fff;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 2px;
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 800;
             color: #57534e;
             transition: all 0.15s;
         }
 
         .hero-option img {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             object-fit: contain;
         }
 
@@ -435,15 +453,15 @@
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 14px;
+            gap: 8px;
+            margin-bottom: 12px;
         }
 
         .stat-box {
             background: #fff;
             border: 2px solid #fde68a;
-            border-radius: 14px;
-            padding: 8px;
+            border-radius: 12px;
+            padding: 7px;
         }
 
         .stat-box .lbl {
@@ -453,7 +471,7 @@
         }
 
         .stat-box .val {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 900;
             color: #451a03;
             margin-top: 2px;
@@ -461,13 +479,13 @@
 
         .primary-btn {
             width: 100%;
-            padding: 12px 18px;
-            border-radius: 16px;
+            padding: 11px 16px;
+            border-radius: 14px;
             border: 3px solid #78350f;
             background: linear-gradient(180deg, #facc15 0%, #f59e0b 100%);
             color: #451a03;
             font-family: inherit;
-            font-size: 17px;
+            font-size: 16px;
             font-weight: 900;
             cursor: pointer;
             box-shadow: 0 4px 0 #78350f;
@@ -481,14 +499,14 @@
 
         .secondary-btn {
             width: 100%;
-            margin-top: 8px;
-            padding: 10px 16px;
-            border-radius: 14px;
-            border: 2.5px solid #a8a29e;
+            margin-top: 7px;
+            padding: 9px 14px;
+            border-radius: 12px;
+            border: 2px solid #a8a29e;
             background: #fff;
             color: #57534e;
             font-family: inherit;
-            font-size: 14px;
+            font-size: 13.5px;
             font-weight: 800;
             cursor: pointer;
         }
@@ -497,62 +515,66 @@
 
 <body>
     <div id="stage-frame">
-        <canvas id="gameCanvas" width="660" height="572"></canvas>
+        <canvas id="gameCanvas"></canvas>
 
-        <!-- 左上至中上：全息乘法題目看板與彩虹充能 -->
-        <div id="math-hud">
-            <div class="question-card">
-                <span class="wave-tag" id="wave-label">第 1 / 15 波</span>
-                <span id="question-text">2 × 3 = ?</span>
-            </div>
-            <div class="charge-row">
-                <span class="charge-label">🌈 彩虹巨砲</span>
-                <div class="charge-dots">
-                    <div class="charge-dot" id="charge-0"></div>
-                    <div class="charge-dot" id="charge-1"></div>
-                    <div class="charge-dot" id="charge-2"></div>
+        <!-- 頂部極簡狀態列（左側波數、右側星幣與愛心，清爽不擁擠） -->
+        <div id="top-right-hud">
+            <div class="hud-group">
+                <div class="hud-pill">
+                    <span>🛸</span>
+                    <span id="wave-label">第 1 / 15 波</span>
                 </div>
             </div>
-        </div>
-
-        <!-- 右上角：精簡生命、星幣與暫停 HUD -->
-        <div id="top-right-hud">
-            <div class="hud-pill" title="本局獲得星幣與得分">
-                <span>⭐</span>
-                <span id="stars-text">0</span>
-                <span style="opacity:0.4;">|</span>
-                <span id="score-text">0</span>
+            <div class="hud-group">
+                <div class="hud-pill" title="本局獲得星幣與得分">
+                    <span>⭐</span>
+                    <span id="stars-text">0</span>
+                    <span style="opacity:0.35;">|</span>
+                    <span id="score-text">0</span>
+                </div>
+                <div class="hud-pill" title="生命值與護盾">
+                    <span id="hp-hearts">🫧❤️❤️❤️❤️</span>
+                </div>
+                <button id="pause-btn" title="暫停">⏸️</button>
             </div>
-            <div class="hud-pill" title="生命值與護盾">
-                <span id="hp-hearts">❤️❤️❤️❤️</span>
-            </div>
-            <button id="pause-btn" title="暫停">⏸️</button>
         </div>
 
         <!-- 畫面中央短暫提示橫幅 -->
         <div id="center-toast">
             <div class="toast-main" id="toast-main">🚀 星際防衛開始！</div>
-            <div class="toast-sub" id="toast-sub">點擊正確答案的飛碟或下方按鈕發射雷射！</div>
+            <div class="toast-sub" id="toast-sub">看下方題目，點擊答案鈕或飛碟發射雷射！</div>
         </div>
 
-        <!-- 底部：4 顆彩色圓形答案發射鈕 -->
-        <div id="bottom-cannons">
-            <button class="cannon-pad pad-0" id="pad-0" onclick="fireAtSlot(0)">
-                <span class="key-hint">1</span>
-                <span class="pad-val">--</span>
-            </button>
-            <button class="cannon-pad pad-1" id="pad-1" onclick="fireAtSlot(1)">
-                <span class="key-hint">2</span>
-                <span class="pad-val">--</span>
-            </button>
-            <button class="cannon-pad pad-2" id="pad-2" onclick="fireAtSlot(2)">
-                <span class="key-hint">3</span>
-                <span class="pad-val">--</span>
-            </button>
-            <button class="cannon-pad pad-3" id="pad-3" onclick="fireAtSlot(3)">
-                <span class="key-hint">4</span>
-                <span class="pad-val">--</span>
-            </button>
+        <!-- 底部一體化星際駕駛艙：題目緊貼在 4 個答案按鈕正上方 -->
+        <div id="bottom-cockpit">
+            <div id="question-deck">
+                <span id="question-text">3 × 7 = ?</span>
+                <div class="charge-inline" title="連續答對 3 題觸發超級彩虹巨砲">
+                    <span class="charge-icon">🌈</span>
+                    <div class="charge-dot" id="charge-0"></div>
+                    <div class="charge-dot" id="charge-1"></div>
+                    <div class="charge-dot" id="charge-2"></div>
+                </div>
+            </div>
+
+            <div id="bottom-cannons">
+                <button class="cannon-pad pad-0" id="pad-0" onclick="fireAtSlot(0)">
+                    <span class="key-hint">1</span>
+                    <span class="pad-val">--</span>
+                </button>
+                <button class="cannon-pad pad-1" id="pad-1" onclick="fireAtSlot(1)">
+                    <span class="key-hint">2</span>
+                    <span class="pad-val">--</span>
+                </button>
+                <button class="cannon-pad pad-2" id="pad-2" onclick="fireAtSlot(2)">
+                    <span class="key-hint">3</span>
+                    <span class="pad-val">--</span>
+                </button>
+                <button class="cannon-pad pad-3" id="pad-3" onclick="fireAtSlot(3)">
+                    <span class="key-hint">4</span>
+                    <span class="pad-val">--</span>
+                </button>
+            </div>
         </div>
 
         <!-- 彈出視窗（開始 / 暫停 / 結算） -->
@@ -561,8 +583,8 @@
                 <div class="modal-badge" id="modal-badge">🎯 九九乘法星際防衛</div>
                 <div class="modal-title" id="modal-title">怪獸星際乘法射擊</div>
                 <div class="modal-desc" id="modal-desc">
-                    外星飛碟帶著數字護盾降落了！<br>
-                    <strong>直接點擊正確答案的飛碟</strong>或<strong>按下方四色發射鈕</strong>，發射彩虹雷射擊落敵機！
+                    題目就在下方按鈕正上方！<br>
+                    <strong>點擊下方四色答案鈕</strong>或<strong>直接點飛碟</strong>即可發射雷射擊落敵機！
                 </div>
 
                 <div id="setup-section">
@@ -612,13 +634,17 @@
     </div>
 
     <script>
-        // ==========================================
-        // 怪獸星際乘法射擊（單一畫框・直覺雙操作版）
-        // ==========================================
+        // ====================================================
+        // 怪獸星際乘法射擊（底部駕駛艙題目整合 + 手機 RWD 優化版）
+        // ====================================================
+        const stageFrame = document.getElementById('stage-frame');
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const W = canvas.width;   // 660
-        const H = canvas.height;  // 572
+        const bottomCockpit = document.getElementById('bottom-cockpit');
+
+        let W = 660;
+        let H = 572;
+        let isCompactMobile = false;
         const TOTAL_WAVES = 15;
 
         // 四色能量護盾配色（與底部四顆發射鈕一一對應）
@@ -705,14 +731,54 @@
         }
         const sfx = new SoundFX();
 
-        // 星空背景粒子
-        const stars = Array.from({ length: 75 }, () => ({
-            x: Math.random() * W,
-            y: Math.random() * H,
-            r: Math.random() * 1.8 + 0.6,
-            speed: Math.random() * 18 + 8,
-            phase: Math.random() * Math.PI * 2
-        }));
+        // 玩家底部星際砲台（緊貼在底部題目面板正上方）
+        const turret = {
+            x: W / 2,
+            y: H - 150,
+            angle: 0,
+            targetAngle: 0,
+            recoil: 0
+        };
+
+        let stars = [];
+        function initStars() {
+            stars = Array.from({ length: 70 }, () => ({
+                x: Math.random() * W,
+                y: Math.random() * H,
+                r: Math.random() * 1.8 + 0.6,
+                speed: Math.random() * 18 + 8,
+                phase: Math.random() * Math.PI * 2
+            }));
+        }
+
+        // 根據螢幕與容器尺寸自適應調整畫布與飛碟軌道，徹底解決手機擁擠問題
+        function resizeCanvas() {
+            const rect = stageFrame.getBoundingClientRect();
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            W = Math.max(320, Math.round(rect.width));
+            H = Math.max(420, Math.round(rect.height));
+            isCompactMobile = W < 500;
+
+            canvas.width = W * dpr;
+            canvas.height = H * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            const cockpitH = bottomCockpit.offsetHeight || 118;
+            turret.x = W / 2;
+            turret.y = H - cockpitH - 34;
+
+            if (stars.length === 0) initStars();
+
+            // 重新對齊場上飛碟的水平軌道，防止旋轉螢幕或縮放時跑位
+            if (ufos.length === 4) {
+                const padX = isCompactMobile ? 16 : 36;
+                const laneWidth = (W - padX * 2) / 4;
+                ufos.forEach((u, slot) => {
+                    u.baseX = padX + laneWidth * (slot + 0.5);
+                });
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
 
         // 遊戲狀態
         let selectedHero = 'astro_turtle';
@@ -731,26 +797,16 @@
         let starsEarnedThisRun = 0;
         let screenShake = 0;
 
-        let currentQuestion = { a: 2, b: 3, ans: 6 };
+        let currentQuestion = { a: 3, b: 7, ans: 21 };
         let askedHistory = [];
         let ufos = [];          // 當前波次的 4 架數字飛碟
         let beamEffects = [];   // 雷射光束與閃電鏈特效
         let particles = [];     // 爆炸星星與彩紙粒子
         let floatingTexts = []; // 浮動得分文字
 
-        // 玩家底部星際砲台
-        const turret = {
-            x: W / 2,
-            y: H - 108,
-            targetX: W / 2,
-            angle: 0,
-            targetAngle: 0,
-            recoil: 0
-        };
-
         // Toast 控制
         let toastTimeout = null;
-        function showCenterToast(mainText, subText = '', duration = 1750) {
+        function showCenterToast(mainText, subText = '', duration = 1700) {
             const toast = document.getElementById('center-toast');
             document.getElementById('toast-main').textContent = mainText;
             document.getElementById('toast-sub').textContent = subText;
@@ -790,6 +846,7 @@
 
         // 產生題目與 4 艘數字飛碟
         function spawnWave() {
+            resizeCanvas();
             gameState = 'playing';
 
             // 依選擇範圍決定被乘數與乘數
@@ -814,7 +871,7 @@
             currentQuestion = { a, b, ans };
             document.getElementById('question-text').textContent = `${a} × ${b} = ?`;
 
-            // 產生 3 個貼近但合理的干擾答案（幫助練習九九乘法分辨）
+            // 產生 3 個貼近但合理的干擾答案
             const optionsSet = new Set([ans]);
             const candidates = [
                 a * (b + 1),
@@ -838,21 +895,26 @@
 
             const options = Array.from(optionsSet).sort(() => Math.random() - 0.5);
 
-            // 計算降落速度（高年級 6~9 題目自動放慢 18%，讓孩子從容思考）
-            const baseSpeed = 24 + Math.min(18, (wave - 1) * 1.3);
+            // 計算降落速度（高年級 6~9 題目自動放慢 18%）
+            const flightDist = Math.max(200, turret.y - 120);
+            const targetSeconds = 11.5 - Math.min(4.0, (wave - 1) * 0.25);
             const hardFactor = (a >= 6 && b >= 6) ? 0.82 : 1.0;
-            const fallSpeed = baseSpeed * hardFactor;
+            const fallSpeed = (flightDist / targetSeconds) * hardFactor;
 
-            const laneWidth = (W - 76) / 4;
+            const padX = isCompactMobile ? 16 : 36;
+            const laneWidth = (W - padX * 2) / 4;
+            // 在手機窄螢幕上採用高低錯位編隊（偶數與奇數軌錯開 34px），避免 4 顆數字球水平互擠
+            const staggerY = isCompactMobile ? 34 : 18;
+
             ufos = options.map((val, slot) => {
-                const laneCenterX = 38 + laneWidth * (slot + 0.5);
+                const laneCenterX = padX + laneWidth * (slot + 0.5);
                 const monsterKey = ENEMY_KEYS[(wave + slot) % ENEMY_KEYS.length];
                 return {
                     slot,
                     value: val,
                     isCorrect: val === ans,
                     x: laneCenterX,
-                    y: 96 + (slot % 2) * 18,
+                    y: 74 + (slot % 2) * staggerY,
                     baseX: laneCenterX,
                     speed: fallSpeed,
                     wobbleOffset: slot * 1.4 + Math.random(),
@@ -955,7 +1017,7 @@
             });
 
             floatingTexts.push({
-                x: target.x,
+                x: Math.min(W - 90, Math.max(90, target.x)),
                 y: target.y - 10,
                 text: isSuperRainbow ? `🌈 超級巨砲 +${gain}!` : `✨ ${currentQuestion.a}×${currentQuestion.b}=${currentQuestion.ans}  +${gain}`,
                 color: '#fde047',
@@ -1012,7 +1074,7 @@
 
             spawnExplosion(target.x, target.y + 15, '#94a3b8', 8);
             floatingTexts.push({
-                x: target.x,
+                x: Math.min(W - 60, Math.max(60, target.x)),
                 y: target.y - 14,
                 text: '再算算看！',
                 color: '#fca5a5',
@@ -1050,13 +1112,13 @@
             const colors = [color, '#fde047', '#ffffff', '#38bdf8', '#f472b6'];
             for (let i = 0; i < count; i++) {
                 const angle = Math.random() * Math.PI * 2;
-                const speed = Math.random() * 170 + 45;
+                const speed = Math.random() * 160 + 40;
                 particles.push({
                     x,
                     y,
                     vx: Math.cos(angle) * speed,
                     vy: Math.sin(angle) * speed,
-                    r: Math.random() * 4.5 + 2,
+                    r: Math.random() * 4 + 2,
                     color: colors[i % colors.length],
                     life: 1.0,
                     decay: Math.random() * 1.4 + 1.1
@@ -1071,12 +1133,11 @@
             const cx = (e.clientX - rect.left) * (W / rect.width);
             const cy = (e.clientY - rect.top) * (H / rect.height);
 
-            // 檢查是否點到任何一艘飛碟
             let bestSlot = -1;
-            let bestDist = 72; // 寬鬆好點的觸控半徑
+            let bestDist = isCompactMobile ? 56 : 72;
             ufos.forEach(u => {
                 if (!u.alive || u.eliminated) return;
-                const d = Math.hypot(cx - u.x, cy - u.y);
+                const d = Math.hypot(cx - u.x, cy - (u.y + 8));
                 if (d < bestDist) {
                     bestDist = d;
                     bestSlot = u.slot;
@@ -1100,7 +1161,6 @@
         // 主更新迴圈
         let lastTime = performance.now();
         function update(dt) {
-            // 背景星星流動
             stars.forEach(s => {
                 s.y += s.speed * dt;
                 if (s.y > H) {
@@ -1109,7 +1169,6 @@
                 }
             });
 
-            // 砲台平滑轉向與後座力恢復
             turret.angle += (turret.targetAngle - turret.angle) * Math.min(1, dt * 16);
             turret.recoil = Math.max(0, turret.recoil - dt * 45);
 
@@ -1117,13 +1176,11 @@
                 screenShake = Math.max(0, screenShake - dt * 28);
             }
 
-            // 更新雷射特效
             for (let i = beamEffects.length - 1; i >= 0; i--) {
                 beamEffects[i].life -= dt;
                 if (beamEffects[i].life <= 0) beamEffects.splice(i, 1);
             }
 
-            // 更新爆炸粒子
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
                 p.x += p.vx * dt;
@@ -1133,29 +1190,29 @@
                 if (p.life <= 0) particles.splice(i, 1);
             }
 
-            // 更新浮動文字
             for (let i = floatingTexts.length - 1; i >= 0; i--) {
                 const ft = floatingTexts[i];
-                ft.y -= 38 * dt;
+                ft.y -= 36 * dt;
                 ft.life -= dt * 1.1;
                 if (ft.life <= 0) floatingTexts.splice(i, 1);
             }
 
             if (gameState !== 'playing') return;
 
-            // 更新飛碟位置與防線檢查
-            const defenseLineY = H - 155;
+            // 防線位於砲台上方 38px
+            const defenseLineY = turret.y - 38;
             let breached = false;
             const nowSec = performance.now() * 0.001;
+            const wobbleAmp = isCompactMobile ? 4.5 : 9;
 
             ufos.forEach(u => {
                 if (!u.alive) return;
                 u.y += u.speed * dt;
-                u.x = u.baseX + Math.sin(nowSec * 2.2 + u.wobbleOffset) * 10;
+                u.x = u.baseX + Math.sin(nowSec * 2.2 + u.wobbleOffset) * wobbleAmp;
                 if (u.hitScale > 1) {
                     u.hitScale = Math.max(1, u.hitScale - dt * 2.5);
                 }
-                if (u.y >= defenseLineY) {
+                if (u.y + 22 >= defenseLineY) {
                     breached = true;
                 }
             });
@@ -1180,14 +1237,13 @@
             ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, W, H);
 
-            // 柔和星雲裝飾
-            const neb1 = ctx.createRadialGradient(140, 180, 10, 140, 180, 160);
+            const neb1 = ctx.createRadialGradient(W * 0.22, H * 0.3, 10, W * 0.22, H * 0.3, 150);
             neb1.addColorStop(0, 'rgba(139, 92, 246, 0.18)');
             neb1.addColorStop(1, 'rgba(139, 92, 246, 0)');
             ctx.fillStyle = neb1;
             ctx.fillRect(0, 0, W, H);
 
-            const neb2 = ctx.createRadialGradient(520, 290, 10, 520, 290, 180);
+            const neb2 = ctx.createRadialGradient(W * 0.78, H * 0.5, 10, W * 0.78, H * 0.5, 170);
             neb2.addColorStop(0, 'rgba(14, 165, 233, 0.16)');
             neb2.addColorStop(1, 'rgba(14, 165, 233, 0)');
             ctx.fillStyle = neb2;
@@ -1203,15 +1259,15 @@
                 ctx.fill();
             });
 
-            // 2. 底部星際防線光束
-            const defenseY = H - 155;
+            // 2. 底部星際防線光束（位於怪獸砲台上方）
+            const defenseY = turret.y - 38;
             ctx.save();
-            ctx.strokeStyle = shield ? 'rgba(56, 189, 248, 0.45)' : 'rgba(244, 63, 94, 0.35)';
+            ctx.strokeStyle = shield ? 'rgba(56, 189, 248, 0.42)' : 'rgba(244, 63, 94, 0.35)';
             ctx.lineWidth = 2;
-            ctx.setLineDash([8, 8]);
+            ctx.setLineDash([7, 7]);
             ctx.beginPath();
-            ctx.moveTo(24, defenseY);
-            ctx.lineTo(W - 24, defenseY);
+            ctx.moveTo(18, defenseY);
+            ctx.lineTo(W - 18, defenseY);
             ctx.stroke();
             ctx.restore();
 
@@ -1227,41 +1283,42 @@
                     grad.addColorStop(0.66, '#4ade80');
                     grad.addColorStop(1, '#38bdf8');
                     ctx.strokeStyle = grad;
-                    ctx.lineWidth = 18 * alpha;
+                    ctx.lineWidth = 16 * alpha;
                     ctx.shadowColor = '#facc15';
-                    ctx.shadowBlur = 22;
+                    ctx.shadowBlur = 20;
                     ctx.beginPath();
                     ctx.moveTo(b.x1, b.y1);
                     ctx.lineTo(b.x2, b.y2);
                     ctx.stroke();
 
                     ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 6 * alpha;
+                    ctx.lineWidth = 5 * alpha;
                     ctx.stroke();
                 } else {
                     ctx.strokeStyle = b.weak ? `rgba(148, 163, 184, ${alpha})` : `rgba(56, 189, 248, ${alpha})`;
-                    ctx.lineWidth = (b.weak ? 6 : 12) * alpha;
+                    ctx.lineWidth = (b.weak ? 6 : 11) * alpha;
                     ctx.shadowColor = '#38bdf8';
-                    ctx.shadowBlur = 16;
+                    ctx.shadowBlur = 14;
                     ctx.beginPath();
                     ctx.moveTo(b.x1, b.y1);
                     ctx.lineTo(b.x2, b.y2);
                     ctx.stroke();
 
                     ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-                    ctx.lineWidth = 4 * alpha;
+                    ctx.lineWidth = 3.5 * alpha;
                     ctx.stroke();
                 }
                 ctx.restore();
             });
 
-            // 4. 繪製 4 艘外星數字飛碟艦隊
+            // 4. 繪製 4 艘外星數字飛碟艦隊（根據手機/桌機自動縮放尺寸）
+            const ufoScale = isCompactMobile ? 0.82 : 1.0;
             ufos.forEach(u => {
                 if (!u.alive) return;
                 const pal = ORB_PALETTES[u.slot];
                 ctx.save();
                 ctx.translate(u.x, u.y);
-                ctx.scale(u.hitScale, u.hitScale);
+                ctx.scale(u.hitScale * ufoScale, u.hitScale * ufoScale);
                 if (u.eliminated) {
                     ctx.globalAlpha = 0.32;
                 }
@@ -1271,14 +1328,14 @@
                 ctx.strokeStyle = 'rgba(186, 230, 253, 0.75)';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.arc(0, -28, 24, Math.PI, 0);
+                ctx.arc(0, -28, 23, Math.PI, 0);
                 ctx.fill();
                 ctx.stroke();
 
                 // 繪製座艙內的 Voxel 外星怪獸
                 const mImg = sprites[u.monsterKey];
                 if (mImg && mImg.complete && mImg.naturalWidth > 0) {
-                    ctx.drawImage(mImg, -22, -52, 44, 44);
+                    ctx.drawImage(mImg, -21, -50, 42, 42);
                 }
 
                 // 飛碟金屬圓盤底座
@@ -1286,21 +1343,21 @@
                 ctx.strokeStyle = '#cbd5e1';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.ellipse(0, -10, 34, 9, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, -10, 32, 8.5, 0, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
 
                 // 飛碟下方懸浮的大號彩色數字護盾球
                 ctx.shadowColor = pal.glow;
-                ctx.shadowBlur = u.eliminated ? 0 : 16;
-                const orbGrad = ctx.createRadialGradient(-8, 12, 4, 0, 20, 30);
+                ctx.shadowBlur = u.eliminated ? 0 : 14;
+                const orbGrad = ctx.createRadialGradient(-8, 12, 4, 0, 20, 29);
                 orbGrad.addColorStop(0, pal.light);
                 orbGrad.addColorStop(0.55, pal.main);
                 orbGrad.addColorStop(1, pal.dark);
 
                 ctx.fillStyle = orbGrad;
                 ctx.beginPath();
-                ctx.arc(0, 20, 28, 0, Math.PI * 2);
+                ctx.arc(0, 19, 27, 0, Math.PI * 2);
                 ctx.fill();
 
                 ctx.lineWidth = 3;
@@ -1311,34 +1368,35 @@
                 // 護盾高光
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
                 ctx.beginPath();
-                ctx.ellipse(-9, 9, 9, 5, -0.5, 0, Math.PI * 2);
+                ctx.ellipse(-8, 8, 8, 4.5, -0.5, 0, Math.PI * 2);
                 ctx.fill();
 
                 // 超清晰答案數字
-                ctx.font = '900 26px "Fredoka", "Noto Sans TC", sans-serif';
+                ctx.font = '900 25px "Fredoka", "Noto Sans TC", sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.lineWidth = 4;
                 ctx.strokeStyle = 'rgba(15, 23, 42, 0.65)';
-                ctx.strokeText(u.value, 0, 21);
+                ctx.strokeText(u.value, 0, 20);
                 ctx.fillStyle = '#ffffff';
-                ctx.fillText(u.value, 0, 21);
+                ctx.fillText(u.value, 0, 20);
 
                 ctx.restore();
             });
 
-            // 5. 繪製底部玩家星際怪獸砲台
+            // 5. 繪製底部玩家星際怪獸砲台（緊貼在底部題目橫幅正上方）
+            const turretScale = isCompactMobile ? 0.86 : 1.0;
             ctx.save();
             ctx.translate(turret.x, turret.y + turret.recoil * 0.6);
+            ctx.scale(turretScale, turretScale);
 
-            // 若有泡泡護盾，繪製半透明藍光防護罩
             if (shield) {
                 ctx.save();
                 ctx.strokeStyle = 'rgba(56, 189, 248, 0.75)';
                 ctx.fillStyle = 'rgba(56, 189, 248, 0.14)';
                 ctx.lineWidth = 2.5;
                 ctx.beginPath();
-                ctx.arc(0, -2, 44, 0, Math.PI * 2);
+                ctx.arc(0, -2, 40, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
                 ctx.restore();
@@ -1347,14 +1405,14 @@
             // 旋轉能量砲管
             ctx.save();
             ctx.rotate(turret.angle);
-            const barrelGrad = ctx.createLinearGradient(-10, -48, 10, 0);
+            const barrelGrad = ctx.createLinearGradient(-9, -44, 9, 0);
             barrelGrad.addColorStop(0, '#38bdf8');
             barrelGrad.addColorStop(1, '#1d4ed8');
             ctx.fillStyle = barrelGrad;
             ctx.strokeStyle = '#e0f2fe';
             ctx.lineWidth = 2.5;
             ctx.beginPath();
-            ctx.roundRect(-9, -46, 18, 34, 7);
+            ctx.roundRect(-8, -42, 16, 32, 7);
             ctx.fill();
             ctx.stroke();
             ctx.restore();
@@ -1364,10 +1422,10 @@
             ctx.strokeStyle = '#818cf8';
             ctx.lineWidth = 2.5;
             ctx.beginPath();
-            ctx.moveTo(-40, 18);
-            ctx.lineTo(-18, -10);
-            ctx.lineTo(18, -10);
-            ctx.lineTo(40, 18);
+            ctx.moveTo(-36, 16);
+            ctx.lineTo(-16, -9);
+            ctx.lineTo(16, -9);
+            ctx.lineTo(36, 16);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
@@ -1375,7 +1433,7 @@
             // 駕駛艙內的 Voxel 怪獸飛行員
             const heroImg = sprites[selectedHero];
             if (heroImg && heroImg.complete && heroImg.naturalWidth > 0) {
-                ctx.drawImage(heroImg, -27, -30, 54, 54);
+                ctx.drawImage(heroImg, -25, -28, 50, 50);
             }
             ctx.restore();
 
@@ -1393,7 +1451,7 @@
             floatingTexts.forEach(ft => {
                 ctx.save();
                 ctx.globalAlpha = Math.max(0, ft.life);
-                ctx.font = '900 20px "Noto Sans TC", sans-serif';
+                ctx.font = `900 ${isCompactMobile ? 16 : 19}px "Noto Sans TC", sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
                 ctx.lineWidth = 4;
@@ -1424,7 +1482,6 @@
         const primaryBtn = document.getElementById('modal-primary-btn');
         const secondaryBtn = document.getElementById('modal-secondary-btn');
 
-        // 切換乘法範圍
         document.querySelectorAll('.range-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('selected'));
@@ -1433,7 +1490,6 @@
             });
         });
 
-        // 切換怪獸飛行員
         document.querySelectorAll('.hero-option').forEach(opt => {
             opt.addEventListener('click', () => {
                 document.querySelectorAll('.hero-option').forEach(o => o.classList.remove('selected'));
@@ -1456,7 +1512,7 @@
             askedHistory = [];
             modalOverlay.classList.add('hidden');
             spawnWave();
-            showCenterToast('🚀 星際防衛開始！', '直接點飛碟或按下方四色發射鈕開火！', 1800);
+            showCenterToast('🚀 星際防衛開始！', '看下方題目，點擊四色答案鈕或飛碟開火！', 1750);
         }
 
         function togglePause() {
@@ -1485,7 +1541,7 @@
         function triggerVictory() {
             gameState = 'victory';
             sfx.win();
-            awardStarCoins(3); // 通關額外獎勵 3 顆星幣
+            awardStarCoins(3);
             modalBadge.textContent = '🏆 星際防衛大成功';
             modalTitle.textContent = '恭喜擊退全部 15 波外星艦隊！';
             modalDesc.innerHTML = '你的九九乘法反應超敏捷，成功守護了怪獸星系！';
@@ -1527,7 +1583,8 @@
         document.getElementById('pause-btn').addEventListener('click', togglePause);
         primaryBtn.onclick = startNewGame;
 
-        // 初始化預覽背景與啟動迴圈
+        // 初始化畫布尺寸與啟動迴圈
+        resizeCanvas();
         updateHUD();
         requestAnimationFrame(loop);
     </script>

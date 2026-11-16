@@ -78,7 +78,7 @@ test.describe('Mobile game layout smoke tests', () => {
 
         // 全螢幕畫布、不捲動：整個棋盤必須完整落在可視範圍內
         await expect(page.locator('#gameCanvas')).toBeVisible();
-        await expect(page.locator('#menu-screen')).toBeVisible();
+        await expect(page.locator('#modal-overlay')).toBeVisible();
 
         const box = await page.locator('#gameCanvas').boundingBox();
         const viewport = page.viewportSize();

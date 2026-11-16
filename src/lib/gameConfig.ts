@@ -142,6 +142,8 @@ export const FUN_GAMES: FunGame[] = [
         color: 'bg-amber-500 hover:bg-amber-600',
         category: 'action',
         cover: cover('neon_slicer'),
+        tags: ['星光道場'],
+        earnsStars: true,
     },
     {
         id: 'neon_breaker',
@@ -152,6 +154,8 @@ export const FUN_GAMES: FunGame[] = [
         color: 'bg-pink-500 hover:bg-pink-600',
         category: 'action',
         cover: cover('neon_breaker'),
+        tags: ['5 關掉寶'],
+        earnsStars: true,
     },
     {
         id: 'bubble_shooter',
@@ -162,6 +166,8 @@ export const FUN_GAMES: FunGame[] = [
         color: 'bg-red-500 hover:bg-red-600',
         category: 'action',
         cover: cover('bubble_shooter'),
+        tags: ['5 關清場'],
+        earnsStars: true,
     },
     {
         id: 'snake',

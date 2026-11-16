@@ -4,298 +4,656 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bubble Shooter</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>怪獸魔法泡泡龍</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Orbitron', sans-serif;
-            background-color: #020617;
-            overflow: hidden;
-            touch-action: manipulation;
+        * {
+            box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
-            height: 100dvh;
+            -webkit-touch-callout: none;
+        }
+
+        html, body {
             margin: 0;
-            padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
-        }
-
-        .neon-text {
-            text-shadow: 0 0 10px currentColor;
-        }
-
-        canvas {
-            image-rendering: pixelated;
-        }
-
-        .game-shell {
-            position: relative;
-            width: min(100%, 34rem);
-            height: 100%;
-            margin: 0 auto;
-        }
-
-        .game-stage {
-            position: relative;
+            padding: 0;
             width: 100%;
-            height: 100%;
-            background: #020617;
+            height: 100dvh;
             overflow: hidden;
-            border-radius: 20px;
-            border: 2px solid rgba(71, 85, 105, .6);
+            font-family: 'Noto Sans TC', 'Fredoka', sans-serif;
+            background: radial-gradient(circle at 50% 25%, #0c4a6e 0%, #082f49 55%, #041326 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
         }
 
-        .ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            pointer-events: none;
-            padding: 10px;
-            z-index: 10;
-        }
-
-        .hud-card {
-            border: 1px solid rgba(96, 165, 250, .25);
-            background: rgba(10, 17, 34, .5);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 2px 8px rgba(0,0,0,.25);
-        }
-
-        .menu-card {
-            border: 2px solid rgba(6, 182, 212, .8);
-            box-shadow: 0 28px 56px rgba(2, 8, 23, .6);
-        }
-
-        @keyframes slide-up-fade {
-            0% { transform: translateX(-50%) translateY(0); opacity: 1; }
-            100% { transform: translateX(-50%) translateY(-50px); opacity: 0; }
-        }
-        .float-score {
-            animation: slide-up-fade 0.8s ease-out forwards;
+        /* 單一置中珊瑚海灣畫框（手機直向自動 100% 滿版） */
+        #stage-frame {
+            position: relative;
+            width: min(96vw, 520px);
+            height: min(94dvh, 660px);
+            background: #082540;
+            border-radius: 26px;
+            border: 4px solid #0284c7;
+            box-shadow:
+                0 18px 45px rgba(0, 0, 0, 0.75),
+                0 0 28px rgba(56, 189, 248, 0.35),
+                inset 0 0 0 2px rgba(186, 230, 253, 0.25);
+            overflow: hidden;
         }
 
         @media (max-width: 640px) {
-            body {
-                padding: 0;
-            }
-
-            .game-shell {
-                width: 100%;
-            }
-
-            .game-stage {
-                border: none;
+            #stage-frame {
+                width: 100vw;
+                height: 100dvh;
                 border-radius: 0;
+                border: none;
+                box-shadow: none;
             }
+        }
 
-            .ui-layer {
-                padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) 0 max(6px, env(safe-area-inset-left));
-            }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        /* 頂部專屬安全區 HUD（獨立於第一排泡泡之上，絕不遮擋泡泡） */
+        #top-hud {
+            position: absolute;
+            top: 10px;
+            left: 12px;
+            right: 12px;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .hud-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            pointer-events: auto;
+        }
+
+        .hud-pill {
+            background: rgba(15, 23, 42, 0.84);
+            backdrop-filter: blur(6px);
+            border: 1.5px solid rgba(125, 211, 252, 0.45);
+            border-radius: 999px;
+            padding: 4px 11px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            font-weight: 900;
+            font-size: clamp(11px, 2.8vw, 13px);
+            color: #fff;
+            white-space: nowrap;
+        }
+
+        #pause-btn {
+            background: rgba(30, 41, 59, 0.88);
+            border: 1.5px solid rgba(125, 211, 252, 0.5);
+            color: #fff;
+            border-radius: 999px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 13px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+            transition: transform 0.1s;
+        }
+
+        #pause-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* 右下角獨立「🔄 換球」按鈕（防誤觸發射，隨時對調主副泡泡） */
+        #swap-btn {
+            position: absolute;
+            bottom: 12px;
+            right: 16px;
+            z-index: 22;
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(30, 58, 138, 0.92));
+            border: 2.5px solid #38bdf8;
+            border-radius: 20px;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45), 0 0 12px rgba(56, 189, 248, 0.3);
+            transition: transform 0.12s;
+        }
+
+        #swap-btn:active {
+            transform: scale(0.92);
+        }
+
+        #next-bubble-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: inset -3px -3px 6px rgba(0, 0, 0, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        /* 畫面中央短暫提示橫幅（Toast） */
+        #center-toast {
+            position: absolute;
+            top: 42%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.85);
+            z-index: 25;
+            pointer-events: none;
+            background: linear-gradient(135deg, rgba(254, 240, 138, 0.96), rgba(251, 191, 36, 0.96));
+            border: 2.5px solid #92400e;
+            border-radius: 18px;
+            padding: 6px 18px;
+            text-align: center;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 90%;
+        }
+
+        #center-toast.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        #center-toast .toast-main {
+            font-size: clamp(14px, 3.8vw, 18px);
+            font-weight: 900;
+            color: #78350f;
+        }
+
+        #center-toast .toast-sub {
+            font-size: clamp(11px, 2.8vw, 12px);
+            font-weight: 800;
+            color: #92400e;
+            margin-top: 2px;
+        }
+
+        /* 彈出視窗（開始 / 暫停 / 過關結算） */
+        .overlay-modal {
+            position: absolute;
+            inset: 0;
+            background: rgba(6, 16, 36, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 40;
+            padding: 12px;
+        }
+
+        .overlay-modal.hidden {
+            display: none;
+        }
+
+        .modal-card {
+            background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+            border: 3.5px solid #78350f;
+            border-radius: 24px;
+            padding: clamp(14px, 3.5vw, 20px);
+            width: 100%;
+            max-width: 390px;
+            max-height: 92dvh;
+            overflow-y: auto;
+            text-align: center;
+            color: #451a03;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+            animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.88); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 900;
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 2px solid #38bdf8;
+            margin-bottom: 4px;
+        }
+
+        .modal-title {
+            font-size: clamp(20px, 5vw, 24px);
+            font-weight: 900;
+            margin: 2px 0 6px;
+            color: #451a03;
+        }
+
+        .modal-desc {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #78350f;
+            margin-bottom: 10px;
+            line-height: 1.45;
+        }
+
+        .section-label {
+            font-size: 12px;
+            font-weight: 900;
+            color: #92400e;
+            margin: 6px 0 6px;
+        }
+
+        .hero-picker {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .hero-option {
+            padding: 6px 2px;
+            border-radius: 12px;
+            border: 2px solid #d6d3d1;
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            font-size: 10.5px;
+            font-weight: 800;
+            color: #57534e;
+            transition: all 0.15s;
+        }
+
+        .hero-option img {
+            width: 38px;
+            height: 38px;
+            object-fit: contain;
+        }
+
+        .hero-option.selected {
+            border-color: #0284c7;
+            background: #e0f2fe;
+            color: #0369a1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .stat-box {
+            background: #fff;
+            border: 2px solid #fde68a;
+            border-radius: 12px;
+            padding: 7px;
+        }
+
+        .stat-box .lbl {
+            font-size: 11px;
+            font-weight: 800;
+            color: #92400e;
+        }
+
+        .stat-box .val {
+            font-size: 18px;
+            font-weight: 900;
+            color: #451a03;
+            margin-top: 2px;
+        }
+
+        .primary-btn {
+            width: 100%;
+            padding: 11px 16px;
+            border-radius: 14px;
+            border: 3px solid #78350f;
+            background: linear-gradient(180deg, #facc15 0%, #f59e0b 100%);
+            color: #451a03;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #78350f;
+            transition: transform 0.1s;
+        }
+
+        .primary-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #78350f;
+        }
+
+        .secondary-btn {
+            width: 100%;
+            margin-top: 7px;
+            padding: 9px 14px;
+            border-radius: 12px;
+            border: 2px solid #a8a29e;
+            background: #fff;
+            color: #57534e;
+            font-family: inherit;
+            font-size: 13.5px;
+            font-weight: 800;
+            cursor: pointer;
         }
     </style>
 </head>
 
-<body class="flex items-center justify-center">
+<body>
+    <div id="stage-frame">
+        <canvas id="gameCanvas"></canvas>
 
-    <div id="game-shell" class="game-shell">
-    <!-- Header UI -->
-    <div id="ui-layer" class="ui-layer">
-        <div class="flex justify-between items-start gap-1.5">
-            <div class="hud-card rounded-lg px-2 py-1.5">
-                <div class="text-blue-400 text-[9px] leading-none">SCORE</div>
-                <div id="score" class="text-base text-white font-bold leading-tight">0</div>
-            </div>
-            <div class="flex flex-1 flex-col items-center gap-0.5 px-1 min-w-0">
-                <div id="combo-display"
-                    class="text-yellow-400 text-[11px] font-bold opacity-0 transition-opacity duration-300"
-                    style="text-shadow:0 0 8px #eab308">
-                </div>
-                <div id="mission-display" class="text-cyan-300 text-[9px] sm:text-[10px] font-bold text-center max-w-[160px] truncate"></div>
-                <div id="phase-display" class="text-fuchsia-300 text-[9px] font-bold"></div>
-                <div class="hud-card bg-gradient-to-r from-purple-600/50 to-blue-600/50 rounded-md px-2.5 py-1 border border-purple-400/40">
-                    <div class="text-purple-200 text-[9px] leading-none">LV</div>
-                    <div id="level" class="text-base text-white font-bold text-center leading-tight">1</div>
+        <!-- 頂部專屬安全區 HUD（不遮擋第一排泡泡） -->
+        <div id="top-hud">
+            <div class="hud-group">
+                <div class="hud-pill">
+                    <span>🫧</span>
+                    <span id="level-label">第 1 關 ・ 剩餘 0</span>
                 </div>
             </div>
-            <div class="hud-card rounded-lg px-2 py-1.5 flex flex-col items-center">
-                <div class="text-blue-400 text-[9px] leading-none mb-0.5">NEXT</div>
-                <canvas id="preview-canvas" width="32" height="32"></canvas>
+            <div class="hud-group">
+                <div class="hud-pill" title="本局獲得星幣與得分">
+                    <span>⭐</span>
+                    <span id="stars-text">0</span>
+                    <span style="opacity:0.35;">|</span>
+                    <span id="score-text">0</span>
+                </div>
+                <button id="pause-btn" title="暫停">⏸️</button>
             </div>
         </div>
-    </div>
 
-    <!-- Floating score popups container -->
-    <div id="popup-container" class="absolute inset-0 pointer-events-none z-20"></div>
+        <!-- 右下角獨立「🔄 換球」按鈕 -->
+        <button id="swap-btn" title="點擊切換當前與下一顆泡泡">
+            <div id="next-bubble-dot"></div>
+            <span>🔄 換球</span>
+        </button>
 
-    <!-- Start / Game Over Screen -->
-    <div id="menu-screen"
-        class="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div class="menu-card bg-slate-900 rounded-2xl p-6 sm:p-8 text-center max-w-md mx-4">
-            <div class="text-6xl mb-4 animate-bounce">🫧</div>
-            <h1 id="menu-title"
-                class="text-2xl sm:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 font-bold mb-1 neon-text">
-                霓虹泡泡龍
-            </h1>
-            <p id="menu-message" class="text-cyan-200/60 mb-3 tracking-wider text-xs sm:text-sm">
-                消除所有泡泡，別讓泡泡線壓到底部！
-            </p>
-            <div class="mb-4 space-y-1.5 text-left text-xs text-cyan-100/80 bg-slate-800/60 rounded-xl border border-cyan-500/20 p-3">
-                <div>📱 <span class="text-cyan-300 font-bold">操作：</span>拖曳瞄準方向，放開或點一下即可<b class="text-white">發射泡泡</b>。</div>
-                <div>🎯 <span class="text-cyan-300 font-bold">目標：</span>湊出 <b class="text-white">3 顆以上同色</b>泡泡即可消除，完成任務拿高分。</div>
-                <div>💥 <span class="text-cyan-300 font-bold">特殊：</span>炸彈泡泡可炸碎周圍，彩虹泡泡可匹配任意顏色。</div>
-                <div>⚠️ <span class="text-cyan-300 font-bold">注意：</span>多次未消除，頂部會新增一排泡泡，<b class="text-red-300">壓到紅線即結束</b>。</div>
-            </div>
-            <div id="final-score" class="hidden mb-4">
-                <div class="text-yellow-400 text-sm">最終得分</div>
-                <div id="final-score-value" class="text-4xl text-white font-black">0</div>
-                <div id="summary-combo" class="text-cyan-300 text-sm mt-2">最高連擊：0x</div>
-                <div id="summary-mission" class="text-fuchsia-300 text-sm">任務：未開始</div>
-            </div>
-            <button onclick="startGame()"
-                class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-cyan-500/50 pointer-events-auto cursor-pointer text-sm sm:text-base">
-                ⚡ 開始遊戲
-            </button>
+        <!-- 畫面中央短暫提示橫幅 -->
+        <div id="center-toast">
+            <div class="toast-main" id="toast-main">🫧 第 1 關：珊瑚星光海灣</div>
+            <div class="toast-sub" id="toast-sub">按住拖曳看反射瞄準線，放開手指發射泡泡！</div>
         </div>
-    </div>
 
-    <div id="game-stage" class="game-stage">
-        <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
-    </div>
+        <!-- 彈出視窗（開始 / 暫停 / 結算） -->
+        <div class="overlay-modal" id="modal-overlay">
+            <div class="modal-card">
+                <div class="modal-badge" id="modal-badge">🫧 珊瑚星光海灣</div>
+                <div class="modal-title" id="modal-title">怪獸魔法泡泡龍</div>
+                <div class="modal-desc" id="modal-desc">
+                    <strong>按住畫面拖曳</strong>即可顯示牆壁反射瞄準線，<strong>放開手指</strong>發射泡泡！<br>
+                    湊滿 3 顆同色即可消除，點右下角 <strong>🔄 換球</strong> 可隨時切換顏色，消除 <strong>⭐星幣泡泡</strong> 還能拿星幣獎勵！
+                </div>
+
+                <div id="setup-section">
+                    <div class="section-label">🐾 選擇你的怪獸泡泡砲手：</div>
+                    <div class="hero-picker" id="hero-picker">
+                        <div class="hero-option selected" data-hero="mystic_water">
+                            <img src="/images/monsters/new/mystic_water.png" alt="神秘水滴">
+                            <span>神秘水滴</span>
+                        </div>
+                        <div class="hero-option" data-hero="astro_turtle">
+                            <img src="/images/monsters/new/astro_turtle.png" alt="太空龜">
+                            <span>太空龜</span>
+                        </div>
+                        <div class="hero-option" data-hero="sand_castle_crab">
+                            <img src="/images/monsters/new/sand_castle_crab.png" alt="沙堡蟹">
+                            <span>沙堡蟹</span>
+                        </div>
+                        <div class="hero-option" data-hero="space_jelly">
+                            <img src="/images/monsters/new/space_jelly.png" alt="宇宙水母">
+                            <span>宇宙水母</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="modal-stats" style="display: none;">
+                    <div class="stat-box">
+                        <div class="lbl">闖關進度 / 最高連擊</div>
+                        <div class="val" id="stat-level">第 1 關</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="lbl">獲得星幣獎勵</div>
+                        <div class="val" id="stat-stars">⭐ +0</div>
+                    </div>
+                </div>
+
+                <button class="primary-btn" id="modal-primary-btn">🫧 開始發射泡泡</button>
+                <button class="secondary-btn" id="modal-secondary-btn" style="display: none;">🔄 重新開始</button>
+            </div>
+        </div>
     </div>
 
     <script>
+        // ====================================================
+        // 怪獸魔法泡泡龍（黃金比例棋盤・反射瞄準線・拖曳放開發射版）
+        // ====================================================
+        const stageFrame = document.getElementById('stage-frame');
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const scoreDisplay = document.getElementById('score');
-        const levelDisplay = document.getElementById('level');
-        const comboDisplay = document.getElementById('combo-display');
-        const missionDisplay = document.getElementById('mission-display');
-        const phaseDisplay = document.getElementById('phase-display');
-        const menuScreen = document.getElementById('menu-screen');
-        const previewCanvas = document.getElementById('preview-canvas');
-        const previewCtx = previewCanvas.getContext('2d');
-        const popupContainer = document.getElementById('popup-container');
 
-        // ── Config ──
-        const BASE_COLORS = [
-            { fill: '#ef4444', glow: '#ff6b6b' },
-            { fill: '#3b82f6', glow: '#60a5fa' },
-            { fill: '#22c55e', glow: '#4ade80' },
-            { fill: '#eab308', glow: '#facc15' },
-            { fill: '#a855f7', glow: '#c084fc' },
-            { fill: '#f97316', glow: '#fb923c' },
+        let W = 480;
+        let H = 640;
+        const COLS = 9;
+        const MAX_ROWS = 13;
+        const TOP_OFFSET = 54; // 頂部獨立安全高度，絕不遮擋第一排泡泡
+
+        // 幾何與棋盤自適應參數（寬高雙重上限，保證留出 45% 以上瞄準空間）
+        let bubbleRad = 20;
+        let rowHeight = 34;
+        let boardLeft = 20;
+        let boardRight = 460;
+        let dangerLineY = 480;
+        let cannonX = 240;
+        let cannonY = 560;
+
+        // 預載怪獸圖片
+        const HERO_URLS = {
+            mystic_water: '/images/monsters/new/mystic_water.png',
+            astro_turtle: '/images/monsters/new/astro_turtle.png',
+            sand_castle_crab: '/images/monsters/new/sand_castle_crab.png',
+            space_jelly: '/images/monsters/new/space_jelly.png'
+        };
+        const sprites = {};
+        Object.entries(HERO_URLS).forEach(([k, url]) => {
+            const img = new Image();
+            img.src = url;
+            sprites[k] = img;
+        });
+
+        // 5 種晶透魔法泡泡配色
+        const BUBBLE_PALETTES = [
+            { fill: '#f43f5e', light: '#fda4af', dark: '#9f1239', glow: 'rgba(244, 63, 94, 0.5)' },  // 珊瑚紅
+            { fill: '#38bdf8', light: '#bae6fd', dark: '#0369a1', glow: 'rgba(56, 189, 248, 0.5)' }, // 海洋藍
+            { fill: '#4ade80', light: '#bbf7d0', dark: '#15803d', glow: 'rgba(74, 222, 128, 0.5)' }, // 翡翠綠
+            { fill: '#fbbf24', light: '#fef08a', dark: '#b45309', glow: 'rgba(251, 191, 36, 0.5)' }, // 星光黃
+            { fill: '#c084fc', light: '#e9d5ff', dark: '#6b21a8', glow: 'rgba(192, 132, 252, 0.5)' } // 珍珠紫
         ];
 
-        const SPECIAL_BOMB = 'bomb';
-        const SPECIAL_RAINBOW = 'rainbow';
-
-        let state = {};
-        let animFrame = 0;
-
-        function initState() {
-            return {
-                isPlaying: false,
-                score: 0,
-                level: 1,
-                cols: 8,
-                maxRows: 14,
-                grid: [],
-                activeBubble: null,
-                nextBubble: null,
-                angle: -Math.PI / 2,
-                particles: [],
-                combo: 0,
-                maxCombo: 0,
-                shotCount: 0,
-                dropThreshold: 8,
-                screenShake: { x: 0, y: 0, intensity: 0 },
-                dangerPulse: 0,
-                colorsInPlay: 5,
-                initialRows: 5,
-                totalPopped: 0,
-                levelTarget: 30,
-                mission: null,
-                gameStartAt: 0,
-                bgStars: Array.from({ length: 40 }, () => ({
-                    x: Math.random(),
-                    y: Math.random(),
-                    s: Math.random() * 1.5 + 0.5,
-                    speed: Math.random() * 0.0003 + 0.0001
-                })),
-            };
-        }
-
-        function resize() {
-            const parent = canvas.parentElement;
-            const w = parent.clientWidth;
-            const h = parent.clientHeight;
-            if (w < 10 || h < 10) return;
-            if (canvas.width !== w || canvas.height !== h) {
-                canvas.width = w;
-                canvas.height = h;
+        // 輕量音效合成器
+        class SoundFX {
+            constructor() { this.ctx = null; }
+            init() {
+                if (!this.ctx) {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if (AC) this.ctx = new AC();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            }
+            tone(freq, type = 'sine', dur = 0.11, vol = 0.12, slide = null) {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    if (slide) osc.frequency.exponentialRampToValueAtTime(slide, this.ctx.currentTime + dur);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + dur);
+                } catch (e) {}
+            }
+            shoot() { this.tone(360, 'sine', 0.12, 0.12, 680); }
+            swap() { this.tone(520, 'triangle', 0.09, 0.1, 740); }
+            pop(combo = 1) {
+                const base = Math.min(980, 480 + combo * 65);
+                this.tone(base, 'sine', 0.14, 0.14, base * 1.45);
+            }
+            bomb() { this.tone(170, 'sawtooth', 0.26, 0.15, 65); }
+            win() {
+                [523, 659, 784, 1046].forEach((f, i) => {
+                    setTimeout(() => this.tone(f, 'triangle', 0.2, 0.14), i * 85);
+                });
             }
         }
-        window.addEventListener('resize', resize);
-        screen.orientation?.addEventListener('change', () => setTimeout(resize, 150));
-        resize();
+        const sfx = new SoundFX();
 
-        function createMission() {
-            const pool = [
-                { key: 'popped', label: '消除 40 顆泡泡', target: 40, progress: 0, reward: 200 },
-                { key: 'combo', label: '達成 4 連擊', target: 4, progress: 0, reward: 260 },
-                { key: 'score', label: '得分突破 900 分', target: 900, progress: 0, reward: 220 }
-            ];
-            return { ...pool[Math.floor(Math.random() * pool.length)], completed: false };
+        // 遊戲狀態
+        let selectedHero = 'mystic_water';
+        let gameState = 'menu'; // 'menu' | 'playing' | 'paused' | 'gameover' | 'victory'
+        let level = 1;
+        let score = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let shotsSinceMatch = 0;
+        let starsEarnedThisRun = 0;
+        let screenShake = 0;
+
+        let grid = []; // grid[r][c] = { type: 'normal'|'bomb'|'rainbow', colorIdx, hasStar }
+        let currentBubble = null;
+        let nextBubble = null;
+        let flyingBubble = null;
+        let aimAngle = -Math.PI / 2;
+        let isAiming = false;
+
+        let fallingBubbles = [];
+        let particles = [];
+        let floatingTexts = [];
+        let seaBubbles = [];
+
+        function initSeaBubbles() {
+            seaBubbles = Array.from({ length: 30 }, () => ({
+                x: Math.random() * W,
+                y: Math.random() * H,
+                r: Math.random() * 3 + 1,
+                speed: Math.random() * 14 + 6,
+                phase: Math.random() * Math.PI * 2
+            }));
         }
 
-        function updateMissionUI() {
-            if (!state.mission) {
-                missionDisplay.textContent = '';
-                return;
-            }
-            const icon = state.mission.completed ? '✅' : '🎯';
-            missionDisplay.textContent = `${icon} ${state.mission.label} ${state.mission.progress}/${state.mission.target}`;
+        // Toast 控制
+        let toastTimeout = null;
+        function showCenterToast(mainText, subText = '', duration = 1650) {
+            const toast = document.getElementById('center-toast');
+            document.getElementById('toast-main').textContent = mainText;
+            document.getElementById('toast-sub').textContent = subText;
+            toast.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
         }
 
-        function updatePhaseLabel() {
-            if (!state.isPlaying) return;
-            const elapsed = (Date.now() - state.gameStartAt) / 1000;
-            let text = '✨ 開場驚喜';
-            if (elapsed >= 120) text = '🏁 結尾獎勵';
-            else if (elapsed >= 30) text = '🚀 精彩時刻';
-            else if (elapsed >= 10) text = '🎯 任務暖身';
-            phaseDisplay.textContent = text;
+        function awardStarCoins(amount) {
+            if (amount <= 0) return;
+            starsEarnedThisRun += amount;
+            try {
+                window.parent.postMessage({ type: 'QUESTMON_EARN_STARS', amount }, '*');
+            } catch (e) {}
+            updateHUD();
         }
 
-        function markMission(type, value) {
-            if (!state.mission || state.mission.completed) return;
-            if (state.mission.key === type) {
-                state.mission.progress = Math.max(state.mission.progress, Math.floor(value));
-                if (state.mission.progress >= state.mission.target) {
-                    state.mission.completed = true;
-                    state.score += state.mission.reward;
-                    scoreDisplay.innerText = state.score;
-                    showFloatingScore(canvas.width / 2, canvas.height * 0.28, `任務完成 +${state.mission.reward}`, true);
+        function countRemainingBubbles() {
+            let cnt = 0;
+            grid.forEach(row => row.forEach(cell => { if (cell) cnt++; }));
+            return cnt;
+        }
+
+        function updateHUD() {
+            const rem = countRemainingBubbles();
+            document.getElementById('level-label').textContent = `第 ${level} 關 ・ 剩餘 ${rem}`;
+            document.getElementById('stars-text').textContent = starsEarnedThisRun;
+            document.getElementById('score-text').textContent = score;
+
+            // 更新右下角「🔄 換球」按鈕上的下一顆泡泡預覽
+            const dot = document.getElementById('next-bubble-dot');
+            if (nextBubble && dot) {
+                if (nextBubble.type === 'bomb') {
+                    dot.style.background = '#1e293b';
+                    dot.textContent = '💥';
+                } else if (nextBubble.type === 'rainbow') {
+                    dot.style.background = 'linear-gradient(135deg, #f43f5e, #facc15, #4ade80, #38bdf8, #c084fc)';
+                    dot.textContent = '🌈';
+                } else {
+                    const pal = BUBBLE_PALETTES[nextBubble.colorIdx] || BUBBLE_PALETTES[0];
+                    dot.style.background = `radial-gradient(circle at 35% 35%, ${pal.light}, ${pal.fill})`;
+                    dot.textContent = '';
                 }
             }
-            updateMissionUI();
         }
 
-        // ── Hex Grid Helpers ──
-        function getTileParams() {
-            const r = canvas.width / state.cols / 2;
-            const h = r * Math.sqrt(3);
-            return { r, h };
-        }
+        // 動態計算黃金比例棋盤（同時約束寬度與高度，確保泡泡在手機或方框都絕不過大！）
+        function resizeCanvas() {
+            const rect = stageFrame.getBoundingClientRect();
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            W = Math.max(320, Math.round(rect.width));
+            H = Math.max(440, Math.round(rect.height));
 
-        function getPixelPos(c, r) {
-            const { r: rad, h } = getTileParams();
-            const xOffset = (r % 2 === 1) ? rad : 0;
+            canvas.width = W * dpr;
+            canvas.height = H * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            const maxRadByW = (W - 24) / (COLS * 2);
+            const maxRadByH = (H * 0.35) / 9.2; // 強制前 5 排只佔約 34% 高度，留出寬敞瞄準空間
+            bubbleRad = Math.max(13, Math.min(maxRadByW, maxRadByH));
+            rowHeight = bubbleRad * Math.sqrt(3);
+
+            const boardW = COLS * bubbleRad * 2;
+            boardLeft = (W - boardW) / 2;
+            boardRight = boardLeft + boardW;
+
+            cannonX = W / 2;
+            cannonY = H - 50;
+            dangerLineY = TOP_OFFSET + (MAX_ROWS - 1.2) * rowHeight;
+            if (dangerLineY > cannonY - 68) {
+                dangerLineY = cannonY - 68;
+            }
+
+            if (seaBubbles.length === 0) initSeaBubbles();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function getCellCenter(c, r) {
+            const xOff = (r % 2 === 1) ? bubbleRad : 0;
             return {
-                x: c * rad * 2 + rad + xOffset,
-                y: r * h + rad
+                x: boardLeft + c * bubbleRad * 2 + bubbleRad + xOff,
+                y: TOP_OFFSET + r * rowHeight + bubbleRad
             };
         }
 
@@ -303,384 +661,364 @@
             const offsets = (r % 2 === 1)
                 ? [[0, -1], [1, -1], [-1, 0], [1, 0], [0, 1], [1, 1]]
                 : [[-1, -1], [0, -1], [-1, 0], [1, 0], [-1, 1], [0, 1]];
-            const result = [];
-            offsets.forEach(o => {
-                const nc = c + o[0];
-                const nr = r + o[1];
-                if (nr >= 0 && nr < state.grid.length && nc >= 0 && nc < state.cols) {
-                    result.push({ c: nc, r: nr });
+            const list = [];
+            offsets.forEach(([dc, dr]) => {
+                const nc = c + dc;
+                const nr = r + dr;
+                if (nr >= 0 && nr < grid.length) {
+                    const maxC = (nr % 2 === 1) ? COLS - 1 : COLS;
+                    if (nc >= 0 && nc < maxC) list.push({ c: nc, r: nr });
                 }
             });
-            return result;
+            return list;
         }
 
-        // Find best empty cell to snap a bubble into, nearest to pixel (px, py)
-        function findBestSnapCell(px, py) {
-            const { r: rad, h } = getTileParams();
-            let bestDist = Infinity;
+        function pickBoardColorIdx() {
+            const present = new Set();
+            grid.forEach(row => row.forEach(cell => {
+                if (cell && cell.type === 'normal') present.add(cell.colorIdx);
+            }));
+            const pool = present.size > 0
+                ? Array.from(present)
+                : [0, 1, 2, 3].slice(0, Math.min(5, 3 + level));
+            return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        function createAmmoBubble() {
+            const rand = Math.random();
+            if (rand < 0.08) return { type: 'rainbow', colorIdx: 0 };
+            if (rand < 0.15) return { type: 'bomb', colorIdx: 0 };
+            return { type: 'normal', colorIdx: pickBoardColorIdx() };
+        }
+
+        function buildLevelGrid(lvl) {
+            grid = [];
+            const numColors = Math.min(BUBBLE_PALETTES.length, 3 + Math.min(2, Math.floor(lvl / 2)));
+            const initialRows = 5;
+
+            for (let r = 0; r < MAX_ROWS + 2; r++) {
+                const row = new Array(COLS).fill(null);
+                if (r < initialRows) {
+                    const maxC = (r % 2 === 1) ? COLS - 1 : COLS;
+                    for (let c = 0; c < maxC; c++) {
+                        // 成對顏色群聚生成，讓小朋友更容易湊滿 3 顆產生連消爽快感
+                        const prevColor = (c > 0 && row[c - 1]) ? row[c - 1].colorIdx : Math.floor(Math.random() * numColors);
+                        const colorIdx = Math.random() < 0.42 ? prevColor : Math.floor(Math.random() * numColors);
+                        const hasStar = (r === 1 || r === 2) && (c === 2 || c === maxC - 3);
+                        row[c] = { type: 'normal', colorIdx, hasStar };
+                    }
+                }
+                grid.push(row);
+            }
+
+            currentBubble = { type: 'normal', colorIdx: pickBoardColorIdx() };
+            nextBubble = createAmmoBubble();
+            flyingBubble = null;
+            shotsSinceMatch = 0;
+            updateHUD();
+        }
+
+        // 切換當前泡泡與下一顆泡泡（防卡色神器）
+        function swapBubbles() {
+            if (gameState !== 'playing' || flyingBubble) return;
+            sfx.init();
+            sfx.swap();
+            const tmp = currentBubble;
+            currentBubble = nextBubble;
+            nextBubble = tmp;
+            updateHUD();
+        }
+        document.getElementById('swap-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            swapBubbles();
+        });
+
+        // 計算包含牆壁反射的瞄準軌跡點與預測落點
+        function computeAimTrajectory(angle) {
+            const pts = [{ x: cannonX, y: cannonY }];
+            let x = cannonX;
+            let y = cannonY;
+            const step = bubbleRad * 0.45;
+            let dx = Math.cos(angle) * step;
+            let dy = Math.sin(angle) * step;
+
+            const minX = boardLeft + bubbleRad;
+            const maxX = boardRight - bubbleRad;
+
+            for (let i = 0; i < 140; i++) {
+                x += dx;
+                y += dy;
+                if (x <= minX) {
+                    x = minX;
+                    dx = Math.abs(dx);
+                } else if (x >= maxX) {
+                    x = maxX;
+                    dx = -Math.abs(dx);
+                }
+                pts.push({ x, y });
+
+                if (y <= TOP_OFFSET + bubbleRad) break;
+
+                let hit = false;
+                for (let r = 0; r < grid.length; r++) {
+                    const maxC = (r % 2 === 1) ? COLS - 1 : COLS;
+                    for (let c = 0; c < maxC; c++) {
+                        if (!grid[r][c]) continue;
+                        const cc = getCellCenter(c, r);
+                        if (Math.hypot(x - cc.x, y - cc.y) <= bubbleRad * 1.82) {
+                            hit = true;
+                            break;
+                        }
+                    }
+                    if (hit) break;
+                }
+                if (hit) break;
+            }
+            return pts;
+        }
+
+        // 觸控與滑鼠瞄準（按住滑動看反射瞄準線，放開才發射！）
+        function updateAimFromClient(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const cx = (clientX - rect.left) * (W / rect.width);
+            const cy = (clientY - rect.top) * (H / rect.height);
+
+            let dx = cx - cannonX;
+            let dy = cy - cannonY;
+            // 若玩家在砲台下方左右滑動，自動映射為向上的扇形角度
+            if (dy > -24) dy = -85;
+            let ang = Math.atan2(dy, dx);
+            ang = Math.max(-Math.PI + 0.18, Math.min(-0.18, ang));
+            aimAngle = ang;
+        }
+
+        function fireBubble() {
+            if (gameState !== 'playing' || flyingBubble || !currentBubble) return;
+            sfx.init();
+            sfx.shoot();
+            const speed = Math.max(540, H * 0.95);
+            flyingBubble = {
+                x: cannonX,
+                y: cannonY,
+                vx: Math.cos(aimAngle) * speed,
+                vy: Math.sin(aimAngle) * speed,
+                bubble: currentBubble
+            };
+            currentBubble = nextBubble;
+            nextBubble = createAmmoBubble();
+            updateHUD();
+        }
+
+        canvas.addEventListener('pointerdown', (e) => {
+            if (gameState !== 'playing') return;
+            sfx.init();
+            isAiming = true;
+            updateAimFromClient(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (gameState !== 'playing') return;
+            if (isAiming || e.pointerType === 'mouse') {
+                updateAimFromClient(e.clientX, e.clientY);
+            }
+        });
+
+        window.addEventListener('pointerup', (e) => {
+            if (!isAiming) return;
+            isAiming = false;
+            if (gameState === 'playing') {
+                updateAimFromClient(e.clientX, e.clientY);
+                fireBubble();
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.key === 'c' || e.key === 'C') {
+                swapBubbles();
+            } else if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+                togglePause();
+            }
+        });
+
+        // 尋找最佳吸附格位
+        function snapFlyingBubble(fb) {
             let bestCell = null;
+            let bestDist = Infinity;
 
-            const estRow = Math.max(0, Math.round((py - rad) / h));
-            const startRow = Math.max(0, estRow - 2);
-            const endRow = Math.min(state.grid.length - 1, estRow + 2);
-
-            for (let r = startRow; r <= endRow; r++) {
-                const maxC = (r % 2 === 1) ? state.cols - 1 : state.cols;
+            for (let r = 0; r < grid.length; r++) {
+                const maxC = (r % 2 === 1) ? COLS - 1 : COLS;
                 for (let c = 0; c < maxC; c++) {
-                    if (state.grid[r] && state.grid[r][c]) continue; // occupied
+                    if (grid[r][c]) continue;
+                    const connectsTop = (r === 0);
+                    const connectsNeighbor = getNeighbors(c, r).some(n => grid[n.r] && grid[n.r][n.c]);
+                    if (!connectsTop && !connectsNeighbor) continue;
 
-                    // Must be adjacent to an existing bubble, or on row 0
-                    if (r > 0 && !hasAdjacentBubble(c, r)) continue;
-
-                    const pp = getPixelPos(c, r);
-                    const dx = px - pp.x;
-                    const dy = py - pp.y;
-                    const dist = dx * dx + dy * dy;
-
-                    if (dist < bestDist) {
-                        bestDist = dist;
+                    const cc = getCellCenter(c, r);
+                    const d = Math.hypot(fb.x - cc.x, fb.y - cc.y);
+                    if (d < bestDist) {
+                        bestDist = d;
                         bestCell = { c, r };
                     }
                 }
             }
-            return bestCell;
-        }
 
-        function hasAdjacentBubble(c, r) {
-            return getNeighbors(c, r).some(n => state.grid[n.r] && state.grid[n.r][n.c]);
-        }
-
-        // ── Bubble Factories ──
-        function getActiveColors() {
-            return BASE_COLORS.slice(0, state.colorsInPlay);
-        }
-
-        function pickRandomColorIdx() {
-            const boardColors = new Set();
-            state.grid.forEach(row => row.forEach(cell => {
-                if (cell && cell.type === 'normal') boardColors.add(cell.colorIdx);
-            }));
-            const pool = boardColors.size > 0 ? [...boardColors] : getActiveColors().map((_, i) => i);
-            return pool[Math.floor(Math.random() * pool.length)];
-        }
-
-        function makeBubble(colorIdx) { return { type: 'normal', colorIdx }; }
-        function makeBombBubble() { return { type: SPECIAL_BOMB, colorIdx: -1 }; }
-        function makeRainbowBubble() { return { type: SPECIAL_RAINBOW, colorIdx: -1 }; }
-
-        function getBubbleColor(bubble) {
-            if (!bubble) return null;
-            if (bubble.type === SPECIAL_BOMB) return { fill: '#1e293b', glow: '#f59e0b' };
-            if (bubble.type === SPECIAL_RAINBOW) return { fill: '#fff', glow: '#fff' };
-            return BASE_COLORS[bubble.colorIdx] || BASE_COLORS[0];
-        }
-
-        function pickNextBubble() {
-            const rand = Math.random();
-            if (rand < 0.04 && state.level >= 2) return makeRainbowBubble();
-            if (rand < 0.08 && state.level >= 3) return makeBombBubble();
-            return makeBubble(pickRandomColorIdx());
-        }
-
-        // ── Game Start ──
-        function startGame() {
-            state = initState();
-            resize();
-            scoreDisplay.innerText = 0;
-            levelDisplay.innerText = 1;
-            comboDisplay.style.opacity = '0';
-            state.mission = createMission();
-            state.gameStartAt = Date.now();
-            phaseDisplay.textContent = '✨ 開場驚喜';
-            updateMissionUI();
-
-            const active = getActiveColors();
-            state.grid = [];
-            for (let r = 0; r < state.initialRows; r++) {
-                const row = [];
-                const maxC = (r % 2 === 1) ? state.cols - 1 : state.cols;
-                for (let c = 0; c < state.cols; c++) {
-                    if (c >= maxC) { row.push(null); }
-                    else { row.push(makeBubble(Math.floor(Math.random() * active.length))); }
-                }
-                state.grid.push(row);
-            }
-            for (let r = state.initialRows; r < state.maxRows; r++) {
-                state.grid.push(new Array(state.cols).fill(null));
+            if (!bestCell) {
+                const c = Math.max(0, Math.min(COLS - 1, Math.round((fb.x - boardLeft - bubbleRad) / (bubbleRad * 2))));
+                bestCell = { c, r: 0 };
             }
 
-            state.nextBubble = pickNextBubble();
-            loadBubble();
-            state.isPlaying = true;
-
-            menuScreen.classList.add('hidden');
-            document.getElementById('final-score').classList.add('hidden');
-            document.getElementById('menu-title').textContent = '霓虹泡泡龍';
-            requestAnimationFrame(gameLoop);
+            const { c, r } = bestCell;
+            grid[r][c] = fb.bubble;
+            flyingBubble = null;
+            resolveBubbleLanding(c, r, fb.bubble);
         }
 
-        function loadBubble() {
-            const { r: rad } = getTileParams();
-            const launcherOffset = Math.max(rad * 4, canvas.height * 0.16);
-            state.activeBubble = {
-                x: canvas.width / 2,
-                y: canvas.height - launcherOffset,
-                dx: 0, dy: 0,
-                bubble: state.nextBubble,
-                active: false,
-            };
-            state.nextBubble = pickNextBubble();
-            drawPreview();
-        }
-
-        function drawPreview() {
-            const b = state.nextBubble;
-            const s = 32, c = 16, r = 12;
-            previewCtx.clearRect(0, 0, s, s);
-
-            if (b.type === SPECIAL_BOMB) {
-                previewCtx.fillStyle = '#1e293b';
-                previewCtx.beginPath();
-                previewCtx.arc(c, c, r, 0, Math.PI * 2);
-                previewCtx.fill();
-                previewCtx.strokeStyle = '#f59e0b';
-                previewCtx.lineWidth = 2;
-                previewCtx.stroke();
-                previewCtx.fillStyle = '#f59e0b';
-                previewCtx.font = '12px sans-serif';
-                previewCtx.textAlign = 'center';
-                previewCtx.textBaseline = 'middle';
-                previewCtx.fillText('💥', c, c);
-            } else if (b.type === SPECIAL_RAINBOW) {
-                const grad = previewCtx.createLinearGradient(0, 0, s, s);
-                grad.addColorStop(0, '#ef4444');
-                grad.addColorStop(0.25, '#eab308');
-                grad.addColorStop(0.5, '#22c55e');
-                grad.addColorStop(0.75, '#3b82f6');
-                grad.addColorStop(1, '#a855f7');
-                previewCtx.fillStyle = grad;
-                previewCtx.beginPath();
-                previewCtx.arc(c, c, r, 0, Math.PI * 2);
-                previewCtx.fill();
-                previewCtx.fillStyle = 'rgba(255,255,255,0.9)';
-                previewCtx.font = 'bold 12px sans-serif';
-                previewCtx.textAlign = 'center';
-                previewCtx.textBaseline = 'middle';
-                previewCtx.fillText('✦', c, c + 1);
-            } else {
-                const color = getBubbleColor(b);
-                previewCtx.fillStyle = color.fill;
-                previewCtx.shadowBlur = 6;
-                previewCtx.shadowColor = color.glow;
-                previewCtx.beginPath();
-                previewCtx.arc(c, c, r, 0, Math.PI * 2);
-                previewCtx.fill();
-                previewCtx.fillStyle = 'rgba(255,255,255,0.3)';
-                previewCtx.shadowBlur = 0;
-                previewCtx.beginPath();
-                previewCtx.arc(c - 4, c - 4, 3, 0, Math.PI * 2);
-                previewCtx.fill();
-            }
-        }
-
-        // ── Input ──
-        function handleInput(clientX, clientY) {
-            if (!state.activeBubble || state.activeBubble.active) return;
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const x = (clientX - rect.left) * scaleX;
-            const y = (clientY - rect.top) * scaleY;
-            const dx = x - state.activeBubble.x;
-            const dy = y - state.activeBubble.y;
-            state.angle = Math.atan2(dy, dx);
-            if (state.angle > -0.15) state.angle = -0.15;
-            if (state.angle < -Math.PI + 0.15) state.angle = -Math.PI + 0.15;
-        }
-
-        function shoot() {
-            if (!state.activeBubble || state.activeBubble.active) return;
-            state.activeBubble.active = true;
-            const speed = 16;
-            state.activeBubble.dx = Math.cos(state.angle) * speed;
-            state.activeBubble.dy = Math.sin(state.angle) * speed;
-        }
-
-        canvas.addEventListener('mousemove', e => { if (state.isPlaying) handleInput(e.clientX, e.clientY); });
-        canvas.addEventListener('click', () => { if (state.isPlaying) shoot(); });
-        canvas.addEventListener('touchmove', e => {
-            if (!state.isPlaying) return;
-            e.preventDefault();
-            handleInput(e.touches[0].clientX, e.touches[0].clientY);
-        }, { passive: false });
-        canvas.addEventListener('touchstart', e => {
-            if (!state.isPlaying) return;
-            e.preventDefault();
-            handleInput(e.touches[0].clientX, e.touches[0].clientY);
-            shoot();
-        }, { passive: false });
-
-        // ── Snap & Match ──
-        function snapBubble() {
-            const b = state.activeBubble;
-            let cell = findBestSnapCell(b.x, b.y);
-
-            if (!cell) {
-                // Fallback: find any free cell in nearby rows
-                const { r: rad, h } = getTileParams();
-                const estRow = Math.max(0, Math.round((b.y - rad) / h));
-                for (let dr = 0; dr <= 2; dr++) {
-                    for (let sign of [0, -1, 1]) {
-                        const tr = estRow + sign * dr;
-                        if (tr < 0 || tr >= state.maxRows) continue;
-                        const maxC = (tr % 2 === 1) ? state.cols - 1 : state.cols;
-                        const xOff = (tr % 2 === 1) ? rad : 0;
-                        const estC = Math.round((b.x - rad - xOff) / (rad * 2));
-                        const cc = Math.max(0, Math.min(estC, maxC - 1));
-                        if (!state.grid[tr][cc]) {
-                            cell = { c: cc, r: tr };
-                            break;
-                        }
-                    }
-                    if (cell) break;
-                }
-            }
-
-            if (!cell) { loadBubble(); return; }
-
-            while (state.grid.length <= cell.r) state.grid.push(new Array(state.cols).fill(null));
-            processSnap(cell.c, cell.r, b.bubble);
-        }
-
-        function processSnap(c, r, bubble) {
-            state.grid[r][c] = bubble;
-            state.shotCount++;
-            let totalPopped = 0;
-
-            if (bubble.type === SPECIAL_BOMB) {
-                const targets = [{ c, r }, ...getNeighbors(c, r)];
-                targets.forEach(t => {
-                    if (state.grid[t.r] && state.grid[t.r][t.c]) {
-                        const pp = getPixelPos(t.c, t.r);
-                        spawnParticles(pp.x, pp.y, getBubbleColor(state.grid[t.r][t.c]).fill, 10);
-                        state.grid[t.r][t.c] = null;
-                        totalPopped++;
-                    }
-                });
-                state.screenShake.intensity = 12;
-            } else if (bubble.type === SPECIAL_RAINBOW) {
-                // Match the most common adjacent color
-                const counts = {};
-                getNeighbors(c, r).forEach(n => {
-                    const cell = state.grid[n.r] && state.grid[n.r][n.c];
-                    if (cell && cell.type === 'normal') counts[cell.colorIdx] = (counts[cell.colorIdx] || 0) + 1;
-                });
-                let bestIdx = 0, bestCnt = 0;
-                Object.entries(counts).forEach(([idx, cnt]) => {
-                    if (cnt > bestCnt) { bestIdx = parseInt(idx); bestCnt = cnt; }
-                });
-                state.grid[r][c] = makeBubble(bestIdx);
-                const matches = findMatches(c, r, bestIdx);
-                if (matches.length >= 3) { popBubbles(matches); totalPopped = matches.length; }
-            } else {
-                const matches = findMatches(c, r, bubble.colorIdx);
-                if (matches.length >= 3) { popBubbles(matches); totalPopped = matches.length; }
-            }
-
-            const dropped = dropFloatingBubbles();
-            totalPopped += dropped;
-
-            if (totalPopped > 0) {
-                state.combo++;
-                if (state.combo > state.maxCombo) state.maxCombo = state.combo;
-
-                let points = totalPopped * 10;
-                if (state.combo >= 2) {
-                    points = Math.floor(points * (1 + state.combo * 0.5));
-                    comboDisplay.textContent = `🔥 COMBO x${state.combo}`;
-                    comboDisplay.style.opacity = '1';
-                    state.screenShake.intensity = Math.min(8, state.combo * 2);
-                }
-
-                state.score += points;
-                state.totalPopped += totalPopped;
-                scoreDisplay.innerText = state.score;
-                markMission('popped', state.totalPopped);
-                markMission('combo', state.maxCombo);
-                markMission('score', state.score);
-
-                const pp = getPixelPos(c, r);
-                showFloatingScore(pp.x, pp.y, `+${points}`, state.combo >= 2);
-
-                if (state.totalPopped >= state.levelTarget * state.level) {
-                    levelUp();
-                }
-
-                if (isBoardEmpty()) {
-                    const clearBonus = 500 * state.level;
-                    state.score += clearBonus;
-                    scoreDisplay.innerText = state.score;
-                    showFloatingScore(canvas.width / 2, canvas.height / 2, `全消! +${clearBonus}`, true);
-                    setTimeout(() => { if (state.isPlaying) refillBoard(); }, 1000);
-                }
-            } else {
-                state.combo = 0;
-                comboDisplay.style.opacity = '0';
-                if (state.shotCount % state.dropThreshold === 0) {
-                    addRoof();
-                }
-            }
-
-            if (checkGameOver()) { gameOver(); return; }
-            loadBubble();
-        }
-
-        function findMatches(c, r, colorIdx) {
-            const matches = [];
-            const queue = [{ c, r }];
-            const visited = new Set([`${c},${r}`]);
+        function findColorCluster(startC, startR, colorIdx) {
+            const cluster = [];
+            const queue = [{ c: startC, r: startR }];
+            const visited = new Set([`${startC},${startR}`]);
 
             while (queue.length > 0) {
-                const curr = queue.pop();
-                matches.push(curr);
-                getNeighbors(curr.c, curr.r).forEach(n => {
+                const cur = queue.pop();
+                cluster.push(cur);
+                getNeighbors(cur.c, cur.r).forEach(n => {
                     const key = `${n.c},${n.r}`;
-                    if (!visited.has(key) && state.grid[n.r] && state.grid[n.r][n.c]) {
-                        const cell = state.grid[n.r][n.c];
-                        if (cell.type === 'normal' && cell.colorIdx === colorIdx) {
-                            visited.add(key);
-                            queue.push(n);
-                        }
+                    if (visited.has(key)) return;
+                    const cell = grid[n.r] && grid[n.r][n.c];
+                    if (cell && cell.type === 'normal' && cell.colorIdx === colorIdx) {
+                        visited.add(key);
+                        queue.push(n);
                     }
                 });
             }
-            return matches;
+            return cluster;
         }
 
-        function popBubbles(matches) {
-            matches.forEach(m => {
-                const cell = state.grid[m.r][m.c];
-                if (cell) {
-                    const pp = getPixelPos(m.c, m.r);
-                    spawnParticles(pp.x, pp.y, getBubbleColor(cell).fill, 8);
+        function resolveBubbleLanding(c, r, bubble) {
+            let poppedCells = [];
+
+            if (bubble.type === 'bomb') {
+                sfx.bomb();
+                screenShake = 9;
+                poppedCells = [{ c, r }, ...getNeighbors(c, r)].filter(p => grid[p.r] && grid[p.r][p.c]);
+            } else if (bubble.type === 'rainbow') {
+                // 彩虹泡泡自動配對周圍最多數量的同色群組
+                let bestCluster = [{ c, r }];
+                let bestColor = pickBoardColorIdx();
+                getNeighbors(c, r).forEach(n => {
+                    const cell = grid[n.r] && grid[n.r][n.c];
+                    if (cell && cell.type === 'normal') {
+                        grid[r][c] = { type: 'normal', colorIdx: cell.colorIdx };
+                        const cl = findColorCluster(c, r, cell.colorIdx);
+                        if (cl.length > bestCluster.length) {
+                            bestCluster = cl;
+                            bestColor = cell.colorIdx;
+                        }
+                    }
+                });
+                grid[r][c] = { type: 'normal', colorIdx: bestColor };
+                if (bestCluster.length >= 3) poppedCells = bestCluster;
+            } else {
+                const cl = findColorCluster(c, r, bubble.colorIdx);
+                if (cl.length >= 3) poppedCells = cl;
+            }
+
+            if (poppedCells.length > 0) {
+                combo++;
+                maxCombo = Math.max(maxCombo, combo);
+                shotsSinceMatch = 0;
+                sfx.pop(combo);
+
+                let starsFound = 0;
+                poppedCells.forEach(p => {
+                    const cell = grid[p.r][p.c];
+                    if (!cell) return;
+                    if (cell.hasStar) starsFound++;
+                    const pos = getCellCenter(p.c, p.r);
+                    const pal = BUBBLE_PALETTES[cell.colorIdx] || BUBBLE_PALETTES[0];
+                    spawnPopSparks(pos.x, pos.y, pal.fill, 10);
+                    grid[p.r][p.c] = null;
+                });
+
+                // 檢查懸空失去連結的泡泡並震落！
+                const droppedCount = dropUnconnectedBubbles();
+                const totalCleared = poppedCells.length + droppedCount.count;
+                starsFound += droppedCount.stars;
+
+                const gain = totalCleared * 20 * Math.min(4, combo);
+                score += gain;
+
+                if (starsFound > 0) {
+                    awardStarCoins(starsFound);
                 }
-                state.grid[m.r][m.c] = null;
-            });
+
+                const centerPos = getCellCenter(c, r);
+                floatingTexts.push({
+                    x: Math.min(W - 80, Math.max(80, centerPos.x)),
+                    y: centerPos.y - 10,
+                    text: combo >= 2 ? `🔥 COMBO x${combo}! +${gain}` : `+${gain}`,
+                    color: '#fde047',
+                    life: 1.0
+                });
+
+                // 檢查是否清空本關所有泡泡！
+                if (countRemainingBubbles() === 0) {
+                    awardStarCoins(1);
+                    if (level >= 5) {
+                        triggerVictory();
+                        return;
+                    } else {
+                        level++;
+                        buildLevelGrid(level);
+                        showCenterToast(`🎉 完美清場！進入第 ${level} 關 ⭐+1`, '新的星光泡泡群出現了！', 1800);
+                        return;
+                    }
+                }
+            } else {
+                combo = 0;
+                shotsSinceMatch++;
+                // 每連續 7 發未消除才緩緩新增一排，節奏寬鬆不挫折
+                if (shotsSinceMatch >= 7) {
+                    shotsSinceMatch = 0;
+                    pushNewTopRow();
+                }
+            }
+
+            // 若當前手上的泡泡顏色已不在場上，自動貼心換成場上有的顏色
+            if (currentBubble && currentBubble.type === 'normal') {
+                const present = new Set();
+                grid.forEach(row => row.forEach(cell => {
+                    if (cell && cell.type === 'normal') present.add(cell.colorIdx);
+                }));
+                if (present.size > 0 && !present.has(currentBubble.colorIdx)) {
+                    currentBubble.colorIdx = pickBoardColorIdx();
+                }
+            }
+
+            updateHUD();
+
+            // 檢查是否壓到底部警戒線
+            if (checkDangerBreach()) {
+                triggerGameOver();
+            }
         }
 
-        function dropFloatingBubbles() {
+        function dropUnconnectedBubbles() {
             const connected = new Set();
             const queue = [];
-            if (state.grid[0]) {
-                for (let c = 0; c < state.cols; c++) {
-                    if (state.grid[0][c]) { queue.push({ c, r: 0 }); connected.add(`${c},0`); }
+            const maxC0 = COLS;
+            for (let c = 0; c < maxC0; c++) {
+                if (grid[0] && grid[0][c]) {
+                    connected.add(`${c},0`);
+                    queue.push({ c, r: 0 });
                 }
             }
+
             while (queue.length > 0) {
-                const curr = queue.pop();
-                getNeighbors(curr.c, curr.r).forEach(n => {
+                const cur = queue.pop();
+                getNeighbors(cur.c, cur.r).forEach(n => {
                     const key = `${n.c},${n.r}`;
-                    if (state.grid[n.r] && state.grid[n.r][n.c] && !connected.has(key)) {
+                    if (!connected.has(key) && grid[n.r] && grid[n.r][n.c]) {
                         connected.add(key);
                         queue.push(n);
                     }
@@ -688,369 +1026,509 @@
             }
 
             let count = 0;
-            for (let r = 0; r < state.grid.length; r++) {
-                for (let c = 0; c < state.cols; c++) {
-                    if (state.grid[r][c] && !connected.has(`${c},${r}`)) {
-                        const pp = getPixelPos(c, r);
-                        spawnFallingBubble(pp.x, pp.y, getBubbleColor(state.grid[r][c]).fill);
-                        state.grid[r][c] = null;
+            let stars = 0;
+            for (let r = 0; r < grid.length; r++) {
+                const maxC = (r % 2 === 1) ? COLS - 1 : COLS;
+                for (let c = 0; c < maxC; c++) {
+                    const cell = grid[r][c];
+                    if (cell && !connected.has(`${c},${r}`)) {
+                        if (cell.hasStar) stars++;
+                        const pos = getCellCenter(c, r);
+                        const pal = BUBBLE_PALETTES[cell.colorIdx] || BUBBLE_PALETTES[0];
+                        fallingBubbles.push({
+                            x: pos.x,
+                            y: pos.y,
+                            vx: (Math.random() - 0.5) * 80,
+                            vy: -40 - Math.random() * 40,
+                            r: bubbleRad,
+                            pal,
+                            hasStar: cell.hasStar,
+                            life: 1.0
+                        });
+                        grid[r][c] = null;
                         count++;
                     }
                 }
             }
-            if (count > 0) {
-                state.score += count * 20;
-                scoreDisplay.innerText = state.score;
+            return { count, stars };
+        }
+
+        function pushNewTopRow() {
+            const numColors = Math.min(BUBBLE_PALETTES.length, 3 + Math.min(2, Math.floor(level / 2)));
+            const newRow = new Array(COLS).fill(null);
+            for (let c = 0; c < COLS; c++) {
+                newRow[c] = { type: 'normal', colorIdx: Math.floor(Math.random() * numColors), hasStar: false };
             }
-            return count;
-        }
-
-        function addRoof() {
-            const active = getActiveColors();
-            const newRow = [];
-            for (let c = 0; c < state.cols; c++) {
-                newRow.push(makeBubble(Math.floor(Math.random() * active.length)));
+            grid.unshift(newRow);
+            for (let r = 0; r < grid.length; r++) {
+                if (r % 2 === 1) grid[r][COLS - 1] = null;
             }
-            state.grid.unshift(newRow);
-            // Fix parity: odd rows must have last cell null
-            for (let r = 0; r < state.grid.length; r++) {
-                if (r % 2 === 1) state.grid[r][state.cols - 1] = null;
-            }
-            while (state.grid.length > state.maxRows) state.grid.pop();
+            while (grid.length > MAX_ROWS + 2) grid.pop();
         }
 
-        function isBoardEmpty() {
-            return state.grid.every(row => row.every(cell => !cell));
-        }
-
-        function refillBoard() {
-            state.level++;
-            levelDisplay.innerText = state.level;
-            state.colorsInPlay = Math.min(BASE_COLORS.length, 5 + Math.floor(state.level / 3));
-            state.dropThreshold = Math.max(4, 8 - Math.floor(state.level / 2));
-            const rows = Math.min(8, state.initialRows + Math.floor(state.level / 2));
-            const active = getActiveColors();
-            state.grid = [];
-            for (let r = 0; r < rows; r++) {
-                const row = [];
-                const maxC = (r % 2 === 1) ? state.cols - 1 : state.cols;
-                for (let c = 0; c < state.cols; c++) {
-                    row.push(c < maxC ? makeBubble(Math.floor(Math.random() * active.length)) : null);
-                }
-                state.grid.push(row);
-            }
-            for (let r = rows; r < state.maxRows; r++) state.grid.push(new Array(state.cols).fill(null));
-        }
-
-        function levelUp() {
-            state.colorsInPlay = Math.min(BASE_COLORS.length, 5 + Math.floor(state.level / 3));
-            showFloatingScore(canvas.width / 2, canvas.height / 3, `⬆ LEVEL ${state.level + 1}`, true);
-        }
-
-        function checkGameOver() {
-            for (let r = 12; r < state.grid.length; r++) {
-                for (let c = 0; c < state.cols; c++) {
-                    if (state.grid[r] && state.grid[r][c]) return true;
+        function checkDangerBreach() {
+            for (let r = 0; r < grid.length; r++) {
+                const maxC = (r % 2 === 1) ? COLS - 1 : COLS;
+                for (let c = 0; c < maxC; c++) {
+                    if (grid[r][c]) {
+                        const pos = getCellCenter(c, r);
+                        if (pos.y + bubbleRad >= dangerLineY) return true;
+                    }
                 }
             }
             return false;
         }
 
-        function gameOver() {
-            state.isPlaying = false;
-            document.getElementById('menu-title').textContent = 'GAME OVER';
-            const missionText = state.mission && state.mission.completed
-                ? '任務完成，太厲害了！'
-                : `任務進度 ${state.mission ? `${state.mission.progress}/${state.mission.target}` : '0/0'}`;
-            document.getElementById('menu-message').textContent = `最高連擊 ${state.maxCombo}x ・ 等級 ${state.level} ・ ${missionText}`;
-            document.getElementById('final-score-value').textContent = state.score;
-            document.getElementById('summary-combo').textContent = `最高連擊：${state.maxCombo}x`;
-            document.getElementById('summary-mission').textContent = state.mission
-                ? `任務：${state.mission.label}（${state.mission.completed ? '完成' : '未完成'}）`
-                : '任務：未開始';
-            document.getElementById('final-score').classList.remove('hidden');
-            menuScreen.classList.remove('hidden');
-        }
-
-        // ── Particles ──
-        function spawnParticles(x, y, color, count) {
+        function spawnPopSparks(x, y, color, count = 10) {
+            const cols = [color, '#ffffff', '#fde047'];
             for (let i = 0; i < count; i++) {
-                const angle = (Math.PI * 2 * i / count) + Math.random() * 0.5;
-                const speed = 2 + Math.random() * 4;
-                state.particles.push({
-                    x, y,
-                    dx: Math.cos(angle) * speed,
-                    dy: Math.sin(angle) * speed,
-                    color, life: 1,
-                    decay: 0.02 + Math.random() * 0.02,
-                    size: 3 + Math.random() * 4,
+                const a = Math.random() * Math.PI * 2;
+                const s = Math.random() * 140 + 35;
+                particles.push({
+                    x,
+                    y,
+                    vx: Math.cos(a) * s,
+                    vy: Math.sin(a) * s,
+                    r: Math.random() * 4 + 2,
+                    color: cols[i % cols.length],
+                    life: 1.0,
+                    decay: Math.random() * 1.5 + 1.1
                 });
             }
         }
 
-        function spawnFallingBubble(x, y, color) {
-            const { r: rad } = getTileParams();
-            state.particles.push({
-                x, y,
-                dx: (Math.random() - 0.5) * 3,
-                dy: 1 + Math.random() * 2,
-                color, life: 1, decay: 0.008,
-                size: rad - 2, gravity: 0.3, isBubble: true,
-            });
-        }
+        // 主更新迴圈
+        let lastTime = performance.now();
+        function update(dt) {
+            if (screenShake > 0) screenShake = Math.max(0, screenShake - dt * 28);
 
-        function updateParticles() {
-            state.particles = state.particles.filter(p => {
-                p.x += p.dx; p.y += p.dy;
-                if (p.gravity) p.dy += p.gravity;
-                p.life -= p.decay;
-                return p.life > 0;
-            });
-        }
-
-        function drawParticles() {
-            state.particles.forEach(p => {
-                ctx.globalAlpha = p.life;
-                ctx.fillStyle = p.color;
-                if (p.isBubble) {
-                    ctx.shadowBlur = 6;
-                    ctx.shadowColor = p.color;
+            seaBubbles.forEach(sb => {
+                sb.y -= sb.speed * dt;
+                if (sb.y < -10) {
+                    sb.y = H + 10;
+                    sb.x = Math.random() * W;
                 }
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.shadowBlur = 0;
             });
-            ctx.globalAlpha = 1;
-        }
 
-        // ── Floating Score ──
-        function showFloatingScore(cx, cy, text, isSpecial) {
-            const rect = canvas.getBoundingClientRect();
-            const sx = cx * (rect.width / canvas.width);
-            const sy = cy * (rect.height / canvas.height);
-            const el = document.createElement('div');
-            el.className = 'float-score';
-            el.style.cssText = `
-                position:absolute; left:${sx}px; top:${sy}px;
-                transform:translateX(-50%);
-                font-family:'Orbitron',sans-serif; font-weight:900;
-                font-size:${isSpecial ? '20px' : '15px'};
-                color:${isSpecial ? '#facc15' : '#fff'};
-                text-shadow:0 0 10px ${isSpecial ? '#eab308' : '#60a5fa'};
-                pointer-events:none; z-index:25;
-            `;
-            el.textContent = text;
-            popupContainer.appendChild(el);
-            setTimeout(() => el.remove(), 800);
-        }
+            for (let i = fallingBubbles.length - 1; i >= 0; i--) {
+                const fb = fallingBubbles[i];
+                fb.x += fb.vx * dt;
+                fb.y += fb.vy * dt;
+                fb.vy += 460 * dt;
+                fb.life -= dt * 0.9;
+                if (fb.life <= 0 || fb.y > H + 50) fallingBubbles.splice(i, 1);
+            }
 
-        // ── Screen Shake ──
-        function updateScreenShake() {
-            const s = state.screenShake;
-            if (s.intensity > 0) {
-                s.x = (Math.random() - 0.5) * s.intensity;
-                s.y = (Math.random() - 0.5) * s.intensity;
-                s.intensity *= 0.85;
-                if (s.intensity < 0.5) s.intensity = 0;
-            } else { s.x = 0; s.y = 0; }
-        }
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.vy += 160 * dt;
+                p.life -= p.decay * dt;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
 
-        // ── Update ──
-        function update() {
-            updateParticles();
-            updateScreenShake();
-            updatePhaseLabel();
-            animFrame++;
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const ft = floatingTexts[i];
+                ft.y -= 36 * dt;
+                ft.life -= dt * 1.05;
+                if (ft.life <= 0) floatingTexts.splice(i, 1);
+            }
 
-            if (!state.activeBubble || !state.activeBubble.active) return;
-            const b = state.activeBubble;
-            const { r: rad } = getTileParams();
+            if (gameState !== 'playing' || !flyingBubble) return;
 
-            b.x += b.dx;
-            b.y += b.dy;
+            // 分步微步進更新飛行泡泡，確保高速下絕不穿牆或穿過泡泡
+            const steps = 3;
+            const subDt = dt / steps;
+            const minX = boardLeft + bubbleRad;
+            const maxX = boardRight - bubbleRad;
 
-            // Wall bounce
-            if (b.x - rad < 0) { b.x = rad; b.dx = Math.abs(b.dx); }
-            if (b.x + rad > canvas.width) { b.x = canvas.width - rad; b.dx = -Math.abs(b.dx); }
+            for (let s = 0; s < steps; s++) {
+                if (!flyingBubble) break;
+                flyingBubble.x += flyingBubble.vx * subDt;
+                flyingBubble.y += flyingBubble.vy * subDt;
 
-            // Ceiling
-            if (b.y - rad < 0) { b.y = rad; snapBubble(); return; }
+                if (flyingBubble.x <= minX) {
+                    flyingBubble.x = minX;
+                    flyingBubble.vx = Math.abs(flyingBubble.vx);
+                } else if (flyingBubble.x >= maxX) {
+                    flyingBubble.x = maxX;
+                    flyingBubble.vx = -Math.abs(flyingBubble.vx);
+                }
 
-            // Collision with existing bubbles — scan nearby rows
-            const { r: rad2, h } = getTileParams();
-            const estRow = Math.max(0, Math.round((b.y - rad2) / h));
-            const startR = Math.max(0, estRow - 2);
-            const endR = Math.min(state.grid.length - 1, estRow + 2);
+                if (flyingBubble.y <= TOP_OFFSET + bubbleRad) {
+                    flyingBubble.y = TOP_OFFSET + bubbleRad;
+                    snapFlyingBubble(flyingBubble);
+                    break;
+                }
 
-            for (let r = startR; r <= endR; r++) {
-                for (let c = 0; c < state.cols; c++) {
-                    if (!state.grid[r] || !state.grid[r][c]) continue;
-                    const pp = getPixelPos(c, r);
-                    const dx = b.x - pp.x;
-                    const dy = b.y - pp.y;
-                    if (dx * dx + dy * dy < (rad * 1.8) * (rad * 1.8)) {
-                        snapBubble();
-                        return;
+                let hit = false;
+                for (let r = 0; r < grid.length; r++) {
+                    const maxC = (r % 2 === 1) ? COLS - 1 : COLS;
+                    for (let c = 0; c < maxC; c++) {
+                        if (!grid[r][c]) continue;
+                        const cc = getCellCenter(c, r);
+                        if (Math.hypot(flyingBubble.x - cc.x, flyingBubble.y - cc.y) <= bubbleRad * 1.82) {
+                            hit = true;
+                            break;
+                        }
                     }
+                    if (hit) break;
+                }
+
+                if (hit) {
+                    snapFlyingBubble(flyingBubble);
+                    break;
                 }
             }
         }
 
-        // ── Draw ──
-        function drawBubble(x, y, bubble, rad, pulse) {
-            const color = getBubbleColor(bubble);
-            if (!color) return;
+        // 繪製單顆晶透魔法泡泡
+        function drawMagicBubble(x, y, r, bubble) {
+            ctx.save();
+            ctx.translate(x, y);
 
-            if (bubble.type === SPECIAL_BOMB) {
-                ctx.fillStyle = '#1e293b';
-                ctx.shadowBlur = 8 + pulse * 4;
+            if (bubble.type === 'bomb') {
                 ctx.shadowColor = '#f59e0b';
+                ctx.shadowBlur = 12;
+                const g = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.1, 0, 0, r);
+                g.addColorStop(0, '#475569');
+                g.addColorStop(1, '#0f172a');
+                ctx.fillStyle = g;
                 ctx.beginPath();
-                ctx.arc(x, y, rad - 2, 0, Math.PI * 2);
+                ctx.arc(0, 0, r - 1, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.strokeStyle = '#f59e0b';
+                ctx.strokeStyle = '#facc15';
                 ctx.lineWidth = 2;
                 ctx.stroke();
                 ctx.shadowBlur = 0;
-                ctx.fillStyle = '#f59e0b';
-                ctx.font = `${rad}px sans-serif`;
+                ctx.font = `${Math.round(r * 1.05)}px sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText('💥', x, y);
-            } else if (bubble.type === SPECIAL_RAINBOW) {
-                const hueShift = (animFrame * 3) % 360;
-                const grad = ctx.createRadialGradient(x, y, 0, x, y, rad);
-                grad.addColorStop(0, `hsl(${hueShift},100%,80%)`);
-                grad.addColorStop(0.5, `hsl(${(hueShift + 120) % 360},100%,60%)`);
-                grad.addColorStop(1, `hsl(${(hueShift + 240) % 360},100%,50%)`);
-                ctx.fillStyle = grad;
+                ctx.fillText('💥', 0, 1);
+            } else if (bubble.type === 'rainbow') {
+                ctx.shadowColor = '#ffffff';
                 ctx.shadowBlur = 12;
-                ctx.shadowColor = `hsl(${hueShift},100%,70%)`;
+                const g = ctx.createLinearGradient(-r, -r, r, r);
+                g.addColorStop(0, '#f43f5e');
+                g.addColorStop(0.25, '#facc15');
+                g.addColorStop(0.5, '#4ade80');
+                g.addColorStop(0.75, '#38bdf8');
+                g.addColorStop(1, '#c084fc');
+                ctx.fillStyle = g;
                 ctx.beginPath();
-                ctx.arc(x, y, rad - 2, 0, Math.PI * 2);
+                ctx.arc(0, 0, r - 1, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
                 ctx.shadowBlur = 0;
-                ctx.fillStyle = 'rgba(255,255,255,0.9)';
-                ctx.font = `bold ${rad * 0.8}px sans-serif`;
+                ctx.font = `${Math.round(r * 0.95)}px sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText('✦', x, y);
+                ctx.fillText('🌈', 0, 1);
             } else {
-                ctx.fillStyle = color.fill;
-                ctx.shadowBlur = 8 + pulse * 4;
-                ctx.shadowColor = color.glow;
+                const pal = BUBBLE_PALETTES[bubble.colorIdx] || BUBBLE_PALETTES[0];
+                const g = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.12, 0, 0, r);
+                g.addColorStop(0, pal.light);
+                g.addColorStop(0.55, pal.fill);
+                g.addColorStop(1, pal.dark);
+                ctx.fillStyle = g;
                 ctx.beginPath();
-                ctx.arc(x, y, rad - 2 + pulse, 0, Math.PI * 2);
+                ctx.arc(0, 0, r - 1, 0, Math.PI * 2);
                 ctx.fill();
-                // Inner shine
-                ctx.fillStyle = 'rgba(255,255,255,0.3)';
-                ctx.shadowBlur = 0;
-                ctx.beginPath();
-                ctx.arc(x - rad / 3, y - rad / 3, rad / 3.5, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            ctx.shadowBlur = 0;
-        }
 
-        function draw() {
-            ctx.save();
-            ctx.translate(state.screenShake.x, state.screenShake.y);
-
-            // Background
-            ctx.fillStyle = '#020617';
-            ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
-
-            // Stars
-            state.bgStars.forEach(star => {
-                star.y += star.speed;
-                if (star.y > 1) star.y = 0;
-                ctx.fillStyle = `rgba(148,163,184,${0.3 + Math.sin(animFrame * 0.02 + star.x * 10) * 0.2})`;
-                ctx.beginPath();
-                ctx.arc(star.x * canvas.width, star.y * canvas.height, star.s, 0, Math.PI * 2);
-                ctx.fill();
-            });
-
-            const { r: rad, h } = getTileParams();
-
-            // Danger zone
-            const dangerY = getPixelPos(0, 12).y;
-            state.dangerPulse += 0.05;
-            const da = 0.3 + Math.sin(state.dangerPulse) * 0.2;
-            ctx.strokeStyle = `rgba(239,68,68,${da})`;
-            ctx.lineWidth = 2;
-            ctx.setLineDash([8, 4]);
-            ctx.beginPath();
-            ctx.moveTo(0, dangerY);
-            ctx.lineTo(canvas.width, dangerY);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            const dg = ctx.createLinearGradient(0, dangerY, 0, dangerY + h * 2);
-            dg.addColorStop(0, `rgba(239,68,68,${da * 0.15})`);
-            dg.addColorStop(1, 'transparent');
-            ctx.fillStyle = dg;
-            ctx.fillRect(0, dangerY, canvas.width, h * 2);
-
-            // Grid bubbles
-            state.grid.forEach((row, r) => {
-                row.forEach((cell, c) => {
-                    if (!cell) return;
-                    const pp = getPixelPos(c, r);
-                    const pulse = r >= 10 ? Math.sin(animFrame * 0.1 + c) * 1.5 : 0;
-                    drawBubble(pp.x, pp.y, cell, rad, pulse);
-                });
-            });
-
-            // Particles
-            drawParticles();
-
-            // Launcher base indicator
-            if (state.activeBubble && !state.activeBubble.active) {
-                const lx = state.activeBubble.x;
-                const ly = state.activeBubble.y;
-                ctx.strokeStyle = 'rgba(96,165,250,.18)';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.arc(lx, ly, rad * 1.6, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+                ctx.lineWidth = 1.5;
                 ctx.stroke();
-            }
 
-            // Active bubble
-            const b = state.activeBubble;
-            if (b) {
-                if (!b.active && state.isPlaying) {
-                    // Dotted aim trajectory with wall bounces
-                    const dotSpacing = rad * 1.5;
-                    let simX = b.x, simY = b.y;
-                    let simDx = Math.cos(state.angle) * dotSpacing;
-                    let simDy = Math.sin(state.angle) * dotSpacing;
-                    for (let i = 1; i <= 12; i++) {
-                        simX += simDx; simY += simDy;
-                        if (simX - rad < 0 || simX + rad > canvas.width) { simDx = -simDx; simX += simDx; }
-                        const alpha = (1 - i / 12) * 0.5;
-                        const size = rad * 0.2 * (1 - i / 12 * 0.5);
-                        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-                        ctx.beginPath();
-                        ctx.arc(simX, simY, size, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
+                // 晶透泡泡高光
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+                ctx.beginPath();
+                ctx.ellipse(-r * 0.34, -r * 0.34, r * 0.3, r * 0.16, -0.6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 若泡泡內封存著 ⭐ 星幣
+                if (bubble.hasStar) {
+                    ctx.font = `${Math.round(r * 0.95)}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('⭐', 0, 1);
                 }
-                drawBubble(b.x, b.y, b.bubble, rad, Math.sin(animFrame * 0.15));
             }
 
             ctx.restore();
         }
 
-        // ── Game Loop ──
-        function gameLoop() {
-            if (!state.isPlaying) return;
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
+        function draw() {
+            ctx.save();
+            if (screenShake > 0) {
+                ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+            }
+
+            // 1. 珊瑚星光海灣深海背景
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+            bgGrad.addColorStop(0, '#082f49');
+            bgGrad.addColorStop(0.55, '#0c4a6e');
+            bgGrad.addColorStop(1, '#0f172a');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            // 棋盤玻璃邊界牆（清楚標示左右反射牆位置）
+            ctx.fillStyle = 'rgba(7, 25, 48, 0.55)';
+            ctx.fillRect(boardLeft, TOP_OFFSET, boardRight - boardLeft, dangerLineY - TOP_OFFSET);
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(boardLeft, TOP_OFFSET, boardRight - boardLeft, dangerLineY - TOP_OFFSET);
+
+            // 海底上浮氣泡裝飾
+            seaBubbles.forEach(sb => {
+                ctx.strokeStyle = 'rgba(186, 230, 253, 0.25)';
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.arc(sb.x, sb.y, sb.r, 0, Math.PI * 2);
+                ctx.stroke();
+            });
+
+            // 2. 繪製底部警戒虛線
+            ctx.save();
+            ctx.strokeStyle = 'rgba(244, 63, 94, 0.45)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 6]);
+            ctx.beginPath();
+            ctx.moveTo(boardLeft + 6, dangerLineY);
+            ctx.lineTo(boardRight - 6, dangerLineY);
+            ctx.stroke();
+            ctx.restore();
+
+            // 3. 繪製牆壁反射瞄準虛線與落點預覽圈
+            if (gameState === 'playing' && !flyingBubble && currentBubble) {
+                const pts = computeAimTrajectory(aimAngle);
+                if (pts.length > 1) {
+                    const pal = currentBubble.type === 'normal'
+                        ? (BUBBLE_PALETTES[currentBubble.colorIdx] || BUBBLE_PALETTES[0])
+                        : { light: '#fde047', fill: '#facc15' };
+
+                    ctx.save();
+                    ctx.strokeStyle = pal.light;
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([5, 7]);
+                    ctx.shadowColor = pal.fill;
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.moveTo(pts[0].x, pts[0].y);
+                    for (let i = 1; i < pts.length; i++) {
+                        ctx.lineTo(pts[i].x, pts[i].y);
+                    }
+                    ctx.stroke();
+
+                    // 落點預覽光圈
+                    const lastPt = pts[pts.length - 1];
+                    ctx.setLineDash([]);
+                    ctx.beginPath();
+                    ctx.arc(lastPt.x, lastPt.y, bubbleRad * 0.85, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            // 4. 繪製棋盤上的所有魔法泡泡
+            for (let r = 0; r < grid.length; r++) {
+                const maxC = (r % 2 === 1) ? COLS - 1 : COLS;
+                for (let c = 0; c < maxC; c++) {
+                    const cell = grid[r][c];
+                    if (!cell) continue;
+                    const pos = getCellCenter(c, r);
+                    drawMagicBubble(pos.x, pos.y, bubbleRad, cell);
+                }
+            }
+
+            // 5. 繪製震落中的懸空泡泡與飛行中的泡泡
+            fallingBubbles.forEach(fb => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, fb.life);
+                drawMagicBubble(fb.x, fb.y, fb.r, { type: 'normal', colorIdx: BUBBLE_PALETTES.indexOf(fb.pal), hasStar: fb.hasStar });
+                ctx.restore();
+            });
+
+            if (flyingBubble) {
+                drawMagicBubble(flyingBubble.x, flyingBubble.y, bubbleRad, flyingBubble.bubble);
+            }
+
+            // 6. 繪製底部魔法泡泡砲台與 Voxel 怪獸砲手
+            ctx.save();
+            ctx.translate(cannonX, cannonY);
+
+            // 左側陪伴助威的 Voxel 怪獸砲手
+            const heroImg = sprites[selectedHero];
+            if (heroImg && heroImg.complete && heroImg.naturalWidth > 0) {
+                ctx.drawImage(heroImg, -82, -26, 54, 54);
+            }
+
+            // 旋轉魔法砲管
+            ctx.save();
+            ctx.rotate(aimAngle + Math.PI / 2);
+            const barrelGrad = ctx.createLinearGradient(-16, -38, 16, 10);
+            barrelGrad.addColorStop(0, '#38bdf8');
+            barrelGrad.addColorStop(1, '#1d4ed8');
+            ctx.fillStyle = barrelGrad;
+            ctx.strokeStyle = '#bae6fd';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.roundRect(-14, -36, 28, 38, 9);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            // 砲台底座與待發射泡泡
+            ctx.fillStyle = '#1e3a8a';
+            ctx.strokeStyle = '#7dd3fc';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(0, 6, 26, Math.PI, 0);
+            ctx.fill();
+            ctx.stroke();
+
+            if (!flyingBubble && currentBubble) {
+                drawMagicBubble(0, 0, bubbleRad * 0.92, currentBubble);
+            }
+            ctx.restore();
+
+            // 7. 繪製粒子與浮動得分文字
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            floatingTexts.forEach(ft => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, ft.life);
+                ctx.font = '900 18px "Fredoka", "Noto Sans TC", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.lineWidth = 4;
+                ctx.strokeText(ft.text, ft.x, ft.y);
+                ctx.fillStyle = ft.color;
+                ctx.fillText(ft.text, ft.x, ft.y);
+                ctx.restore();
+            });
+
+            ctx.restore();
         }
 
-        // Init blank state
-        state = initState();
+        function loop(now) {
+            const dt = Math.min(0.04, (now - lastTime) / 1000);
+            lastTime = now;
+            update(dt);
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        // 選單與流程控制
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalBadge = document.getElementById('modal-badge');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+        const setupSection = document.getElementById('setup-section');
+        const modalStats = document.getElementById('modal-stats');
+        const primaryBtn = document.getElementById('modal-primary-btn');
+        const secondaryBtn = document.getElementById('modal-secondary-btn');
+
+        document.querySelectorAll('.hero-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                document.querySelectorAll('.hero-option').forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                selectedHero = opt.dataset.hero;
+            });
+        });
+
+        function startNewGame() {
+            sfx.init();
+            resizeCanvas();
+            level = 1;
+            score = 0;
+            combo = 0;
+            maxCombo = 0;
+            starsEarnedThisRun = 0;
+            fallingBubbles = [];
+            particles = [];
+            floatingTexts = [];
+            buildLevelGrid(level);
+            gameState = 'playing';
+            modalOverlay.classList.add('hidden');
+            updateHUD();
+            showCenterToast('🫧 第 1 關：珊瑚星光海灣', '按住畫面拖曳瞄準，放開手指即可發射！', 1800);
+        }
+
+        function togglePause() {
+            if (gameState === 'playing') {
+                gameState = 'paused';
+                modalBadge.textContent = '⏸️ 遊戲暫停';
+                modalTitle.textContent = '休息一下，換位怪獸砲手嗎？';
+                modalDesc.innerHTML = '隨時可以切換你的怪獸夥伴，或點右下角 🔄 換球！';
+                setupSection.style.display = 'block';
+                modalStats.style.display = 'none';
+                primaryBtn.textContent = '▶️ 繼續挑戰';
+                primaryBtn.onclick = () => {
+                    modalOverlay.classList.add('hidden');
+                    gameState = 'playing';
+                };
+                secondaryBtn.style.display = 'block';
+                secondaryBtn.textContent = '🔄 重新開始本局';
+                secondaryBtn.onclick = startNewGame;
+                modalOverlay.classList.remove('hidden');
+            } else if (gameState === 'paused') {
+                modalOverlay.classList.add('hidden');
+                gameState = 'playing';
+            }
+        }
+
+        function triggerVictory() {
+            gameState = 'victory';
+            sfx.win();
+            awardStarCoins(3);
+            modalBadge.textContent = '🏆 珊瑚海灣大破關';
+            modalTitle.textContent = '恭喜清空全部 5 關魔法泡泡！';
+            modalDesc.innerHTML = '你的反射瞄準超神準，拯救了整片珊瑚星光海灣！';
+            setupSection.style.display = 'none';
+            modalStats.style.display = 'grid';
+            document.getElementById('stat-level').textContent = `5 關全破 (連擊 ${maxCombo})`;
+            document.getElementById('stat-stars').textContent = `⭐ +${starsEarnedThisRun}`;
+
+            primaryBtn.textContent = '🔄 再玩一局';
+            primaryBtn.onclick = startNewGame;
+            secondaryBtn.style.display = 'none';
+            modalOverlay.classList.remove('hidden');
+        }
+
+        function triggerGameOver() {
+            gameState = 'gameover';
+            modalBadge.textContent = '💫 挑戰結束';
+            modalTitle.textContent = '泡泡壓到警戒線了！';
+            modalDesc.innerHTML = '善用右下角 🔄 換球鈕與牆壁反射瞄準上層泡泡，可以整串震落喔！';
+            setupSection.style.display = 'block';
+            modalStats.style.display = 'grid';
+            document.getElementById('stat-level').textContent = `第 ${level} 關 (連擊 ${maxCombo})`;
+            document.getElementById('stat-stars').textContent = `⭐ +${starsEarnedThisRun}`;
+
+            primaryBtn.textContent = '🫧 再挑戰一次';
+            primaryBtn.onclick = startNewGame;
+            secondaryBtn.style.display = 'none';
+            modalOverlay.classList.remove('hidden');
+        }
+
+        document.getElementById('pause-btn').addEventListener('click', togglePause);
+        primaryBtn.onclick = startNewGame;
+
+        resizeCanvas();
+        buildLevelGrid(1);
+        updateHUD();
+        requestAnimationFrame(loop);
     </script>
 </body>
 
