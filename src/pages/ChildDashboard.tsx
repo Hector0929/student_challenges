@@ -236,7 +236,7 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     return (
         <LearningArea userId={userId} onGoHome={onGoHome}>
             {({ recommended, all }) => (
-                <div className="max-w-5xl mx-auto grid gap-5 lg:grid-cols-2 lg:items-start">
+                <div className="max-w-5xl mx-auto grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-start">
                     {/* 手機單欄：問候 → 進度 → 任務 → 推薦 → 入口 → 全部學習（用 order 排）；
                 桌機兩欄各自往下長，不會互相撐出空隙 */}
                     <div className="contents lg:flex lg:flex-col lg:gap-5">
