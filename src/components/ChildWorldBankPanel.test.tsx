@@ -38,8 +38,8 @@ describe('ChildWorldBankPanel', () => {
         fireEvent.click(screen.getByRole('button', { name: '🏦 存入活存' }));
         expect(onDepositDemand).toHaveBeenCalledWith(60);
 
-        fireEvent.click(screen.getByRole('button', { name: '活存全額提領' }));
-        expect((screen.getByLabelText('孩子活存金額') as HTMLInputElement).value).toBe('44');
+        fireEvent.click(screen.getByRole('button', { name: '提領快捷 44 星' }));
+        expect((screen.getByLabelText('提領活存金額') as HTMLInputElement).value).toBe('44');
         fireEvent.click(screen.getByRole('button', { name: '💸 提領活存' }));
         expect(onWithdrawDemand).toHaveBeenCalledWith(44);
 

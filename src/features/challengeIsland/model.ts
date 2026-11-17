@@ -163,7 +163,7 @@ const ISLAND_LAYOUT: IslandLayout[] = [
     {
         id: HARBOR_ISLAND_ID, name: '冒險港', en: 'Adventure Harbour', icon: '⚓',
         axial: [-1, -1], style: 'stall', ground: '#d9cdb2', accent: '#2f6f8f', hub: true,
-        summary: '商店街、冒險家家園和許願池都在這座港口。',
+        summary: '商店街、星幣銀行和許願池都在這座港口。',
     },
     {
         id: MONSTER_ISLAND_ID, name: '怪獸島', en: 'Monster Isle', icon: '🐲',

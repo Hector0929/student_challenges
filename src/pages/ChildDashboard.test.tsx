@@ -45,16 +45,12 @@ vi.mock('../components/LearningArea', () => ({
         <>{children({ recommended: <div>Learning Area</div>, all: null })}</>,
 }));
 
-vi.mock('../components/World3D', () => ({
-    World3D: () => <div>World 3D Preview</div>,
-}));
-
 vi.mock('../components/ChildMonsterShop', () => ({
     ChildMonsterShop: () => <div>Monster Shop Content</div>,
 }));
 
-vi.mock('../components/ChildWorldShopStreet', () => ({
-    ChildWorldShopStreet: () => <div>World Shop Street Content</div>,
+vi.mock('../components/StarBank', () => ({
+    StarBank: () => <div>Star Bank Content</div>,
 }));
 
 vi.mock('../hooks/useGameWindowController', () => ({
@@ -107,21 +103,25 @@ describe('ChildDashboard', () => {
         });
     });
 
-    it('opens the top shop street button and lets the child switch to world shop', async () => {
+    it('商店街只賣怪獸，銀行有自己的入口', async () => {
         render(
             <TestWrapper>
                 <ChildDashboard userId="child-1" />
             </TestWrapper>,
         );
 
+        expect(screen.queryByRole('button', { name: /家園/ })).not.toBeInTheDocument();
+
         fireEvent.click(screen.getByRole('button', { name: /^商店街$/i }));
         // 商店是第一次打開時才載入（lazy），要等它出現
         expect(await screen.findByText('怪獸商店街')).toBeInTheDocument();
         expect(screen.getByText('Monster Shop Content')).toBeInTheDocument();
-        expect(screen.queryByText('World Shop Street Content')).not.toBeInTheDocument();
+        expect(screen.queryByText('Star Bank Content')).not.toBeInTheDocument();
 
-        fireEvent.click(screen.getByRole('button', { name: /世界商店街/i }));
-        expect(screen.getByText('World Shop Street Content')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: '返回' }));
+        fireEvent.click(screen.getByRole('button', { name: /^銀行$/i }));
+        expect(await screen.findByText('星幣銀行')).toBeInTheDocument();
+        expect(screen.getByText('Star Bank Content')).toBeInTheDocument();
         expect(screen.queryByText('Monster Shop Content')).not.toBeInTheDocument();
     });
 

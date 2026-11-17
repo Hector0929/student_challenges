@@ -10,9 +10,7 @@ import { LearningArea } from '../components/LearningArea';
 import { TodayProgressCard } from '../components/TodayProgressCard';
 import { useQuests, useDailyLogs, useDailyProgress, useCompleteQuest, useStarBalance, isQuestVisibleToChild } from '../hooks/useQuests';
 import { useFamilySettings, DEFAULT_FAMILY_SETTINGS } from '../hooks/useFamilySettings';
-import { useWorldPersistence } from '../hooks/useWorldPersistence';
 import { useUser } from '../contexts/UserContext';
-import type { WorldTheme } from '../hooks/useWorldState';
 import type { Quest } from '../types/database';
 import { computeTodayProgress } from '../lib/todayProgress';
 import { useMountOnFirstOpen } from '../hooks/useMountOnFirstOpen';
@@ -21,11 +19,6 @@ import { useMountOnFirstOpen } from '../hooks/useMountOnFirstOpen';
 const MonsterTowerV4 = lazy(() =>
     import('../components/MonsterTowerV4').then((m) => ({
         default: m.MonsterTowerV4,
-    })),
-);
-const WorldFullScreen = lazy(() =>
-    import('../components/WorldFullScreen').then((m) => ({
-        default: m.WorldFullScreen,
     })),
 );
 const ShopModal = lazy(() => import('../components/ShopModal').then((m) => ({ default: m.ShopModal })));
@@ -65,28 +58,16 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
     const { data: starBalance } = useStarBalance(userId);
     const completeQuestMutation = useCompleteQuest();
     const { data: familySettings } = useFamilySettings();
-    const { data: persistedWorld } = useWorldPersistence(userId);
-
-    // 家園背景：本地狀態立刻反映，存檔由 WorldFullScreen 自己處理
-    const [localTheme, setLocalTheme] = useState<WorldTheme>('normal');
-    const serverTheme = persistedWorld?.worldLab?.worldTheme;
-    const [syncedServerTheme, setSyncedServerTheme] = useState<WorldTheme | undefined>(undefined);
-    if (serverTheme !== syncedServerTheme) {
-        setSyncedServerTheme(serverTheme);
-        if (serverTheme) setLocalTheme(serverTheme);
-    }
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
     const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
     const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false);
     const [isTowerOpen, setIsTowerOpen] = useState(false);
-    const [isShopOpen, setIsShopOpen] = useState(false);
-    const [isWorldOpen, setIsWorldOpen] = useState(false);
+    const [shopMode, setShopMode] = useState<'monster' | 'bank' | null>(null);
     const [isIslandOpen, setIsIslandOpen] = useState(false);
     const towerMounted = useMountOnFirstOpen(isTowerOpen);
-    const shopMounted = useMountOnFirstOpen(isShopOpen);
-    const worldMounted = useMountOnFirstOpen(isWorldOpen);
+    const shopMounted = useMountOnFirstOpen(shopMode !== null);
     const islandMounted = useMountOnFirstOpen(isIslandOpen);
     const [showAllTodo, setShowAllTodo] = useState(false);
     const [showDone, setShowDone] = useState(false);
@@ -208,13 +189,8 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
             <div className={`grid gap-2 ${funGamesEnabled ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-4'}`}>
                 <EntryTile icon="🏝️" label="群島" onClick={() => setIsIslandOpen(true)} />
                 <EntryTile icon="🗼" label="怪獸塔" onClick={() => setIsTowerOpen(true)} />
-                <EntryTile
-                    icon="🏡"
-                    label="家園"
-                    sub={persistedWorld?.worldLab?.islandLevel ? `Lv.${persistedWorld.worldLab.islandLevel}` : undefined}
-                    onClick={() => setIsWorldOpen(true)}
-                />
-                <EntryTile icon="🏪" label="商店街" onClick={() => setIsShopOpen(true)} />
+                <EntryTile icon="🏦" label="銀行" onClick={() => setShopMode('bank')} />
+                <EntryTile icon="🏪" label="商店街" onClick={() => setShopMode('monster')} />
                 {funGamesEnabled && (
                     <EntryTile
                         icon={today.unlocked ? '🎮' : '🔒'}
@@ -383,12 +359,12 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                     {shopMounted && (
                         <Suspense fallback={null}>
                             <ShopModal
-                                isOpen={isShopOpen}
-                                onClose={() => setIsShopOpen(false)}
+                                isOpen={shopMode !== null}
+                                onClose={() => setShopMode(null)}
                                 onGoHome={onGoHome}
                                 userId={userId}
                                 starBalance={starBalance || 0}
-                                initialTab="monster"
+                                mode={shopMode ?? 'monster'}
                             />
                         </Suspense>
                     )}
@@ -400,19 +376,6 @@ export const ChildDashboard: React.FC<ChildDashboardProps> = ({ userId, onGoHome
                                 onGoHome={onGoHome}
                                 userId={userId}
                                 starBalance={starBalance || 0}
-                            />
-                        </Suspense>
-                    )}
-                    {worldMounted && (
-                        <Suspense fallback={null}>
-                            <WorldFullScreen
-                                isOpen={isWorldOpen}
-                                onClose={() => setIsWorldOpen(false)}
-                                onGoHome={onGoHome}
-                                userId={userId}
-                                starBalance={starBalance || 0}
-                                worldTheme={localTheme}
-                                onThemeChange={setLocalTheme}
                             />
                         </Suspense>
                     )}

@@ -6,8 +6,6 @@ import { ParentSettings } from './ParentSettings';
 const useUserMock = vi.fn();
 const useFamilySettingsMock = vi.fn();
 const useUpdateFamilySettingsMock = vi.fn();
-const useFamilyExchangeRatesMock = vi.fn();
-const useUpdateFamilyExchangeRatesMock = vi.fn();
 const useFamilyBankSettingsMock = vi.fn();
 const useUpdateFamilyBankSettingsMock = vi.fn();
 const useAdjustStarsMock = vi.fn();
@@ -33,15 +31,8 @@ vi.mock('../hooks/useFamilySettings', () => ({
 }));
 
 vi.mock('../hooks/useFamilyShopSettings', () => ({
-    useFamilyExchangeRates: () => useFamilyExchangeRatesMock(),
-    useUpdateFamilyExchangeRates: () => useUpdateFamilyExchangeRatesMock(),
     useFamilyBankSettings: () => useFamilyBankSettingsMock(),
     useUpdateFamilyBankSettings: () => useUpdateFamilyBankSettingsMock(),
-    DEFAULT_FAMILY_EXCHANGE_RATES: {
-        wood_rate: 0.025,
-        stone_rate: 0.04,
-        crystal_rate: 0.14,
-    },
     DEFAULT_FAMILY_BANK_SETTINGS: {
         demand_daily_rate: 0.002,
         time_deposit_daily_rate: 0.01,
@@ -103,19 +94,6 @@ describe('ParentSettings', () => {
         useUpdateFamilySettingsMock.mockReturnValue({
             mutateAsync: vi.fn(),
         });
-        useFamilyExchangeRatesMock.mockReturnValue({
-            data: {
-                id: 'rates-1',
-                family_id: 'family-1',
-                wood_rate: 0.03,
-                stone_rate: 0.05,
-                crystal_rate: 0.2,
-                updated_at: '2025-01-01T00:00:00.000Z',
-            },
-        });
-        useUpdateFamilyExchangeRatesMock.mockReturnValue({
-            mutateAsync: vi.fn(),
-        });
         useFamilyBankSettingsMock.mockReturnValue({
             data: {
                 id: 'bank-1',
@@ -143,17 +121,14 @@ describe('ParentSettings', () => {
         });
     });
 
-    it('renders shop street settings using family shop hook values', async () => {
+    it('renders star bank settings without resource prices', async () => {
         render(<ParentSettings />);
 
-        expect(screen.getByText('商店街設定')).toBeInTheDocument();
-        expect(screen.getByText('兌換店價格')).toBeInTheDocument();
+        expect(screen.getByText('星幣銀行設定')).toBeInTheDocument();
+        expect(screen.queryByText('兌換店價格')).not.toBeInTheDocument();
         expect(screen.getByText('銀行利率與規則')).toBeInTheDocument();
 
         await waitFor(() => {
-            expect(screen.getByLabelText('木頭單價')).toHaveValue('0.03');
-            expect(screen.getByLabelText('石頭單價')).toHaveValue('0.05');
-            expect(screen.getByLabelText('水晶單價')).toHaveValue('0.2');
             expect(screen.getByLabelText('活存日利率')).toHaveValue('0.003');
             expect(screen.getByLabelText('定存日利率')).toHaveValue('0.012');
             expect(screen.getByLabelText('最短定存天數')).toHaveValue('10');

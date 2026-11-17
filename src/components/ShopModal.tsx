@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, Home, Store, Star } from 'lucide-react';
+import { ArrowLeft, Home, Landmark, Store, Star } from 'lucide-react';
 import { ChildMonsterShop } from './ChildMonsterShop';
-import { ChildWorldShopStreet } from './ChildWorldShopStreet';
+import { StarBank } from './StarBank';
 import { useGameWindowController } from '../hooks/useGameWindowController';
 import { formatStars } from '../lib/formatStars';
 
@@ -12,7 +12,8 @@ interface ShopModalProps {
     onGoHome?: () => void;
     userId: string;
     starBalance: number;
-    initialTab?: 'monster' | 'world';
+    /** monster：怪獸商店街；bank：星幣銀行 */
+    mode?: 'monster' | 'bank';
 }
 
 export const ShopModal: React.FC<ShopModalProps> = ({
@@ -21,23 +22,14 @@ export const ShopModal: React.FC<ShopModalProps> = ({
     onGoHome,
     userId,
     starBalance,
-    initialTab = 'monster',
+    mode = 'monster',
 }) => {
-    const [activeTab, setActiveTab] = React.useState<'monster' | 'world'>(initialTab);
     const { handleEndGame, handleGoHome } = useGameWindowController({
         isOpen,
         isImmersivePhase: isOpen,
         onClose,
         onGoHome,
     });
-
-    // 每次打開（或打開時指定的分頁改變）都回到指定分頁；在 render 中調整，避免多一次重繪
-    const openKey = isOpen ? initialTab : null;
-    const [prevOpenKey, setPrevOpenKey] = React.useState(openKey);
-    if (openKey !== prevOpenKey) {
-        setPrevOpenKey(openKey);
-        if (openKey) setActiveTab(openKey);
-    }
 
     useEffect(() => {
         if (!isOpen) {
@@ -57,9 +49,10 @@ export const ShopModal: React.FC<ShopModalProps> = ({
 
     if (!isOpen) return null;
 
-    const isWorldTab = activeTab === 'world';
-    const title = isWorldTab ? '世界商店街' : '怪獸商店街';
-    const subtitle = isWorldTab ? '建材補給、資源兌換、世界銀行與定存收益都在這裡。' : '用星幣帶怪獸夥伴回家，打造你的隊伍。';
+    const isBank = mode === 'bank';
+    const title = isBank ? '星幣銀行' : '怪獸商店街';
+    const subtitle = isBank ? '把用不到的星幣存起來，每天都會長一點利息。活存隨時可以領；定存要放滿天數，利息比較多，提早解約會被扣一點點喔。' : '用星幣帶怪獸夥伴回家，打造你的隊伍。';
+    const TitleIcon = isBank ? Landmark : Store;
 
     const modalTree = (
         <div className="fixed inset-0 z-[120] bg-black/45 backdrop-blur-[1px] p-0 sm:p-3">
@@ -75,7 +68,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                             <ArrowLeft size={18} />
                         </button>
                         <span className="font-heading text-indigo-900 text-xs sm:text-sm truncate max-w-[140px] sm:max-w-[240px] flex items-center gap-2">
-                            <Store size={16} />
+                            <TitleIcon size={16} />
                             {title}
                         </span>
                     </div>
@@ -98,32 +91,11 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-3 sm:p-4">
-                    <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${isWorldTab ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-indigo-200 bg-indigo-50 text-indigo-900'}`}>
+                    <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${isBank ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-indigo-200 bg-indigo-50 text-indigo-900'}`}>
                         {subtitle}
                     </div>
 
-                    <div className="flex flex-wrap gap-2 mb-4">
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('monster')}
-                            className={`px-4 py-2 rounded-xl border-2 font-heading font-bold text-sm ${activeTab === 'monster' ? 'bg-indigo-500 text-white border-indigo-700' : 'bg-white text-indigo-700 border-indigo-200'}`}
-                        >
-                            👾 怪獸商店
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('world')}
-                            className={`px-4 py-2 rounded-xl border-2 font-heading font-bold text-sm ${activeTab === 'world' ? 'bg-emerald-500 text-white border-emerald-700' : 'bg-white text-emerald-700 border-emerald-200'}`}
-                        >
-                            🏬 世界商店街
-                        </button>
-                    </div>
-
-                    {activeTab === 'monster' ? (
-                        <ChildMonsterShop userId={userId} starBalance={starBalance} inModal />
-                    ) : (
-                        <ChildWorldShopStreet userId={userId} starBalance={starBalance} />
-                    )}
+                    {isBank ? <StarBank userId={userId} starBalance={starBalance} /> : <ChildMonsterShop userId={userId} starBalance={starBalance} inModal />}
                 </div>
             </div>
         </div>

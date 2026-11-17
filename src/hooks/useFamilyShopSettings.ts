@@ -2,8 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '../contexts/UserContext';
 import { supabase } from '../lib/supabase';
 import { createDefaultBankSettings } from '../lib/world/bank';
-import { createDefaultExchangePriceTable } from '../lib/world/exchangeShop';
-import type { FamilyBankSettings, FamilyExchangeRates } from '../types/database';
+import type { FamilyBankSettings } from '../types/database';
 
 type PostgrestLikeError = {
     code?: string;
@@ -44,112 +43,13 @@ function clampRateToUnitInterval(value: number): number {
     return Math.min(1, Math.max(0, value));
 }
 
-const defaultExchangeRates = createDefaultExchangePriceTable();
 const defaultBankSettings = createDefaultBankSettings();
-
-export const DEFAULT_FAMILY_EXCHANGE_RATES: Omit<FamilyExchangeRates, 'id' | 'family_id' | 'updated_at' | 'updated_by'> = {
-    wood_rate: defaultExchangeRates.wood,
-    stone_rate: defaultExchangeRates.stone,
-    crystal_rate: defaultExchangeRates.crystal,
-};
 
 export const DEFAULT_FAMILY_BANK_SETTINGS: Omit<FamilyBankSettings, 'id' | 'family_id' | 'updated_at' | 'updated_by'> = {
     demand_daily_rate: defaultBankSettings.demandDailyRate,
     time_deposit_daily_rate: defaultBankSettings.timeDepositDailyRate,
     min_time_deposit_days: defaultBankSettings.minTimeDepositDays,
     early_withdraw_penalty_rate: defaultBankSettings.earlyWithdrawPenaltyRate,
-};
-
-export const useFamilyExchangeRates = (overrideFamilyId?: string) => {
-    const { user } = useUser();
-    const familyId = overrideFamilyId ?? user?.family_id;
-
-    return useQuery({
-        queryKey: ['family_exchange_rates', familyId],
-        enabled: !!familyId,
-        queryFn: async () => {
-            if (!familyId) return null;
-
-            const { data, error } = await supabase
-                .from('family_exchange_rates')
-                .select('*')
-                .eq('family_id', familyId)
-                .maybeSingle();
-
-            if (error) {
-                // A 404 / PGRST116 just means no row exists yet — treat as null (defaults apply)
-                const status = (error as { status?: number }).status;
-                if (status === 404 || (error as { code?: string }).code === 'PGRST116') {
-                    return null;
-                }
-                if (isMissingRelationError(error)) {
-                    // Table is not deployed yet; allow UI to continue with defaults.
-                    console.warn('family_exchange_rates table is missing. Falling back to defaults.');
-                    return null;
-                }
-                console.error('Error fetching family exchange rates:', error);
-                throw error;
-            }
-
-            return data as FamilyExchangeRates | null;
-        },
-    });
-};
-
-export const useUpdateFamilyExchangeRates = () => {
-    const queryClient = useQueryClient();
-    const { user } = useUser();
-
-    return useMutation({
-        mutationFn: async (rates: Partial<FamilyExchangeRates>) => {
-            if (!user?.family_id) {
-                throw new Error('No family ID found');
-            }
-
-            const payload: Partial<FamilyExchangeRates> = {};
-
-            if (rates.wood_rate !== undefined) {
-                payload.wood_rate = clampNonNegativeNumber(Number(rates.wood_rate));
-            }
-            if (rates.stone_rate !== undefined) {
-                payload.stone_rate = clampNonNegativeNumber(Number(rates.stone_rate));
-            }
-            if (rates.crystal_rate !== undefined) {
-                payload.crystal_rate = clampNonNegativeNumber(Number(rates.crystal_rate));
-            }
-
-            const { data, error } = await supabase
-                .from('family_exchange_rates')
-                .upsert(
-                    {
-                        family_id: user.family_id,
-                        ...payload,
-                        updated_by: user.id,
-                    },
-                    {
-                        onConflict: 'family_id',
-                    }
-                )
-                .select()
-                .single();
-
-            if (error) {
-                if (isMissingRelationError(error)) {
-                    throw createMissingTableMigrationError('family_exchange_rates');
-                }
-                console.error('Error updating family exchange rates:', error);
-                throw error;
-            }
-
-            return data as FamilyExchangeRates;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ['family_exchange_rates'],
-                refetchType: 'all',
-            });
-        },
-    });
 };
 
 export const useFamilyBankSettings = (overrideFamilyId?: string) => {

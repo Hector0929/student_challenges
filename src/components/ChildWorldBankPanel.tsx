@@ -79,7 +79,7 @@ export const ChildWorldBankPanel: React.FC<ChildWorldBankPanelProps> = ({
         <div className="rounded-2xl border-2 border-sky-200 bg-sky-50 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                 <div>
-                    <h3 className="font-heading text-lg font-bold text-sky-900">🏦 世界銀行</h3>
+                    <h3 className="font-heading text-lg font-bold text-sky-900">🏦 星幣銀行</h3>
                     <p className="text-xs text-sky-700 mt-1">可以存活存、開定存，利率由家長設定。</p>
                 </div>
                 <div className="text-xs rounded-lg border border-sky-200 bg-white px-3 py-2 text-sky-800">
